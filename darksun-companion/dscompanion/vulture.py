@@ -22,6 +22,7 @@ COOKED = 0xA4C  # (its object, as the campfire's script makes it)
 MEAL, EATEN = 780, 781  # (the Ledger's flags) set by Dinos's script; the reward given
 OWN_NAME = 0x101  # the game's "Vulture"
 XP_REWARD = 100
+PENS, DINOS = 0x29, "Dinos"  # where he is (RGN29), and his name
 SHEET_MAX_PSP = 0x0C
 STATUS_DEAD = 5
 DOWN = (2, 3, 4)  # Stunned, Out Cold, Dying: up again after the meal
@@ -86,8 +87,12 @@ def eat(gd: GameData) -> List[str]:
 
 
 def meal(gd: GameData) -> List[str]:
-    """Once Dinos's script has set MEAL: the reward, once (EATEN)."""
+    """Once Dinos's script has set MEAL: the reward, once (EATEN). Only while the party is talking
+    with him in the pens (where his script sets it): while a game is loading, the flags' memory
+    can hold anything for a moment."""
     if not gd.flag(MEAL) or gd.flag(EATEN):
+        return []
+    if gd.region() != PENS or gd.talk_target() != DINOS:
         return []
     gd.set_flag(EATEN)
     return eat(gd)

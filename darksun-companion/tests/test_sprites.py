@@ -130,6 +130,42 @@ class SpriteTests(unittest.TestCase):
         self.assertEqual(gd.entry_fields(0), (shared[0], sprites.NO_SLOT))
         self.assertEqual(gd.guest.read(at, 2), bytes([9 + sprites.PAD, 26 + sprites.PAD]))  # (where ours has room)
 
+    def test_only_its_own_copies_rewritten(self):
+        """A copy is written over only while it is still the picture last written (or the copy
+        file's, which the game loads): memory the game has since given to another picture (a
+        monster's, after a fight) is left alone, and no longer counted as a copy."""
+        pics = sprites.Pictures(game_chunks())
+        plain = pics.build(300, False, {}, ())
+        outfits = [({}, ()), ({"right": (SWORD, METAL)}, ()), ({"cloak": (65, 5)}, ())]
+        worn, sprites.worn = sprites.worn, lambda gd, member: outfits[0]
+        self.addCleanup(setattr, sprites, "worn", worn)
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "SEGOBJEX.GFF")
+            with open(path, "wb") as f:
+                f.write(b"head" * 10 + plain)
+            dresser = sprites.Dresser.__new__(sprites.Dresser)
+            dresser.gd, dresser.pics = FakeGame(figures=[0]), pics
+            dresser.copy_file, dresser.in_file = path, {(300, False): (40, len(plain))}
+            dresser.shown, dresser.chunks, dresser._rescans = {}, {}, []
+            dresser._scanned, dresser._scan = 0.0, lambda: None
+            first, second = 0x20000, 0x40000
+            for at in (first, second):
+                dresser.gd.guest.write(at, plain)
+            dresser.copies = {(300, False): [first, second]}
+            outfits[0] = outfits[1]
+            dresser.update(True, 1.0)
+            sword = pics.build(300, False, *outfits[1])
+            for at in (first, second):
+                self.assertEqual(dresser.gd.guest.read(at, len(sword)), sword)
+            monster = b"another picture" * 20
+            dresser.gd.guest.write(second + 100, monster)  # (loaded where the second one was)
+            outfits[0] = outfits[2]
+            dresser.update(True, 2.0)
+            cloak = pics.build(300, False, *outfits[2])
+            self.assertEqual(dresser.gd.guest.read(first, len(cloak)), cloak)
+            self.assertEqual(dresser.gd.guest.read(second + 100, len(monster)), monster)
+            self.assertEqual(dresser.copies[(300, False)], [first])
+
     def test_rescans_after_an_area_change(self):
         """Memory looked through every RESCAN, and soon after an area change (its pictures are
         loaded anew) at each of AREA_RESCANS."""

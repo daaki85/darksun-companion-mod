@@ -37,6 +37,9 @@ class VultureTests(unittest.TestCase):
         self.flags = set()
         self.gd.flag = lambda n: n in self.flags
         self.gd.set_flag = lambda n, on=True: self.flags.add(n)
+        self.region, self.talking = vulture.PENS, "Dinos"
+        self.gd.region = lambda: self.region
+        self.gd.talk_target = lambda: self.talking
 
     def put(self, rec):
         self.m[ITEMS + ITEM * game.ITEM_SIZE:ITEMS + (ITEM + 1) * game.ITEM_SIZE] = rec
@@ -76,6 +79,18 @@ class VultureTests(unittest.TestCase):
         self.assertGreater(self.m[priest + 1], 0)
         self.assertEqual(vulture.meal(self.gd), [])  # (once)
         self.assertEqual(self.xp(), [1100, 2100, 3100])
+
+    def test_only_while_talking_with_him(self):
+        """MEAL read while a game loads (anything, for a moment), or anywhere but his talk in the
+        pens: no reward, and none marked given."""
+        self.flags.add(vulture.MEAL)
+        for region, talking in ((vulture.PENS, None), (vulture.PENS, "Kalzith"), (0x2A, "Dinos")):
+            self.region, self.talking = region, talking
+            self.assertEqual(vulture.meal(self.gd), [])
+        self.assertNotIn(vulture.EATEN, self.flags)
+        self.assertEqual(self.xp(), [1000, 2000, 3000])
+        self.region, self.talking = vulture.PENS, "Dinos"
+        self.assertIn("+100 XP each", vulture.meal(self.gd)[0])
 
     def test_the_dead_get_none(self):
         self.m[CREATURES + game.CREATURE_STATUS] = vulture.STATUS_DEAD

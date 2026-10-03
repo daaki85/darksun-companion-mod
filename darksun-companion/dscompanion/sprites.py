@@ -226,6 +226,18 @@ class Dresser:
         except OSError:
             pass  # (the copy in memory still dressed; one loaded anew plain)
 
+    def _from_file(self, key: Tuple[int, bool]) -> Optional[bytes]:
+        """The picture as the Ledger's copy of SEGOBJEX has it (what the game loads), or None."""
+        place = self.in_file.get(key) if self.copy_file else None
+        if not place:
+            return None
+        try:
+            with open(self.copy_file, "rb") as f:
+                f.seek(place[0])
+                return f.read(place[1])
+        except OSError:
+            return None
+
     @classmethod
     def for_game(cls, gd: GameData, game_dir: Optional[str], copy_file: Optional[str] = None) -> Optional["Dresser"]:
         """A Dresser from the game's own files (the objects and the palette), or None."""
@@ -339,16 +351,26 @@ class Dresser:
                 pic = (obj, combat)
                 if not fresh and self._current(pic):
                     continue
+                before = self.chunks.get(pic) or self._from_file(pic)
                 if fresh or pic not in self.chunks:
                     try:
                         self.chunks[pic] = self.pics.build(obj, combat, outfit[0], outfit[1], model)
                     except ValueError:  # (more than there is room for: plain)
                         self.chunks[pic] = self.pics.build(obj, combat, {}, (), model)
                     self._to_file(pic, self.chunks[pic])
+                chunk = self.chunks[pic]
+                kept = []
                 for start in self.copies.get(pic, []):
-                    if struct.unpack("<I", self.gd.guest.read(start, 4))[0] == len(self.chunks[pic]):
-                        self.gd.guest.write(start, self.chunks[pic])
+                    # only over a copy still all ours: the game frees a picture and loads others
+                    # where it was (a monster's, an area's), and those are left alone
+                    held = self.gd.guest.read(start, len(chunk))
+                    if held != chunk and held == before:
+                        self.gd.guest.write(start, chunk)
                         wrote = True
+                    if held in (chunk, before):
+                        kept.append(start)
+                if pic in self.copies:
+                    self.copies[pic] = kept
             self.shown[obj] = key
             if self._point(member, figure, obj, redraw=wrote):
                 wrote = True
