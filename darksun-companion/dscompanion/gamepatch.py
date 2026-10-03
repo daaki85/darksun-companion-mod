@@ -198,6 +198,12 @@ PATCHES = (
     # Kalzith and Semyon, alive and dead (pensasks.py), is 11000 and some
     Patch("script_buffer", 0x6A692, bytes.fromhex("666810270000"),
           bytes.fromhex("6668") + struct.pack("<I", SCRIPT_BUFFER)),
+    # The Effects screen: a click on an effect's icon ends it (DSUN.EXE 7F19Dh, its handler for the
+    # selected character's effects, then the game's routine ending an effect). Only a psionic
+    # power's effect (spell 8Ah-ABh, which it stops maintaining) still ends so; a spell's is left
+    # on: its two "not a psionic power" jumps (to the ending) go to the handler's way out instead.
+    Patch("effects_click_low", 0x7F226, bytes.fromhex("7c51"), bytes.fromhex("7c73")),
+    Patch("effects_click_high", 0x7F236, bytes.fromhex("7d41"), bytes.fromhex("7d63")),
     # (not changed: DSCLOG reads the segment this "mov dx,<segment>" loads, the pointer's items')
     Patch("use_item_seg", 0x73A14, bytes.fromhex("ba8003"), bytes.fromhex("ba8003")),
     # The data path is argv[0] cut after its last \ or :, kept at DS:4B81h. The

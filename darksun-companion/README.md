@@ -1413,6 +1413,12 @@ the screen shows only effects with an icon; with the rule on, the Ledger gives
 54 Flaming Sphere's icon (21014, read as Cat's Grace's) and the spell's name.
 
 ![The Effects screen: Cat's Grace's paw, and its name below](docs/cats-grace-effect.png)
+
+On that screen the game ends an effect whose icon is clicked. With the Ledger's
+copy of the game, a spell's effect is left on (two jumps in the screen's click
+handler, DSUN.EXE 7F226h and 7F236h, go to its way out instead of to the
+routine ending an effect); a psionic power's can still be stopped there, since
+maintaining it costs PSP.
 The description: the game reads a spell's text from RESOURCE.GFF (chunk SPIN,
 the spell's number + 1) into a buffer for the box; after the read
 (`INT E2h`) the helper puts Cat's Grace's in, in the game's words for

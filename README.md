@@ -154,6 +154,9 @@ Release **1.0.0** is pull requests #1 to #13. Its notes are in
   filled water jug).
 
 **Changed**
+- **The Effects screen no longer ends a spell's effect when its icon is clicked**
+  (the game's own behaviour, which dispelled a party member's buff by accident).
+  A psionic power's can still be stopped there, as it costs PSP to maintain.
 - **Windows' security warning only once:** after the first `.bat` file is let
   through ("Open File - Security Warning", Run), the Ledger takes the download
   mark off the files in its own folder, so the others start without asking.
