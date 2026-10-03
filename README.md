@@ -161,8 +161,8 @@ Release **1.0.0** is pull requests #1 to #13. Its notes are in
   through ("Open File - Security Warning", Run), the Ledger takes the download
   mark off the files in its own folder, so the others start without asking.
 - **The vulture quest is part of Dinos's talk:** while the party carries the
-  cooked vulture, his "Who else is in here?" questions end with "We cooked the
-  vulture from the arena." His answer and the reward are in his own dialogue
+  cooked vulture, his first menu has "We cooked the vulture from the arena."
+  just before "Goodbye." His answer and the reward are in his own dialogue
   window, with his portrait, instead of the game's message box; the vulture
   is no longer used on him from the inventory.
 - **Cat's Grace's icon** is a cat's paw print instead of a cat's face.

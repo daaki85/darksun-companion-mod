@@ -155,24 +155,31 @@ class PensAsksTests(unittest.TestCase):
         self.assertEqual(pensasks.with_asks(long, b"", self.FIRST, pensasks.DINOS_ASKS), long)
 
     def test_vulture(self):
-        """Asked while the party carries the cooked vulture (the game's 33h test on the party):
-        his answer, then the vulture taken, the quest's sound, MEAL set, and the reward said."""
-        out = pensasks.with_asks(self.script, b"", self.FIRST, pensasks.DINOS_ASKS + (pensasks.VULTURE,))
+        """In Dinos's first menu, just before "Goodbye.", shown while the party carries the cooked
+        vulture (the game's 33h test on the party, as the reply's own condition: the menu has no
+        part start to set a flag at); chosen: his answer, the vulture taken, the quest's sound,
+        MEAL set, and the reward said."""
+        first = _game_like().replace(gpl.encode_expr(("str", "  What do you know about Gilal?")),
+                                     gpl.encode_expr(("str", "<name>")))
+        out = pensasks.with_asks(first, b"", "<name>", (pensasks.VULTURE,), "Goodbye.")
+        self.assertNotEqual(out, first)
         types = bytes(72) + b"\x12"  # (field 72, an object, carries a number: as the game's)
-        ops = gpl.decode(out[len(self.script):], types)
+        ops = gpl.decode(out[len(first):], types)
+        menu = next(o for o in ops if o.code == 0x48)
+        texts = [r["text"] for r in menu.args[0]["replies"]]
+        self.assertEqual(texts[-2:], [("str", pensasks.VULTURE.text), ("str", "Goodbye.")])
+        shown = menu.args[0]["replies"][-2]["if"]
+        self.assertEqual(shown[0], "op")
+        self.assertEqual((shown[1].code, shown[1].args),
+                         (0x33, [("n", pensasks.PARTY), 77, 80, [(72, 4, ("n", -vulture.COOKED))]]))
         codes = [(o.code, o.args) for o in ops]
         self.assertIn((pensasks.TAKE, [("n", 1), ("n", -vulture.COOKED), ("n", pensasks.PARTY), ("n", 9999)]), codes)
         self.assertIn((pensasks.SOUND, [("n", pensasks.QUEST_SOUND)]), codes)
         self.assertIn((0x16, [("n", 1), ("var", 13, vulture.MEAL)]), codes)
-        tests = [o.args[0] for o in ops if o.code == 0x18]
-        self.assertIn(("op", gpl.Op(0, 0x33, [("n", pensasks.PARTY), 77, 80, [(72, 4, ("n", -vulture.COOKED))]])),
-                      [(t[0], gpl.Op(0, t[1].code, t[1].args)) for t in tests if t[0] == "op"])
         said = " ".join(gpl.strings(ops)).replace("  ", " ")
         self.assertIn("A vulture! Give it here.", said)
         self.assertIn("100 EXP", said)
-        flags = [a.flag for a in pensasks.DINOS_ASKS + pensasks.TRUSTEE_ASKS + (pensasks.VULTURE,)]
-        self.assertEqual(len(set(flags)), len(flags))
-        self.assertNotIn(pensasks.VULTURE.flag, (vulture.MEAL, vulture.EATEN, semyon.SETTLED, kalzith.SOLD_OUT))
+        self.assertEqual([m[1] for m in pensasks.MENUS if pensasks.VULTURE in m[2]], ["<name>"])
 
     def test_buffer(self):
         """The Ledger's game has room for the Trustee's script with the questions (10540 bytes)."""

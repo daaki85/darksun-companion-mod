@@ -811,8 +811,8 @@ Hit the arena's vulture and its feathers come off (a plucked vulture); the
 slave pens' campfire cooks it. In the game itself the cooked vulture is then no
 use to anyone: no script asks for it. With the Ledger running, **Dinos**, the
 pens' fine cook, can be asked about it: talk to him while someone in the party
-carries it, and his "Who else is in here?" questions end with **"We cooked the
-vulture from the arena."** He takes it ("A vulture! Give it here. A little salt,
+carries it, and among the first things the party can say to him, just before
+"Goodbye.", is **"We cooked the vulture from the arena."** He takes it ("A vulture! Give it here. A little salt,
 some agafari leaf, slow over the coals... Sit, eat with me: the best meal in the
 pens!"), to the sound the game plays when a quest is done (as for the Trustee's
 key or the filled water jug), and, as the game's quests tell theirs: "For
@@ -825,11 +825,12 @@ used on one of them from the inventory, it's too tough to be worth the chewing.)
 ![Dinos's answer, and the reward, in his own dialogue window with his portrait](docs/vulture-meal.png)
 
 How: in the Ledger's copy of `GPLDATA.GFF`, Dinos's talk (script 139) has the
-question in the same menu as the ones about Kalzith and Semyon (see
+question in its first menu (a copy of the game's with the question added, as for
+the questions about Kalzith and Semyon, see
 [Dinos and the Trustee](#dinos-and-the-trustee-on-kalzith-and-semyon)), shown
 while the game's own test says someone in the party carries the cooked vulture
 (33h, as the campfire's script asks about the plucked one; the game's object
-A4Ch). Chosen, the script takes it (5Ch, as the campfire takes the plucked one),
+A4Ch), the test being the question's own condition in the menu. Chosen, the script takes it (5Ch, as the campfire takes the plucked one),
 plays the game's quest sound (5Dh 53, as its quests do) and sets the Ledger's
 flag 780; the Ledger then adds the XP and refills the party, once (flag 781).
 

@@ -59,8 +59,9 @@ SEMYON_DEAD = _all(_is(semyon.PLACED), _is(semyon.DIED))
 
 class Ask(NamedTuple):
     text: str  # the question (as the game's: two spaces first)
-    flag: int  # the companion's flag showing it (set as the menu's part starts)
-    shown: tuple  # (values) shown when any of them is true
+    flag: Optional[int]  # the companion's flag showing it (set as the menu's part starts); None:
+    shown: tuple  # (values) shown when any of them is true (with no flag: the one, tested as
+    # the menu is shown)
     answer: str
     dead: Optional[tuple] = None  # (a value) when true, DEAD_ANSWER instead (as Dinos does)
     dead_answer: str = ""
@@ -103,7 +104,7 @@ DINOS_ASKS = (
         "Semyon? Dead, from what I hear. Asking too many questions about the Veiled Alliance will "
         "do that."),
 )
-VULTURE = Ask("  We cooked the vulture from the arena.", 782, (CARRIED,), vulture.MEAL_TEXT, then=_meal)
+VULTURE = Ask("  We cooked the vulture from the arena.", None, (CARRIED,), vulture.MEAL_TEXT, then=_meal)
 TRUSTEE_ASKS = (
     Ask("  What can you tell me about Kalzith?", 768, (KALZITH_ALIVE,),
         "Keep clear of that one. A defiler. The templars put him in here until the arena wants "
@@ -122,8 +123,11 @@ TRUSTEE_ASKS = (
 QUESTION = "  What"  # (the new questions go after the menu's last asking about someone: before
 # Dinos's "Let's change the subject.", the Trustee's "How can I get to Dinos?", and "Goodbye.")
 # (the script, its menu's first question, the questions added)
-MENUS = ((DINOS_SCRIPT, "  What do you know about Gilal?", DINOS_ASKS + (VULTURE,)),
-         (TRUSTEE_SCRIPT, "  What can you tell me about Dinos?", TRUSTEE_ASKS))
+MENUS = ((DINOS_SCRIPT, "  What do you know about Gilal?", DINOS_ASKS, None),
+         (TRUSTEE_SCRIPT, "  What can you tell me about Dinos?", TRUSTEE_ASKS, None),
+         # Dinos's first menu ("I'm <name>", "Why are you in here?", ... "Goodbye."): the vulture,
+         # just before "Goodbye."
+         (DINOS_SCRIPT, "<name>", (VULTURE,), "Goodbye."))
 
 
 def _answer(s: _Script, ask: Ask) -> None:
@@ -135,11 +139,16 @@ def _answer(s: _Script, ask: Ask) -> None:
         ask.then(s)
 
 
-def with_asks(script: bytes, field_types: bytes, first: str, asks: Sequence[Ask]) -> bytes:
-    """SCRIPT with ASKS in its menu whose first question is FIRST (once; unchanged without it)."""
+def with_asks(script: bytes, field_types: bytes, first: str, asks: Sequence[Ask],
+              before: Optional[str] = None, original: Optional[bytes] = None) -> bytes:
+    """SCRIPT with ASKS in its menu whose first question is FIRST (once; unchanged without it):
+    after its last question about someone, or just before the reply BEFORE. ORIGINAL: the game's
+    script SCRIPT was made from by an earlier call (its commands are where they were, but the
+    jumps put over two of them don't decode as a whole), to find the menu in."""
     if gpl.encode_expr(("str", asks[0].text)) in script:
         return script
-    ops = gpl.decode(script, field_types)
+    original = original or script
+    ops = gpl.decode(original, field_types)
     m = next((i for i, o in enumerate(ops) if o.code == MENU and o.args[0]["replies"]
               and o.args[0]["replies"][0]["text"] == ("str", first)), None)
     if m is None or m < 2 or ops[m - 1].code != SKIP_UNLESS or ops[m - 2].code != TEST:
@@ -148,31 +157,43 @@ def with_asks(script: bytes, field_types: bytes, first: str, asks: Sequence[Ask]
     if not (test[0] == "expr" and len(test[1]) == 3 and test[1][0][:2] == ("var", LOCAL)):
         return script
     loop = test[1][0][2]
+    flagged = [ask for ask in asks if ask.flag is not None]
     start = next((i for i in range(m - 1, -1, -1) if ops[i].code == SET
                   and ops[i].args == [("n", 0), ("var", SET_LOCAL, loop)]), None)
-    if start is None or m + 1 >= len(ops):
-        return script
-    start_op, menu_op = ops[start], ops[m]
+    if (flagged and start is None) or m + 1 >= len(ops):
+        return script  # (the questions' flags need the menu's part's start to be set at)
+    menu_op = ops[m]
     menu = menu_op.args[0]
     if script[menu_op.at:ops[m + 1].at] != gpl.encode_op(menu_op):
-        return script  # (the copy must be the game's bytes)
-
+        return script  # (the copy must be the game's bytes, not an earlier call's jump)
     s = _Script()
-    s.label("start")
-    s.op(SET, *start_op.args)
-    for ask in asks:
-        s.flag(ask.flag, 0)
-        for shown in ask.shown:
-            s.when(shown, lambda ask=ask: s.flag(ask.flag, 1))
-    s.op(GOTO, ("n", ops[start + 1].at))
+    jumps = []
+    if flagged:
+        start_op = ops[start]
+        if script[start_op.at:ops[start + 1].at] != original[start_op.at:ops[start + 1].at]:
+            return script
+        s.label("start")
+        s.op(SET, *start_op.args)
+        for ask in flagged:
+            s.flag(ask.flag, 0)
+            for shown in ask.shown:
+                s.when(shown, lambda ask=ask: s.flag(ask.flag, 1))
+        s.op(GOTO, ("n", ops[start + 1].at))
+        jumps.append((start_op.at, "start"))
     replies = list(menu["replies"])
-    at = 1 + max(i for i, r in enumerate(replies)
-                 if r["text"][0] == "str" and str(r["text"][1]).startswith(QUESTION))
+    if before is None:
+        at = 1 + max(i for i, r in enumerate(replies)
+                     if r["text"][0] == "str" and str(r["text"][1]).startswith(QUESTION))
+    else:
+        at = next((i for i, r in enumerate(replies) if r["text"] == ("str", before)), None)
+        if at is None:
+            return script
     for ask in asks:
         name = s._new("reply")
-        s.sub(name, lambda ask=ask: (_answer(s, ask), s.flag(ask.flag, 0)))
+        s.sub(name, lambda ask=ask: (_answer(s, ask), ask.flag is not None and s.flag(ask.flag, 0)))
+        shown = ("var", FLAG, ask.flag) if ask.flag is not None else ask.shown[0]
         replies.insert(at, {"text": ("str", ask.text), "goto": ("label", name),
-                            "if": ("var", FLAG, ask.flag), "before": [], "after": []})
+                            "if": shown, "before": [], "after": []})
         at += 1
     s.label("menu")
     s.op(MENU, dict(menu, replies=replies))
@@ -182,7 +203,7 @@ def with_asks(script: bytes, field_types: bytes, first: str, asks: Sequence[Ask]
     out = bytearray(script) + added
     if len(out) > LONGEST:
         return script
-    for at, to in ((start_op.at, s.at["start"]), (menu_op.at, s.at["menu"])):
+    for at, to in [(where, s.at[label]) for where, label in jumps] + [(menu_op.at, s.at["menu"])]:
         jump = gpl.encode_op((GOTO, [("n", to)]))
         out[at:at + len(jump)] = jump
     return bytes(out)
@@ -191,10 +212,11 @@ def with_asks(script: bytes, field_types: bytes, first: str, asks: Sequence[Ask]
 def script_chunks(chunks, field_types: bytes) -> dict:
     """For the Ledger's copy of GPLDATA: Dinos's and the Trustee's talks with the questions."""
     out = {}
-    for number, first, asks in MENUS:
+    for number, first, asks, before in MENUS:
         key = ("GPL ", number)
         if key in chunks:
-            changed = with_asks(chunks[key], field_types, first, asks)
-            if changed != chunks[key]:
+            script = out.get(key, chunks[key])
+            changed = with_asks(script, field_types, first, asks, before, chunks[key])
+            if changed != script:
                 out[key] = changed
     return out
