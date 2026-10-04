@@ -351,6 +351,15 @@ DONE = 1  # the script's local ending a menu (as the game's merchants use 1 for 
 WINDOW = 4  # the lines the dialogue window shows
 
 
+# The escape's alarm: the game's flag, set as the guards raise it (the arena's breakout, script 3)
+# and tested by the pens' slaves to say so instead of their talk (scripts 142, 146)
+ALARM = 20
+ALARM_FRIENDLY = ("That's the alarm. So it's you breaking out. Go, and go quickly: if they find you "
+                  "at my cell, I burn with you.")
+ALARM_COLD = "The alarm's for you, isn't it? Good. Run, and let them chase you, not me."
+ALARM_STRANGER = "That's the alarm. Whoever you are, this is no time to talk. Go!"
+
+
 def _is(var, value) -> tuple:
     return ("expr", [var, "==", ("n", value)])
 
@@ -472,13 +481,24 @@ def conversation() -> bytes:
               "What do you want?")
         s.flag(MET, 1)
 
+    def greeting():
+        s.when(_is(cold_, 1), lambda: s.call("cold"),
+               lambda: s.when(_is(friendly, 1),
+                              lambda: (s.say("Back again? Keep your voice down."), s.call("friend")),
+                              lambda: (s.when(_is(met, 1), lambda: s.say("You again. Well?"), meeting),
+                                       s.call("first"))))
+
+    # the escape's alarm sounding (the game's flag ALARM), as the pens' other slaves have it: a
+    # line for the party, by how he stands with them, and no talk
+    def alarm():
+        s.when(_is(friendly, 1),
+               lambda: s.say(ALARM_FRIENDLY),
+               lambda: s.when(_is(cold_, 1), lambda: s.say(ALARM_COLD), lambda: s.say(ALARM_STRANGER)))
+        s.page()
+
     s.op(BEGIN)  # (every script of the game's opens so; its talk commands start after it)
     s.op(0x54, ("n", PORTRAIT))
-    s.when(_is(cold_, 1), lambda: s.call("cold"),
-           lambda: s.when(_is(friendly, 1),
-                          lambda: (s.say("Back again? Keep your voice down."), s.call("friend")),
-                          lambda: (s.when(_is(met, 1), lambda: s.say("You again. Well?"), meeting),
-                                   s.call("first"))))
+    s.when(_is(("var", 0x8D, ALARM), 1), alarm, greeting)
     return s.bytes()
 
 

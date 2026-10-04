@@ -41,6 +41,12 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
   who escaped), instead of "Every single one" for all the pens.
 
 **Changed**
+- **Kalzith and the alarm:** while the escape's alarm sounds he has a line
+  for the party (by how he stands with them) and no talk, as the pens' other
+  slaves do.
+- **A missing bone scale piece comes back:** should the Bone Helm, or the
+  arm or leg piece, go missing while the chest piece is in the area, it is put
+  back with it, once each a game, and the log says so.
 - **Finding the Ring +1 is worth 50 XP** to whoever searches the Tied-up
   Prisoner's body, given as the game gives a quest's (its window, "Gerakis
   receives 50 experience points!", and the quest's sound), once.
@@ -60,6 +66,10 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
   next drawing areas went, so the game drew over its own code and stopped,
   often with "Null pointer assignment". The bug is the game's own; the
   Ledger's copy now skips both frees when the first area was never made.
+- **The bone scale set in a second new game:** the Ledger remembered it as
+  given across games, so a later new game never had it; it is now kept for
+  each game. And a carrier with room for only some of the three got only
+  those: now all three wait until there is room.
 - **Thieves' Tools clicked between turns** (as an area changes) stopped the
   dice log with an error.
 - **The game's flags** were read and written through a null pointer at times

@@ -1808,9 +1808,21 @@ the Ledger running, the first time the chest piece is in the region with the
 party, wherever it is (on the ground, in a container, or already carried), the
 rest of the set is put with it: the **Bone Scale Arm Armor**, the **Bone Scale
 Leg Armor** and a **Bone Helm**, in the same pile or container, or in the
-carrier's pack. Once a game, and never where any of the three already is (a
+carrier's pack (all three at once: with less room than that, the next time
+there is). Once a game, and never where any of the three already is (a
 game saved after they were added, loaded again). The log doesn't say: they're
 there to be found.
+
+Should one of the three later go missing while the chest piece is in the area
+(it has happened: a Bone Helm gone from a pack with no trace), the Ledger puts
+it back with the chest piece, in the carrier's pack or the same pile, once for
+each piece in a game, and the log says so:
+
+```
+The Bone Helm had gone missing from the bone scale set: it is back, in Gerakis's backpack.
+```
+
+(A piece sold or left in another area counts as missing too, once.)
 
 The arm and leg pieces are the game's own, with its own icons. The game has
 no helm of bone, so the Bone Helm is an item type of the Ledger's own (the
@@ -1850,6 +1862,11 @@ Talk button). His conversation is the game's kind, just him speaking:
   any of the game's (right-click it in the inventory, click its spell), by the
   game's own rules: a spell of a level the preserver can cast. He remembers a
   friend ("Back again? Keep your voice down.").
+- **During the escape**, with the alarm sounding (the game's own alarm, which
+  the pens' other slaves also answer to), he has only a line for the party,
+  by how he stands with them, and no talk: to a friend, "That's the alarm. So
+  it's you breaking out. Go, and go quickly: if they find you at my cell, I
+  burn with you."
 - **Calling him a defiler**, he answers back; take it back and he's friendly,
   or **threaten to tell the templars** and he won't speak to the party again
   until they make amends: **50 ceramic** (offered only to a party that has

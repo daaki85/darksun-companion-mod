@@ -81,6 +81,18 @@ class KalzithTests(unittest.TestCase):
         flags = [a for a in sets if a[1][1] == 13]
         self.assertTrue(all(a[0][1] in (0, 1) and a[1][2] > 755 for a in flags), flags)
 
+    def test_alarm(self):
+        """With the escape's alarm sounding (the game's flag 20, only read), a line for the party by
+        how he stands with them, and no menu before it."""
+        ops = gpl.decode(kalzith.conversation(), b"")
+        first_test = next(o for o in ops if o.code == 0x18)
+        self.assertEqual(first_test.args, [("expr", [("var", 0x8D, kalzith.ALARM), "==", ("n", 1)])])
+        lines = " ".join(s for o in ops for s in gpl.strings(o.args))
+        for text in (kalzith.ALARM_FRIENDLY, kalzith.ALARM_COLD, kalzith.ALARM_STRANGER):
+            self.assertIn(text.split()[0], lines)
+        sets = [o.args for o in ops if o.code == 0x16]
+        self.assertNotIn(kalzith.ALARM, [a[1][2] for a in sets if a[1][1] == 13])  # (never set)
+
     def test_menus(self):
         """Each menu is the game's kind: in a loop (63h ... 64h), and each reply a subroutine
         returning to it (15h) before anything ends the talk or shows a menu."""
