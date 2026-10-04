@@ -1,7 +1,8 @@
 ; GAMEEND.COM: run after the game. If the game stopped with an error (a message such as "Null
 ; pointer assignment" left on the screen, a non-zero return code, or the screen left in graphics
 ; mode), the screen's text and the code are saved to GAMEEND.TXT next to this file (for the
-; Ledger's crash report) and the message stays on screen until a key is pressed; otherwise
+; Ledger's crash report) and the message stays on screen until a key is pressed (in text mode, if
+; the game left the screen in graphics, where it couldn't be read); otherwise
 ; nothing (DOSBox closes as before).
 ; Build: nasm -f bin -o dos/GAMEEND.COM dos/gameend.asm
 
@@ -43,6 +44,13 @@ ROWS    equ 25
         mov byte [text], 1
 .error:
         call save
+        cmp byte [mode], 7              ; still in graphics: back to text, for the message to be read
+        je .text
+        cmp byte [mode], 3
+        jbe .text
+        mov ax, 0003h
+        int 10h
+.text:
         mov ah, 09h
         mov dx, said
         int 21h

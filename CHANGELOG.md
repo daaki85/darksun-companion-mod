@@ -47,6 +47,16 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
   the window's guide beside how to start it, the memory-mapping steps under
   Development; this changelog moved out of the main README into its own file.
 
+**Fixed**
+- **A crash in the opening fight** (and possibly other fights): when the game
+  couldn't make the first of two drawing areas of the map's view, it freed the
+  second one anyway with a number it had never set. That threw off where its
+  next drawing areas went, so the game drew over its own code and stopped,
+  often with "Null pointer assignment". The bug is the game's own; the
+  Ledger's copy now skips both frees when the first area was never made.
+- **Crash messages readable:** a game that stopped in graphics mode left its
+  error message invisible; the screen goes back to text before the message.
+
 **Fixed** (from a review of the code)
 - **Clicks after Tab + Enter:** for a few seconds after Enter, anything the
   next character clicked could still count as the enemy chosen before. The

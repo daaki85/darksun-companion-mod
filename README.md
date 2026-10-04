@@ -156,6 +156,8 @@ In [pull request #16](https://github.com/daaki85/darksun-companion-mod/pull/16)
   DOSBox's dynamic core), and the party's gear pictures no longer slow the game.
 - **Switches for all the new content,** and the Options tab regrouped.
 - **Crash reports** saved when DOSBox crashes or the game stops with an error.
+- **A crash in the opening fight fixed:** a bug of the game's own made it
+  draw over its own code.
 - **Fixes** from a review of the code.
 
 Everything that changed, pull request by pull request, is in

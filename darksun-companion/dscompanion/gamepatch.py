@@ -192,6 +192,13 @@ PATCHES = (
     Patch("hit", 0x25B52, bytes.fromhex("558bec83ec10"), _interrupt(VEC_HIT, 6)),
     Patch("thief_skill", 0x80307, bytes.fromhex("8bc6c1e00203d08bf2"),
           bytes((0xCD, VEC_THIEF_SKILL, 0x72, 0x80386 - 0x8030B)) + b"\x90" * 5),
+    # a bug of the game's own (DSUN.EXE 1DF3:142F, which makes two child pages of the view, frees
+    # them after): when the first can't be made, "jz" went to the freeing with the second's number
+    # never set, and the page routine was handed whatever was on the stack. Its size, read from past
+    # the pages' table, took the top of video memory's pages down into the game's code, the next
+    # pages were made there, and the game crashed (the opening fight, "Null pointer assignment").
+    # Now the first failing goes past both frees (the first is -1: nothing to free)
+    Patch("page_free", 0x248B3, bytes.fromhex("743b"), bytes.fromhex("7459")),
     # the scripts' buffer (one: a script called from another is read in over it): "push dword
     # 10000", its size, as it is allocated. A script of 9800 bytes ran, one of 10000 ended with
     # "BAD GPL EXIT" (the game's largest is 9792); the Trustee's, with the questions about
