@@ -6,6 +6,8 @@ next to them tries to hide in shadows (the chance halved in daylight: on open gr
 Athas's sun), and if they do, to move silently up to someone. Both succeeding, the thief's next
 attack this turn counts as one from behind (DSCLOG's PROBE_STEALTH), and so as a backstab with
 a weapon that can backstab; attacking gives them away, and the turn ending ends the hiding.
+Worn, a cloak adds CLOAK_HIDE to hiding in shadows and boots BOOTS_QUIET to moving silently
+(at most MOST), before the light halves it.
 
 Rangers do it too, with AD&D's chances for a ranger (the game gives them no thief skills;
 game.ranger_skill_parts), but the other way round for the light: outdoorsmen, they hide with
@@ -99,6 +101,17 @@ def ranger_chance(gd: GameData, creature: int, skill: int) -> Optional[int]:
     return gd.ranger_skill_now(creature, skill)
 
 
+CLOAK_HIDE, BOOTS_QUIET = 10, 10  # worn, a cloak helps hide in shadows and boots move silently
+MOST = 95  # (AD&D's most for a thief skill)
+
+
+def worn_bonus(gd: GameData, creature: int, slot: int, bonus: int, name: str) -> Tuple[int, str]:
+    """BONUS (and its note) when the character wears something in SLOT, else nothing."""
+    if any(item[game.ITEM_SLOT] == slot for _, item, _ in gd._worn(creature)):
+        return bonus, f" +{bonus} {name}"
+    return 0, ""
+
+
 def turn(gd: GameData, combatant: int, roll: Callable[[], int]) -> Tuple[List[str], bool]:
     """A party member's turn has come in a fight: if a thief or a ranger, the hiding and moving
     silently. (log lines, whether their next attack is from behind)."""
@@ -112,6 +125,9 @@ def turn(gd: GameData, combatant: int, roll: Callable[[], int]) -> Tuple[List[st
         hide, of = ranger_chance(gd, creature, HIDE), ranger_chance
     if hide is None:
         return [], False
+    extra, note = worn_bonus(gd, creature, game.CLOAK_SLOT, CLOAK_HIDE, "cloak")
+    shown = f"{hide}{note} = {min(MOST, hide + extra)}" if extra else f"{hide}"
+    hide = min(MOST, hide + extra)
     who = gd.creature_name(creature)
     enemy = enemy_beside(gd, combatant)
     if enemy:
@@ -119,10 +135,10 @@ def turn(gd: GameData, combatant: int, roll: Callable[[], int]) -> Tuple[List[st
     sun = daylight(gd, combatant)
     if ranger:  # at home under the open sky
         need = hide if sun else hide // 2
-        why = f"{hide}, a ranger under the open sky" if sun else f"{hide}, halved indoors for a ranger"
+        why = f"{shown}, a ranger under the open sky" if sun else f"{shown}, halved indoors for a ranger"
     else:
         need = hide // 2 if sun else hide
-        why = f"{hide}, halved in daylight" if sun else f"{hide}, out of the sun"
+        why = f"{shown}, halved in daylight" if sun else f"{shown}, out of the sun"
     d100 = roll()
     hidden = d100 <= need
     lines = [f"{who} hides in shadows: d100 = {d100}, needs {need} or less ({why}) -> "
@@ -130,9 +146,12 @@ def turn(gd: GameData, combatant: int, roll: Callable[[], int]) -> Tuple[List[st
     if not hidden:
         return lines, False
     quiet = of(gd, creature, MOVE) or 0
+    extra, note = worn_bonus(gd, creature, game.FOOT, BOOTS_QUIET, "boots")
+    boots = f" ({quiet}{note})" if extra else ""
+    quiet = min(MOST, quiet + extra)
     d100 = roll()
     unheard = d100 <= quiet
     behind = "from behind" if ranger else "from behind (a backstab with a weapon that can)"
-    lines.append(f"  {who} moves silently: d100 = {d100}, needs {quiet} or less -> "
+    lines.append(f"  {who} moves silently: d100 = {d100}, needs {quiet}{boots} or less -> "
                  + (f"unheard: their next attack this turn is {behind}" if unheard else "heard"))
     return lines, unheard

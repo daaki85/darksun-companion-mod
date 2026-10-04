@@ -1439,7 +1439,9 @@ behind: +2 to hit, the target's DEX and shield don't count, and with a weapon
 that can backstab it is a backstab, the damage multiplied as usual. The
 attack gives the thief away, and so does the turn ending without one. An enemy
 next to the thief when the turn comes means no hiding at all: get clear
-first.
+first. A worn cloak adds 10 to hiding in shadows (before daylight halves it)
+and worn boots add 10 to moving silently, for rangers too, up to 95:
+`needs 18 or less (26 +10 cloak = 36, halved in daylight)`.
 
 ```
 Cilla's turn
