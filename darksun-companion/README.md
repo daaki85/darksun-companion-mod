@@ -520,7 +520,7 @@ screenshots here are taken that way).
 | `Message: Long Sword is broken !` | The game's own message boxes: broken or corroded weapons and armour, level-ups, "NO PATH FROM HERE" and so on. |
 | `  Slig now 8/18 HP (-10)` / `  Gerakis now 51/54 HP (+1)` | Any combatant's hit points going down or up, with what's left out of their most. The game never shows a monster's HP; this does. The line comes just after the damage that caused it (sometimes after the next roll, when the game is quick). |
 | `  Gerrard regenerates 1 HP (CON 22), now 16/35 HP` | A hit point back by itself: the game gives one now and then to anyone with CON 20 or more (in the game, CON 20 regenerates and 18 or 19 don't). |
-| `  Skeleton now 10/14 HP (-3: 3 of the 7 rolled, non-magical weapons do half)` / `  Skeleton takes none of the 6 damage: crushing weapons can't hurt it` | A weapon hit that took less than its roll, or none at all (no HP lost three seconds on, or by the next round), with the reason when the monster's own defences give one (what weapons hurt it); otherwise "a protection or resistance took it" (Stoneskin, say). |
+| `  Rampager now 69/72 HP (-3: 3 of the 7 rolled, non-magical weapons do half)` / `  Mastyrial takes none of the 6 damage: crushing weapons can't hurt it` | A weapon hit that took less than its roll, or none at all (no HP lost three seconds on, or by the next round), with the reason when the monster's own defences give one (what weapons hurt it); otherwise "a protection or resistance took it" (Stoneskin, say). |
 | `    X's special effect on Y: d10 = 1, works on a 1 -> it works` | The 1-in-10 extra effect some creatures' hits have (the thri-kreen bite, for one). |
 | `Slig is killed (270 XP)` | A creature dying, with the XP it's worth (from its character sheet). |
 | `XP: Gerakis +67, K'ratchek +22, ... (for Slig 270)` | Experience the party got, and for which kills. The game gives it right after the kill: an equal share to each character, split again between a multi-class character's classes (the sheet counts XP per class, so a three-class thri-kreen shows a third of the share). |
@@ -996,9 +996,11 @@ From the game's damage code (DSUN.EXE); none of this is in the manual:
   and pointed: 0%; +1 or better: 100%" is a monster only magical weapons hurt.
   The game's 14 classes come to: only +1 (or +2) weapons hurt it, sometimes
   with immunity to poison and draining, or to fire; half damage from
-  non-magical weapons and psionic attacks; immune to crushing weapons, or to
-  edged and pointed ones; immune to fire and cold (and half from
-  electricity); half from fire; immune to poison; immune to psionic attacks.
+  non-magical weapons and psionic attacks (the Rampager); immune to crushing
+  weapons (the mastyrials); immune to crushing and pointed weapons, fire and
+  acid, so that only edged weapons hurt it (the slimes); immune to fire and
+  cold (and half from electricity); half from fire; immune to poison; immune
+  to psionic attacks.
 - Properties: can't be charmed or held; unaffected by spells left on the
   ground (fogs, clouds, walls, Web, Grease); not held by Grease, Web,
   Entangle, Solid Fog or Quicksand; and hits that also cast one of the
@@ -1008,8 +1010,9 @@ From the game's damage code (DSUN.EXE); none of this is in the manual:
   draining, and mind-affecting spells, charms and holds don't work on them.
 
 The dice log notes a weapon hit that takes less than its roll, or nothing at
-all, with what the monster's defences say about it (`Skeleton takes none of
-the 6 damage: crushing weapons can't hurt it`).
+all, with what the monster's defences say about it (`Mastyrial takes none of
+the 6 damage: crushing weapons can't hurt it`: the game's mastyrials take
+nothing from clubs and maces, only from edged and pointed weapons).
 
 ### No critical hits
 

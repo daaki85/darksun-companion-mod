@@ -126,8 +126,8 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
   it would, even when someone stands in front of it. Rings on the Options tab:
   none, only the chosen enemy's (the default) or all the enemies'.
 - **Hits that do less than rolled** in the dice log: a weapon hit that took
-  part of its damage, or none, with what the monster's defences say (`Skeleton
-  takes none of the 6 damage: crushing weapons can't hurt it`).
+  part of its damage, or none, with what the monster's defences say
+  (`Mastyrial takes none of the 6 damage: crushing weapons can't hurt it`).
 - **The quest sound for the vulture:** giving Dinos the cooked vulture plays
   the sound the game plays when a quest is done (the Trustee's key, the
   filled water jug).
