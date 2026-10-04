@@ -540,6 +540,9 @@ def script_chunks(gpldata: bytes) -> Dict[Tuple[str, int], bytes]:
     arena = ("GPL ", semyon.ARENA_TALK)
     if arena in chunks:  # (his leaving after the fight marked)
         out[arena] = semyon.with_exit(chunks[arena], field_types)
+    escape = ("GPL ", semyon.ESCAPE_SCRIPT)
+    if escape in chunks:  # (taken along to the pens with Scar)
+        out[escape] = semyon.with_escape(chunks[escape], field_types)
     # Dinos and the Trustee asked about him and Semyon (pensasks.py)
     from . import pensasks
     out.update(pensasks.script_chunks(chunks, field_types))

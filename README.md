@@ -44,7 +44,9 @@ game itself, in the game's own lettering and windows:
 - **A new person in the slave pens:** Kalzith, a defiler slave who, treated
   with respect, sells arcane spell scrolls that a preserver can learn from.
 - **Semyon kept his word:** after he leaves the arena through the entrance to
-  the pens, he is in the pens to talk to, as the game promised and never did.
+  the pens, he is in the pens to talk to, as the game promised and never did;
+  and if he is still beside the party when they break out with Scar, he breaks
+  out with them.
 - **What the party wears, on the map:** weapons, shields, bows, armour, helms,
   cloaks, boots and belts on their figures, walking and fighting, changing as
   their gear does.
@@ -93,6 +95,14 @@ double-click, with the options as last set.)
 
 Release **1.0.0** is pull requests #1 to #13. Its notes are in
 [`release-notes/v1.0.0.md`](release-notes/v1.0.0.md).
+
+### Pull request #16 (in review)
+
+**Added**
+- **Semyon breaks out with Scar:** recruit Semyon before the fight with Scar,
+  take up Scar's offer to break out, and Semyon comes along to the slave pens
+  with Scar's men, fights the guards on the party's side, and has a line of his
+  own for the breakout. In the game he was left behind in the arena.
 
 ### Pull request #14 ([merged 2026-10-04](https://github.com/daaki85/darksun-companion-mod/pull/14))
 

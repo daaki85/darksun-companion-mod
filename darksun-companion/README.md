@@ -1000,6 +1000,32 @@ party, and only guards near him join the fight; in a fight in the pens he isn't
 on the party's side. Like Kalzith's, his commands come after everything of the
 game's, which keeps its place.
 
+#### Breaking out with Scar
+
+A rare way through the arena: recruit Semyon just before the fight with Scar,
+take up Scar's offer to break out together, and head for the west exit. In the
+game, when the alarm goes up ("Gladiators escaping! Guards! Sound the
+alarms!"), Scar and his henchmen come along to the slave pens and Semyon is left
+behind. With the Ledger, if he is still in the arena, alive and on the party's
+side, he comes too: he stands beside Scar's men in the pens and fights the guards
+with them, on the party's side. Talked to then, he says: "Scar's gladiators and
+the Veiled Alliance, side by side! Who would have believed it? Keep moving: the
+grate is in the northwest, and I'm right behind you." He isn't made one of the
+pens' slaves while the escape lasts, and once the party is out through the
+grate, he is gone with everyone else.
+
+![The slave pens during the escape: Semyon, with his portrait, telling the party to make for the grate](docs/semyon-escape.png)
+
+How: the arena's script 3 moves Scar and his henchman to the pens (5Eh to region
+41) when the party reaches the west exit after Scar's plan is agreed. In the
+Ledger's copy, the henchman's move (at 1828) becomes a jump past the script's
+end, where that move is made, then Semyon's, to a square beside them (74, 68),
+if he is recruited (the game's flag 6), not seen dead (771), in the arena and
+not against the party (his field 74, the side, not 2); then the Ledger's flag
+782 is set and the script goes on where it was. With 782 set, the pens' script
+leaves him on the party's side, and his conversation has the breakout's line
+instead of his menu, until the escape (the game's flag 503).
+
 ### Dinos and the Trustee on Kalzith and Semyon
 
 Dinos ("Who else is in here?") and the Trustee ("Who else is in the
