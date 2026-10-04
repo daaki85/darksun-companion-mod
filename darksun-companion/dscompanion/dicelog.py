@@ -360,7 +360,6 @@ class DiceLog:
         self.rules = 0  # RULE_HELMS | RULE_BOOTS: rule changes DSCLOG makes (set_rules)
         self.stealth_roll: Callable[[], int] = lambda: random.randint(1, 100)  # hiding, moving silently
         self._ring_check = 0.0
-        self._dress_region: Optional[int] = None  # the area the party's pictures were last looked for in
         self._main_ticks: Optional[int] = None  # DSCLOG's count of the map's main loop, last read
         self._look_seq = 0
         self._turn_seq = 0
@@ -1069,14 +1068,8 @@ class DiceLog:
 
     def _dress_now(self, now: float) -> None:
         """The party dressed four times a second (not with the ring's search, every 3 s: a party
-        walking off as an area loads was drawn plain till then), and memory looked through
-        again soon after an area change, when its pictures are loaded anew."""
+        walking off as an area loads was drawn plain till then)."""
         try:
-            region = self.game.region()
-            if region != self._dress_region:
-                self._dress_region = region
-                if self._dresser is not None:
-                    self._dresser.area_changed(now)
             self._dress(now)
         except (struct.error, IndexError, ValueError):
             pass

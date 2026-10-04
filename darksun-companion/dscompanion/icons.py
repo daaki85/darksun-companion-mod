@@ -129,12 +129,14 @@ def new_chunks(chunks: gff.Chunks) -> gff.Chunks:
     return out
 
 
-def with_chunks(data: bytes, added: gff.Chunks) -> bytes:
+def with_chunks(data: bytes, added: gff.Chunks, room: Optional[Dict[Tuple[str, int], int]] = None) -> bytes:
     """DATA (a GFF file, its table of contents last; types listing their ids as ranges have their
     offsets in GFFI index chunks, the others in the table itself) with ADDED appended: each added
     chunk (in place of one with its id, if there is one), the index chunks of their types grown
     by them, and a new table of contents, the header pointing to it. Everything already in the
-    file stays where it was."""
+    file stays where it was. ROOM: bytes kept free after a chunk (not in its length: for it to be
+    written bigger in place later)."""
+    room = room or {}
     toc_offset, toc_length = struct.unpack_from("<II", data, 12)
     pos = toc_offset + 8
     count, = struct.unpack_from("<H", data, pos)
@@ -168,7 +170,7 @@ def with_chunks(data: bytes, added: gff.Chunks) -> bytes:
                     info.append(entry)
                     info.sort(key=lambda e: e[0])
                 entry[1], entry[2] = len(out), len(chunk)
-                out += chunk
+                out += chunk + bytes(room.get((kind.decode("latin1"), cid), 0))
             continue
         total, index, ranges = info
         entry = next(e for e in gffi if e[0] == index)
@@ -181,7 +183,7 @@ def with_chunks(data: bytes, added: gff.Chunks) -> bytes:
         for cid in ids:
             chunk = added[(kind.decode("latin1"), cid)]
             listed[cid] = (len(out), len(chunk))
-            out += chunk
+            out += chunk + bytes(room.get((kind.decode("latin1"), cid), 0))
         # the game looks ids up in runs sorted by id (as the file's own are)
         ranges[:] = []
         new_table = bytearray(struct.pack("<I", len(listed)))
@@ -278,8 +280,11 @@ def write_objects(source: str, dest: str) -> bool:
     from . import sprites
     chunks = gff.read_gff(data)
     added = new_chunks(chunks)
-    try:
-        added.update(sprites.new_chunks(chunks))  # (the party's own sprites, for what they wear)
+    room: Dict[Tuple[str, int], int] = {}
+    try:  # (the party's own sprites, for what they wear: room after each to be dressed in place)
+        pictures = sprites.new_chunks(chunks)
+        room = sprites.new_room(chunks, pictures)
+        added.update(pictures)
     except (KeyError, ValueError, IndexError, struct.error):
         pass
     from . import kalzith
@@ -288,7 +293,7 @@ def write_objects(source: str, dest: str) -> bool:
     except KeyError:  # (a number of his taken in this copy of the game: no Kalzith, the rest kept)
         his = {}
     added.update(his)
-    out = with_chunks(data, added)
+    out = with_chunks(data, added, room)
     tmp = dest + ".tmp"
     with open(tmp, "wb") as f:
         f.write(out)

@@ -1145,23 +1145,26 @@ as it is loaded.
 How: the party's figures are objects 300 to 313 in `SEGOBJEX.GFF` (300 and
 the figure picked at character creation). The launcher's copy of the file
 (see [Item icons](#item-icons)) gives each its own walking and fighting
-pictures, the game's with room round them, at a fixed size with room to
-spare and a marker at the end. While the game runs, when someone's worn items
-change, the Ledger draws their pictures anew (`dscompanion/spritegear.py`,
-from where `dscompanion/spriteparts.py` finds the head, hair, hands and the
-rest in each frame) and writes them over the copies the game has loaded,
-which it draws from at once (only over memory that still holds one of its own
-versions of that picture: what the game has freed and given to something else,
-a monster's figure or a portrait, is left alone), and into the copy of the file, so a picture the
-game loads again (in a fight, in another area) comes dressed
-(`dscompanion/sprites.py`); it has the helper draw the view again (see
-[Shadows](#shadows)), so the figures show it at once, standing still or not.
-The copy also has a spare
-pair of pictures for each party place. Each thing on the map names the
-picture it is drawn with and the slot in the game's picture cache it is drawn
-from; for a second member of the same figure the Ledger names their spare
-there and empties the slot, and marks the figure changed: the game loads the
-picture and fills it.
+pictures, the game's with room round them for gear (walking, 6 pixels at the
+sides and 2 above, as much as anything worn reaches; in a fight, 10), and free
+space after each in the file. The game draws a figure's whole picture at every
+step, so each picture is exactly as long as it needs to be. While the game
+runs, when someone's worn items change, the Ledger draws their pictures anew
+(`dscompanion/spritegear.py`, from where `dscompanion/spriteparts.py` finds the
+head, hair, hands and the rest in each frame), writes them into its copy of the
+file with their new lengths in the file's index (the game reads a picture's
+place and length there each time it loads one), takes the old ones out of the
+game's table of loaded pictures (the game frees them itself, as any it no
+longer uses), and empties the figure's slot on the map: the game loads the new
+pictures and draws them at once, in a few thousandths of a second
+(`dscompanion/sprites.py`). It then has the helper draw the view again (see
+[Shadows](#shadows)), so the shadows show the new outfit too. A picture the
+game loads later (in a fight, in another area) comes dressed, from the file.
+The copy also has a spare pair of pictures for each party place. Each thing on
+the map names the picture it is drawn with and the slot in the game's picture
+table it is drawn from; for a second member of the same figure the Ledger names
+their spare there and empties the slot, and the game loads the picture and
+fills it.
 
 ### Shadows
 

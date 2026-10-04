@@ -112,7 +112,12 @@ Release **1.0.0** is pull requests #1 to #13. Its notes are in
   same cycles and lighter on the computer.
 - **Faster walking with gear shown:** the party's figure pictures keep only the
   room their gear needs while walking (they had 10 pixels all round, which the
-  game drew again at every step), and less spare room for outfits.
+  game drew again at every step). Each picture is now exactly as long as its
+  outfit: a new outfit is written into the Ledger's copy of the game's file
+  and the game loads it from there (as fast as before), instead of being
+  written into pictures kept with spare room, which the game drew too. With
+  plain figures and everything else off, the party walks as smoothly as in the
+  game without the Ledger.
 - **New content switches:** Kalzith, Semyon, the cooked vulture, the slave
   pens' gear, a worn cloak's and boots' bonuses to hiding, and the Effects
   screen's click keeping a spell can each be switched off on the Options tab.
