@@ -263,6 +263,7 @@ If more than one DOSBox is running, add `--pid <number>` (from `processes`).
 | `    X's Bone Long Sword nearly broke: 0 on 0-7, then 12 on 0-19 (needed 0)` / `... BREAKS` | The weapon check the game makes after an attack sequence whose last attack hit. Only non-magical wood, bone, stone and obsidian weapons can break (and not every kind: clubs and quarterstaffs can't): they break when a 0-7 roll and then a 0-19 roll both come up 0, 1 chance in 160. The line only appears when the first roll comes up 0. |
 | `Message: Long Sword is broken !` | The game's own message boxes: broken or corroded weapons and armour, level-ups, "NO PATH FROM HERE" and so on. |
 | `  Slig now 8/18 HP (-10)` / `  Gerakis now 51/54 HP (+1)` | Any combatant's hit points going down or up, with what's left out of their most. The game never shows a monster's HP; this does. The line comes just after the damage that caused it (sometimes after the next roll, when the game is quick). |
+| `  Gerrard regenerates 1 HP (CON 22), now 16/35 HP` | A hit point back by itself: the game gives one now and then to anyone with CON 20 or more (in the game, CON 20 regenerates and 18 or 19 don't). |
 | `  Skeleton now 10/14 HP (-3: 3 of the 7 rolled, non-magical weapons do half)` / `  Skeleton takes none of the 6 damage: crushing weapons can't hurt it` | A weapon hit that took less than its roll, or none at all (no HP lost three seconds on, or by the next round), with the reason when the monster's own defences give one (what weapons hurt it); otherwise "a protection or resistance took it" (Stoneskin, say). |
 | `    X's special effect on Y: d10 = 1, works on a 1 -> it works` | The 1-in-10 extra effect some creatures' hits have (the thri-kreen bite, for one). |
 | `Slig is killed (270 XP)` | A creature dying, with the XP it's worth (from its character sheet). |
@@ -272,11 +273,12 @@ If more than one DOSBox is running, add `--pid <number>` (from `processes`).
 | `Cilla's 3rd Ranger level: hit points d10 = 2, raised to 3 for CON 21` | The hit point roll for a new level: the class's die (d8 clerics and druids, d10 fighters, gladiators and rangers, d4 preservers, d6 psionicists and thieves), never less than 2, 3 or 4 with CON 20, 21-22 or 23+, and doubled for half-giants. After level 9 or 10 there's no roll, just a fixed gain (thieves roll at 10th too with [levels up to 10](#rule-changes)). |
 | `Cilla hides in shadows: d100 = 21, needs 27 or less (54, halved in daylight) -> hidden` / `  Cilla moves silently: ...` | A thief's or ranger's hiding and moving silently at the start of their turn (the [stealth rule](#rule-changes)). |
 | `Chosen with Tab: Guard (50 HP) - Enter attacks it` | An enemy chosen with Tab in a fight (see [Choosing an enemy](#choosing-an-enemy-tab-enter-and-the-rings)). |
-| `Dinos cooks the vulture and the party eats with him: ... +100 XP each, and restored as after a full rest` | Dinos asked about the cooked vulture (see [The cooked vulture](#the-cooked-vulture)). |
+| `Dinos cooks the vulture and the party eats with him: ... restored as after a full rest (HP, PSP and spell slots); the game gives each 100 XP` | Dinos asked about the cooked vulture (see [The cooked vulture](#the-cooked-vulture)); the XP itself is on the `XP:` line after it. |
 | `Character creation, STR 17: best of four 4d4 (7, 11, 9, 10) = 11, +4, +1 dwarf = 16, raised to 17 (the Fighter's prime requisite)` | An ability score rolled on the character creation screen (see below). |
 | `Character creation, hit points 15: Fighter d10 per level: 7 + 9; Thief d6 per level: 5 + 1 = 22, / 2 classes = 11, +4 CON 16 = 15` | The new character's hit points: a die for every level of every class, divided by the number of classes, plus CON's bonus (see below). |
 | `Character creation: a name picked at random, 1d33 = 6` | The game picks a new name from its lists when the sex or race changes. |
 | `Dice: 1d8 = [3] = 3` | Dice the log couldn't tie to anything (for example a spell with no saving throw). |
+| `(The Ledger stopped one of its own writes over the game's memory: ...)` | A safety net: the Ledger never writes over the start of memory (the interrupt vectors, the BIOS's and DOS's data) or the first bytes of the game's data, which its C runtime checks ("Null pointer assignment"). Such a write could only come from a pointer the game has left empty for a moment; the line says where in the Ledger it came from. Please report it. |
 
 **Reading it at a glance.** Lines at the left edge are the events: a round
 starting, whose turn it is, attack rolls, saves, spells, kills. Lines indented
@@ -812,17 +814,19 @@ slave pens' campfire cooks it. In the game itself the cooked vulture is then no
 use to anyone: no script asks for it. With the Ledger running, **Dinos**, the
 pens' fine cook, can be asked about it: talk to him while someone in the party
 carries it, and among the first things the party can say to him, just before
-"Goodbye.", is **"We cooked the vulture from the arena."** He takes it ("A vulture! Give it here. A little salt,
-some agafari leaf, slow over the coals... Sit, eat with me: the best meal in the
-pens!"), to the sound the game plays when a quest is done (as for the Trustee's
-key or the filled water jug), and, as the game's quests tell theirs: "For
-sharing the vulture with Dinos, each of you earns 100 EXP, and you are fully
-rested." Each party member gets **100 XP** and is **restored as after a full
-rest**: HP, PSP and spell slots full, and anyone knocked out back on their feet.
+"Goodbye.", is **"We cooked the vulture from the arena."** He takes it ("A vulture! Give it here. A pinch of salt,
+some agafari leaf, slow over the coals... Sit down and eat with me. A meal like
+this puts the strength back in you."), and the game's own window for a quest's
+reward follows, as for any of its quests: "Each party member receives 100
+experience points!", with the sound the game plays when a quest is done (as for
+the Trustee's key or the filled water jug). Each party member gets **100 XP**
+(split between a multi-class character's classes, as the game splits all its
+XP) and is **restored as after a full rest**: HP, PSP and spell slots full, and
+anyone knocked out back on their feet. No time passes.
 The question is gone once the vulture is. (Eaten by the party on their own,
 used on one of them from the inventory, it's too tough to be worth the chewing.)
 
-![Dinos's answer, and the reward, in his own dialogue window with his portrait](docs/vulture-meal.png)
+![Dinos's answer in his dialogue window with his portrait, then the game's own window for the reward: "Each party member receives 100 experience points!"](docs/vulture-meal.png)
 
 How: in the Ledger's copy of `GPLDATA.GFF`, Dinos's talk (script 139) has the
 question in its first menu (a copy of the game's with the question added, as for
@@ -830,9 +834,12 @@ the questions about Kalzith and Semyon, see
 [Dinos and the Trustee](#dinos-and-the-trustee-on-kalzith-and-semyon)), shown
 while the game's own test says someone in the party carries the cooked vulture
 (33h, as the campfire's script asks about the plucked one; the game's object
-A4Ch), the test being the question's own condition in the menu. Chosen, the script takes it (5Ch, as the campfire takes the plucked one),
-plays the game's quest sound (5Dh 53, as its quests do) and sets the Ledger's
-flag 780; the Ledger then adds the XP and refills the party, once (flag 781).
+A4Ch), the test being the question's own condition in the menu. Chosen, the script takes it (5Ch, as the campfire takes the plucked one)
+and sets the Ledger's flag 780, then gives the XP through the game's own routine
+for quests (the amount in its variable, then script 74 at 135: the window, the
+words and the quest's sound), as Dinos's own script does when he heals Gilal
+(350). The Ledger then refills the party, once (flag 781), only while the party
+is talking with him (never from a game being loaded).
 
 ### The slave pens' gear
 
@@ -1079,7 +1086,7 @@ walking and fighting:
 |---|---|
 | **Weapons and shields** | each kind its shape (dagger, sword, club, mace, axe, polearm, gythka, staff, a round shield), in its material's colours (wood, bone, stone, obsidian, metal); walking, a one-handed weapon is worn at the belt, hanging down and back like a scabbard, and two-handed ones are carried upright; in a fight they are in the hands and swung, and the shield is on the other forearm in every pose (placed by hand for each model where the arm is hidden or flung) |
 | **Bows and slings** | the bow and quiver on the back (the game draws the bow when shooting), a sling or chatkcha at the hip |
-| **Armour** | the character's own clothing recoloured toward its material, shade for shade (leather, bone, chain, plate, scale...): the chest piece above the waist, arm pieces at the wrists, leg pieces below the waist |
+| **Armour** | the character's own clothing recoloured toward its material, shade for shade (leather, bone, chain, plate, scale...): the chest piece above the waist, arm pieces at the wrists, leg pieces below the waist; on figures the artist drew mostly bare (the mul, the dwarf man) only their straps and loincloth change, so it shows little |
 | **Helms** | a circlet at the brow blended into the hair: a feather on leather, a dark stone on iron, low spikes on bone |
 | **Cloaks** | the human and half-elf woman's own cloak (its folds and swing as she walks and fights) fitted to the wearer, under the hair, in the cloak's colours; hers takes them too |
 | **Boots and belts** | the feet and the waist recoloured |
@@ -1101,7 +1108,9 @@ spare and a marker at the end. While the game runs, when someone's worn items
 change, the Ledger draws their pictures anew (`dscompanion/spritegear.py`,
 from where `dscompanion/spriteparts.py` finds the head, hair, hands and the
 rest in each frame) and writes them over the copies the game has loaded,
-which it draws from at once, and into the copy of the file, so a picture the
+which it draws from at once (only over memory that still holds one of its own
+versions of that picture: what the game has freed and given to something else,
+a monster's figure or a portrait, is left alone), and into the copy of the file, so a picture the
 game loads again (in a fight, in another area) comes dressed
 (`dscompanion/sprites.py`); it has the helper draw the view again (see
 [Shadows](#shadows)), so the figures show it at once, standing still or not.

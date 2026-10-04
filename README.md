@@ -16,7 +16,8 @@ game itself, in the game's own lettering and windows:
   - spell slots on the USE screen;
   - each turn's rolls in a pop-up during fights, if you tick it (three levels
     of detail);
-  - what hurts a monster in the Look box.
+  - what hurts a monster in the Look box;
+  - a party member's spell no longer ended by a click on the Effects screen.
 - **Dialogue and spells tabs:** a scrollable record of every conversation, and
   what each spell and psionic power really does, from the game's own records.
 - **Optional AD&D rule changes**, all on by default and each one switchable:
@@ -27,7 +28,7 @@ game itself, in the game's own lettering and windows:
   - DEX on saves against fire, cold and electricity instead of a doubled d20;
   - a new spell, Cat's Grace;
   - thieves hiding in shadows and moving silently to backstab, and rangers
-    to attack from behind;
+    to attack from behind (a cloak and boots help);
   - thief skills from AD&D's table, with Dark Sun's race and DEX adjustments;
   - half-giants wielding two-handed weapons in one hand;
   - class levels up to 10 (the game stops at 9).
@@ -93,7 +94,7 @@ double-click, with the options as last set.)
 Release **1.0.0** is pull requests #1 to #13. Its notes are in
 [`release-notes/v1.0.0.md`](release-notes/v1.0.0.md).
 
-### Pull request #14 (in review)
+### Pull request #14 ([merged 2026-10-04](https://github.com/daaki85/darksun-companion-mod/pull/14))
 
 **Added**
 - **What the party wears, on the map:** each character's figure shows their
@@ -152,6 +153,15 @@ Release **1.0.0** is pull requests #1 to #13. Its notes are in
 - **The quest sound for the vulture:** giving Dinos the cooked vulture plays
   the sound the game plays when a quest is done (the Trustee's key, the
   filled water jug).
+- **Cloaks and boots help thieves and rangers hide:** with the stealth rule, a
+  worn cloak adds 10 to hiding in shadows (before daylight halves it) and worn
+  boots 10 to moving silently, up to 95.
+- **Regeneration in the dice log:** a hit point back by itself, which the game
+  gives anyone with CON 20 or more, is logged as such (`Gerrard regenerates 1
+  HP (CON 22)`).
+- **A safety net against stray writes:** the Ledger never writes over the start
+  of memory or the first bytes of the game's data (what "Null pointer
+  assignment" checks); a write stopped there is named in the dice log.
 
 **Changed**
 - **The Effects screen no longer ends a spell's effect when its icon is clicked**
@@ -162,14 +172,30 @@ Release **1.0.0** is pull requests #1 to #13. Its notes are in
   mark off the files in its own folder, so the others start without asking.
 - **The vulture quest is part of Dinos's talk:** while the party carries the
   cooked vulture, his first menu has "We cooked the vulture from the arena."
-  just before "Goodbye." His answer and the reward are in his own dialogue
-  window, with his portrait, instead of the game's message box; the vulture
+  just before "Goodbye." His answer is in his own dialogue window, with his
+  portrait, and the XP comes as the game's quests give it, in the game's own
+  window ("Each party member receives 100 experience points!"); the vulture
   is no longer used on him from the inventory.
 - **Cat's Grace's icon** is a cat's paw print instead of a cat's face.
 - **Dinos's vulture lines** are his own words, without narration (the game's
   conversations are people speaking).
 
 **Fixed**
+- **DOSBox crashes, garbled figures, freezes and "Null pointer assignment"**
+  (in this pull request's earlier builds): the gear writer kept writing a party
+  picture over memory the game had freed and given to something else (a
+  monster's figure after a fight, a portrait). It now writes only over its own
+  pictures. Gear then failed to show after an area change in one build (an
+  older copy of a picture not recognised as the Ledger's); fixed too.
+- **Kalzith said he had nothing left to sell** after one purchase: while a save
+  loaded, the Ledger could read the new game's flags with the last game's
+  Kalzith (emptied by pickpocketing) and mark it sold out. A game marked so by
+  mistake gets his shop back.
+- **The vulture's reward in the dice log when a game was loaded,** and its XP
+  and rest given then: the flag was read from memory still being loaded.
+- **A thief first in a round didn't hide:** someone who had the last turn of one
+  round and the first of the next got no new turn in the log, so no hide in
+  shadows or move silently roll.
 - **Tab + Enter froze the game:** after Enter, the walk to the chosen enemy
   stalled, sometimes until a mouse click. The helper answered the game's "what is
   under the pointer" with the enemy and returned without giving back the game's
