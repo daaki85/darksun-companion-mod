@@ -15,7 +15,9 @@ sound of a quest done, as the cooked vulture's meal (vulture.py).
 """
 
 import struct
-from typing import Optional
+import time
+from collections import deque
+from typing import Deque, Optional, Tuple
 
 from . import game
 from .game import GameData
@@ -30,6 +32,13 @@ THING_COUNT = 0x208  # objects 0-519; 320-519 are handed out from a free list
 FREE_THINGS, THINGS_USED = 0x4D72, 0x4C48  # DS: that list's first, and how many are out
 FREE_ITEMS = 0x4D76  # DS: the first free item record (each names the next at +04h)
 ITEM_CONTENTS = 0x08
+# The Ledger's own takings from that list (and givings back), the last ones, for a report on an
+# item gone missing (bonescale.Watch): (time, item, what for)
+TAKEN: Deque[Tuple[float, int, str]] = deque(maxlen=30)
+
+
+def took(item: int, what: str) -> None:
+    TAKEN.append((time.time(), item, what))
 # Its name, in the first of the entries DSCLOG adds after the game's 322 (names.py): the
 # inventory screen shows the name alone, the box an item's Look opens shows it with the plus
 # after it ("%Fs%+d": "Ring/Protection+1").
@@ -147,6 +156,7 @@ def give_ring(gd: GameData) -> Optional[str]:
         if cell is None or item >= game.NO_ITEM:
             continue
         gd.guest.write(gd.ds * 16 + FREE_ITEMS, it.item(item)[game.ITEM_NEXT:game.ITEM_NEXT + 2])
+        took(item, "the Ring +1")
         gd.guest.write(it.items + item * game.ITEM_SIZE, RING)
         if pickpocket.give(gd, Items(gd), member, item, cell):
             return MESSAGE.format(who=gd.creature_name(member))

@@ -20,9 +20,9 @@ import random
 import re
 import struct
 import time
-from collections import Counter
+from collections import Counter, deque
 from dataclasses import dataclass
-from typing import Callable, Dict, List, NamedTuple, Optional, Tuple
+from typing import Callable, Deque, Dict, List, NamedTuple, Optional, Tuple
 
 from . import bonescale, dust, game, rings, targeting, icons, kalzith, monsters, names, npcitems, pickpocket, ring, scrolling, semyon, shadows, sprites, stealth, tools, vulture
 from .game import (CONVENTIONAL_AND_UPPER, CREATURE_ABILITIES, CREATURE_SIDE, CREATURE_THAC0, EFFECT_NAMES,
@@ -362,6 +362,8 @@ class DiceLog:
         self.rules = 0  # RULE_HELMS | RULE_BOOTS: rule changes DSCLOG makes (set_rules)
         self.stealth_roll: Callable[[], int] = lambda: random.randint(1, 100)  # hiding, moving silently
         self._ring_check = 0.0
+        self._bone_watch = bonescale.Watch()
+        self._recent: Deque[str] = deque(maxlen=60)  # the log's last lines (for bonescale's report)
         self._main_ticks: Optional[int] = None  # DSCLOG's count of the map's main loop, last read
         self._look_seq = 0
         self._turn_seq = 0
@@ -989,6 +991,7 @@ class DiceLog:
         if self.missed:
             out.append(f"({self.missed} rolls came too fast to record)")
             self.missed = 0
+        self._recent.extend(out)
         return out
 
     def _arena_ring(self, now: float) -> List[str]:
@@ -1007,6 +1010,7 @@ class DiceLog:
                 before = set(self.tools_given)
                 out += npcitems.place(self.game, self.tools_given)
                 out += bonescale.place(self.game, self.tools_given)  # the bone scale armour's set
+                out += self._bone_watch.check(self.game, self.tools_given, self._recent)  # (one vanished)
                 npcitems.reprice(self.game)  # (those given before they had a magic item's price)
                 self._tools_new += sorted(self.tools_given - before)
             kalzith.stock(self.game, bool(self.rules & game.RULE_CATS_GRACE))  # (once a game, by its flag)

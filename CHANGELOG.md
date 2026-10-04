@@ -44,9 +44,11 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
 - **Kalzith and the alarm:** while the escape's alarm sounds he has a line
   for the party (by how he stands with them) and no talk, as the pens' other
   slaves do.
-- **A missing bone scale piece comes back:** should the Bone Helm, or the
-  arm or leg piece, go missing while the chest piece is in the area, it is put
-  back with it, once each a game, and the log says so.
+- **A vanished bone scale piece is written up:** the set is still given once
+  a game and never again (a piece sold stays sold); should the Bone Helm, or
+  the arm or leg piece, vanish, the Ledger saves a report on what became of it
+  in `crash-logs` (its item record, the game's free list, the Ledger's own use
+  of that list, the log's end), and the log says so.
 - **Finding the Ring +1 is worth 50 XP** to whoever searches the Tied-up
   Prisoner's body, given as the game gives a quest's (its window, "Gerakis
   receives 50 experience points!", and the quest's sound), once.

@@ -1813,16 +1813,23 @@ there is). Once a game, and never where any of the three already is (a
 game saved after they were added, loaded again). The log doesn't say: they're
 there to be found.
 
-Should one of the three later go missing while the chest piece is in the area
-(it has happened: a Bone Helm gone from a pack with no trace), the Ledger puts
-it back with the chest piece, in the carrier's pack or the same pile, once for
-each piece in a game, and the log says so:
+The set is given only that once: a piece sold, dropped or lost isn't given
+again. Instead the Ledger keeps an eye on the three pieces (every 3 seconds),
+because one has been seen to vanish from a pack with no trace. If one is gone
+from where it was on two looks in a row (not left on the ground of another
+area, and not a save loaded), the Ledger writes up what became of it in the
+`crash-logs` folder, as `vanished-` and the time, and the log says so:
 
 ```
-The Bone Helm had gone missing from the bone scale set: it is back, in Gerakis's backpack.
+The Bone Scale Leg Armor has vanished (last seen worn by Gerakis (slot 6, item 10)). What became of it is written up in crash-logs\vanished-2026-10-04-225337.txt: please send that file.
 ```
 
-(A piece sold or left in another area counts as missing too, once.)
+The report says where the piece was last seen and what its item record holds
+now: given back to the game's free list (the game took the piece away), taken
+for another item while still the piece's (two owners of one record), or cut out
+of its list. It also lists the game's free list, the Ledger's own last uses of
+that list, and the dice log's last lines. When the game took the piece back
+(sold, say), the log line says so, and that nothing is wrong if you sold it.
 
 The arm and leg pieces are the game's own, with its own icons. The game has
 no helm of bone, so the Bone Helm is an item type of the Ledger's own (the

@@ -720,6 +720,7 @@ def _unlink(gd, it, item: int) -> bool:
                 gd.guest.write(it.items + item * game.ITEM_SIZE + game.ITEM_NEXT,
                                struct.pack("<H", it.word(ring.FREE_ITEMS)))
                 gd.guest.write(gd.ds * 16 + ring.FREE_ITEMS, struct.pack("<H", item))
+                ring.took(item, "given back (Kalzith's)")
                 return True
             before, index = index, after
     return False
@@ -732,6 +733,7 @@ def _after(gd, it, item: int, rec: bytes) -> bool:
     if new >= game.NO_ITEM:
         return False
     gd.guest.write(gd.ds * 16 + ring.FREE_ITEMS, it.item(new)[game.ITEM_NEXT:game.ITEM_NEXT + 2])
+    ring.took(new, "an item of Kalzith's")
     rec = bytearray(rec)
     rec[game.ITEM_NEXT:game.ITEM_NEXT + 2] = it.item(item)[game.ITEM_NEXT:game.ITEM_NEXT + 2]
     gd.guest.write(it.items + new * game.ITEM_SIZE, bytes(rec))
