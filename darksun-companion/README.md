@@ -1629,7 +1629,10 @@ Searching the body, you find a ring sewn into his loincloth: a Ring of Protectio
 ```
 
 and puts the ring in the leader's backpack (or, if that's full, the first
-backpack with room); the log says whose. Wear it on either hand's finger from the
+backpack with room); the log says whose. Finding it is worth **50 XP to
+whoever searched**: after the line, the game's own window says so ("Gerakis
+receives 50 experience points!") with the sound of a quest done, as the
+cooked vulture's meal has, once only. Wear it on either hand's finger from the
 inventory screen. The game's names are at most 15 letters long, and
 longer ones run out of the Look box, so in the game it is **RING/PROTECTION**
 on the inventory screen and **Ring/Protection+1** in the box Look opens on it

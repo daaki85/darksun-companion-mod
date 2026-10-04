@@ -67,7 +67,8 @@ can be switched off on its Options tab.
 
 ### New content
 
-- **New items and thief play:** a Ring of Protection +1 to find in the arena;
+- **New items and thief play:** a Ring of Protection +1 to find in the arena
+  (and 50 XP for finding it);
   gear for Kurzak, Legcrusher and Pehtucl in the slave pens (a short sword
   and a Cloak of Protection among it), with icons of their own; the rest of
   the bone scale armour, with a Bone Helm, where its chest piece lies; Thieves'

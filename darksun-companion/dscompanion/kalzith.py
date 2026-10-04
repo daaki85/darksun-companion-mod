@@ -519,7 +519,7 @@ def with_entry(entries: bytes, script: int = SCRIPT) -> bytes:
 
 
 def script_chunks(gpldata: bytes, kalzith: bool = True, semyon: bool = True,
-                  vulture: bool = True) -> Dict[Tuple[str, int], bytes]:
+                  vulture: bool = True, ring: bool = True) -> Dict[Tuple[str, int], bytes]:
     """For the Ledger's copy of GPLDATA: his conversation, and the master script running it (and
     Semyon's, semyon.py; Dinos's and the Trustee's questions, pensasks.py), each part only if
     switched on (the Options tab's new content)."""
@@ -552,6 +552,13 @@ def script_chunks(gpldata: bytes, kalzith: bool = True, semyon: bool = True,
     # the questions about either show only once he is in the pens (their flags)
     from . import pensasks
     out.update(pensasks.script_chunks(chunks, field_types, vulture=vulture))
+    if ring:  # the XP for finding the arena's ring (ring.py), in the same script as Semyon's exit
+        from . import ring as rg
+        body = ("GPL ", rg.BODY_SCRIPT)
+        if body in chunks:
+            changed = rg.with_xp(out.get(body, chunks[body]), field_types, chunks[body])
+            if changed != out.get(body, chunks[body]):
+                out[body] = changed
     return out
 
 
@@ -808,10 +815,11 @@ def _write(source: str, dest: str, added) -> None:
     os.replace(tmp, dest)
 
 
-def write_scripts(source: str, dest: str, kalzith: bool = True, semyon: bool = True, vulture: bool = True) -> None:
+def write_scripts(source: str, dest: str, kalzith: bool = True, semyon: bool = True, vulture: bool = True,
+                  ring: bool = True) -> None:
     """The game's GPLDATA.GFF (SOURCE, only read) with Kalzith's conversation (and the rest of
     the new content switched on), to DEST."""
-    _write(source, dest, lambda data: script_chunks(data, kalzith, semyon, vulture))
+    _write(source, dest, lambda data: script_chunks(data, kalzith, semyon, vulture, ring))
 
 
 def write_region(source: str, dest: str) -> None:

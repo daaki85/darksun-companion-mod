@@ -41,6 +41,9 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
   who escaped), instead of "Every single one" for all the pens.
 
 **Changed**
+- **Finding the Ring +1 is worth 50 XP** to whoever searches the Tied-up
+  Prisoner's body, given as the game gives a quest's (its window, "Gerakis
+  receives 50 experience points!", and the quest's sound), once.
 - **Picking pockets with the Thieves' Tools only, by default:** the Options
   tab's switch is now about the tools, and P in a conversation is a choice
   under it, off unless ticked.
@@ -57,6 +60,10 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
   next drawing areas went, so the game drew over its own code and stopped,
   often with "Null pointer assignment". The bug is the game's own; the
   Ledger's copy now skips both frees when the first area was never made.
+- **Thieves' Tools clicked between turns** (as an area changes) stopped the
+  dice log with an error.
+- **The game's flags** were read and written through a null pointer at times
+  (in the arena outside a script's run); the Ledger's guard stopped the writes.
 - **Crash messages readable:** a game that stopped in graphics mode left its
   error message invisible; the screen goes back to text before the message.
 

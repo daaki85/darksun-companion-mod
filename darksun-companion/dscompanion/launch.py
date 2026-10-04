@@ -196,7 +196,7 @@ def write_conf(game_dir: str, path: str = CONF, dice_log: bool = True) -> str:
 
 # The Options tab's new content and game changes (settings keys), each on unless switched off;
 # the game's copies are written with them as they stand when it is started
-CONTENT = ("kalzith", "semyon", "vulture", "pens_gear", "effects_kept", "stealth_gear")
+CONTENT = ("kalzith", "semyon", "vulture", "pens_gear", "effects_kept", "stealth_gear", "arena_ring")
 
 
 def content(settings: dict) -> dict:
@@ -229,7 +229,7 @@ def prepare_patched_game(game_dir: str, settings: Optional[dict] = None) -> Opti
     # or no objects copy with him, it is written without him, and the pens' region is the game's)
     with_kalzith = on["kalzith"] and objects_ok
     files = [(kalzith.SCRIPTS_FILE, lambda source, dest: kalzith.write_scripts(
-        source, dest, with_kalzith, on["semyon"], on["vulture"]))]
+        source, dest, with_kalzith, on["semyon"], on["vulture"], on["arena_ring"]))]
     if with_kalzith:
         files.append((kalzith.REGION_FILE, kalzith.write_region))
     try:
