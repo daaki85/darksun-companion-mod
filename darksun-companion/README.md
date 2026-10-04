@@ -1197,7 +1197,20 @@ choppy with them on. The launcher gives DOSBox more of the computer's time
 (20,000 cycles a millisecond), at which walking is as smooth with them as the
 game's own without them. On the Options tab **Game speed** is GOG's own, that
 (the default) or 30,000 (smoother still; animations run quicker, and it needs a
-faster computer). It applies the next time the game is started.
+faster computer). It applies the next time the game is started. Both run on
+DOSBox's dynamic core (GOG's settings run this game on the slower normal core):
+the same cycles do more and cost the computer about a third less.
+
+About 96 times a second the game's timer lets it move each walking figure a
+step, once the view is drawn; a frame that takes longer loses the rest of that
+time. That is why the whole party in view is choppier than the leader alone
+(the game's manual says collapsing the party "speeds up the game"): with four in
+view at GOG's 7,000 cycles a step comes every 30 to 120 ms, at 20,000 every 15
+to 36 ms.
+
+The pictures the Ledger draws the party's gear on keep only the room gear needs
+while walking (6 pixels at the sides, 2 above; 10 in a fight), since the game
+draws a walking figure's whole picture again at each step.
 
 Measured in the slave pens, four of the party walking, at 12,000 cycles:
 a step every 56 ms with everything on, 32 ms with the shadows off or

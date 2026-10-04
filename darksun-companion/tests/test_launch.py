@@ -99,12 +99,13 @@ class LaunchTests(unittest.TestCase):
             self.assertEqual(launch.dosbox_output(game, os.path.getmtime(os.path.join(game, "DOSBOX", "stdout.txt")) + 1), {})
 
     def test_game_speed(self):
-        """20000 cycles unless asked otherwise (smooth walking with shadows and dust); GOG's own
+        """20000 cycles on the dynamic core unless asked otherwise (smooth walking with the party in
+        view, shadows and dust); GOG's own
         when asked; nothing else taken."""
-        self.assertEqual(launch.cpu_lines({}), ["[cpu]", "cycles=fixed 20000", ""])
-        self.assertEqual(launch.cpu_lines({"cycles": 30000}), ["[cpu]", "cycles=fixed 30000", ""])
+        self.assertEqual(launch.cpu_lines({}), ["[cpu]", "core=dynamic", "cycles=fixed 20000", ""])
+        self.assertEqual(launch.cpu_lines({"cycles": 30000}), ["[cpu]", "core=dynamic", "cycles=fixed 30000", ""])
         self.assertEqual(launch.cpu_lines({"cycles": "gog"}), [])
-        self.assertEqual(launch.cpu_lines({"cycles": 99999}), ["[cpu]", "cycles=fixed 20000", ""])
+        self.assertEqual(launch.cpu_lines({"cycles": 99999}), ["[cpu]", "core=dynamic", "cycles=fixed 20000", ""])
 
     def test_a_window_three_times_the_game_unless_asked_otherwise(self):
         self.assertEqual(launch.display_lines({}),

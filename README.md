@@ -108,7 +108,11 @@ Release **1.0.0** is pull requests #1 to #13. Its notes are in
   by default, at which walking with shadows, dust and rings on is as smooth as
   the game without them (at GOG's speed it was slower and choppy); GOG's own
   speed and 30,000 can be chosen, with suggested system requirements for each
-  in the companion's README.
+  in the companion's README. DOSBox runs on its dynamic core, smoother at the
+  same cycles and lighter on the computer.
+- **Faster walking with gear shown:** the party's figure pictures keep only the
+  room their gear needs while walking (they had 10 pixels all round, which the
+  game drew again at every step), and less spare room for outfits.
 - **New content switches:** Kalzith, Semyon, the cooked vulture, the slave
   pens' gear, a worn cloak's and boots' bonuses to hiding, and the Effects
   screen's click keeping a spell can each be switched off on the Options tab.

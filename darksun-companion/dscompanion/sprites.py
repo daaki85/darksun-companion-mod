@@ -35,7 +35,7 @@ SPARES = range(314, 314 + game.PARTY_SIZE)  # (each party place's spare pair: 31
 # +18h its walking picture's number
 MAP_ENTRIES, MAP_ENTRY_SIZE, MAP_SLOT, MAP_PICTURE = 0x6694, 32, 0x0F, 0x18
 # ... and, for the party, where on its picture it stands (+7h half the width, +8h the height, of the
-# picture it was made with): ours have PAD more room left, right and above than the game's own
+# picture it was made with): ours have more room left, right and above than the game's own (room)
 MAP_ANCHOR = 0x07
 MAP_FLAGS, MAP_CHANGED = 0x00, 0x01  # (+0: bit 0 marks it changed, for the game to draw again)
 # A thing whose slot is NO_SLOT the game gives one as it goes through them (DSUN.EXE 23232h): its
@@ -43,7 +43,13 @@ MAP_FLAGS, MAP_CHANGED = 0x00, 0x01  # (+0: bit 0 marks it changed, for the game
 NO_SLOT = 0xFFFF
 OJFF_PICTURE = 0x0C
 CREATURE_FIGURE = 0x18
-PAD = 10
+PAD = 10  # (room round the game's own picture that gear is drawn in)
+# ... of which a walking picture keeps WALK_SIDE on each side and WALK_TOP above: as much as
+# anything worn reaches out walking (gear in a fight reaches further: a fight picture keeps it
+# all). The game draws a walking figure's whole picture again at each step, so room it doesn't
+# need slows walking (four figures with ten all round: a third slower)
+WALK_SIDE, WALK_TOP = 6, 2
+ROOM = 3 / 2  # a picture's size, of its plain size: room for its bulkiest outfit (at most 1.38)
 MARKER = b"TLGSPRT"  # (then a byte: the object less 300, then one: 0 walking, 1 combat)
 MARKER_SIZE = len(MARKER) + 2
 
@@ -70,11 +76,23 @@ def encode_frames(frames: List[sg.Rows]) -> bytes:
     return struct.pack("<IH", pos, len(bodies)) + b"".join(struct.pack("<I", o) for o in offsets) + b"".join(bodies)
 
 
-def capacity(frames: List[sg.Rows]) -> int:
-    """Room for any outfit on these frames: the plain padded picture's size and three quarters
-    more (a full outfit, the bulkiest, adds about a third), and the marker."""
-    plain = len(encode_frames([sg.padded(f, PAD) for f in frames]))
-    return plain * 7 // 4 + MARKER_SIZE
+def room(combat: bool) -> Tuple[int, int]:
+    """The room a walking (or COMBAT) picture keeps round the game's own: (each side, above)."""
+    return (PAD, PAD) if combat else (WALK_SIDE, WALK_TOP)
+
+
+def trimmed(rows: sg.Rows, combat: bool) -> sg.Rows:
+    """ROWS drawn with PAD all round, cut down to the room the picture keeps (room)."""
+    side, top = room(combat)
+    cut = PAD - side
+    return [r[cut:len(r) - cut] for r in rows[PAD - top:]]
+
+
+def capacity(frames: List[sg.Rows], combat: bool = False) -> int:
+    """Room for any outfit on these frames: the plain picture's size times ROOM (the bulkiest
+    outfit adds at most two fifths), and the marker."""
+    plain = len(encode_frames([trimmed(sg.padded(f, PAD), combat) for f in frames]))
+    return int(plain * ROOM) + MARKER_SIZE
 
 
 def sized(chunk: bytes, size: int, obj: int, combat: bool) -> bytes:
@@ -105,7 +123,7 @@ class Pictures:
 
     def spare_capacity(self, combat: bool) -> int:
         """A spare picture's size: room for any model's."""
-        return max(capacity(self.own(m + combat)) for m in sp.MODELS if ("BMP ", m + combat) in self.chunks)
+        return max(capacity(self.own(m + combat), combat) for m in sp.MODELS if ("BMP ", m + combat) in self.chunks)
 
     def build(self, obj: int, combat: bool, gear: Dict[str, Tuple[int, int]], armour: Tuple[int, ...],
               model: Optional[int] = None) -> bytes:
@@ -117,8 +135,8 @@ class Pictures:
         out = []
         for f, rows in enumerate(frames):
             template = sg.cloak_template(cloaks[f], sg.CLOAK_MODEL, f, combat) if f < len(cloaks) else None
-            out.append(sg.armed(rows, model, f, combat, gear, PAD, armour, template))
-        size = self.spare_capacity(combat) if obj in SPARES else capacity(frames)
+            out.append(trimmed(sg.armed(rows, model, f, combat, gear, PAD, armour, template), combat))
+        size = self.spare_capacity(combat) if obj in SPARES else capacity(frames, combat)
         return sized(encode_frames(out), size, obj, combat)
 
 
@@ -312,7 +330,8 @@ class Dresser:
                 self.gd.guest.write(at + MAP_SLOT, struct.pack("<H", NO_SLOT))
                 if picture == model:  # (the game's own, smaller: drawn from where ours has room)
                     x, y = struct.unpack("<bb", self.gd.guest.read(at + MAP_ANCHOR, 2))
-                    self.gd.guest.write(at + MAP_ANCHOR, struct.pack("<bb", min(127, x + PAD), min(127, y + PAD)))
+                    side, top = room(False)
+                    self.gd.guest.write(at + MAP_ANCHOR, struct.pack("<bb", min(127, x + side), min(127, y + top)))
                 self._changed(at)
                 moved = True
         return moved

@@ -43,7 +43,12 @@ class SpriteTests(unittest.TestCase):
         self.assertTrue(chunk.endswith(sprites.MARKER + bytes([0, 0])))
         self.assertTrue(new[("BMP ", fight)].endswith(sprites.MARKER + bytes([0, 1])))
         self.assertEqual(struct.unpack_from("<H", chunk, 4)[0], 15)
-        self.assertEqual(art.decode_frame(chunk, 0)[2], sg.padded(rows(), sprites.PAD))
+        # walking, the room gear needs there (sprites.room); in a fight, all of PAD
+        self.assertEqual(art.decode_frame(chunk, 0)[2], sprites.trimmed(sg.padded(rows(), sprites.PAD), False))
+        frame = art.decode_frame(chunk, 0)[2]
+        self.assertEqual((len(frame[0]), len(frame)), (len(rows()[0]) + 2 * sprites.WALK_SIDE, len(rows()) + sprites.WALK_TOP))
+        self.assertEqual(art.decode_frame(new[("BMP ", fight)], 0)[2][0].__len__(),
+                         len(art.decode_frame(game_chunks()[("BMP ", 2096)], 0)[2][0]) + 2 * sprites.PAD)
 
     def test_dressed_fits(self):
         """A picture in an outfit is the same size as the plain one (it goes where that was)."""
@@ -128,7 +133,7 @@ class SpriteTests(unittest.TestCase):
         gd.guest.write(at, bytes([9, 26]))
         self.assertTrue(dresser._point(0, 300, 300))
         self.assertEqual(gd.entry_fields(0), (shared[0], sprites.NO_SLOT))
-        self.assertEqual(gd.guest.read(at, 2), bytes([9 + sprites.PAD, 26 + sprites.PAD]))  # (where ours has room)
+        self.assertEqual(gd.guest.read(at, 2), bytes([9 + sprites.WALK_SIDE, 26 + sprites.WALK_TOP]))  # (where ours has room)
 
     def test_only_its_own_copies_rewritten(self):
         """A copy is written over only while it is still the picture last written (or the copy
