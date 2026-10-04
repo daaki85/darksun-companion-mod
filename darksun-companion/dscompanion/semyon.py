@@ -45,9 +45,9 @@ CLEARED = 775  # (the companion's) Kalzith and he taken off the map after the es
 GONE_AT = (255, 20, 20, 1)  # where the game puts the pens' people then (region 255: none)
 # His object is the arena's: on the party's side (as when he fights beside them), and with 0 where
 # every slave of the pens has 12 (the creature's byte 1Bh; the arena's Tied-up Prisoner has 0 too).
-# In the pens he is as the slaves are (as the game's scripts set anyone's, 40h: an object's field),
-# on their side (SIDE: 1 the party's, 2 against it, 4 neither) and with their 12 (STEADY), once
-# (SETTLED; also for one put in his pen before). Attacked, he is then as any of them is.
+# In his pen (PLACED: put there by the Ledger) he is as the slaves are (as the game's scripts set
+# anyone's, 40h: an object's field), on their side (SIDE: 1 the party's, 2 against it, 4 neither)
+# and with their 12 (STEADY), once (SETTLED; also for one put in his pen before). Attacked, he is then as any of them is.
 SET_FIELD, SIDE, NEUTRAL, STEADY, SLAVES_STEADY = 0x40, 74, 4, 70, 12
 SETTLED = 779
 
@@ -61,7 +61,8 @@ RECRUITED = 6
 ESCAPING = 782
 ESCAPE_SCRIPT, ESCAPE_AT = 3, 1828  # the henchman's move to the pens in it (Scar's is just before)
 HENCHMAN = 229
-ESCAPE_SPOT = (74, 68)  # (tiles) beside them: the game puts Scar's group on one square, hiding him
+BESIDE = -2  # (tiles, across) from where the henchman goes: the game puts Scar's group on one square
+WITH_US = 1  # (a side: the party's)
 AGAINST = 2  # (a side: against the party)
 
 
@@ -83,7 +84,7 @@ def placement(base: int) -> bytes:
         s.flag(PLACED, 1)))
     present = ["(", ("op", (0x80, [kalzith.ACTOR, ("n", -SEMYON)])), ")", "<", ("n", 999)]
     here = ("expr", present)
-    s.when(("expr", _flag(SETTLED, 0) + ["and"] + _flag(ESCAPED, 0) + ["and"] + _flag(ESCAPING, 0)
+    s.when(("expr", _flag(SETTLED, 0) + ["and"] + _flag(ESCAPED, 0) + ["and"] + _flag(PLACED)
             + ["and", "("] + present + [")"]),
            lambda: (s.op(SET_FIELD, ("field", SEMYON, [SIDE]), ("n", NEUTRAL)),
                     s.op(SET_FIELD, ("field", SEMYON, [STEADY]), ("n", SLAVES_STEADY)), s.flag(SETTLED, 1)))
@@ -136,8 +137,8 @@ def with_exit(script: bytes, field_types: bytes = b"") -> bytes:
 def with_escape(script: bytes, field_types: bytes = b"") -> bytes:
     """The arena's script ESCAPE_SCRIPT with Semyon taken along to the pens with Scar: the
     henchman's move at ESCAPE_AT becomes a jump past the script's end, where that move is made,
-    then Semyon's to a square beside them (ESCAPE_SPOT) if he is recruited, alive, in the arena
-    and not against the party (ESCAPING set), then a jump back to what follows it. Nothing of the game's moves. Unchanged if the
+    then Semyon's to a square beside them (BESIDE), on the party's side, if he is recruited,
+    alive, in the arena and not against the party (ESCAPING set), then a jump back to what follows it. Nothing of the game's moves. Unchanged if the
     command at ESCAPE_AT isn't that move (or is already the jump)."""
     try:
         ops = gpl.decode(script, field_types)
@@ -152,10 +153,18 @@ def with_escape(script: bytes, field_types: bytes = b"") -> bytes:
     s = _Script()
     s.op(op.code, *op.args)
     here = ["(", ("op", (0x80, [kalzith.ACTOR, ("n", -SEMYON)])), ")", "<", ("n", 999)]
-    with_us = ["(", ("field", SEMYON, [SIDE]), "!=", ("n", AGAINST), ")"]
-    along = ("expr", _flag(RECRUITED) + ["and"] + _flag(DIED, 0) + ["and", "("] + here + [")", "and"] + with_us)
-    spot = (op.args[1], ("n", ESCAPE_SPOT[0]), ("n", ESCAPE_SPOT[1]), op.args[4])  # (their region)
-    s.when(along, lambda: (s.op(REMOVE, ("n", -SEMYON), *spot), s.flag(ESCAPING, 1)))
+    recruited = ("expr", _flag(RECRUITED) + ["and"] + _flag(DIED, 0) + ["and", "("] + here + [")"])
+    # (his side read only once he is known to be on the map: the game works out a whole test)
+    not_against = ("expr", ["(", ("field", SEMYON, [SIDE]), "!=", ("n", AGAINST), ")"])
+    region, (_, x), y, last = op.args[1], op.args[2], op.args[3], op.args[4]
+    spot = (region, ("n", x + BESIDE), y, last)
+
+    def along():
+        s.op(SET_FIELD, ("field", SEMYON, [SIDE]), ("n", WITH_US))
+        s.op(REMOVE, ("n", -SEMYON), *spot)
+        s.flag(ESCAPING, 1)
+
+    s.when(recruited, lambda: s.when(not_against, along))
     s.op(GOTO, ("n", ops[at + 1].at))
     out = bytearray(script) + s.bytes(base=len(script), end=False)
     out[ESCAPE_AT:ESCAPE_AT + 3] = gpl.encode_op((GOTO, [("n", len(script))]))

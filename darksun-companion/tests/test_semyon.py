@@ -123,14 +123,17 @@ class SemyonTests(unittest.TestCase):
         codes = [(o.code, o.args) for o in added]
         place = [("n", 41), ("n", 76), ("n", 68), ("n", 0)]
         self.assertEqual(codes[0], (semyon.REMOVE, [("n", -semyon.HENCHMAN)] + place))
-        test = added[1].args[0][1]
+        tests = [o.args[0][1] for o in added if o.code == 0x18]
+        first, second = tests
         for flag, value in ((semyon.RECRUITED, 1), (semyon.DIED, 0)):
             self.assertIn(["(", ("var", 0x8D, flag), "==", ("n", value), ")"],
-                          [test[i:i + 5] for i in range(len(test) - 4)])
-        self.assertIn(("field", semyon.SEMYON, [semyon.SIDE]), test)
-        self.assertIn(0x80, [a[1].code for a in test if isinstance(a, tuple) and a[0] == "op"])
-        self.assertIn((semyon.REMOVE, [("n", -semyon.SEMYON), ("n", 41), ("n", semyon.ESCAPE_SPOT[0]),
-                                       ("n", semyon.ESCAPE_SPOT[1]), ("n", 0)]), codes)
+                          [first[i:i + 5] for i in range(len(first) - 4)])
+        self.assertIn(0x80, [a[1].code for a in first if isinstance(a, tuple) and a[0] == "op"])
+        self.assertNotIn(("field", semyon.SEMYON, [semyon.SIDE]), first)  # (read only once he's there)
+        self.assertIn(("field", semyon.SEMYON, [semyon.SIDE]), second)
+        self.assertIn((semyon.SET_FIELD, [("field", semyon.SEMYON, [semyon.SIDE]), ("n", semyon.WITH_US)]), codes)
+        self.assertIn((semyon.REMOVE, [("n", -semyon.SEMYON), ("n", 41), ("n", 76 + semyon.BESIDE),
+                                       ("n", 68), ("n", 0)]), codes)
         self.assertIn((0x16, [("n", 1), ("var", 13, semyon.ESCAPING)]), codes)
         moved = len(gpl.encode([codes[0]]))
         self.assertEqual(codes[-1], (semyon.GOTO, [("n", at + moved)]))
@@ -189,7 +192,7 @@ class SemyonTests(unittest.TestCase):
                          [(("field", semyon.SEMYON, [semyon.SIDE]), ("n", semyon.NEUTRAL)),
                           (("field", semyon.SEMYON, [semyon.STEADY]), ("n", semyon.SLAVES_STEADY))])
         test = max((o for o in ops if o.code == 0x18 and o.at < fields[0].at), key=lambda o: o.at)
-        for flag, value in ((semyon.SETTLED, 0), (semyon.ESCAPED, 0), (semyon.ESCAPING, 0)):
+        for flag, value in ((semyon.SETTLED, 0), (semyon.ESCAPED, 0), (semyon.PLACED, 1)):
             self.assertIn(["(", ("var", 0x8D, flag), "==", ("n", value), ")"],
                           [test.args[0][1][i:i + 5] for i in range(len(test.args[0][1]) - 4)])
         self.assertIn(0x80, [a[1].code for a in test.args[0][1] if isinstance(a, tuple) and a[0] == "op"])
