@@ -342,6 +342,9 @@ def find_data_segment(guest: GuestMemory, low: Optional[bytes] = None) -> Option
     return None
 
 
+NULL_AREA = 0x40  # the first bytes of the game's data segment, which its C runtime checks at exit
+
+
 def far_pointer(guest: GuestMemory, ds: int, offset: int) -> int:
     off, seg = struct.unpack("<HH", guest.read(ds * 16 + offset, 4))
     return seg * 16 + off
@@ -557,6 +560,8 @@ class GameData:
         self.guest = guest
         self.ds = ds
         self.load_seg = ds - DGROUP
+        if hasattr(guest, "guarded"):  # (the C runtime's check, at exit: "Null pointer assignment")
+            guest.guarded["the game's data segment's start"] = (ds * 16, ds * 16 + NULL_AREA)
         self.rules = RULES_IN_FORCE if rules is None else rules
 
     def _word(self, offset: int) -> int:

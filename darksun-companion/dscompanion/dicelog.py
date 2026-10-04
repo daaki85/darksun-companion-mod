@@ -960,6 +960,11 @@ class DiceLog:
         if self._creation_hp and now - self._creation_hp_at >= CREATION_HP_WAIT:
             out += self.creation_hp_lines()
         out += self.flush(now)
+        refused = getattr(self.guest, "refused", None)
+        if refused:
+            out += [f"(The Ledger stopped one of its own writes over the game's memory: {r}. "
+                    "Please send this line.)" for r in refused[:3]]
+            refused.clear()
         if self.missed:
             out.append(f"({self.missed} rolls came too fast to record)")
             self.missed = 0
