@@ -39,14 +39,76 @@ class LaunchTests(unittest.TestCase):
         self.assertLess(lines.index(r"lh d:\dsclog.exe"), lines.index(r"d:\dsunlog.exe"))
         self.assertLess(lines.index("c:"), lines.index(r"d:\dsunlog.exe"))  # run from the game folder
         self.assertEqual(lines[-2:], ["exit", ""])
-        # a game stopping with an error (not its own Exit to DOS: 0) leaves its message up
-        self.assertLess(lines.index(r"d:\dsunlog.exe"), lines.index("if errorlevel 1 pause"))
+        # a game stopping with an error leaves its message up, saved for the crash report
+        self.assertEqual(lines.index(r"d:\gameend.com"), lines.index(r"d:\dsunlog.exe") + 1)
+        self.assertTrue(os.path.isfile(os.path.join(launch.DOS_DIR, launch.GAME_END_COM)))
 
     def test_dosbox_closing_said_in_the_log(self):
         self.assertEqual(launch.closed_line(0), "DOSBox closed.")
         self.assertIn("crashed (an access violation, code C0000005h)", launch.closed_line(3221225477))
         self.assertIn("C0000005h", launch.closed_line(-1073741819))  # (the same, as a signed int)
         self.assertEqual(launch.closed_line(3), "DOSBox closed with exit code 3.")
+
+    def test_content_switches(self):
+        """Each piece of new content is on unless the settings switch it off."""
+        on = launch.content({})
+        self.assertEqual(set(on), set(launch.CONTENT))
+        self.assertTrue(all(on.values()))
+        off = launch.content({"vulture": False, "kalzith": False, "semyon": None})
+        self.assertFalse(off["vulture"])
+        self.assertFalse(off["kalzith"])
+        self.assertTrue(off["semyon"])  # (only False switches off)
+
+    def test_crash_report(self):
+        """What DOSBox and the game left, the switches, and the end of the logs, in a file of its
+        own in crash-logs."""
+        dice = "\n".join(f"line {n}" for n in range(500))
+        text = launch.crash_report(0, "Return code 00h, video mode 03h\nNull pointer assignment",
+                                   {"vulture": False, "cycles": 20000, "game_dir": "C:\\Games", "tools_given": ["Xan|Xan"]}, dice,
+                                   "Dinos\nA vulture! Give it here.", ["2 bytes at 0x10 (low memory), from x"],
+                                   {"stdout.txt": "DOSBox version 0.74-3"}, 1000.0, 1000.0 + 600)
+        self.assertIn("DOSBox closed.", text)
+        self.assertIn("The game ran for 10 minutes.", text)
+        self.assertIn("The game stopped with an error. On the screen:\nReturn code 00h, video mode 03h\n"
+                      "Null pointer assignment", text)
+        self.assertIn("  vulture: False", text)
+        self.assertIn("  cycles: 20000", text)
+        self.assertIn("  shadows: True", text)  # (not in the settings: its default)
+        self.assertIn("  stealth: True", text)
+        self.assertIn("  pick_key: False", text)
+        self.assertNotIn("Games", text)  # (where the game is installed is left out)
+        self.assertNotIn("Xan", text)  # (and the lists kept for the game, not switches)
+        self.assertIn("2 bytes at 0x10 (low memory)", text)
+        self.assertIn("DOSBox's stdout.txt:\nDOSBox version 0.74-3", text)
+        self.assertIn("line 499", text)
+        self.assertNotIn("line 199\n", text)  # (the last 300)
+        self.assertIn("A vulture! Give it here.", text)
+        with tempfile.TemporaryDirectory() as d:
+            path = launch.write_crash_report(text, 1000.0, os.path.join(d, "crash-logs"))
+            self.assertTrue(os.path.basename(path).startswith("crash-") and path.endswith(".txt"))
+            with open(path, encoding="utf-8") as f:
+                self.assertEqual(f.read(), text)
+            again = launch.write_crash_report(text, 1000.0, os.path.join(d, "crash-logs"))
+            self.assertNotEqual(again, path)
+            self.assertTrue(again.endswith("-2.txt"))
+
+    def test_dosbox_output(self):
+        """DOSBox's stdout.txt and stderr.txt from this run only."""
+        with tempfile.TemporaryDirectory() as d:
+            game = make_game(d, cloud_saves=False)
+            with open(os.path.join(game, "DOSBOX", "stdout.txt"), "w") as f:
+                f.write("Exit to error: CPU:GRP5:Illegal Call 7\n")
+            self.assertEqual(launch.dosbox_output(game, 0), {"stdout.txt": "Exit to error: CPU:GRP5:Illegal Call 7"})
+            self.assertEqual(launch.dosbox_output(game, os.path.getmtime(os.path.join(game, "DOSBOX", "stdout.txt")) + 1), {})
+
+    def test_game_speed(self):
+        """20000 cycles on the dynamic core unless asked otherwise (smooth walking with the party in
+        view, shadows and dust); GOG's own
+        when asked; nothing else taken."""
+        self.assertEqual(launch.cpu_lines({}), ["[cpu]", "core=dynamic", "cycles=fixed 20000", ""])
+        self.assertEqual(launch.cpu_lines({"cycles": 30000}), ["[cpu]", "core=dynamic", "cycles=fixed 30000", ""])
+        self.assertEqual(launch.cpu_lines({"cycles": "gog"}), [])
+        self.assertEqual(launch.cpu_lines({"cycles": 99999}), ["[cpu]", "core=dynamic", "cycles=fixed 20000", ""])
 
     def test_a_window_three_times_the_game_unless_asked_otherwise(self):
         self.assertEqual(launch.display_lines({}),

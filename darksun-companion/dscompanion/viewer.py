@@ -60,6 +60,7 @@ class Viewer:
         self.dice: Optional[DiceLog] = None
         self.next_try = 0.0  # when to retry connecting / attaching
         self.dosbox = None  # the game, when started from here (Start the game)
+        self._game_dir, self._started, self._refused = None, 0.0, []  # (for a crash report)
         # the game's portraits and font, from the player's own install (if it can be found)
         self.art = art.GameArt(launch.find_game_dir())
         self._images: List[tk.PhotoImage] = []  # Tk shows an image only while it's referenced
@@ -319,60 +320,109 @@ class Viewer:
                 ("boots_move", "Boots give 1 more move in a fight"),
                 ("two_weapons", "Two weapons: -2 main hand, -4 off hand, DEX reaction adjustment added "
                                 "(no better than 0; rangers none)"),
+                ("half_giant_hands", "Half-giants wield two-handed weapons in one hand (a shield or a light "
+                                     "weapon in the other; two heavy weapons still can't be held)"),
                 ("spell_save", "Spells are saved against with the spell save (the game uses "
                                "petrification/polymorph)"),
                 ("no_doubled_save", "Saves against fire, cold and electricity: DEX defensive adjustment "
                                     "instead of a doubled d20"),
                 ("cats_grace", "Cat's Grace in Flaming Sphere's place (DEX + 1d6, at most 24, like Strength)"),
-                ("stealth", "Thieves hide in shadows and move silently to backstab, rangers to attack from behind "
-                            "(no enemy beside them; thieves half the chance in daylight, rangers indoors)"),
                 ("level_10", "Class levels go up to 10 (the game stops at 9; no spells past 5th level are needed)"),
                 ("thief_table", "Thief skills from AD&D's table by level, with Dark Sun's race and DEX adjustments "
                                 "(the game adds 4 a level to a base of its own, and DEX by a formula)"),
-                ("half_giant_hands", "Half-giants wield two-handed weapons in one hand (a shield or a light "
-                                     "weapon in the other; two heavy weapons still can't be held)"))):
+                ("stealth", "Thieves hide in shadows and move silently to backstab, rangers to attack from behind "
+                            "(no enemy beside them; thieves half the chance in daylight, rangers indoors)"))):
             self.rule_vars[key] = tk.BooleanVar(value=bool(settings.get(key, True)))
             ttk.Checkbutton(rules, text=text, variable=self.rule_vars[key],
                             command=self._popups_changed).pack(anchor="w", pady=(4 if n else 0, 0))
-        # the companion's own additions, with the rule changes: a Ring +1 on the Tied-up Prisoner in
-        # the arena (ring.py), picking pockets, and the thieves' tools
+        self.stealth_gear = tk.BooleanVar(value=settings.get("stealth_gear", True) is not False)
+        ttk.Checkbutton(rules, text="... a worn cloak adds 10 to hiding, worn boots 10 to moving silently",
+                        variable=self.stealth_gear, command=self._popups_changed).pack(anchor="w", padx=(20, 0))
+
+        # the companion's own content: people, a quest and items in the game, and thief play. Some
+        # are written into the game's files when it is started; what a save already has stays
+        new = ttk.LabelFrame(options, text="New content", padding=6)
+        new.pack(fill="x", pady=(8, 0))
+        ttk.Label(new, text="Kalzith, Semyon and the vulture: from the next time you start the game. "
+                  "What a saved game already has (people met, items given) stays in it.",
+                  wraplength=460).pack(anchor="w")
+        options.bind("<Configure>", lambda e, label=new.winfo_children()[-1]: label.configure(
+            wraplength=max(200, e.width - 60)), add="+")
+        self.content_vars: Dict[str, tk.BooleanVar] = {}
+        for key, text in (
+                ("kalzith", "Kalzith, a defiler slave in the slave pens who sells arcane scrolls (new games)"),
+                ("semyon", "Semyon in the slave pens after he leaves the arena, and breaking out with Scar"),
+                ("vulture", "The cooked vulture: Dinos cooks it for the party (XP and a full rest)"),
+                ("pens_gear", "Gear for Kurzak, Legcrusher and Pehtucl, and the rest of the bone scale "
+                              "armour with a Bone Helm")):
+            self.content_vars[key] = tk.BooleanVar(value=settings.get(key, True) is not False)
+            ttk.Checkbutton(new, text=text, variable=self.content_vars[key],
+                            command=self._popups_changed).pack(anchor="w", pady=(4, 0))
+        # a Ring +1 on the Tied-up Prisoner in the arena (ring.py), picking pockets, and the tools
         self.arena_ring = tk.BooleanVar(value=bool(settings.get("arena_ring", True)))
-        ttk.Checkbutton(rules, text="A Ring of Protection +1 on the arena's Tied-up Prisoner (search his body)",
+        ttk.Checkbutton(new, text="A Ring of Protection +1 on the arena's Tied-up Prisoner (search his body)",
                         variable=self.arena_ring, command=self._popups_changed).pack(anchor="w", pady=(4, 0))
         self.pickpockets = tk.BooleanVar(value=bool(settings.get("pickpockets", True)))
-        ttk.Checkbutton(rules, text="P in a conversation: the leader, a thief, tries the other's pockets "
-                        "(until caught)", variable=self.pickpockets,
+        ttk.Checkbutton(new, text="Picking pockets: a thief uses Thieves' Tools on someone in sight (each "
+                        "thief gets a set), until caught", variable=self.pickpockets,
                         command=self._popups_changed).pack(anchor="w", pady=(4, 0))
+        self.pick_key = tk.BooleanVar(value=bool(settings.get("pick_key", False)))
+        ttk.Checkbutton(new, text="... or the leader, a thief, presses P in a conversation",
+                        variable=self.pick_key, command=self._popups_changed).pack(anchor="w", padx=(20, 0))
+        ttk.Button(new, text="Give thieving tools now", command=self.give_tools).pack(anchor="w", pady=(8, 0))
+
+        # how the game looks
+        looks = ttk.LabelFrame(options, text="On the screen (in the game)", padding=6)
+        looks.pack(fill="x", pady=(8, 0))
         self.show_gear = tk.BooleanVar(value=bool(settings.get("show_gear", True)))
-        ttk.Checkbutton(rules, text="Show what the party wears on their figures in the game (weapons, "
-                        "armour, helms, cloaks, boots, belts)", variable=self.show_gear,
-                        command=self._popups_changed).pack(anchor="w", pady=(4, 0))
+        ttk.Checkbutton(looks, text="Show what the party wears on their figures (weapons, armour, helms, "
+                        "cloaks, boots, belts)", variable=self.show_gear,
+                        command=self._popups_changed).pack(anchor="w")
         self.show_shadows = tk.BooleanVar(value=bool(settings.get("shadows", True)))
-        ttk.Checkbutton(rules, text="Shadows under the figures in the game (see-through, on the floor)",
+        ttk.Checkbutton(looks, text="Shadows under the figures (see-through, on the floor)",
                         variable=self.show_shadows, command=self._popups_changed).pack(anchor="w", pady=(4, 0))
         self.show_dust = tk.BooleanVar(value=bool(settings.get("dust", True)))
-        ttk.Checkbutton(rules, text="Dust raised behind the feet of anyone walking on sand or dirt",
+        ttk.Checkbutton(looks, text="Dust raised behind the feet of anyone walking on sand or dirt",
                         variable=self.show_dust, command=self._popups_changed).pack(anchor="w", pady=(4, 0))
         self.ring_mode = tk.StringVar(value=rings.mode(settings))
-        ttk.Label(rules, text="Red rings on the ground in a fight:").pack(anchor="w", pady=(4, 0))
+        ttk.Label(looks, text="Red rings on the ground in a fight:").pack(anchor="w", pady=(4, 0))
         for value, text in ((rings.OFF, "... none"),
                             (rings.ONLY_CHOSEN, "... under the enemy chosen with Tab"),
                             (rings.ALL, "... under all the enemies (the chosen one's redder)")):
-            ttk.Radiobutton(rules, text=text, value=value, variable=self.ring_mode,
+            ttk.Radiobutton(looks, text=text, value=value, variable=self.ring_mode,
                             command=self._popups_changed).pack(anchor="w", padx=(20, 0))
+
+        # the mouse and keys in the game
+        controls = ttk.LabelFrame(options, text="Controls (in the game)", padding=6)
+        controls.pack(fill="x", pady=(8, 0))
         self.use_targeting = tk.BooleanVar(value=bool(settings.get("targeting", True)))
-        ttk.Checkbutton(rules, text="In a fight, Tab (Shift+Tab back) chooses an enemy, its ring brighter, and "
+        ttk.Checkbutton(controls, text="In a fight, Tab (Shift+Tab back) chooses an enemy, its ring brighter, and "
                         "Enter attacks it, even behind someone", variable=self.use_targeting,
-                        command=self._popups_changed).pack(anchor="w", pady=(4, 0))
+                        command=self._popups_changed).pack(anchor="w")
         self.scroll_map = tk.BooleanVar(value=bool(settings.get("scroll_map", True)))
-        ttk.Checkbutton(rules, text="Scroll the map with the mouse wheel: press it and move, or turn it "
+        ttk.Checkbutton(controls, text="Scroll the map with the mouse wheel: press it and move, or turn it "
                         "(Shift: sideways)", variable=self.scroll_map,
                         command=self._popups_changed).pack(anchor="w", pady=(4, 0))
         self.scroll_right = tk.BooleanVar(value=bool(settings.get("scroll_right", False)))
-        ttk.Checkbutton(rules, text="Scroll it by holding the right mouse button and moving too (a right "
+        ttk.Checkbutton(controls, text="Scroll it by holding the right mouse button and moving too (a right "
                         "click still changes the pointer)", variable=self.scroll_right,
                         command=self._popups_changed).pack(anchor="w", pady=(4, 0))
-        ttk.Button(rules, text="Give thieving tools now", command=self.give_tools).pack(anchor="w", pady=(8, 0))
+        self.effects_kept = tk.BooleanVar(value=settings.get("effects_kept", True) is not False)
+        ttk.Checkbutton(controls, text="A click on a spell's icon on the Effects screen leaves it on (the game "
+                        "ends it; psionic powers can still be stopped); from the next time you start the game",
+                        variable=self.effects_kept, command=self._popups_changed).pack(anchor="w", pady=(4, 0))
+
+        # the game's speed (DOSBox's CPU)
+        pace = ttk.LabelFrame(options, text="Game speed (from the next time you start the game)", padding=6)
+        pace.pack(fill="x", pady=(8, 0))
+        speed = settings.get("cycles", launch.DEFAULT_SPEED)
+        self.game_speed = tk.StringVar(value=str(speed if speed in launch.SPEEDS or speed == launch.GOG_SPEED
+                                                 else launch.DEFAULT_SPEED))
+        for value, text in ((launch.GOG_SPEED, "GOG's own (walking can be choppy with shadows and dust)"),
+                            ("20000", "Faster: smooth walking with shadows and dust (the default)"),
+                            ("30000", "Fastest: smoother still, quicker animations (needs a faster PC)")):
+            ttk.Radiobutton(pace, text=text, value=value, variable=self.game_speed,
+                            command=self._speed_chosen).pack(anchor="w")
 
     def give_tools(self) -> None:
         """A set of thieving tools for each thief in the party without one, right away (they
@@ -442,9 +492,14 @@ class Viewer:
             with open(path, "w", encoding="utf-8") as f:
                 f.write(widget.get("1.0", "end-1c"))
 
+    def _drop_dice(self) -> None:
+        if self.dice is not None:
+            self.dice.close()
+        self.dice = None
+
     def reconnect(self, quiet: bool = False) -> None:
         self.ds = None
-        self.dice = None
+        self._drop_dice()
         try:
             self.guest = self.connect()
         except Exception as e:  # shown to the user, who can fix it and retry
@@ -474,6 +529,7 @@ class Viewer:
             launch.save_settings(dict(launch.load_settings(), game_dir=game_dir))
             self.art = art.GameArt(game_dir)
         try:
+            self._game_dir, self._started = game_dir, time.time()
             self.dosbox, problem = launch.launch(game_dir)
         except (launch.LaunchError, OSError) as e:
             messagebox.showerror("Start the game", str(e))
@@ -492,7 +548,27 @@ class Viewer:
             return
         code, self.dosbox = self.dosbox.returncode, None
         self._append_dice([launch.closed_line(code)])
+        note = launch.game_end_note()
+        if code != 0 or note:
+            self._crash_report(code, note)
         self._start_state()
+
+    def _crash_report(self, code: int, note) -> None:
+        """DOSBox crashed, or the game stopped with an error: save what is known of it in
+        crash-logs (launch.crash_report), and say where in the log."""
+        now = time.time()
+        refused = list(self.guest.refused) if self.guest is not None else self._refused
+        text = launch.crash_report(code, note, launch.load_settings(), self.dice_text.get("1.0", "end"),
+                                   self.talk_text.get("1.0", "end"), refused,
+                                   launch.dosbox_output(self._game_dir, self._started), self._started, now)
+        try:
+            path = launch.write_crash_report(text, now)
+        except OSError as e:
+            self._append_dice([f"Couldn't save a crash report: {e}"])
+            return
+        lines = ["The game stopped with an error: " + note.splitlines()[-1]] if note and "\n" in note else []
+        self._append_dice(lines + [f"A crash report is saved in {path}. Please send it with a description "
+                                   "of what happened just before."])
 
     def _start_state(self) -> None:
         """"Start the game" only while there's no game to attach to."""
@@ -589,8 +665,10 @@ class Viewer:
     # ---- refresh loop --------------------------------------------------------------
 
     def _disconnected(self, err: Exception) -> None:
+        if self.guest is not None:
+            self._refused = list(self.guest.refused)  # (for a crash report)
         self.guest = None
-        self.dice = None
+        self._drop_dice()
         self.ds = None
         self.status.set(f"Disconnected ({err}). Waiting for DOSBox...")
         self.dice_status.set("Waiting for the game...")
@@ -601,6 +679,7 @@ class Viewer:
         try:
             if self.dice:
                 self.dice.detach()
+                self.dice.close()
         except Exception:
             pass
         self.root.destroy()
@@ -664,6 +743,7 @@ class Viewer:
                 self.dice.monster_info = self.monster_info.get()
                 self.dice.arena_ring = self.arena_ring.get()
                 self.dice.pickpockets = self.pickpockets.get()
+                self.dice.pick_key = self.pick_key.get()
                 self.dice.show_gear = self.show_gear.get()
                 self.dice.show_shadows = self.show_shadows.get()
                 self.dice.show_dust = self.show_dust.get()
@@ -671,6 +751,9 @@ class Viewer:
                 self.dice.use_targeting = self.use_targeting.get()
                 self.dice.scroll_map = self.scroll_map.get()
                 self.dice.scroll_right = self.scroll_right.get()
+                self.dice.pens_gear = self.content_vars["pens_gear"].get()
+                self.dice.vulture_on = self.content_vars["vulture"].get()
+                self.dice.stealth_gear = self.stealth_gear.get()
                 self.dice.load_picked(launch.pickpocketed())
                 self.dice.tools_given = launch.tools_given()
                 self.dice.rules = self._rules()
@@ -744,6 +827,14 @@ class Viewer:
         self.status.set(f"Game window: {self.window_choice.get()}, from the next time you start the game "
                         "(Alt+Enter switches full screen while playing).")
 
+    def _speed_chosen(self) -> None:
+        """Remember the game's speed; it applies the next time the game is started."""
+        value = self.game_speed.get()
+        settings = launch.load_settings()
+        settings["cycles"] = value if value == launch.GOG_SPEED else int(value)
+        launch.save_settings(settings)
+        self.status.set("Game speed: from the next time you start the game.")
+
     def _popups_changed(self) -> None:
         on = self.popups.get()
         settings = launch.load_settings()
@@ -752,6 +843,7 @@ class Viewer:
         settings["monster_info"] = self.monster_info.get()
         settings["arena_ring"] = self.arena_ring.get()
         settings["pickpockets"] = self.pickpockets.get()
+        settings["pick_key"] = self.pick_key.get()
         settings["show_gear"] = self.show_gear.get()
         settings["shadows"] = self.show_shadows.get()
         settings["dust"] = self.show_dust.get()
@@ -759,6 +851,10 @@ class Viewer:
         settings["targeting"] = self.use_targeting.get()
         settings["scroll_map"] = self.scroll_map.get()
         settings["scroll_right"] = self.scroll_right.get()
+        for key, var in self.content_vars.items():
+            settings[key] = var.get()
+        settings["effects_kept"] = self.effects_kept.get()
+        settings["stealth_gear"] = self.stealth_gear.get()
         for key, var in self.rule_vars.items():
             settings[key] = var.get()
         launch.save_settings(settings)
@@ -767,7 +863,7 @@ class Viewer:
             self.dice.popup_level = self.popup_level.get()
             self.dice.set_monster_info(self.monster_info.get())
             self.dice.arena_ring = self.arena_ring.get()
-            self.dice.set_pickpockets(self.pickpockets.get())
+            self.dice.set_pickpockets(self.pickpockets.get(), self.pick_key.get())
             self.dice.show_gear = self.show_gear.get()
             self.dice.show_shadows = self.show_shadows.get()
             self.dice.show_dust = self.show_dust.get()
@@ -775,6 +871,9 @@ class Viewer:
             self.dice.use_targeting = self.use_targeting.get()
             self.dice.scroll_map = self.scroll_map.get()
             self.dice.scroll_right = self.scroll_right.get()
+            self.dice.pens_gear = self.content_vars["pens_gear"].get()
+            self.dice.vulture_on = self.content_vars["vulture"].get()
+            self.dice.stealth_gear = self.stealth_gear.get()
             self.dice.set_rules(self._rules())
 
     def _rules(self) -> int:
@@ -1127,7 +1226,12 @@ class Viewer:
             self.hex.tag_add("selected", *selected)
 
 
-def run(layout: Layout, connect: Callable[[], GuestMemory]) -> None:
+def run(layout: Layout, connect: Callable[[], GuestMemory], dosbox=None, game_dir: Optional[str] = None) -> None:
+    """The Ledger's window; DOSBOX, if given, is the game started for it (from GAME_DIR), whose
+    closing is told in the log as if started from the window."""
     root = tk.Tk()
-    Viewer(root, layout, connect)
+    viewer = Viewer(root, layout, connect)
+    if dosbox is not None:
+        viewer.dosbox, viewer._game_dir, viewer._started = dosbox, game_dir, time.time()
+        viewer._start_state()
     root.mainloop()

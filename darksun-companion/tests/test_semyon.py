@@ -52,6 +52,10 @@ class SemyonTests(unittest.TestCase):
         self.assertEqual(menu.args[0]["replies"][-1]["text"][1].strip(), "Farewell.")
         text = " ".join(gpl.strings(ops))
         self.assertIn("holding pens", text)
+        self.assertIn("I'm right behind you", text)  # (breaking out with Scar)
+        tests = [o.args[0][1] for o in ops if o.code == 0x18 and o.args[0][0] == "expr"]
+        self.assertIn(["(", ("var", 0x8D, semyon.ESCAPING), "==", ("n", 1), ")", "and",
+                       "(", ("var", 0x8D, semyon.ESCAPED), "==", ("n", 0), ")"], tests)
 
     def test_numbers(self):
         """None of the game's: script past 217 (Kalzith's 218), flags past 755 (Kalzith's
@@ -89,6 +93,54 @@ class SemyonTests(unittest.TestCase):
         self.assertEqual(semyon.with_exit(out), out)
         other = arena[:semyon.EXIT] + gpl.encode([(0x31, [])] * 13)
         self.assertEqual(semyon.with_exit(other), other)
+
+    def _escape(self) -> bytes:
+        """A script laid out as the arena's breakout (script 3): Scar's move to the pens, then
+        his henchman's at ESCAPE_AT."""
+        def move(obj):
+            return (semyon.REMOVE, [("n", -obj), ("n", 41), ("n", 76), ("n", 68), ("n", 0)])
+        before = gpl.encode([(kalzith.BEGIN, [])])
+        pad_to = semyon.ESCAPE_AT - len(gpl.encode([move(87)]))  # (Scar's move just before)
+        sets, ends = divmod(pad_to - len(before), 5)
+        pad = before + gpl.encode([(0x16, [("n", 0), ("var", 14, 1)])] * sets + [(0x31, [])] * ends)
+        self.assertEqual(len(pad), pad_to)
+        return pad + gpl.encode([move(87), move(semyon.HENCHMAN), (0x67, []), (0x31, [])])
+
+    def test_escape(self):
+        """At the henchman's move to the pens: a jump to that move, then Semyon's to the same
+        place with ESCAPING set if he is recruited, alive, in the arena and not against the
+        party, and back; nothing of the game's moves; once only; other scripts unchanged."""
+        script = self._escape()
+        out = semyon.with_escape(script)
+        at = semyon.ESCAPE_AT
+        self.assertEqual(out[:at], script[:at])
+        self.assertEqual(out[at + 3:len(script)], script[at + 3:])
+        r = gpl._Reader(out, b"")
+        r.i = at
+        jump = gpl._op(r)
+        self.assertEqual((jump.code, jump.args), (semyon.GOTO, [("n", len(script))]))
+        added = gpl.decode(out[len(script):], b"")
+        codes = [(o.code, o.args) for o in added]
+        place = [("n", 41), ("n", 76), ("n", 68), ("n", 0)]
+        self.assertEqual(codes[0], (semyon.REMOVE, [("n", -semyon.HENCHMAN)] + place))
+        tests = [o.args[0][1] for o in added if o.code == 0x18]
+        first, second = tests
+        for flag, value in ((semyon.RECRUITED, 1), (semyon.DIED, 0)):
+            self.assertIn(["(", ("var", 0x8D, flag), "==", ("n", value), ")"],
+                          [first[i:i + 5] for i in range(len(first) - 4)])
+        self.assertIn(0x80, [a[1].code for a in first if isinstance(a, tuple) and a[0] == "op"])
+        self.assertNotIn(("field", semyon.SEMYON, [semyon.SIDE]), first)  # (read only once he's there)
+        self.assertIn(("field", semyon.SEMYON, [semyon.SIDE]), second)
+        self.assertIn((semyon.SET_FIELD, [("field", semyon.SEMYON, [semyon.SIDE]), ("n", semyon.WITH_US)]), codes)
+        self.assertIn((semyon.REMOVE, [("n", -semyon.SEMYON), ("n", 41), ("n", 76 + semyon.BESIDE),
+                                       ("n", 68), ("n", 0)]), codes)
+        self.assertIn((0x16, [("n", 1), ("var", 13, semyon.ESCAPING)]), codes)
+        moved = len(gpl.encode([codes[0]]))
+        self.assertEqual(codes[-1], (semyon.GOTO, [("n", at + moved)]))
+        self.assertTrue(_ifs_closed(added))
+        self.assertEqual(semyon.with_escape(out), out)
+        other = script[:at] + gpl.encode([(0x31, [])] * 14)
+        self.assertEqual(semyon.with_escape(other), other)
 
     def test_watch(self):
         """DIED once a creature named Semyon is dead; not for a living one."""
@@ -130,6 +182,11 @@ class SemyonTests(unittest.TestCase):
         sets = [(o.args[1][2], o.args[0][1]) for o in ops if o.code == 0x16]
         self.assertIn((semyon.CLEARED, 1), sets)
         self.assertTrue(_ifs_closed(ops))
+        # (broke out with the party and lived: the game's flag for a Semyon who got away)
+        got_away = next(i for i, o in enumerate(ops) if o.code == 0x16 and o.args[1] == ("var", 13, semyon.GOT_AWAY))
+        test = max((o for o in ops[:got_away] if o.code == 0x18), key=lambda o: o.at).args[0][1]
+        self.assertEqual(test, ["(", ("var", 0x8D, semyon.ESCAPING), "==", ("n", 1), ")", "and",
+                                "(", ("var", 0x8D, semyon.DIED), "==", ("n", 0), ")"])
 
     def test_settled(self):
         """In his pen, once (SETTLED), before the escape: as the pens' slaves are, on their side
@@ -140,7 +197,7 @@ class SemyonTests(unittest.TestCase):
                          [(("field", semyon.SEMYON, [semyon.SIDE]), ("n", semyon.NEUTRAL)),
                           (("field", semyon.SEMYON, [semyon.STEADY]), ("n", semyon.SLAVES_STEADY))])
         test = max((o for o in ops if o.code == 0x18 and o.at < fields[0].at), key=lambda o: o.at)
-        for flag, value in ((semyon.SETTLED, 0), (semyon.ESCAPED, 0)):
+        for flag, value in ((semyon.SETTLED, 0), (semyon.ESCAPED, 0), (semyon.PLACED, 1)):
             self.assertIn(["(", ("var", 0x8D, flag), "==", ("n", value), ")"],
                           [test.args[0][1][i:i + 5] for i in range(len(test.args[0][1]) - 4)])
         self.assertIn(0x80, [a[1].code for a in test.args[0][1] if isinstance(a, tuple) and a[0] == "op"])
@@ -148,7 +205,7 @@ class SemyonTests(unittest.TestCase):
         self.assertEqual(sets[0], (semyon.SETTLED, 1))
 
     def test_flags(self):
-        flags = (semyon.LEFT, semyon.DIED, semyon.CLEARED, semyon.SETTLED, kalzith.DIED, kalzith.DRESSED, kalzith.SOLD_OUT)
+        flags = (semyon.LEFT, semyon.DIED, semyon.CLEARED, semyon.SETTLED, semyon.ESCAPING, kalzith.DIED, kalzith.DRESSED, kalzith.SOLD_OUT)
         self.assertTrue(all(765 < f < 808 for f in flags))
         self.assertEqual(len(set(flags)), len(flags))
 

@@ -69,6 +69,15 @@ class StealthTests(unittest.TestCase):
         worn[:] = []
         self.assertIn("needs 8 or less (16, halved in daylight)", stealth.turn(self.gd, 0, rolls(99))[0][0])
 
+    def test_cloak_and_boots_switched_off(self):
+        """With the Options tab's switch off, a worn cloak and boots add nothing."""
+        cloak, boots = bytearray(game.ITEM_SIZE), bytearray(game.ITEM_SIZE)
+        cloak[game.ITEM_SLOT], boots[game.ITEM_SLOT] = game.CLOAK_SLOT, game.FOOT
+        self.gd._worn = lambda member: iter([(1, bytes(cloak), b""), (2, bytes(boots), b"")])
+        lines, hidden = stealth.turn(self.gd, 0, rolls(8, 16), gear=False)
+        self.assertEqual(lines[0], "Dag hides in shadows: d100 = 8, needs 8 or less (16, halved in daylight) -> hidden")
+        self.assertNotIn("boots", lines[1])
+
     def test_seen(self):
         self.assertEqual(stealth.turn(self.gd, 0, rolls(9)),
                          (["Dag hides in shadows: d100 = 9, needs 8 or less (16, halved in daylight) -> seen"], False))

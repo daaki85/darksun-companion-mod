@@ -20,9 +20,9 @@ import random
 import re
 import struct
 import time
-from collections import Counter
+from collections import Counter, deque
 from dataclasses import dataclass
-from typing import Callable, Dict, List, NamedTuple, Optional, Tuple
+from typing import Callable, Deque, Dict, List, NamedTuple, Optional, Tuple
 
 from . import bonescale, dust, game, rings, targeting, icons, kalzith, monsters, names, npcitems, pickpocket, ring, scrolling, semyon, shadows, sprites, stealth, tools, vulture
 from .game import (CONVENTIONAL_AND_UPPER, CREATURE_ABILITIES, CREATURE_SIDE, CREATURE_THAC0, EFFECT_NAMES,
@@ -31,7 +31,7 @@ from .guestmem import GuestMemory
 from .textlog import KIND_MESSAGE, KIND_PORTRAIT, KIND_TEXT, Dialogue, DialogueEntry, TextBuffer
 from .tracker import PartyTracker
 
-HDR_SIG = b"DSCLOGvU"
+HDR_SIG = b"DSCLOGvV"
 # DSCLOG's header: the in-game turn summaries (see PROBE_TURN in dos/dsclog.asm)
 TSR_TURN_SEQ, TSR_REPLY_SEQ, TSR_POPUPS, TSR_MSG_OFF, TSR_ENDED, TSR_HDR_OFF = 138, 140, 142, 144, 146, 20
 MSG_SIZE = 900
@@ -52,6 +52,7 @@ BIOS_TIMER = 0x46C
 TSR_RULES = 170
 TSR_MAIN_TICKS = 260  # the map's main loop run (counted)
 TSR_PICK_SEQ, TSR_PICK_REPLY, TSR_PICK_OFF, TSR_PICK_ON, PICK_SIZE = 172, 174, 176, 178, 240
+PICK_TOOLS, PICK_KEY = 1, 2  # (TSR_PICK_ON: the thieving tools on someone; P in a conversation too)
 TSR_USE_SEQ, TSR_USE_REPLY, TSR_USE_WHO, TSR_USE_TAKEN, TSR_USE_ITEM = 180, 182, 184, 186, 188
 TSR_SWAP_ON, TSR_SWAP_SEQ, TSR_SWAP_OFF, SWAP_SIZE, SWAP_TEXT_SIZE = 190, 192, 194, 64, 240
 RULE_HELMS, RULE_BOOTS = game.RULE_HELMS, game.RULE_BOOTS
@@ -327,11 +328,15 @@ class DiceLog:
         self.popup_level = POPUP_DETAIL  # ... with the dice log's lines, in short, or the results only
         self.monster_info = True  # monsters' defences in the game's Look box (set_monster_info)
         self.arena_ring = True  # put the Ring +1 on the Tied-up Prisoner's body in the arena (ring.py)
-        self.pickpockets = True  # P in a conversation picks a pocket (pickpocket.py)
+        self.pickpockets = True  # the thieving tools pick a pocket (pickpocket.py, tools.py)
+        self.pick_key = False  # ... and so does P in a conversation
         self.show_gear = True  # the party's map sprites dressed in what they wear (sprites.py)
         self.show_shadows = True  # shadows under the figures on the map (shadows.py)
         self._shadows = shadows.Shadows()
         self.show_dust = True  # dust raised by walkers on sand and dirt (dust.py)
+        self.pens_gear = True  # the slave pens' gear for Kurzak, Legcrusher, Pehtucl, the bone scale set
+        self.vulture_on = True  # the cooked vulture quest (vulture.py)
+        self.stealth_gear = True  # a worn cloak's and boots' bonuses to hiding (stealth.py)
         self._dust = dust.Dust()
         self.ring_mode = rings.ONLY_CHOSEN  # rings in a fight: off, the chosen enemy's, all the enemies' (rings.py)
         self._rings = rings.Rings()
@@ -357,7 +362,8 @@ class DiceLog:
         self.rules = 0  # RULE_HELMS | RULE_BOOTS: rule changes DSCLOG makes (set_rules)
         self.stealth_roll: Callable[[], int] = lambda: random.randint(1, 100)  # hiding, moving silently
         self._ring_check = 0.0
-        self._dress_region: Optional[int] = None  # the area the party's pictures were last looked for in
+        self._bone_watch = bonescale.Watch()
+        self._recent: Deque[str] = deque(maxlen=60)  # the log's last lines (for bonescale's report)
         self._main_ticks: Optional[int] = None  # DSCLOG's count of the map's main loop, last read
         self._look_seq = 0
         self._turn_seq = 0
@@ -452,11 +458,15 @@ class DiceLog:
         if self.tsr_hdr is not None:
             self.guest.write(self.tsr_hdr + TSR_POPUPS, struct.pack("<H", int(on)))
 
-    def set_pickpockets(self, on: bool) -> None:
-        """Take P in a conversation as the leader trying the pocket of the person talked to."""
+    def set_pickpockets(self, on: bool, key: Optional[bool] = None) -> None:
+        """Picking pockets (ON): the thieving tools used on someone, and with KEY, P in a
+        conversation, as the leader trying the pocket of the person talked to."""
         self.pickpockets = on
+        if key is not None:
+            self.pick_key = key
         if self.tsr_hdr is not None:
-            self.guest.write(self.tsr_hdr + TSR_PICK_ON, struct.pack("<H", int(on)))
+            flags = (PICK_TOOLS | (PICK_KEY if self.pick_key else 0)) if on else 0
+            self.guest.write(self.tsr_hdr + TSR_PICK_ON, struct.pack("<H", flags))
 
     def load_picked(self, entries) -> None:
         """The pockets tried, as remembered (settings.json): "key@game time" (or a bare key, from
@@ -550,7 +560,7 @@ class DiceLog:
             it = ring.Items(self.game)
             rec = it.item(item) if item < game.NO_ITEM else b""
             kind, index = it.thing(thing) if 0 <= thing < ring.THING_COUNT else (None, None)
-            meal = vulture.use(self.game, rec, index, self._fighting()) if rec and kind == 2 else None
+            meal = vulture.use(self.game, rec, index, self._fighting()) if rec and kind == 2 and self.vulture_on else None
             if meal is not None:
                 taken = 2 if meal.used_up else True
                 result = pickpocket.Attempt(meal.text, meal.log)
@@ -609,10 +619,14 @@ class DiceLog:
         self.monster_info = bool(settings.get("monster_info", True))
         self.arena_ring = bool(settings.get("arena_ring", True))
         self.pickpockets = bool(settings.get("pickpockets", True))
+        self.pick_key = bool(settings.get("pick_key", False))
         self.show_gear = bool(settings.get("show_gear", True))
         self.show_shadows = bool(settings.get("shadows", True))
         self.scroll_map = bool(settings.get("scroll_map", True))
         self.show_dust = bool(settings.get("dust", True))
+        self.pens_gear = bool(settings.get("pens_gear", True))
+        self.vulture_on = bool(settings.get("vulture", True))
+        self.stealth_gear = bool(settings.get("stealth_gear", True))
         self.ring_mode = rings.mode(settings)
         self.use_targeting = bool(settings.get("targeting", True))
         self.scroll_right = bool(settings.get("scroll_right", False))
@@ -896,6 +910,13 @@ class DiceLog:
     def detach(self) -> None:
         self.rand_addr = None
 
+    def close(self) -> None:
+        """Done with: the mouse wheel's watch (a hook of Windows') stopped, so a new DiceLog's
+        doesn't run beside it."""
+        if self._wheel is not None:
+            self._wheel.stop()
+            self._wheel = None
+
     # ---- reading ----------------------------------------------------------------
 
     def poll(self) -> List[Entry]:
@@ -970,6 +991,7 @@ class DiceLog:
         if self.missed:
             out.append(f"({self.missed} rolls came too fast to record)")
             self.missed = 0
+        self._recent.extend(out)
         return out
 
     def _arena_ring(self, now: float) -> List[str]:
@@ -984,15 +1006,17 @@ class DiceLog:
             ring.name_items(self.game, self.rules)
             if not names.update(self.game, self.tsr_hdr):
                 return out  # no names for them yet: none given
-            if npcitems.types_ready(self.game, self.tsr_hdr):  # Kurzak's, Legcrusher's, Pehtucl's
+            if self.pens_gear and npcitems.types_ready(self.game, self.tsr_hdr):  # Kurzak's, Legcrusher's, Pehtucl's
                 before = set(self.tools_given)
                 out += npcitems.place(self.game, self.tools_given)
                 out += bonescale.place(self.game, self.tools_given)  # the bone scale armour's set
+                out += self._bone_watch.check(self.game, self.tools_given, self._recent)  # (one vanished)
                 npcitems.reprice(self.game)  # (those given before they had a magic item's price)
                 self._tools_new += sorted(self.tools_given - before)
             kalzith.stock(self.game, bool(self.rules & game.RULE_CATS_GRACE))  # (once a game, by its flag)
             semyon.watch(self.game)  # (killed: never put in the pens)
-            out += vulture.meal(self.game)  # (Dinos's script has set its flag: XP and a full rest)
+            if self.vulture_on:
+                out += vulture.meal(self.game)  # (Dinos's script has set its flag: XP and a full rest)
             if kalzith.watch(self.game):  # (killed: Dinos and the Trustee speak of him so)
                 left = kalzith.loot(self.game)  # (one of his scrolls, his Cloak and Quarterstaff)
                 if left:
@@ -1055,14 +1079,8 @@ class DiceLog:
 
     def _dress_now(self, now: float) -> None:
         """The party dressed four times a second (not with the ring's search, every 3 s: a party
-        walking off as an area loads was drawn plain till then), and memory looked through
-        again soon after an area change, when its pictures are loaded anew."""
+        walking off as an area loads was drawn plain till then)."""
         try:
-            region = self.game.region()
-            if region != self._dress_region:
-                self._dress_region = region
-                if self._dresser is not None:
-                    self._dresser.area_changed(now)
             self._dress(now)
         except (struct.error, IndexError, ValueError):
             pass
@@ -1188,9 +1206,12 @@ class DiceLog:
         while hits and lost - taken >= hits[0]:
             taken += hits.pop(0)
         if hits and not taken and lost:  # (less than the hit)
-            rolled = hits.pop(0)
-            taken = lost
             reason = self._weapon_reason(index)
+            if reason and len(hits) > 1:  # (all of them cut down alike, seen as one fall)
+                rolled, hits[:] = sum(hits), []
+            else:
+                rolled = hits.pop(0)
+            taken = lost
             note = f": {lost} of the {rolled} rolled" + (f", {reason}" if reason else "")
         if hits:
             entry["hp"] = hp
@@ -1377,7 +1398,7 @@ class DiceLog:
         turn = self.game.whose_turn()
         if turn is None or turn == self._turn:
             return []
-        first = self.round_order[0][0] if self.round_order else None
+        first = self._first_able()
         if self._turn is None and turn == self._stale_turn and first is not None and first != turn:
             return []  # (the last round's last turn, still shown before the new round's first)
         self._turn, self._stale_turn = turn, None
@@ -1390,12 +1411,22 @@ class DiceLog:
         out = [f"{name}'s turn"] if name != "?" else []
         if self.rules & game.RULE_STEALTH and turn < game.PARTY_SIZE:
             try:
-                lines, hidden = stealth.turn(self.game, turn, self.stealth_roll)
+                lines, hidden = stealth.turn(self.game, turn, self.stealth_roll, self.stealth_gear)
             except (struct.error, IndexError, ValueError):
                 lines, hidden = [], False
             out += lines
             self._set_stealth(hidden, turn)
         return out
+
+    def _first_able(self) -> Optional[int]:
+        """The first in the round's order who can act (alive and up: one down is passed over)."""
+        for combatant, _, _ in self.round_order or ():
+            index = self.game.combatant_creature(combatant)
+            rec = self.game.creature(index) if index is not None else b""
+            if len(rec) > game.CREATURE_STATUS and struct.unpack_from("<h", rec, 0)[0] > 0 \
+                    and rec[game.CREATURE_STATUS] == game.STATUS_OKAY:
+                return combatant
+        return None
 
     def _fighting(self) -> bool:
         """In a fight, by the game's own flag (game time barely moves outside fights, so the time

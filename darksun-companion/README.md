@@ -2,7 +2,74 @@
 
 A companion for **Dark Sun: Shattered Lands** (the GOG release) running in
 DOSBox, in the spirit of the Gold Box Companion. In Draj the templars keep the
-records; this ledger keeps the ones the game doesn't show you. What it does:
+records; this ledger keeps the ones the game doesn't show you.
+
+## Contents
+
+- [What it does](#what-it-does)
+- [Requirements](#requirements)
+- [Running it (Windows)](#running-it-windows)
+  - [One-time setup](#one-time-setup)
+  - [Every time you play](#every-time-you-play)
+  - [Other ways to start](#other-ways-to-start)
+  - [If DOSBox closes by itself](#if-dosbox-closes-by-itself)
+  - [Crash reports](#crash-reports)
+  - [From a command prompt](#from-a-command-prompt)
+- [The Ledger's window](#the-ledgers-window)
+  - [The Spells tab](#the-spells-tab)
+  - [The Dialogue tab](#the-dialogue-tab)
+- [The dice log](#the-dice-log)
+  - [Initiative](#initiative)
+  - [Two weapons](#two-weapons)
+  - [Spells and effects](#spells-and-effects)
+  - [Thief skills](#thief-skills)
+  - [Psionics](#psionics)
+  - [Character creation](#character-creation)
+  - [Attacks from behind and backstabs](#attacks-from-behind-and-backstabs)
+  - [Saving throws](#saving-throws)
+  - [Monsters' defences](#monsters-defences)
+  - [No critical hits](#no-critical-hits)
+  - [How the dice log works](#how-the-dice-log-works)
+- [In the game](#in-the-game)
+  - [In the game: THAC0, saves and thief skills](#in-the-game-thac0-saves-and-thief-skills)
+  - [In the game: spell slots on the USE screen](#in-the-game-spell-slots-on-the-use-screen)
+  - [In the game: each turn's rolls](#in-the-game-each-turns-rolls)
+  - [In the game: what hurts a monster (the Look box)](#in-the-game-what-hurts-a-monster-the-look-box)
+- [Rule changes](#rule-changes)
+  - [Thief skills from AD&D's table](#thief-skills-from-adds-table)
+  - [Half-giants' two-handed weapons](#half-giants-two-handed-weapons)
+- [New content](#new-content)
+  - [The Ring +1](#the-ring-1)
+  - [Picking pockets](#picking-pockets)
+  - [The cooked vulture](#the-cooked-vulture)
+  - [The slave pens' gear](#the-slave-pens-gear)
+  - [The bone scale set](#the-bone-scale-set)
+  - [Kalzith](#kalzith)
+  - [Semyon](#semyon)
+  - [Dinos and the Trustee on Kalzith and Semyon](#dinos-and-the-trustee-on-kalzith-and-semyon)
+  - [Item icons](#item-icons)
+  - [New item names](#new-item-names)
+- [On the screen](#on-the-screen)
+  - [What the party wears](#what-the-party-wears)
+  - [Shadows](#shadows)
+  - [Dust](#dust)
+- [Controls](#controls)
+  - [Choosing an enemy: Tab, Enter and the rings](#choosing-an-enemy-tab-enter-and-the-rings)
+  - [Scrolling the map](#scrolling-the-map)
+- [Game speed](#game-speed)
+  - [Suggested system requirements](#suggested-system-requirements)
+- [Accessibility](#accessibility)
+- [What is known](#what-is-known)
+- [Practising without the game](#practising-without-the-game)
+- [How it works](#how-it-works)
+- [Development](#development)
+  - [Mapping memory](#mapping-memory)
+  - [Command-line mapping tools](#command-line-mapping-tools)
+
+## What it does
+
+
+**In the Ledger's window**
 
 - **Party viewer:** every party member's stats, live, including numbers the
   game doesn't show: THAC0 with each weapon and the saving throws as they
@@ -33,6 +100,11 @@ records; this ledger keeps the ones the game doesn't show you. What it does:
   spell save, with DEX's dodging adjustment instead of the doubled d20.)
 - **Dialogue:** what characters say, the replies you're offered and the one
   you picked, kept in a tab you can scroll back through.
+- **Spells:** a tab listing what every spell and psionic power really does,
+  from the game's own records (see [the Spells tab](#the-spells-tab)).
+
+**In the game**
+
 - **In the game itself**, in the game's own lettering: the inventory screen
   also shows each character's THAC0 (for each weapon too), saving throws,
   DEX reaction and defensive adjustments and (for thieves) their thief
@@ -48,8 +120,9 @@ records; this ledger keeps the ones the game doesn't show you. What it does:
   in a fight tells you what hurts it (see
   [the Look box](#in-the-game-what-hurts-a-monster-the-look-box)). The game,
   these additions and the Ledger's window start together.
-- **Spells:** a tab listing what every spell and psionic power really does,
-  from the game's own records (see [the Spells tab](#the-spells-tab)).
+
+**Rule changes**
+
 - **Rule changes**, each switchable on the Options tab: helms give AC 1,
   boots a move more in a fight, AD&D's two-weapon penalties, spells saved
   against with the spell save, DEX rather than a doubled d20 on saves against
@@ -59,12 +132,15 @@ records; this ledger keeps the ones the game doesn't show you. What it does:
   half-giants wielding two-handed weapons in one hand (see
   [Rule changes](#rule-changes)). And thieves no longer lose skill for what
   they hold (see [Thief skills](#thief-skills)).
+
+**New content** (each can be switched off on the Options tab)
+
 - **A Ring +1** (+1 AC, +1 on saving throws) found by searching the Tied-up
   Prisoner's body in the arena, an item of the Ledger's own (see
   [The Ring +1](#the-ring-1)).
 - **Picking pockets:** a thief can try anyone's pockets, with the Thieves'
-  Tools every thief now carries or with P in a conversation, a move silently
-  roll deciding whether a fumble is noticed (see
+  Tools every thief now carries (or, if ticked, with P in a conversation), a
+  move silently roll deciding whether a fumble is noticed (see
   [Picking pockets](#picking-pockets)).
 - **A use for the cooked vulture:** ask Dinos in the slave pens about it, and he
   cooks it properly for the party (see [The cooked vulture](#the-cooked-vulture)).
@@ -72,24 +148,38 @@ records; this ledger keeps the ones the game doesn't show you. What it does:
   things worth taking from them (see [The slave pens' gear](#the-slave-pens-gear)).
 - **Kalzith, a defiler in the slave pens,** who sells spell scrolls to a party
   that treats him well (see [Kalzith](#kalzith)).
-- **Semyon back in the slave pens,** as he promises when he leaves the arena
-  (see [Semyon](#semyon)).
+- **Semyon back in the slave pens,** as he promises when he leaves the arena,
+  and breaking out with the party and Scar if he is beside them (see
+  [Semyon](#semyon)).
 - **Dinos and the Trustee asked about Kalzith and Semyon** (see
   [Dinos and the Trustee on Kalzith and Semyon](#dinos-and-the-trustee-on-kalzith-and-semyon)).
 - **Icons of their own** for the Ledger's magic items and the Short Sword,
   made from the game's (see [Item icons](#item-icons)).
+
+**On the screen**
+
 - **What the party wears, on the map:** their weapons and shields, bows and
   quivers, armour, helms, cloaks, boots and belts show on their figures, and
   change when their gear does (see [What the party wears](#what-the-party-wears)).
 - **Shadows** under every figure on the map, see-through and in the floor's own
   colours (see [Shadows](#shadows)).
-- **Scrolling the map with the mouse:** press the wheel and move to drag the
-  map, or turn it (see [Scrolling the map](#scrolling-the-map)).
 - **Dust** raised behind the feet of anyone walking on sand or dirt (see
   [Dust](#dust)).
+
+**Controls**
+
 - **Choosing an enemy with Tab** in a fight, marked by a red ring, and
   attacking it with Enter even when someone stands in front of it (see
   [Choosing an enemy](#choosing-an-enemy-tab-enter-and-the-rings)).
+- **Scrolling the map with the mouse:** press the wheel and move to drag the
+  map, or turn it (see [Scrolling the map](#scrolling-the-map)).
+
+**Smoother play, and help when something goes wrong**
+
+- **Game speed:** DOSBox is given more of the computer, for smoother walking
+  with the whole party in view (see [Game speed](#game-speed)).
+- **Crash reports:** if DOSBox crashes or the game stops with an error, what
+  happened is saved in a file to send (see [Crash reports](#crash-reports)).
 
 Nothing in the game folder or your save files is changed, except that a game
 you save keeps what the Ledger has handed out or changed in play: the Ring +1,
@@ -134,7 +224,7 @@ the arena, all sampled from the game (no game artwork is copied).
 Templar's Ledger is a separate program that runs next to the game. You don't
 install anything into the game folder.
 
-**One-time setup**
+### One-time setup
 
 1. Download the latest release, `Templars-Ledger-<version>.zip`, from the
    [Releases page](https://github.com/daaki85/darksun-companion-mod/releases),
@@ -164,13 +254,13 @@ code in `dscompanion`, and the dice log helper's source (`dos\dsclog.asm`,
 which builds `dos\DSCLOG.EXE`, the small DOS program DOSBox loads). There is
 no packaged program to trust.
 
-**Every time you play (recommended)**
+### Every time you play
 
 1. Double-click **`Start Templar's Ledger.bat`** in that
    folder. The Ledger opens on its own.
 2. On its **Options** tab, pick what you want: the rule changes, the Ring +1,
    picking pockets, each turn's rolls in the game and so on (see
-   [Using the viewer](#using-the-viewer) and [Rule changes](#rule-changes)).
+   [The Ledger's window](#the-ledgers-window) and [Rule changes](#rule-changes)).
    They're remembered for next time.
 3. Pick the **Game window** size at the top if you like, then press **Start
    the game** (top left).
@@ -198,6 +288,8 @@ pick Triple.
 Load your game. The party's stats fill in by themselves, and rolls appear in
 the **Dice log** tab as they happen.
 
+### Other ways to start
+
 **Game and Ledger in one double-click:** **`Start Game with Dice Log.bat`**
 starts the game with the dice log and opens the Ledger next to it, with the
 options as you last set them on the Options tab. With the game started the
@@ -212,17 +304,39 @@ pockets, the rule changes); the slave pens' gear and the cooked vulture work
 there too. If anything goes wrong it says so in a message box and
 writes the details to `play.log`.
 
-**If DOSBox closes by itself:** when the game stops with an error, DOSBox now
-waits with the game's message on screen ("The game stopped with an error",
-then press a key), rather than closing over it. With the game started from the
-Ledger, the dice log also says how DOSBox closed: `DOSBox closed: it crashed
-(an access violation, code C0000005h)` means DOSBox itself failed, not the
-game. Either message, and what was happening at the time, says where to look.
+### If DOSBox closes by itself
+
+When the game stops with an error (such as
+"Null pointer assignment"), DOSBox now waits with the game's message on screen
+("The game stopped with an error", then press a key) rather than closing over
+it. With the game started from the Ledger (or either `.bat` file), the dice log
+also says how DOSBox closed: `DOSBox closed: it crashed (an access violation,
+code C0000005h)` means DOSBox itself failed, not the game.
+
+### Crash reports
+
+Either way, the Ledger saves a crash report in the
+`crash-logs` folder (beside `Start Templar's Ledger.bat`), named for the time,
+such as `crash-logs\crash-2026-10-04-213012.txt`, and says so in the dice log
+(or, with `Play Dark Sun (in-game rolls).bat`, in a message box). It holds:
+- how DOSBox closed (its exit code), and what the game left on the screen;
+- how long the game ran, and the Ledger's switches and game speed (not where the
+  game is installed, nor the party's names);
+- DOSBox's own `stdout.txt` and `stderr.txt` from that run, if it wrote them;
+- any writes into the game the Ledger refused as unsafe;
+- the last 300 lines of the dice log and the last 80 of the dialogue.
+
+Send the file along with what you were doing just before. A game closed the
+usual way (Exit to DOS, or closing DOSBox's window) writes no report. With the
+game started from GOG's own shortcut, the Ledger can't see how it closed, so
+there is no report.
 
 **Checking a save file (no game needed):** drag a `SAVEnn.SAV` file from the
 game folder onto **`Show Save.bat`**.
 
-**From a command prompt**, the same things are (`dscompanion` is the program's
+### From a command prompt
+
+The same things are (`dscompanion` is the program's
 internal name):
 
 ```
@@ -235,6 +349,148 @@ python -m dscompanion processes                     # is DOSBox found?
 ```
 
 If more than one DOSBox is running, add `--pid <number>` (from `processes`).
+
+## The Ledger's window
+
+The window has the party on one side and the logs and tools on the other, with
+**Start the game**, the game window's size and the text size along the top. The
+party pane has two tabs:
+
+- **Characters** (Alt+C): a card for each character, laid out like the game's
+  View Character screen. It shows the figure for their race and sex (the one
+  on the character creation screen, read from your install) and their name.
+  Then HP and PSP as the game shows them (PSP in blue). Then their condition
+  (the game's Okay, Stunned, Out Cold, Dying, Dead, Animated, Petrified or
+  Gone, followed by any spells and effects on them, with the rounds or charges
+  each has left: `Blur (22 rounds)`, `Stoneskin (5 charges)`; from the game's own
+  clock and timers). Then the character
+  sheet: scores, sex, race and alignment, classes and levels, experience,
+  AC, THAC0 with each weapon ready (`THAC0: 15 with Wooden Club, 14 with
+  Wooden Bow (base 19)`), the saves as the d20 needed now (see
+  [In the game](#in-the-game-thac0-saves-and-thief-skills)), movement (and a
+  fight's, with boots: `Move: 12 (13 in a fight: boots)`) and attacks. AC is
+  the one the game last used in a fight, with the base AC beside it; before the
+  first fight only the base AC is known. Then what they wear and hold, by the
+  game's own slot names ("Right hand: Bone Long Sword", "Chest: Leather Chest
+  Armor"; "Carried" for anything in the backpack), with each item's material
+  and plus. Last, for spellcasters, their spell slots (see below), for
+  thieves their skills, and for rangers, with the stealth rule on, their
+  chances to hide and move silently (`Ranger skills now`). Scroll
+  with the mouse wheel, or Tab to the cards and use the arrow and Page keys.
+- **All fields** (Alt+A): every field the layout maps, in a table, with rows
+  of its own for the AC in a fight and what it's made of, THAC0 with each
+  weapon and the saves now, and at the end the spell slots, thief skills and
+  equipment.
+
+The other side has the **Dice log**, **Dialogue**, **Spells** and **Memory
+tools** tabs, and **Options** (Alt+O) with the Ledger's switches, in groups:
+
+- **Dice log**: unlabelled rolls, and the details behind each roll.
+- **In the game**: each turn's rolls and how much they say, monster
+  descriptions.
+- **Rule changes**: helms, boots, two weapons, half-giants' two-handed
+  weapons, the spell save, doubled saves, Cat's Grace, levels up to 10, the
+  thief skill table, hiding in shadows (and under it, a worn cloak's and
+  boots' bonuses).
+- **New content**: Kalzith, Semyon, the cooked vulture, the slave pens' gear,
+  the Ring +1, picking pockets, and a button that gives each thief a set of
+  Thieves' Tools now. Kalzith, Semyon and the vulture are put in the game's
+  copies the next time it is started; what a saved game already has (people
+  met, items given) stays in it.
+- **On the screen**: what the party wears, shadows, dust, and the rings in a
+  fight (none, the chosen enemy's, or all).
+- **Controls**: Tab and Enter, scrolling with the wheel (and the right
+  button), and a click on the Effects screen keeping a spell.
+- **Game speed** (see [Game speed](#game-speed)).
+
+All are on by default except unlabelled rolls, each turn's rolls in the game
+and the right button, and are remembered for next time. In a window too small
+to show them all, the tab scrolls (scrollbar, mouse wheel, or arrow and page
+keys once it has the focus).
+
+![The Options tab](docs/options.png)
+
+**Spell slots.** `Priest spells left: 1st 5/5, 2nd 3/3, 3rd 2/2`
+means five first-level priest spells can still be cast out of five, and so
+on. Casting a spell uses one slot of its level, and resting fills them
+again. Wizard slots belong to preservers; priest slots belong to clerics,
+druids and rangers. A multi-class character's classes add up, for example a
+druid/preserver has both. The "most" is worked out the way the game does it
+when it refills them (its tables are read from memory):
+- Preservers: from their level only.
+- Clerics and druids: from their level plus a WIS bonus.
+- Rangers: from their level only, with their first slot at level 8.
+
+The game's WIS bonus doesn't depend on level, so it gives a 2nd-level druid
+with WIS 19 slots at the 2nd to 4th levels too, though a druid that level
+casts only 1st-level spells. Those aren't shown (here or in the game): only
+the spell levels the character's class levels reach, as in AD&D, where the
+WIS bonus counts only at levels the priest can cast. For a human dual-class character, a
+later class counts only while its level is below the first class's. Checked
+against two characters at the start of a new game, whose slots the game had
+just filled.
+
+
+The viewer's **Current AC** row is the AC the game last used for each
+character in a fight (armour, DEX and spells included), and the rows under it
+say what it was made of: armour and shield (and spells that take their place,
+such as Spirit Armor and Magical Vestments), DEX (the game's table: −1 at 15
+down to −6 at 24; not counted when attacked from behind), and spells, rings
+(see [The Ring +1](#the-ring-1)) and anything else. They show "-" until the game has worked out that character's AC
+in a fight.
+
+Ability scores such as `STR 24 (20 without spells)` show the score now and, in
+brackets, the character's own score when a spell (Strength, for one) has
+raised it. The character's own score already includes the racial adjustment:
+a half-giant's 20 + 4 shows as 24.
+
+### The Spells tab
+
+What each wizard and priest spell and psionic power does, read from the
+running game's records: its damage dice and kinds (and that damage stops
+growing at caster level 10), its saving throw (which of the five, any
+modifier, whether the d20 counts double, and whether saving halves or stops
+the damage), the effect it gives and what that does, how long it lasts, and
+each party member's caster level for it. **Show** picks wizard, priest or
+psionic, and **Only spells the party has a caster level for** leaves out the
+rest. **Save...** writes it to a text file. It's filled when you open the tab
+(or press **Refresh**) while the game is running.
+
+### The Dialogue tab
+
+Everything the game shows in its dialogue window, one entry per window of
+text, with the replies offered numbered underneath (and the list's title,
+such as "Answer Yes or No", above them), and then the one you picked:
+`You chose: No`. (The game keeps the clicked row at DS:1F0A while it flashes
+it; the log reads the reply's text from the game's own list.)
+
+**Who's speaking.** The game's dialogue window gets only a portrait number,
+never a name. But when the game runs a script on someone (you click them, or
+they come up to you), it notes who; the log reads that when a conversation
+opens. A conversation that shows one face, started on a named creature outside
+the party, is that creature talking, and from then on the portrait carries its
+name: in the pens, portrait 5 became `Kurzak` ("Legcrusher! Get gladiators!")
+and portrait 100 `Legcrusher` ("Kurzak told me to bring you to the arena").
+When several faces take turns in one conversation, nothing is learned from it,
+as it can't be told who is who. Names learned are shown on the lines already
+there too, and kept in `settings.json` (`speakers_learned`). A speaker not
+named yet shows as `Portrait 57`. Portrait 119 is named `The Announcer`, as the
+game itself calls him ("Yell something back at the Announcer?"). That name isn't
+replaced by one learned (he calls out in the middle of fights, when the
+game's last script ran on a fighter). To name a
+speaker yourself (your name wins over a learned one), right-click the name
+line in the Dialogue tab, or press **Name speaker...** (it names the latest
+speaker). The name replaces the number on every line from that portrait,
+the ones already shown included, and is remembered in `settings.json` for
+next time (the command-line log uses it too). Leave the name empty to go back
+to the number. Text shown without a face (the emblem instead) is `Narration`.
+
+Each entry shows the speaker's portrait, as the game's own dialogue window
+does. Portraits and the title's lettering are read from your installed game
+at run time (GPLDATA.GFF and RESOURCE.GFF in the install folder the launcher
+remembers); nothing from the game is copied into Templar's Ledger. Without
+the game installed the window uses its own lettering and no portraits (the
+screenshots here are taken that way).
 
 ## The dice log
 
@@ -264,7 +520,7 @@ If more than one DOSBox is running, add `--pid <number>` (from `processes`).
 | `Message: Long Sword is broken !` | The game's own message boxes: broken or corroded weapons and armour, level-ups, "NO PATH FROM HERE" and so on. |
 | `  Slig now 8/18 HP (-10)` / `  Gerakis now 51/54 HP (+1)` | Any combatant's hit points going down or up, with what's left out of their most. The game never shows a monster's HP; this does. The line comes just after the damage that caused it (sometimes after the next roll, when the game is quick). |
 | `  Gerrard regenerates 1 HP (CON 22), now 16/35 HP` | A hit point back by itself: the game gives one now and then to anyone with CON 20 or more (in the game, CON 20 regenerates and 18 or 19 don't). |
-| `  Skeleton now 10/14 HP (-3: 3 of the 7 rolled, non-magical weapons do half)` / `  Skeleton takes none of the 6 damage: crushing weapons can't hurt it` | A weapon hit that took less than its roll, or none at all (no HP lost three seconds on, or by the next round), with the reason when the monster's own defences give one (what weapons hurt it); otherwise "a protection or resistance took it" (Stoneskin, say). |
+| `  Rampager now 69/72 HP (-3: 3 of the 7 rolled, non-magical weapons do half)` / `  Mastyrial takes none of the 6 damage: crushing weapons can't hurt it` | A weapon hit that took less than its roll, or none at all (no HP lost three seconds on, or by the next round), with the reason when the monster's own defences give one (what weapons hurt it); otherwise "a protection or resistance took it" (Stoneskin, say). |
 | `    X's special effect on Y: d10 = 1, works on a 1 -> it works` | The 1-in-10 extra effect some creatures' hits have (the thri-kreen bite, for one). |
 | `Slig is killed (270 XP)` | A creature dying, with the XP it's worth (from its character sheet). |
 | `XP: Gerakis +67, K'ratchek +22, ... (for Slig 270)` | Experience the party got, and for which kills. The game gives it right after the kill: an equal share to each character, split again between a multi-class character's classes (the sheet counts XP per class, so a three-class thri-kreen shows a third of the share). |
@@ -307,19 +563,6 @@ labelling.
 Tested in play: the attack and damage lines match the HP the game takes off,
 for both the party and the monsters, and every saving throw of a Fireball is
 logged.
-
-The viewer's **Current AC** row is the AC the game last used for each
-character in a fight (armour, DEX and spells included), and the rows under it
-say what it was made of: armour and shield (and spells that take their place,
-such as Spirit Armor and Magical Vestments), DEX (the game's table: −1 at 15
-down to −6 at 24; not counted when attacked from behind), and spells, rings
-(see [The Ring +1](#the-ring-1)) and anything else. They show "-" until the game has worked out that character's AC
-in a fight.
-
-Ability scores such as `STR 24 (20 without spells)` show the score now and, in
-brackets, the character's own score when a spell (Strength, for one) has
-raised it. The character's own score already includes the racial adjustment:
-a half-giant's 20 + 4 shows as 24.
 
 ### Initiative
 
@@ -736,580 +979,329 @@ are no rings or cloaks of protection, which is why the Ledger adds
 [a ring](#the-ring-1) and [a cloak](#the-slave-pens-gear). Their +1 is in the
 log's saving throws as `+1 Ring of Protection`.
 
-### The Ring +1
-
-A ring of protection the game never had: **+1 AC and +1 on every saving
-throw** for whoever wears it, called a Ring of Protection. With **A Ring of
-Protection +1 on the arena's Tied-up Prisoner (search his body)** ticked on
-the Options tab (it is by default), it is on the Tied-up Prisoner, the bound
-man beside the vulture in the arena: free him (he dies as he falls from his
-bonds; killing him where he hangs does too), then look at his body
-(right-click until the cursor is the eye, then click it). The arena's script
-says there is nothing on it; while the ring is still to be found, the Ledger
-(or **Play Dark Sun (in-game rolls)**) has the game say instead:
-
-```
-Searching the body, you find a ring sewn into his loincloth: a Ring of Protection +1 (+1 AC, +1 on saves).
-```
-
-and puts the ring in the leader's backpack (or, if that's full, the first
-backpack with room); the log says whose. Wear it on either hand's finger from the
-inventory screen. The game's names are at most 15 letters long, and
-longer ones run out of the Look box, so in the game it is **RING/PROTECTION**
-on the inventory screen and **Ring/Protection+1** in the box Look opens on it
-(shortened the way the game shortens its own "Helm/Contempltn"; the game puts
-an item's plus straight after its name there, as for any item with a plus).
-The Ledger's own screens and the log call it Ring of Protection.
-It happens once: with a Ring +1 with the party or anywhere in the arena,
-there is no other. Games saved with an earlier version, where the ring was in
-the body lying below him, keep it there.
-
-How it works: the game has a plain "Ring" item that nothing in it has a plus
-on, and no item that betters saving throws. The Ledger adds a Ring with a plus
-of 1 to a backpack (an item record from the game's free list, its name one
-the helper adds to the game's name table: see
-[New item names](#new-item-names)); the patched game's routine
-that feeds the dialogue window (`INT 63h`) shows the search's line in place of
-the script's when the Ledger asks it to. The dice
-log's patched game does the rest (see
-[How the dice log works](#how-the-dice-log-works)): where it adds up AC, a
-ring counts like armour does (its plus, on top of AC 0), and where it adds up
-a saving throw's modifiers, it starts from the pluses of the rings worn. So:
-
-- The ring works in games started with the dice log. In the original game
-  it is a plain ring, without a name of its own (the game's table has no
-  name with that number).
-- The AC it gives shows on the View Character and inventory screens and in the
-  Ledger's **AC: spells, rings, other** row; the +1 on saves in the saves those
-  screens and the Characters tab show, and in the log.
-- A ring the original game has (the plain Ring and the Serpent Ring are the
-  only kind the patch looks at) has no plus, so it plays as before.
-
-### New item names
-
-An item names its entry in the game's name table by number. The game reads
-the table (GPLDATA's 322 names, 25 letters each) in as it starts and as a game
-is loaded, and none of it is free to take, so in games started with the dice
-log the helper makes room for 32 more each time and copies its own names into
-them, from number 322 on: the Ring of Protection's (322), the Thieves'
-Tools' (323), the Short Sword's (324), the Cloak of Protection's (325,
-"Cloak/Protectn") and Pehtucl's ring's (326, "Ring/Protection" as the arena's:
-an entry of its own tells the two rings apart, for their icons), the rest for
-items to come. Nothing in the game checks the
-numbers against its own 322 (its inventory, list, Look and View Character
-screens all read the name the same way), and the names are there before
-anything shows them, Ledger running or not.
-
-Earlier versions borrowed two of the game's own entries instead: one nothing
-named (the ring's) and "Rest icon", the label of the rest button's picture
-(the tools'). Once the table has the new names, the Ledger gives those entries
-back and renames rings and tools that named them, carried or lying anywhere in
-the region. In the original game, the ring and tools have no name of their
-own.
-
-### The cooked vulture
-
-Hit the arena's vulture and its feathers come off (a plucked vulture); the
-slave pens' campfire cooks it. In the game itself the cooked vulture is then no
-use to anyone: no script asks for it. With the Ledger running, **Dinos**, the
-pens' fine cook, can be asked about it: talk to him while someone in the party
-carries it, and among the first things the party can say to him, just before
-"Goodbye.", is **"We cooked the vulture from the arena."** He takes it ("A vulture! Give it here. A pinch of salt,
-some agafari leaf, slow over the coals... Sit down and eat with me. A meal like
-this puts the strength back in you."), and the game's own window for a quest's
-reward follows, as for any of its quests: "Each party member receives 100
-experience points!", with the sound the game plays when a quest is done (as for
-the Trustee's key or the filled water jug). Each party member gets **100 XP**
-(split between a multi-class character's classes, as the game splits all its
-XP) and is **restored as after a full rest**: HP, PSP and spell slots full, and
-anyone knocked out back on their feet. No time passes.
-The question is gone once the vulture is. (Eaten by the party on their own,
-used on one of them from the inventory, it's too tough to be worth the chewing.)
-
-![Dinos's answer in his dialogue window with his portrait, then the game's own window for the reward: "Each party member receives 100 experience points!"](docs/vulture-meal.png)
-
-How: in the Ledger's copy of `GPLDATA.GFF`, Dinos's talk (script 139) has the
-question in its first menu (a copy of the game's with the question added, as for
-the questions about Kalzith and Semyon, see
-[Dinos and the Trustee](#dinos-and-the-trustee-on-kalzith-and-semyon)), shown
-while the game's own test says someone in the party carries the cooked vulture
-(33h, as the campfire's script asks about the plucked one; the game's object
-A4Ch), the test being the question's own condition in the menu. Chosen, the script takes it (5Ch, as the campfire takes the plucked one)
-and sets the Ledger's flag 780, then gives the XP through the game's own routine
-for quests (the amount in its variable, then script 74 at 135: the window, the
-words and the quest's sound), as Dinos's own script does when he heals Gilal
-(350). The Ledger then refills the party, once (flag 781), only while the party
-is talking with him (never from a game being loaded).
-
-### The slave pens' gear
-
-With the Ledger running, the first time the party is in the slave pens the
-three who run them get things of the Ledger's own (the log doesn't say: they're
-there to be found):
-
-| Who | Gear | Can a thief lift it? |
-|---|---|---|
-| **Kurzak**, the guards' leader | a metal **Short Sword** (1d6, in his pack) and a leather **Helm** (worn) | the sword, yes |
-| **Legcrusher**, the half-giant | **Leather Chest Armor +1** (worn) | no |
-| **Pehtucl**, the head templar (the Templar in the pens' south-west corner with the Obsidian Bloodwrath) | a **Cloak of Protection +1** (worn) and a **Ring of Protection +1** (worn) | the ring, yes; not the cloak |
-
-They're priced as magic items: Leather Chest Armor +1 3000, the Cloak and the
-Ring 5000 each. Nothing is given where it's in the game already (a game saved
-after it was given, loaded again), and a short sword lifted from Kurzak isn't
-replaced.
-
-The Cloak of Protection works as the [Ring +1](#the-ring-1) does, from the
-cloak slot: +1 AC and +1 on every saving throw. Kill them, or pick their
-pockets, to have it. Each item is given once a game, and not to anyone already
-dead.
-
-How: the game has no short sword, and no cloak whose plus counts, so the helper
-adds two item types after the game's 115 each time the game reads its type
-table in (the short sword a copy of the metal long sword's with a d6; the cloak
-a copy of the game's Cloak, its plus counting for AC), and two names after the
-game's (see [New item names](#new-item-names)). Where it adds up saving throws
-it counts a worn Cloak of Protection like a ring. The Ledger puts each item in
-its owner's things (from the game's free list, worn where the slot is free,
-else in a backpack cell), and the game keeps and saves them like its own. In
-the original game, the sword and cloak are items of types it doesn't have:
-don't load a save that has them without the dice log.
-
-### Kalzith
-
-A new person in the slave pens: **Kalzith**, a defiler slave the templars put
-in the arena now and then (the crowd loves to watch a defiler burn), kept in
-a pen of his own in the middle column the rest of the time. He has the
-arena Defiler's figure and a face of his own: the game's portrait 61 with a
-slave's brand on the brow, so the Dialogue tab never mistakes him for anyone
-else.
-
-![Kalzith: his talk, and his shop](docs/kalzith.png)
-
-Talk to him as to anyone (click him with the look pointer, then the Look box's
-Talk button). His conversation is the game's kind, just him speaking:
-
-- **With respect** ("We mean no harm. We're slaves too."), he owns up to
-  scribing spells on scraps of hide at night, to bribe a guard, and offers
-  them: **Show us what you have** opens the game's shop screen, with his six
-  scrolls, one of each:
-
-  | Level | Scroll | Price |
-  |---|---|---|
-  | 1 | Magic Missile, Color Spray | 100 ceramic |
-  | 2 | Blur, Cat's Grace | 250 |
-  | 3 | Lightning Bolt, Haste | 500 |
-
-  Cat's Grace is there only with its rule on (see
-  [Rule changes](#rule-changes)). A preserver learns a scroll's spell as from
-  any of the game's (right-click it in the inventory, click its spell), by the
-  game's own rules: a spell of a level the preserver can cast. He remembers a
-  friend ("Back again? Keep your voice down.").
-- **Calling him a defiler**, he answers back; take it back and he's friendly,
-  or **threaten to tell the templars** and he won't speak to the party again
-  until they make amends: **50 ceramic** (offered only to a party that has
-  it), or a plea that he wins over with a **Charisma check** (the character
-  talking rolls it).
-
-He is in **new games**: those that reach the slave pens with the Ledger's copies
-in use. (A save keeps the pens as they were when the party first went in.)
-
-How: he is the game's own kind of person, in the Ledger's copies of three of
-its files, which the dice log's helper has the game open instead of the
-originals:
-
-- `SEGOBJEX.GFF`: object 1000 (a person's object with the Defiler's picture,
-  and a slave's record, Dinos's, with his name and a defiler's class), and his
-  scrolls' objects 1440 to 1445 (copies of the game's scroll object, with a
-  scroll's picture). The game teaches a scroll's spell only from an object
-  numbered 1400 to 1499 (any other it casts); its own end at 1432, and the
-  numbers after are pictures, most of them other objects' icons, which the copy
-  moves to pictures of their own (2440 to 2445). None of these objects is the
-  game's. Scrolls bought with earlier builds (objects 1001 to 1006, which cast
-  their spell) are renumbered wherever they are.
-- `RGN29.GFF`, the slave pens: an entry setting him in his pen.
-- `GPLDATA.GFF`: his conversation (script 218, after the game's 217), its entry
-  in the game's table of script entry points (which saves go by), the command
-  in the pens' script that runs it when he's talked to, and his portrait
-  (portrait 101, a number the game leaves free).
-
-His state is in the game's own flags (760 to 763: met, friendly, cold, his
-scrolls given; the game uses flags up to 755), so a save keeps it. The first
-time the party is in the pens, the Ledger puts his six scrolls among his
-things (from the game's free list, as for [the slave pens' gear](#the-slave-pens-gear)),
-once a game. If he is killed, the Ledger marks it (flag 772) and the others
-speak of him as dead (see
-[Dinos and the Trustee](#dinos-and-the-trustee-on-kalzith-and-semyon)); after
-the party's escape he is gone from the pens with everyone else.
-
-Killed, he leaves one of the scrolls he still had, chosen at random, a Cloak
-and a Quarterstaff (the game's own), in his body where he fell, and the Ledger
-logs it ("Kalzith leaves: Scroll of Blur, Quarterstaff, Cloak"). The game puts
-everything a dead person carried in the body; the Ledger takes the other
-scrolls out of it and puts the two in (flag 777, once). He can't carry the two
-while he still has scrolls to sell, since his shop offers everything he has.
-Once the party has bought all six, his shop isn't offered any more ("Anything
-left to sell?" "Nothing. You've bought every scrap of hide I had, and more
-takes time I don't have.", flag 778), and the Ledger gives him the two, worn
-(flag 776): only while the map is running, so never into an open talk or shop.
-(The dice log's helper counts the game's map loop; it doesn't run while a talk,
-menu or shop is open.) Killed then, he leaves the Cloak and the Quarterstaff in
-his body, as the game does with anything a dead person carried.
-
-He is a slave of the pens like the game's own (his record is Dinos's): attacked,
-he turns on the party as they do, and only the guards near him join the fight.
-
-![Kalzith's body opened in the game: a Scroll, the Cloak and the Quarterstaff](docs/kalzith-body.png)
-
-### Semyon
-
-Untie the arena's prisoner and he is **Semyon**, of the Veiled Alliance. He
-meets the party again in the arena's bone area, where they can recruit him to
-the Alliance. Recruited, he fights beside them in the next fight and, if he
-survives it, leaves: "That's enough for me. I'm leaving. I'll go find more
-members for the Alliance." (Some of his replies in the bone area send him off
-before that: "That's enough for me. I'll see you in the holding pens.", "Right,
-see you there!", or, still weak, "Why don't I meet you in the holding pen?")
-Each way, he walks out through the arena's entrance to the pens, where a
-script takes him off the map, and nothing in the pens brings him back.
-
-With the Ledger, if he left after the fight he helped in, he is there, in a pen
-of his own above Kalzith's, the first time the party is in the pens after it.
-His other ways out stay as in the game, and so does a Semyon who was killed: he
-isn't in the pens. Talk to him (Look, then Talk): he says why the templars tied
-him up in the arena (he was asking about the Veiled Alliance), passes on what he
-has heard (who carries keys), reminds the party where he hid his gem (the grain
-pots), and talks about the Alliance's plans, in his own voice from the arena.
-
-How: in the Ledger's copy of `GPLDATA.GFF`, the command that takes him off the
-map when he walks out after the fight (script 5 at 2400, run only from there)
-first sets the Ledger's flag 770; the game's other exits don't reach it. The
-Ledger sets flag 771 if it ever sees him dead (his record's hit points or
-status). The pens' script ends with, "if flag 770 is set, 771 isn't, and he
-isn't in his pen yet, make him there", the command the arena's script uses
-when he is untied (25h, his object 280), and the command that runs his
-conversation (script 219) when he's talked to, with its entry in the game's
-table of entry points. Flags 764 and 765 (his own: placed, met) keep the rest,
-so a save keeps him.
-
-His object is the arena's, made for a man who fights beside the party: on the
-party's side, and with 0 in a byte where every slave of the pens has 12. In his
-pen the pens' script makes him as they are, with the command the game's scripts
-use to change someone (40h: his fields 74, the side, to 4, theirs, and 70 to
-12), once (flag 779). Attacked, he is then like any of them: he turns on the
-party, and only guards near him join the fight; in a fight in the pens he isn't
-on the party's side. Like Kalzith's, his commands come after everything of the
-game's, which keeps its place.
-
-### Dinos and the Trustee on Kalzith and Semyon
-
-Dinos ("Who else is in here?") and the Trustee ("Who else is in the
-slavepens?") each answer questions about the others in the pens. With the
-Ledger their menus also ask about Kalzith, and about Semyon once he is in his
-pen ("What do you know about Kalzith?", "What can you tell me about
-Semyon?"). Kalzith's question waits until the Ledger has found him in the pens
-(the game's test for whether someone is there only knows the game's own
-people); Semyon's once he has been in his pen. As with the game's own
-questions, each is shown only until it's answered in that talk.
-
-![The Trustee's menu (left) and Dinos's (right), scrolled to the end: after the game's own questions about people, the new ones about Kalzith and Semyon, then "Let's change the subject." and "Goodbye."](docs/pens-asks.png)
-
-If either has been killed, they speak of him as they do of the game's dead:
-the Trustee asks "What was Kalzith like?" (or Semyon) instead, with an answer
-of its own, and Dinos keeps the question and answers it differently. The
-Ledger marks each death with a flag (772 Kalzith, 771 Semyon) when it sees his
-record dead.
-
-![The Trustee's menu with both dead (left): "What was Kalzith like?" and "What was Semyon like?" after the game's own questions; and his answer about Kalzith (right)](docs/pens-asks-dead.png)
-
-After the party's escape, when the game empties the pens ("They killed
-everybody except for myself", the Trustee says on the torture rack), Kalzith
-and Semyon are taken off the map too, the way the game takes the others (flag
-775), and Semyon is never put in his pen after it.
-
-How: in the Ledger's copy of `GPLDATA.GFF`, their scripts (139 and 146) keep
-every byte where it was, since the game's jumps go to fixed places. Two
-commands become jumps to code after the script's end: the one starting the
-menu's part goes to the same command followed by the new questions' flags
-(766-769, 773, 774), and the menu goes to a copy of it (the game's own bytes) with the
-new questions after its last about someone. Each then jumps back to where the
-game's script carries on.
-
-That makes the Trustee's script 10,898 bytes, and the game reads every script
-into one buffer of 10,000 bytes (a script that calls into another reads it in
-over its own). One of 9,800 bytes ran; one of 10,000 ended with "BAD GPL
-EXIT" (the game's own largest is 9,792). So the Ledger's copy of the game
-makes the buffer 11,776 bytes where it is allocated (`push dword 10000` at
-6A692h becomes 2E00h), about 1.7 KB more of the game's memory.
-
-### Item icons
-
-The Ledger's items have icons of their own on the inventory screen, made from
-the plain item's the way the game makes its own magic items' (the Obsidian
-Bloodwrath's is the obsidian long sword's with a few pixels in the colours the
-game cycles, so they flicker like fire):
-
-| Item | Icon |
-|---|---|
-| **Short Sword** | the metal long sword's, its blade four steps shorter, centred in the cell |
-| **Leather Chest Armor +1** | the leather's brightest pixels in the cycling fire colours |
-| **Cloak of Protection +1** | every other pixel of its lightest folds violet |
-| **Ring of Protection +1**, Pehtucl's | its gold band violet |
-| **Ring of Protection +1**, the arena's | its gold band in the cycling fire colours |
-| **Bone Helm** ([the bone scale set](#the-bone-scale-set)) | the leather Helm's, each shade of leather made the bone scale armour's of the same brightness |
-
-![Dream's backpack: under a long sword, the Short Sword, Leather Chest Armor +1, the Cloak of Protection +1, and Pehtucl's and the arena's Rings of Protection +1](docs/icons.png)
-
-On the map, dropped, each looks like the plain item. The violet is one no
-region's palette changes: the colours after it, violet in the game's own
-palette file, are each region's to set (red in the slave pens).
-
-How: the game reads its objects' pictures from `SEGOBJEX.GFF`. When it starts
-the game, the launcher writes `dos\SEGOBJEX.GFF`: the game's file (only read)
-with six objects and their pictures added at its end, its index grown to
-list them (in order of number, as the game looks them up) and a new table of
-contents after them (`dscompanion/icons.py`). The helper has the game open
-that copy instead of its own (its `INT 21h` hook: it opens the copy when the
-game opens `SEGOBJEX.GFF`, and notes that it has), and the Ledger gives the
-Ledger's items those objects' pictures. In a game without the copy, the Ledger
-puts the plain pictures back; a save with the new pictures loaded in the
-original game shows those items without an icon.
-
-### What the party wears
-
-The party's figures on the map and in fights show what each one wears, and
-change as soon as their gear does (switch it off on the Options tab to see the
-game's own). The game draws each race and sex the same whatever they carry;
-the Ledger keeps the artist's pictures and adds to them, frame by frame,
-walking and fighting:
-
-| Worn | Shown |
-|---|---|
-| **Weapons and shields** | each kind its shape (dagger, sword, club, mace, axe, polearm, gythka, staff, a round shield), in its material's colours (wood, bone, stone, obsidian, metal); walking, a one-handed weapon is worn at the belt, hanging down and back like a scabbard, and two-handed ones are carried upright; in a fight they are in the hands and swung, and the shield is on the other forearm in every pose (placed by hand for each model where the arm is hidden or flung) |
-| **Bows and slings** | the bow and quiver on the back (the game draws the bow when shooting), a sling or chatkcha at the hip |
-| **Armour** | the character's own clothing recoloured toward its material, shade for shade (leather, bone, chain, plate, scale...): the chest piece above the waist, arm pieces at the wrists, leg pieces below the waist; on figures the artist drew mostly bare (the mul, the dwarf man) only their straps and loincloth change, so it shows little |
-| **Helms** | a circlet at the brow blended into the hair: a feather on leather, a dark stone on iron, low spikes on bone |
-| **Cloaks** | the human and half-elf woman's own cloak (its folds and swing as she walks and fights) fitted to the wearer, under the hair, in the cloak's colours; hers takes them too |
-| **Boots and belts** | the feet and the waist recoloured |
-
-The colours are muted ones no region's palette changes. A thri-kreen shows
-only weapons and shields (all it can use). Two party members of the same race
-and sex each show their own equipment: the game gives them one figure, so the
-second is moved to pictures of their own. A save made before the Ledger's
-copy (whose party still names the game's own pictures) is put right as soon
-as it is loaded.
-
-![The arena, three of the party as the game draws them (left) and as the Ledger shows them (right): leather armour and leggings recoloured, clubs and a sword worn at the hip, a bow on the back](docs/gear.png)
-
-How: the party's figures are objects 300 to 313 in `SEGOBJEX.GFF` (300 and
-the figure picked at character creation). The launcher's copy of the file
-(see [Item icons](#item-icons)) gives each its own walking and fighting
-pictures, the game's with room round them, at a fixed size with room to
-spare and a marker at the end. While the game runs, when someone's worn items
-change, the Ledger draws their pictures anew (`dscompanion/spritegear.py`,
-from where `dscompanion/spriteparts.py` finds the head, hair, hands and the
-rest in each frame) and writes them over the copies the game has loaded,
-which it draws from at once (only over memory that still holds one of its own
-versions of that picture: what the game has freed and given to something else,
-a monster's figure or a portrait, is left alone), and into the copy of the file, so a picture the
-game loads again (in a fight, in another area) comes dressed
-(`dscompanion/sprites.py`); it has the helper draw the view again (see
-[Shadows](#shadows)), so the figures show it at once, standing still or not.
-The copy also has a spare
-pair of pictures for each party place. Each thing on the map names the
-picture it is drawn with and the slot in the game's picture cache it is drawn
-from; for a second member of the same figure the Ledger names their spare
-there and empties the slot, and marks the figure changed: the game loads the
-picture and fills it.
-
-### Shadows
-
-Every living figure on the map (the party, the people, the monsters; not the
-dead, nor items) casts a soft see-through shadow on the floor, its outline laid
-long toward the lower right, the way the walls' own shadows fall (the light on
-the game's maps comes from the upper left). The shadows are drawn on the floor
-before anything else, so every figure and wall stands on top of them: a shadow
-never covers another figure. Switch them off on the Options tab.
-
-![The slave pens and the arena, without shadows (left) and with them (right): each figure's outline darkened on the floor behind it, the floor's colours kept](docs/shadows.png)
-
-How: the launcher's copy of `DSUN.EXE` (see [How the dice log
-works](#how-the-dice-log-works)) calls DSCLOG when the game draws the floor of
-the view or of a rectangle of it. DSCLOG then lays each casting figure's
-current picture, flattened and stretched, onto the floor just drawn, darkening
-each pixel to the closest clearly darker colour of the area's palette (a table
-it makes from the palette when the Ledger asks: after each area change, once
-its fade-in is over, and now and then; the colours the game cycles, for water
-and fire, are never picked as darker ones). The rectangles the game draws again when a figure
-moves are widened by the length of a shadow, so none is left behind. The
-Ledger keeps DSCLOG's list of who casts one (`dscompanion/shadows.py`) and has
-DSCLOG draw the view again when it changes (from the game's main loop, as
-centring the view does: marking the figures changed instead, as the game's own
-code does to draw one again, can set one in a fight walking again).
-
-### Dust
-
-Anyone walking on sand or dirt raises little puffs of dust behind their feet,
-which spread, rise a little and fade in about a second. The walls and figures
-stand in front of them, as with the shadows. Switch it off on the Options tab.
-
-![Jellybelly walking across the arena's sand in a fight: puffs of dust behind her, spreading and fading](docs/dust.png)
-
-How: DSCLOG notes, each time round the game's main loop, how far each figure
-that casts a shadow has walked, and raises a puff a little behind and to one
-side of its feet every 6 pixels (the feet in turn). The puffs are drawn on the
-floor after the shadows, lightening it through a table of each colour's lighter
-one, which the Ledger makes from the area's palette (`dscompanion/dust.py`):
-only warm, middling colours (sand, dirt) have one, so stone, water and the
-figures take none. Each puff is dithered thinner toward its edge and as it
-fades, by a pattern fixed to the map, so a puff looks the same however much of
-it the game draws again. While anyone walks, the rectangle the game draws again
-round what moved is made to take the puffs in; once everyone stands, DSCLOG has
-the view drawn again a few times a second until the last puff is gone.
-
-### Choosing an enemy: Tab, Enter and the rings
-
-In a fight, a red ring on the ground can mark the enemies, under their feet (the
-figures stand in it, as on their shadows). On a party member's turn, **Tab**
-chooses an enemy, the nearest first, then the next nearest (**Shift+Tab** goes
-back): its ring is drawn thicker and redder, the view scrolls to it if it is
-out of sight, and the log names it. **Enter** then attacks it, as clicking on
-it does (walking up to it first when it is out of reach), even where another
-figure stands in front of it. On the Options tab the rings are **none**, **only
-under the enemy chosen with Tab** (the default: none until Tab is pressed) or
-**under all the enemies** (the chosen one's thicker and redder); Tab and Enter
-have a switch of their own.
-
-![The arena fight with rings under all the enemies: the guard chosen with Tab (middle) has the thicker, redder ring](docs/rings.png)
-
-Tab and Enter also make attacking possible without aiming the mouse at all.
-
-How: DSCLOG hooks the keyboard (`INT 16h`) and takes Tab, Shift+Tab and, with an
-enemy chosen, Enter from what the game reads, counting them for the Ledger
-(`dscompanion/targeting.py`), which keeps the enemies marked and the chosen one
-(`dscompanion/rings.py`). The rings are drawn in the floor pass, after the
-shadows, through a table of each colour's redder one made from the palette. For
-Enter, DSCLOG puts the pointer at the enemy's feet and gives the game a left
-click there, from the main loop, while the routine that finds what is under the
-pointer (`DSUN.EXE` 25B52h, `INT DBh`) answers with the chosen enemy for half a
-second, whatever stands in front of it.
-
-### Scrolling the map
-
-Press the mouse wheel on the map and move the mouse: the map moves with the
-pointer, as if dragged, in fights too. In Windows, turning the wheel scrolls the
-map up and down while the game's window is in front, and sideways with Shift
-held (or a wheel that tilts). On the Options tab it can be switched off, or
-holding the right button made to drag the map as well (a right click, let go
-before the pointer has moved, still changes the pointer between walking, using
-and looking). The game still scrolls on its own when the pointer touches the
-screen's edge, and still brings the view back to whoever's turn it is in a
-fight.
-
-How: the game hears of the mouse's buttons from the mouse driver, through a
-handler it gives it (`INT 33h`, function 0Ch). DSCLOG hooks `INT 33h` and puts
-its own handler in between, which keeps the middle button (the wheel pressed)
-from the game, and, with the right button dragging too, keeps the right button
-from it while it is held: a click reaches the game when it is let go (pressed
-and released where it was pressed), a drag never does. The game's main loop asks where the pointer
-is (to scroll at the screen's edge); there DSCLOG has the game centre its view
-where the drag puts it, with the game's own routine (the one clicking on the
-overview map uses, which draws the view again), and keeps the pointer it reports
-off the edges meanwhile. DOSBox 0.74, GOG's, never passes the wheel on to the
-game, so the Ledger watches for it in Windows (a low-level mouse hook, only
-while DOSBox's window is in front) and tells DSCLOG how far to scroll
-(`dscompanion/scrolling.py`).
-
-The view can't be zoomed: the game draws a 320 by 200 screen at one scale,
-with the view's size built into its drawing code and its video memory pages.
-
-### The bone scale set
-
-The game has Bone Scale Chest Armor, Arm Armor and Leg Armor (objects 1033 to
-1035, in its tables as a set), but only the chest piece is ever placed. With
-the Ledger running, the first time the chest piece is in the region with the
-party, wherever it is (on the ground, in a container, or already carried), the
-rest of the set is put with it: the **Bone Scale Arm Armor**, the **Bone Scale
-Leg Armor** and a **Bone Helm**, in the same pile or container, or in the
-carrier's pack. Once a game, and never where any of the three already is (a
-game saved after they were added, loaded again). The log doesn't say: they're
-there to be found.
-
-The arm and leg pieces are the game's own, with its own icons. The game has
-no helm of bone, so the Bone Helm is an item type of the Ledger's own (the
-leather Helm's, of bone, AC 1 with **Helms give AC 1** like the game's helms,
-worn by those who can wear the bone scale armour: not thieves),
-with an icon in the bone scale's colours (see [Item icons](#item-icons)).
-
-![Dream's pack with the bone scale set: the chest, arm and leg pieces, and the Bone Helm under the pointer with its name](docs/bonescale.png)
-
-### Picking pockets
-
-The game has one pocket to pick, in the Trustee's conversation (his key). With
-**P in a conversation** ticked on the Options tab (it is by default), a thief
-can try anyone's, two ways, with the thief as the party's leader (keys 1-4):
-
-- **Thieving tools.** Every thief starts a new game with a set in their
-  backpack, in its first free cell (the log says so); a thief who joins later, or one in a game
-  started before this version, gets a set once too. **Give thieving tools
-  now** on the Options tab gives a set at once to each thief in the party
-  without one (lost or sold ones included). Moving the tools about the inventory
-  screen doesn't count as being without: no second set for that. They are called **Thieves'
-  Tools**, a name the helper adds to the game's (see
-  [New item names](#new-item-names)). Tools an earlier version gave, called
-  "pick" or named over the game's "Rest icon", are renamed. They look like a satchel (the game's own
-  picture), and earlier sets that looked like a key change to it too. On the
-  inventory screen, pick the tools up, go back to the
-  game with them on the pointer, and click someone in sight: the result comes
-  up in the game's message window, and the tools stay on the pointer for the
-  next one. (Clicking open ground drops them, as with anything carried.) Not in
-  a fight: there's no time for it then, and the tools stay on the pointer.
-- **P in a conversation.** In a conversation, press **P**.
-
-Either way, the Ledger rolls the leader's pick pockets chance as
-it stands now (effects counted, as in the thief rows):
-
-- **Success:** one small thing goes into the thief's backpack (its first free
-  cell): something weighing 10 or less (a bag or arrows are 10, a helm 15, a
-  long sword 30) that isn't worn on the body (armour, a belt, boots, a helm, a
-  cloak). A dagger, a ring, an amulet, a gem or food can be lifted, and so can
-  Kurzak's short sword (see [The slave pens' gear](#the-slave-pens-gear)). Keys stay,
-  as scripts may look for them. People outside the party keep all they own in
-  their pack, so this goes by what each thing is.
-- **Failure:** a move silently roll. Made, the thief slips away unnoticed;
-  missed, they're caught.
-
-With nothing like that left on them, the thief takes what's in their purse
-instead: a few ceramic pieces (2 to 5), added to the party's money. That is
-the last try on that person.
-
-A thief can go on trying the same person until **caught** (both rolls failed)
-or until they take the coins; after that, that person keeps a hand on their
-pockets for good. The Ledger remembers who in `settings.json`,
-for this party, with the time on the game's clock: load a game saved before
-the try and the clock goes back past it, so the try is forgotten and the
-person can be tried again. The Trustee is left to his own conversation. What happens is
-added to the conversation's text (use its arrow to scroll down to it if the
-text is long) and to the dice log:
-
-```
-Daaki picks Kurzak's pocket: d100 = 71, needs 63 or less -> failed
-  Daaki moves silently to get away: d100 = 12, needs 55 or less -> success
-  Daaki fumbles Kurzak's pockets, but slips away unnoticed.
-```
-
-The thief's card on the Ledger's Characters tab shows the chances as they
-stand, move silently among them, and the tools they carry:
-
-![Cilla's card on the Characters tab: Thieves' Tools carried, and her thief skills now, move silently and hide in shadows among them](docs/thief-card.png)
-
-How: the patched game's conversation window sends a key it doesn't know to
-the helper (`INT FCh`), which has the Ledger roll and move the item, then adds
-the result to the window's text; and the routine that uses the item on the
-pointer on something on the map tells the helper what was used on what
-(`INT FDh`): for the thieving tools on someone, the Ledger does the same, and
-the helper shows the result instead of the game's "nothing happens".
-
-### Rule changes
+### Monsters' defences
+
+From the game's damage code (DSUN.EXE); none of this is in the manual:
+
+- Every creature has a monster kind, and each kind a resistance class and a
+  set of properties, in a table the game fills when it starts.
+- Every hit has damage kinds: fire, cold, electricity, acid, poison, draining,
+  psionic, death, and for weapons crushing, edged or pointed, from the item's
+  type. A weapon's hit also carries its magic: one bit for +1 or better, one
+  for +2 or better and one for +3 or better (the weapon's plus, or its
+  ammunition's if that's higher). A monster's own attacks count as magical by
+  its level: (level - 2) / 2, so a 6th-level monster hits like a +2 weapon.
+- A resistance class is up to four rules: "these kinds of damage: this
+  percent of it". The largest percent that applies counts. So "crushing, edged
+  and pointed: 0%; +1 or better: 100%" is a monster only magical weapons hurt.
+  The game's 14 classes come to: only +1 (or +2) weapons hurt it, sometimes
+  with immunity to poison and draining, or to fire; half damage from
+  non-magical weapons and psionic attacks (the Rampager); immune to crushing
+  weapons (the mastyrials); immune to crushing and pointed weapons, fire and
+  acid, so that only edged weapons hurt it (the slimes); immune to fire and
+  cold (and half from electricity); half from fire; immune to poison; immune
+  to psionic attacks.
+- Properties: can't be charmed or held; unaffected by spells left on the
+  ground (fogs, clouds, walls, Web, Grease); not held by Grease, Web,
+  Entangle, Solid Fog or Quicksand; and hits that also cast one of the
+  monsters' powers on the target: 2d6 cold, 2d6 or 20 acid, paralysis,
+  poison of 10 or 30 damage, a deadly Poison, disease on 1 hit in 10.
+- Undead (race 9 on the character sheet) take nothing from poison and
+  draining, and mind-affecting spells, charms and holds don't work on them.
+
+The dice log notes a weapon hit that takes less than its roll, or nothing at
+all, with what the monster's defences say about it (`Mastyrial takes none of
+the 6 damage: crushing weapons can't hurt it`: the game's mastyrials take
+nothing from clubs and maces, only from edged and pointed weapons).
+
+### No critical hits
+
+A natural 20 on an attack always hits, and a natural 1 always misses, but
+that is all the d20 does: the game has no critical hits or fumbles. Its attack
+routine uses the d20 only for those two checks and the comparison with THAC0,
+and never passes it to the damage routine, so a hit on a 20 rolls the same
+damage as any other. A backstab is the only thing that multiplies damage.
+
+### How the dice log works
+
+Every roll in the game goes through one function, Borland C++'s `rand()`.
+
+1. When you start the game with the dice log, the launcher writes
+   `dos\DSUNLOG.EXE`: a copy of the game's `DSUN.EXE` with a few small changes
+   (`dscompanion/gamepatch.py`). The start of `rand()`, the end of the saving
+   throw, the end of the AC calculation, the start of the routine that fills
+   the dialogue window and the start of the message box routine become
+   `INT 60h` to `64h`, the inventory screen's panel calls `INT 65h`, the
+   combat loop `INT F1h`, the USE screen `INT F2h`, the View Character screen
+   `INT F3h`, the end of the window redraw `INT F4h`, the Look box `INT F5h`
+   and `INT F6h`, the start of a monster's turn `INT F7h` (see In the
+   game; that one is in overlay code, which the game moves or unloads to load
+   the dialogue window's, so the helper puts its way back in a stack frame the
+   game's overlay manager fixes up, rather than returning to a stale address:
+   that used to restart a fight, or stop the game with "Stack overflow!"), and the places where AC and a saving throw's modifiers are added up
+   `INT F8h` and `INT F9h` (for [the Ring +1](#the-ring-1) and helms), each
+   weapon's line on the inventory screen `INT FAh`, and the start of a round's
+   movement `INT FBh` (for boots), a key the conversation window doesn't know
+   `INT FCh` and an item used on the map `INT FDh` (for
+   [picking pockets](#picking-pockets)), the two-weapon adjustment `INT FEh`
+   and the doubling of a save's d20 `INT F0h`, Cat's Grace `INT EDh`-`INT EFh` and a hidden thief's attack `INT EAh` and the class level cap `INT E7h` and a thief's hit dice `INT E6h` and `INT E5h` and the thief skills `INT E4h` and two-handed weapons `INT E3h` and Cat's
+   Grace's description and icon `INT E2h` and `INT E1h` (for
+   [rule changes](#rule-changes)), and
+   where the game makes room for its name table and reads it in `INT ECh` and
+   `INT EBh` (for [new item names](#new-item-names)), and its item type table
+   `INT E9h` and `INT E8h` (for [the slave pens' gear](#the-slave-pens-gear)), and
+   the start of the routines drawing the map's floor `INT E0h` and `INT DFh`
+   and of two that draw a rectangle of it again `INT DEh` and `INT DDh` (for
+   [shadows](#shadows)), and where the main loop asks where the pointer is
+   `INT DCh` (for [scrolling the map](#scrolling-the-map) and the
+   [dust](#dust)), and the start of the routine finding what is under the
+   pointer `INT DBh` (for [choosing an enemy](#choosing-an-enemy-tab-enter-and-the-rings)). The
+   copy also allocates a bigger buffer for the game's scripts (11,776 bytes
+   rather than 10,000, for
+   [Dinos and the Trustee](#dinos-and-the-trustee-on-kalzith-and-semyon)), and
+   looks for its data files in the current folder rather than next to itself. The helper also hooks DOS's `INT 21h`, to
+   open the launcher's copies of `SEGOBJEX.GFF`, `RESOURCE.GFF` (see
+   [Item icons](#item-icons)), `GPLDATA.GFF` and `RGN29.GFF` (see
+   [Kalzith](#kalzith), [Semyon](#semyon) and
+   [Dinos and the Trustee](#dinos-and-the-trustee-on-kalzith-and-semyon)), the mouse driver's `INT 33h`
+   (for [scrolling the map](#scrolling-the-map)) and the keyboard's `INT 16h`
+   (for Tab and Enter). DOSBox runs it from the game folder, so
+   it uses your saves as usual.
+2. `dos\DSCLOG.EXE` (source in `dos\dsclog.asm`) is a tiny DOS program loaded
+   into upper memory before the game, so the game loses no memory. It answers
+   those interrupts. Its `rand()` returns exactly the numbers the original
+   would and also records each call, what code called it, and that code's
+   arguments (dice count and sides, THAC0, AC...) in a ring buffer. Others
+   record the final saving throw total, the AC the game uses, and the text
+   of dialogues and messages (in a second buffer); the rest draw the in-game
+   additions and make the Ledger's items and the rule changes count.
+3. Templar's Ledger finds the buffer in DOSBox's memory and reads it every 50 ms.
+   It works out what each roll was for from the code that asked for it, and
+   reads the rest (names, weapons, spells, effects) from the game's own data.
+4. To keep bursts of unimportant randomness from crowding out the rolls that
+   matter, the helper only records calls from code it knows how to label,
+   unless **Show unlabelled rolls** is ticked.
+
+Because the replacement produces identical numbers, the game plays exactly as
+it would without it, apart from what you choose on the Options tab (the
+Ring +1, picking pockets, the [rule changes](#rule-changes)), the Ledger's
+other additions (the slave pens' gear, the cooked vulture, Kalzith, Semyon,
+what the party wears, shadows, dust, rings, Tab and Enter, scrolling) and one
+fix that is
+always in the patched copy: no equipment penalty on thief skills (see
+[Thief skills](#thief-skills)).
+
+Limitations:
+- Only the GOG release (`DSUN.EXE` of 611,408 bytes) is supported. With
+  another version the launcher starts the game without the dice log and says
+  why.
+- Outside combat, the thief skill, trap and ability checks and the character
+  creation rolls are labelled; other rolls there (for example treasure or
+  random encounters) show up only with **Show unlabelled rolls**, as raw
+  numbers.
+- A save-file load from the main menu is recognised, so the spells already
+  active in it aren't reported as new. Loading a save of the same party in the
+  middle of play isn't, and its effects may be listed as if just cast.
+- Dialogue speakers are portrait numbers until the log learns their names or
+  you name them (see above): the game doesn't keep a name with the dialogue.
+  A learned name is the creature the conversation was started on, so a scene
+  in which one face speaks for someone else would get that someone's name.
+- Weapon breaking was checked against the game's code, and the check's rolls
+  were seen in play, but no weapon happened to break during testing; the
+  game's own "is broken !" message is logged either way.
+
+## In the game
+
+The game itself shows more, in its own lettering and windows, when it is started
+from the Ledger (or either `.bat` file).
+
+### In the game: THAC0, saves and thief skills
+
+Started with the dice log, the game's own inventory screen (the one with the
+character's figure and their equipment) shows five more things in its
+right-hand panel, drawn by the game's text routine so they look like the rest:
+
+- above STR, **THAC0** and the five **saving throws**, with the usual AD&D
+  short labels: `PPD` paralysis/poison/death, `RSW` rod/staff/wand, `PP`
+  petrification/polymorph, `BW` breath weapon, `SP` spell;
+- at the right of each weapon's damage line, the THAC0 with that weapon
+  (`T14`);
+- right of the abilities, level with STR to CHA, for a character with thief
+  levels, six **thief skills**: `PICK` pockets, open `LOCK`s, find/remove
+  `TRAP`s, `MOVE` silently, `HIDE` in shadows and `CLMB` walls. Move silently
+  and hide in shadows are the ones the Ledger rolls (for
+  [picking pockets](#picking-pockets) and the [stealth rule](#rule-changes)).
+  Hear noise, which one script check in the game rolls, is left out for want
+  of room (the Characters tab shows it), as is read languages, which nothing
+  checks (see Where the game rolls them). Not below the weapons: three weapons fill the panel down to its
+  buttons. A ranger, with the [stealth rule](#rule-changes) on, gets their
+  `MOVE` and `HIDE` in the same places (the other four left out);
+- right of SP in the saves (where RSW and BW sit on the rows above), the DEX
+  **reaction adjustment** (`REAC +4`): -6 at DEX 1 to +5 at DEX 24-25, the
+  number the [two-weapon rule](#rule-changes) adds to its penalties, and the
+  one initiative uses. It is worked out from the character's DEX each time
+  the panel is drawn, so it follows any change (Cat's Grace's, while it
+  lasts).
+- right of the AC line, the DEX **defensive adjustment** (`DEF -5`), as
+  AD&D's table gives it, on AC: +5 at DEX 1 to -6 at DEX 24-25 (-4 at 18, -5
+  at 21-23). The game counts it in AC already; on saving throws against what
+  can be dodged it counts the other way round (DEF -5 is +5 on the save), with
+  the [rule change](#rule-changes) for fire, cold and electricity. Worked out
+  the same way as REAC, each time the panel is drawn.
+
+The **View Character** screen gets THAC0 and the saves too, under the item
+icons: `THAC0: 15` and `SAVE: 8 12 11` / `15 13`, the saves in the order
+above.
+
+![The View Character screen with THAC0 and the saves added, as they stand under Bless](docs/view-character.png)
+
+They're the numbers as they stand now, worked out by the Ledger the way the
+game's own attack and saving throw routines do. Each time the game draws one
+of these screens, the helper has the Ledger bring them up to date first (the
+game waits a moment for it), so putting on a ring or readying another weapon
+shows at once. Spells start and end as time passes in the game, which it
+doesn't while these screens are open; open the screen again to see such a
+change.
+
+- **THAC0**: the character's THAC0 less STR's to-hit adjustment (DEX's for a
+  missile weapon), the weapon's plus (or, for a plain wooden, bone, stone or
+  obsidian weapon, its material's penalty), Bless and Prayer (+1), Curse
+  (-1), Slow (-4) and Graft Weapon (+1). The THAC0 at the top is the main
+  weapon's: the right hand's, else the left's, else the missile weapon's.
+  What depends on the target (attacking from behind or backstabbing, a Blurred
+  target) is left out; the dice log shows it on each attack.
+- **Saves**: the d20 each needs, the character sheet's number less what the
+  game adds to every save: the [Ring +1](#the-ring-1) and the
+  [Cloak of Protection](#the-slave-pens-gear), Bless, Prayer,
+  Barkskin, Spirit Armor (not on PPD), the Save penalty, and on PPD the CON
+  adjustment (and a dwarf's or halfling's CON bonus). What depends on the
+  spell or its caster (WIS against mind spells, Protection from Fire, a
+  doubled d20 against fire...) is left out; the dice log shows it on each
+  save. A 1 always fails and a 20 always saves, so they show between 2 and 20.
+- **Thief skills**: as they stand (with no equipment penalty in games started
+  with the dice log: see Thief skills), 0 for a skill an effect rules out or when the thief isn't Okay,
+  and 100 for one an effect makes certain (Detect Traps). Only the situation's
+  bonus or penalty (a hard lock) is left out: the dice log shows it on each
+  roll (see Thief skills).
+
+The Characters tab shows the same THAC0 with each weapon and saves. The
+game's own numbers (the character sheet's) come back on these screens when
+the Ledger isn't running.
+
+How: the patched game calls the helper (`INT 65h`) just after the panel's
+weapon lines; the helper prints the lines with the game's own text routine,
+whose address, like the selected character, it reads from the game's code
+around the patch (overlays move, so nothing is fixed in advance). The View
+Character screen does the same through `INT F3h`, called while it draws the
+character's panel, and the routine that lists the weapons through `INT FAh`
+after each one. The Ledger keeps the numbers in the helper's memory, with the
+time it last did: older than 5 seconds, the helper shows the sheet's numbers
+instead. Before a screen is drawn, the helper asks the Ledger to update them
+and waits for its answer, half a second at most. Nothing else in the game changes.
+
+### In the game: spell slots on the USE screen
+
+The game's USE (cast spells) screen shows, at the top of the panel under the
+spells, how many spells of each level the selected character can still cast,
+and the most they get after resting: `WIZ` for preservers' wizard spells, `PRI`
+for clerics', druids' and rangers' priest spells, one `left/most` per spell
+level from the 1st (six to a line), up to the highest level the character can
+cast (more appear as they level up):
+
+![The USE screen with K'ratchek's spell slots: a 2nd-level druid, five first-level spells](docs/use-slots.png)
+
+The numbers go down as spells are cast (the screen shows the new count when it
+is next drawn) and back up after resting. That panel is where the game puts
+the icons of the character's usable magic items (fruit, wands and the like),
+along its bottom from the left, so the slots take only the three lines above
+them: a character with both wizard and priest spells gets the two lines without
+the `SPELLS LEFT BY LEVEL` heading.
+
+The numbers are the same as on the Characters tab (see Spell slots): the
+Ledger works them out, including the WIS bonus, and keeps a copy in the
+helper's memory, which the patched game (`INT F2h`, where the USE screen
+labels its LEVEL button) prints with the game's own text routine. Picking a
+character or a spell level repaints the screen's panels after that, so the
+helper prints them again when the game has finished redrawing the USE window
+(`INT F4h`, at the end of the game's window-redraw routine). So they show,
+and stay, while Templar's Ledger (or its command-line dice log) is running.
+
+### In the game: each turn's rolls
+
+With **Show each turn's rolls in the game** ticked on the Options tab (it is
+off unless you tick it; or `python -m dscompanion dicelog --popups`), the game
+stops at the end
+of every turn in a fight in which someone attacked or cast a spell, and shows
+that turn's rolls in its own dialogue window, with **Continue** to go on. Below
+the box, pick how much it says: **at the least**, **in short** or **in
+detail**. In detail, they are the dice log's own lines: each attack's d20, the AC it would hit and the
+target's AC, how the THAC0 was worked out, and for a hit the damage dice and
+bonuses; a spell's damage dice, and each saving throw against it. (The chance
+to hit or to save is left out: the log has it.) The last line says who is
+still to act this round (`Still to act this round: Jellybelly, Mountain
+Stalker`), `End of round 2.` when everyone has, or, when the new round's
+order is already in, that order (`Round 3: Dreamwalker, Jellybelly, Mlemlem,
+Daaki`). The window shows five lines at a time; its **MORE** arrow shows the
+next ones:
+
+![The game's window at the end of a turn, in detail](docs/turn-detail.png)
+
+![The game's window after a Defiler's Cone of Cold](docs/turn-spell.png)
+
+**In short** (or `--short-popups`) gives one line per target instead (and each
+spell's first line):
+
+![The game's window at the end of Mlemlem's turn, in short](docs/turn-summary.png)
+
+`20 vs 11+ HIT, 12 damage` is the d20, the roll it needed (THAC0 − the
+target's AC; a natural 20 always hits, a 1 always misses), and the damage the
+hit did.
+
+**At the least** (or `--minimal-popups`) gives only what came of the turn, no
+dice: `Mlemlem hits Mountain Stalker for 12, misses. Slig takes 9 from
+Fireball`. It leaves out who is still to act.
+
+Each turn gets its own window, monsters' included. (The game plays a
+monster's whole turn inside one call, so the helper is also called there, just
+before such a turn starts: `INT F7h`.) Only fights the party is in get them:
+the fights the game stages without the party, such as the Defiler's show at
+the start of the arena, are run by scripts waiting on the same dialogue window,
+and a window of ours there would let the script go on before the fight ends.
+
+How: the patched game calls the helper (`INT F1h`) in its combat loop, right
+after the call that may pass the turn on. When whose turn it is has changed,
+the helper counts it and waits up to a third of a second for the Ledger,
+which writes the summary into the helper's memory; the helper then feeds it to
+the game's dialogue window the way the game's scripts do for a narration
+(the emblem, the text, "Press continue"). If the Ledger isn't running, or the
+box is unticked, the game doesn't wait at all. (INT 66h-6Fh can't be used: the
+game calls those itself, looking for sound drivers.)
+
+### In the game: what hurts a monster (the Look box)
+
+In a fight, Look at a monster (right-click until the cursor is the Look icon,
+then click the monster) and the game's small box, under its name and level,
+now also shows its hit points and AC, its THAC0 and magic resistance (`MR`),
+and its most important defence: `NEEDS +1 WEAPON`, `IMM FIRE COLD`,
+`NO CRUSH`, `HALF FROM WPNS` or `UNDEAD`. Its own status lines (casting,
+charmed, held...) follow in any row left. When there's more to say, closing
+the box shows everything in the game's dialogue window: the weapons it needs,
+the damage it's immune to or takes half of, spells that don't work on it, and
+what its hits do besides damage. The dice log gets the same lines (`Look:
+...`). Untick **Describe monsters when you Look at them in a fight** on the
+Options tab to turn this off.
+
+![The Look box on the arena's Defiler: HP, AC and THAC0 added](docs/look-box.png)
+
+(The arena's Defiler, like the other people in the early fights, has no
+special defences, so its box shows just the numbers.)
+
+How: the patched game calls the helper (`INT F5h`) where the box has drawn its
+first status rows; the helper asks the Ledger (as for each turn's rolls), and
+prints the lines with the game's text routine. `INT F6h`, at the end of the
+routine that closes the box, shows the whole description.
+
+## Rule changes
 
 Ten changes to the game's rules, each with its own box under **Rule changes**
 on the Options tab (all on by default; they take effect in games started with
@@ -1500,7 +1492,7 @@ behind and a backstab (`INT EAh`), makes the hidden thief's next one so, by
 the game's own conditions for a backstab (a thief, in melee, a weapon of
 weight 40 or less).
 
-#### Thief skills from AD&D's table
+### Thief skills from AD&D's table
 
 The game's thief skills come out high: a 3rd-level elf thief with DEX 22 has
 move silently 66 and hide in shadows 61. AD&D gives 27 and 20 at 3rd level
@@ -1545,7 +1537,7 @@ level, adds the DEX table's, and jumps past the game's DEX formula to its
 armour and effects. The Ledger's screens and the inventory screen's panel
 work the chances out the same way.
 
-#### Half-giants' two-handed weapons
+### Half-giants' two-handed weapons
 
 Half-giants stand up to twelve feet tall. With **Half-giants wield
 two-handed weapons in one hand** ticked, a half-giant can hold a two-handed
@@ -1614,367 +1606,704 @@ How: the game holds a class level against 9 in two places, where a character
 goes up a level and where View Character shows the XP for the next one; the
 helper (`INT E7h`) holds it against 10 instead while the rule is on.
 
-### No critical hits
+## New content
 
-A natural 20 on an attack always hits, and a natural 1 always misses, but
-that is all the d20 does: the game has no critical hits or fumbles. Its attack
-routine uses the d20 only for those two checks and the comparison with THAC0,
-and never passes it to the damage routine, so a hit on a 20 rolls the same
-damage as any other. A backstab is the only thing that multiplies damage.
+People, a quest and items the Ledger adds to the game. Each can be switched off on
+the Options tab's **New content** group; Kalzith, Semyon and the vulture from the
+next time the game is started.
 
-### In the game: THAC0, saves and thief skills
+### The Ring +1
 
-Started with the dice log, the game's own inventory screen (the one with the
-character's figure and their equipment) shows five more things in its
-right-hand panel, drawn by the game's text routine so they look like the rest:
+A ring of protection the game never had: **+1 AC and +1 on every saving
+throw** for whoever wears it, called a Ring of Protection. With **A Ring of
+Protection +1 on the arena's Tied-up Prisoner (search his body)** ticked on
+the Options tab (it is by default), it is on the Tied-up Prisoner, the bound
+man beside the vulture in the arena: free him (he dies as he falls from his
+bonds; killing him where he hangs does too), then look at his body
+(right-click until the cursor is the eye, then click it). The arena's script
+says there is nothing on it; while the ring is still to be found, the Ledger
+(or **Play Dark Sun (in-game rolls)**) has the game say instead:
 
-- above STR, **THAC0** and the five **saving throws**, with the usual AD&D
-  short labels: `PPD` paralysis/poison/death, `RSW` rod/staff/wand, `PP`
-  petrification/polymorph, `BW` breath weapon, `SP` spell;
-- at the right of each weapon's damage line, the THAC0 with that weapon
-  (`T14`);
-- right of the abilities, level with STR to CHA, for a character with thief
-  levels, six **thief skills**: `PICK` pockets, open `LOCK`s, find/remove
-  `TRAP`s, `MOVE` silently, `HIDE` in shadows and `CLMB` walls. Move silently
-  and hide in shadows are the ones the Ledger rolls (for
-  [picking pockets](#picking-pockets) and the [stealth rule](#rule-changes)).
-  Hear noise, which one script check in the game rolls, is left out for want
-  of room (the Characters tab shows it), as is read languages, which nothing
-  checks (see Where the game rolls them). Not below the weapons: three weapons fill the panel down to its
-  buttons. A ranger, with the [stealth rule](#rule-changes) on, gets their
-  `MOVE` and `HIDE` in the same places (the other four left out);
-- right of SP in the saves (where RSW and BW sit on the rows above), the DEX
-  **reaction adjustment** (`REAC +4`): -6 at DEX 1 to +5 at DEX 24-25, the
-  number the [two-weapon rule](#rule-changes) adds to its penalties, and the
-  one initiative uses. It is worked out from the character's DEX each time
-  the panel is drawn, so it follows any change (Cat's Grace's, while it
-  lasts).
-- right of the AC line, the DEX **defensive adjustment** (`DEF -5`), as
-  AD&D's table gives it, on AC: +5 at DEX 1 to -6 at DEX 24-25 (-4 at 18, -5
-  at 21-23). The game counts it in AC already; on saving throws against what
-  can be dodged it counts the other way round (DEF -5 is +5 on the save), with
-  the [rule change](#rule-changes) for fire, cold and electricity. Worked out
-  the same way as REAC, each time the panel is drawn.
+```
+Searching the body, you find a ring sewn into his loincloth: a Ring of Protection +1 (+1 AC, +1 on saves).
+```
 
-The **View Character** screen gets THAC0 and the saves too, under the item
-icons: `THAC0: 15` and `SAVE: 8 12 11` / `15 13`, the saves in the order
-above.
+and puts the ring in the leader's backpack (or, if that's full, the first
+backpack with room); the log says whose. Finding it is worth **50 XP to
+whoever searched**: after the line, the game's own window says so ("Gerakis
+receives 50 experience points!") with the sound of a quest done, as the
+cooked vulture's meal has, once only. Wear it on either hand's finger from the
+inventory screen. The game's names are at most 15 letters long, and
+longer ones run out of the Look box, so in the game it is **RING/PROTECTION**
+on the inventory screen and **Ring/Protection+1** in the box Look opens on it
+(shortened the way the game shortens its own "Helm/Contempltn"; the game puts
+an item's plus straight after its name there, as for any item with a plus).
+The Ledger's own screens and the log call it Ring of Protection.
+It happens once: with a Ring +1 with the party or anywhere in the arena,
+there is no other. Games saved with an earlier version, where the ring was in
+the body lying below him, keep it there.
 
-![The View Character screen with THAC0 and the saves added, as they stand under Bless](docs/view-character.png)
+How it works: the game has a plain "Ring" item that nothing in it has a plus
+on, and no item that betters saving throws. The Ledger adds a Ring with a plus
+of 1 to a backpack (an item record from the game's free list, its name one
+the helper adds to the game's name table: see
+[New item names](#new-item-names)); the patched game's routine
+that feeds the dialogue window (`INT 63h`) shows the search's line in place of
+the script's when the Ledger asks it to. The dice
+log's patched game does the rest (see
+[How the dice log works](#how-the-dice-log-works)): where it adds up AC, a
+ring counts like armour does (its plus, on top of AC 0), and where it adds up
+a saving throw's modifiers, it starts from the pluses of the rings worn. So:
 
-They're the numbers as they stand now, worked out by the Ledger the way the
-game's own attack and saving throw routines do. Each time the game draws one
-of these screens, the helper has the Ledger bring them up to date first (the
-game waits a moment for it), so putting on a ring or readying another weapon
-shows at once. Spells start and end as time passes in the game, which it
-doesn't while these screens are open; open the screen again to see such a
-change.
+- The ring works in games started with the dice log. In the original game
+  it is a plain ring, without a name of its own (the game's table has no
+  name with that number).
+- The AC it gives shows on the View Character and inventory screens and in the
+  Ledger's **AC: spells, rings, other** row; the +1 on saves in the saves those
+  screens and the Characters tab show, and in the log.
+- A ring the original game has (the plain Ring and the Serpent Ring are the
+  only kind the patch looks at) has no plus, so it plays as before.
 
-- **THAC0**: the character's THAC0 less STR's to-hit adjustment (DEX's for a
-  missile weapon), the weapon's plus (or, for a plain wooden, bone, stone or
-  obsidian weapon, its material's penalty), Bless and Prayer (+1), Curse
-  (-1), Slow (-4) and Graft Weapon (+1). The THAC0 at the top is the main
-  weapon's: the right hand's, else the left's, else the missile weapon's.
-  What depends on the target (attacking from behind or backstabbing, a Blurred
-  target) is left out; the dice log shows it on each attack.
-- **Saves**: the d20 each needs, the character sheet's number less what the
-  game adds to every save: the [Ring +1](#the-ring-1) and the
-  [Cloak of Protection](#the-slave-pens-gear), Bless, Prayer,
-  Barkskin, Spirit Armor (not on PPD), the Save penalty, and on PPD the CON
-  adjustment (and a dwarf's or halfling's CON bonus). What depends on the
-  spell or its caster (WIS against mind spells, Protection from Fire, a
-  doubled d20 against fire...) is left out; the dice log shows it on each
-  save. A 1 always fails and a 20 always saves, so they show between 2 and 20.
-- **Thief skills**: as they stand (with no equipment penalty in games started
-  with the dice log: see Thief skills), 0 for a skill an effect rules out or when the thief isn't Okay,
-  and 100 for one an effect makes certain (Detect Traps). Only the situation's
-  bonus or penalty (a hard lock) is left out: the dice log shows it on each
-  roll (see Thief skills).
+### Picking pockets
 
-The Characters tab shows the same THAC0 with each weapon and saves. The
-game's own numbers (the character sheet's) come back on these screens when
-the Ledger isn't running.
+The game has one pocket to pick, in the Trustee's conversation (his key). With
+**Picking pockets** ticked on the Options tab (it is by default), a thief can
+try anyone's with Thieves' Tools; with its **... or the leader, a thief, presses
+P in a conversation** ticked too (it is off by default), also with P, the
+thief as the party's leader (keys 1-4):
 
-How: the patched game calls the helper (`INT 65h`) just after the panel's
-weapon lines; the helper prints the lines with the game's own text routine,
-whose address, like the selected character, it reads from the game's code
-around the patch (overlays move, so nothing is fixed in advance). The View
-Character screen does the same through `INT F3h`, called while it draws the
-character's panel, and the routine that lists the weapons through `INT FAh`
-after each one. The Ledger keeps the numbers in the helper's memory, with the
-time it last did: older than 5 seconds, the helper shows the sheet's numbers
-instead. Before a screen is drawn, the helper asks the Ledger to update them
-and waits for its answer, half a second at most. Nothing else in the game changes.
+- **Thieving tools.** Every thief starts a new game with a set in their
+  backpack, in its first free cell (the log says so); a thief who joins later, or one in a game
+  started before this version, gets a set once too. **Give thieving tools
+  now** on the Options tab gives a set at once to each thief in the party
+  without one (lost or sold ones included). Moving the tools about the inventory
+  screen doesn't count as being without: no second set for that. They are called **Thieves'
+  Tools**, a name the helper adds to the game's (see
+  [New item names](#new-item-names)). Tools an earlier version gave, called
+  "pick" or named over the game's "Rest icon", are renamed. They look like a satchel (the game's own
+  picture), and earlier sets that looked like a key change to it too. On the
+  inventory screen, pick the tools up, go back to the
+  game with them on the pointer, and click someone in sight: the result comes
+  up in the game's message window, and the tools stay on the pointer for the
+  next one. (Clicking open ground drops them, as with anything carried.) Not in
+  a fight: there's no time for it then, and the tools stay on the pointer.
+- **P in a conversation** (if ticked). In a conversation, press **P**.
 
-### In the game: spell slots on the USE screen
+Either way, the Ledger rolls the leader's pick pockets chance as
+it stands now (effects counted, as in the thief rows):
 
-The game's USE (cast spells) screen shows, at the top of the panel under the
-spells, how many spells of each level the selected character can still cast,
-and the most they get after resting: `WIZ` for preservers' wizard spells, `PRI`
-for clerics', druids' and rangers' priest spells, one `left/most` per spell
-level from the 1st (six to a line), up to the highest level the character can
-cast (more appear as they level up):
+- **Success:** one small thing goes into the thief's backpack (its first free
+  cell): something weighing 10 or less (a bag or arrows are 10, a helm 15, a
+  long sword 30) that isn't worn on the body (armour, a belt, boots, a helm, a
+  cloak). A dagger, a ring, an amulet, a gem or food can be lifted, and so can
+  Kurzak's short sword (see [The slave pens' gear](#the-slave-pens-gear)). Keys stay,
+  as scripts may look for them. People outside the party keep all they own in
+  their pack, so this goes by what each thing is.
+- **Failure:** a move silently roll. Made, the thief slips away unnoticed;
+  missed, they're caught.
 
-![The USE screen with K'ratchek's spell slots: a 2nd-level druid, five first-level spells](docs/use-slots.png)
+With nothing like that left on them, the thief takes what's in their purse
+instead: a few ceramic pieces (2 to 5), added to the party's money. That is
+the last try on that person.
 
-The numbers go down as spells are cast (the screen shows the new count when it
-is next drawn) and back up after resting. That panel is where the game puts
-the icons of the character's usable magic items (fruit, wands and the like),
-along its bottom from the left, so the slots take only the three lines above
-them: a character with both wizard and priest spells gets the two lines without
-the `SPELLS LEFT BY LEVEL` heading.
+A thief can go on trying the same person until **caught** (both rolls failed)
+or until they take the coins; after that, that person keeps a hand on their
+pockets for good. The Ledger remembers who in `settings.json`,
+for this party, with the time on the game's clock: load a game saved before
+the try and the clock goes back past it, so the try is forgotten and the
+person can be tried again. The Trustee is left to his own conversation. What happens is
+added to the conversation's text (use its arrow to scroll down to it if the
+text is long) and to the dice log:
 
-The numbers are the same as on the Characters tab (see Spell slots): the
-Ledger works them out, including the WIS bonus, and keeps a copy in the
-helper's memory, which the patched game (`INT F2h`, where the USE screen
-labels its LEVEL button) prints with the game's own text routine. Picking a
-character or a spell level repaints the screen's panels after that, so the
-helper prints them again when the game has finished redrawing the USE window
-(`INT F4h`, at the end of the game's window-redraw routine). So they show,
-and stay, while Templar's Ledger (or its command-line dice log) is running.
+```
+Daaki picks Kurzak's pocket: d100 = 71, needs 63 or less -> failed
+  Daaki moves silently to get away: d100 = 12, needs 55 or less -> success
+  Daaki fumbles Kurzak's pockets, but slips away unnoticed.
+```
 
-### In the game: each turn's rolls
+The thief's card on the Ledger's Characters tab shows the chances as they
+stand, move silently among them, and the tools they carry:
 
-With **Show each turn's rolls in the game** ticked on the Options tab (it is
-off unless you tick it; or `python -m dscompanion dicelog --popups`), the game
-stops at the end
-of every turn in a fight in which someone attacked or cast a spell, and shows
-that turn's rolls in its own dialogue window, with **Continue** to go on. Below
-the box, pick how much it says: **at the least**, **in short** or **in
-detail**. In detail, they are the dice log's own lines: each attack's d20, the AC it would hit and the
-target's AC, how the THAC0 was worked out, and for a hit the damage dice and
-bonuses; a spell's damage dice, and each saving throw against it. (The chance
-to hit or to save is left out: the log has it.) The last line says who is
-still to act this round (`Still to act this round: Jellybelly, Mountain
-Stalker`), `End of round 2.` when everyone has, or, when the new round's
-order is already in, that order (`Round 3: Dreamwalker, Jellybelly, Mlemlem,
-Daaki`). The window shows five lines at a time; its **MORE** arrow shows the
-next ones:
+![Cilla's card on the Characters tab: Thieves' Tools carried, and her thief skills now, move silently and hide in shadows among them](docs/thief-card.png)
 
-![The game's window at the end of a turn, in detail](docs/turn-detail.png)
+How: the patched game's conversation window sends a key it doesn't know to
+the helper (`INT FCh`), which has the Ledger roll and move the item, then adds
+the result to the window's text; and the routine that uses the item on the
+pointer on something on the map tells the helper what was used on what
+(`INT FDh`): for the thieving tools on someone, the Ledger does the same, and
+the helper shows the result instead of the game's "nothing happens".
 
-![The game's window after a Defiler's Cone of Cold](docs/turn-spell.png)
+### The cooked vulture
 
-**In short** (or `--short-popups`) gives one line per target instead (and each
-spell's first line):
+Hit the arena's vulture and its feathers come off (a plucked vulture); the
+slave pens' campfire cooks it. In the game itself the cooked vulture is then no
+use to anyone: no script asks for it. With the Ledger running, **Dinos**, the
+pens' fine cook, can be asked about it: talk to him while someone in the party
+carries it, and among the first things the party can say to him, just before
+"Goodbye.", is **"We cooked the vulture from the arena."** He takes it ("A vulture! Give it here. A pinch of salt,
+some agafari leaf, slow over the coals... Sit down and eat with me. A meal like
+this puts the strength back in you."), and the game's own window for a quest's
+reward follows, as for any of its quests: "Each party member receives 100
+experience points!", with the sound the game plays when a quest is done (as for
+the Trustee's key or the filled water jug). Each party member gets **100 XP**
+(split between a multi-class character's classes, as the game splits all its
+XP) and is **restored as after a full rest**: HP, PSP and spell slots full, and
+anyone knocked out back on their feet. No time passes.
+The question is gone once the vulture is. (Eaten by the party on their own,
+used on one of them from the inventory, it's too tough to be worth the chewing.)
 
-![The game's window at the end of Mlemlem's turn, in short](docs/turn-summary.png)
+![Dinos's answer in his dialogue window with his portrait, then the game's own window for the reward: "Each party member receives 100 experience points!"](docs/vulture-meal.png)
 
-`20 vs 11+ HIT, 12 damage` is the d20, the roll it needed (THAC0 − the
-target's AC; a natural 20 always hits, a 1 always misses), and the damage the
-hit did.
+How: in the Ledger's copy of `GPLDATA.GFF`, Dinos's talk (script 139) has the
+question in its first menu (a copy of the game's with the question added, as for
+the questions about Kalzith and Semyon, see
+[Dinos and the Trustee](#dinos-and-the-trustee-on-kalzith-and-semyon)), shown
+while the game's own test says someone in the party carries the cooked vulture
+(33h, as the campfire's script asks about the plucked one; the game's object
+A4Ch), the test being the question's own condition in the menu. Chosen, the script takes it (5Ch, as the campfire takes the plucked one)
+and sets the Ledger's flag 780, then gives the XP through the game's own routine
+for quests (the amount in its variable, then script 74 at 135: the window, the
+words and the quest's sound), as Dinos's own script does when he heals Gilal
+(350). The Ledger then refills the party, once (flag 781), only while the party
+is talking with him (never from a game being loaded).
 
-**At the least** (or `--minimal-popups`) gives only what came of the turn, no
-dice: `Mlemlem hits Mountain Stalker for 12, misses. Slig takes 9 from
-Fireball`. It leaves out who is still to act.
+### The slave pens' gear
 
-Each turn gets its own window, monsters' included. (The game plays a
-monster's whole turn inside one call, so the helper is also called there, just
-before such a turn starts: `INT F7h`.) Only fights the party is in get them:
-the fights the game stages without the party, such as the Defiler's show at
-the start of the arena, are run by scripts waiting on the same dialogue window,
-and a window of ours there would let the script go on before the fight ends.
+With the Ledger running, the first time the party is in the slave pens the
+three who run them get things of the Ledger's own (the log doesn't say: they're
+there to be found):
 
-How: the patched game calls the helper (`INT F1h`) in its combat loop, right
-after the call that may pass the turn on. When whose turn it is has changed,
-the helper counts it and waits up to a third of a second for the Ledger,
-which writes the summary into the helper's memory; the helper then feeds it to
-the game's dialogue window the way the game's scripts do for a narration
-(the emblem, the text, "Press continue"). If the Ledger isn't running, or the
-box is unticked, the game doesn't wait at all. (INT 66h-6Fh can't be used: the
-game calls those itself, looking for sound drivers.)
+| Who | Gear | Can a thief lift it? |
+|---|---|---|
+| **Kurzak**, the guards' leader | a metal **Short Sword** (1d6, in his pack) and a leather **Helm** (worn) | the sword, yes |
+| **Legcrusher**, the half-giant | **Leather Chest Armor +1** (worn) | no |
+| **Pehtucl**, the head templar (the Templar in the pens' south-west corner with the Obsidian Bloodwrath) | a **Cloak of Protection +1** (worn) and a **Ring of Protection +1** (worn) | the ring, yes; not the cloak |
 
-### In the game: what hurts a monster (the Look box)
+They're priced as magic items: Leather Chest Armor +1 3000, the Cloak and the
+Ring 5000 each. Nothing is given where it's in the game already (a game saved
+after it was given, loaded again), and a short sword lifted from Kurzak isn't
+replaced.
 
-In a fight, Look at a monster (right-click until the cursor is the Look icon,
-then click the monster) and the game's small box, under its name and level,
-now also shows its hit points and AC, its THAC0 and magic resistance (`MR`),
-and its most important defence: `NEEDS +1 WEAPON`, `IMM FIRE COLD`,
-`NO CRUSH`, `HALF FROM WPNS` or `UNDEAD`. Its own status lines (casting,
-charmed, held...) follow in any row left. When there's more to say, closing
-the box shows everything in the game's dialogue window: the weapons it needs,
-the damage it's immune to or takes half of, spells that don't work on it, and
-what its hits do besides damage. The dice log gets the same lines (`Look:
-...`). Untick **Describe monsters when you Look at them in a fight** on the
-Options tab to turn this off.
+The Cloak of Protection works as the [Ring +1](#the-ring-1) does, from the
+cloak slot: +1 AC and +1 on every saving throw. Kill them, or pick their
+pockets, to have it. Each item is given once a game, and not to anyone already
+dead.
 
-![The Look box on the arena's Defiler: HP, AC and THAC0 added](docs/look-box.png)
+How: the game has no short sword, and no cloak whose plus counts, so the helper
+adds two item types after the game's 115 each time the game reads its type
+table in (the short sword a copy of the metal long sword's with a d6; the cloak
+a copy of the game's Cloak, its plus counting for AC), and two names after the
+game's (see [New item names](#new-item-names)). Where it adds up saving throws
+it counts a worn Cloak of Protection like a ring. The Ledger puts each item in
+its owner's things (from the game's free list, worn where the slot is free,
+else in a backpack cell), and the game keeps and saves them like its own. In
+the original game, the sword and cloak are items of types it doesn't have:
+don't load a save that has them without the dice log.
 
-(The arena's Defiler, like the other people in the early fights, has no
-special defences, so its box shows just the numbers.)
+### The bone scale set
 
-How: the patched game calls the helper (`INT F5h`) where the box has drawn its
-first status rows; the helper asks the Ledger (as for each turn's rolls), and
-prints the lines with the game's text routine. `INT F6h`, at the end of the
-routine that closes the box, shows the whole description.
+The game has Bone Scale Chest Armor, Arm Armor and Leg Armor (objects 1033 to
+1035, in its tables as a set), but only the chest piece is ever placed. With
+the Ledger running, the first time the chest piece is in the region with the
+party, wherever it is (on the ground, in a container, or already carried), the
+rest of the set is put with it: the **Bone Scale Arm Armor**, the **Bone Scale
+Leg Armor** and a **Bone Helm**, in the same pile or container, or in the
+carrier's pack (all three at once: with less room than that, the next time
+there is). Once a game, and never where any of the three already is (a
+game saved after they were added, loaded again). The log doesn't say: they're
+there to be found.
 
-### Monsters' defences
+The set is given only that once: a piece sold, dropped or lost isn't given
+again. Instead the Ledger keeps an eye on the three pieces (every 3 seconds),
+because one has been seen to vanish from a pack with no trace. If one is gone
+from where it was on two looks in a row (not left on the ground of another
+area, and not a save loaded), the Ledger writes up what became of it in the
+`crash-logs` folder, as `vanished-` and the time, and the log says so:
 
-From the game's damage code (DSUN.EXE); none of this is in the manual:
+```
+The Bone Scale Leg Armor has vanished (last seen worn by Gerakis (slot 6, item 10)). What became of it is written up in crash-logs\vanished-2026-10-04-225337.txt: please send that file.
+```
 
-- Every creature has a monster kind, and each kind a resistance class and a
-  set of properties, in a table the game fills when it starts.
-- Every hit has damage kinds: fire, cold, electricity, acid, poison, draining,
-  psionic, death, and for weapons crushing, edged or pointed, from the item's
-  type. A weapon's hit also carries its magic: one bit for +1 or better, one
-  for +2 or better and one for +3 or better (the weapon's plus, or its
-  ammunition's if that's higher). A monster's own attacks count as magical by
-  its level: (level - 2) / 2, so a 6th-level monster hits like a +2 weapon.
-- A resistance class is up to four rules: "these kinds of damage: this
-  percent of it". The largest percent that applies counts. So "crushing, edged
-  and pointed: 0%; +1 or better: 100%" is a monster only magical weapons hurt.
-  The game's 14 classes come to: only +1 (or +2) weapons hurt it, sometimes
-  with immunity to poison and draining, or to fire; half damage from
-  non-magical weapons and psionic attacks; immune to crushing weapons, or to
-  edged and pointed ones; immune to fire and cold (and half from
-  electricity); half from fire; immune to poison; immune to psionic attacks.
-- Properties: can't be charmed or held; unaffected by spells left on the
-  ground (fogs, clouds, walls, Web, Grease); not held by Grease, Web,
-  Entangle, Solid Fog or Quicksand; and hits that also cast one of the
-  monsters' powers on the target: 2d6 cold, 2d6 or 20 acid, paralysis,
-  poison of 10 or 30 damage, a deadly Poison, disease on 1 hit in 10.
-- Undead (race 9 on the character sheet) take nothing from poison and
-  draining, and mind-affecting spells, charms and holds don't work on them.
+The report says where the piece was last seen and what its item record holds
+now: given back to the game's free list (the game took the piece away), taken
+for another item while still the piece's (two owners of one record), or cut out
+of its list. It also lists the game's free list, the Ledger's own last uses of
+that list, and the dice log's last lines. When the game took the piece back
+(sold, say), the log line says so, and that nothing is wrong if you sold it.
 
-The dice log notes a weapon hit that takes less than its roll, or nothing at
-all, with what the monster's defences say about it (`Skeleton takes none of
-the 6 damage: crushing weapons can't hurt it`).
+The arm and leg pieces are the game's own, with its own icons. The game has
+no helm of bone, so the Bone Helm is an item type of the Ledger's own (the
+leather Helm's, of bone, AC 1 with **Helms give AC 1** like the game's helms,
+worn by those who can wear the bone scale armour: not thieves),
+with an icon in the bone scale's colours (see [Item icons](#item-icons)).
 
-### The Spells tab
+![Dream's pack with the bone scale set: the chest, arm and leg pieces, and the Bone Helm under the pointer with its name](docs/bonescale.png)
 
-What each wizard and priest spell and psionic power does, read from the
-running game's records: its damage dice and kinds (and that damage stops
-growing at caster level 10), its saving throw (which of the five, any
-modifier, whether the d20 counts double, and whether saving halves or stops
-the damage), the effect it gives and what that does, how long it lasts, and
-each party member's caster level for it. **Show** picks wizard, priest or
-psionic, and **Only spells the party has a caster level for** leaves out the
-rest. **Save...** writes it to a text file. It's filled when you open the tab
-(or press **Refresh**) while the game is running.
+### Kalzith
 
-### The Dialogue tab
+A new person in the slave pens: **Kalzith**, a defiler slave the templars put
+in the arena now and then (the crowd loves to watch a defiler burn), kept in
+a pen of his own in the middle column the rest of the time. He has the
+arena Defiler's figure and a face of his own: the game's portrait 61 with a
+slave's brand on the brow, so the Dialogue tab never mistakes him for anyone
+else.
 
-Everything the game shows in its dialogue window, one entry per window of
-text, with the replies offered numbered underneath (and the list's title,
-such as "Answer Yes or No", above them), and then the one you picked:
-`You chose: No`. (The game keeps the clicked row at DS:1F0A while it flashes
-it; the log reads the reply's text from the game's own list.)
+![Kalzith: his talk, and his shop](docs/kalzith.png)
 
-**Who's speaking.** The game's dialogue window gets only a portrait number,
-never a name. But when the game runs a script on someone (you click them, or
-they come up to you), it notes who; the log reads that when a conversation
-opens. A conversation that shows one face, started on a named creature outside
-the party, is that creature talking, and from then on the portrait carries its
-name: in the pens, portrait 5 became `Kurzak` ("Legcrusher! Get gladiators!")
-and portrait 100 `Legcrusher` ("Kurzak told me to bring you to the arena").
-When several faces take turns in one conversation, nothing is learned from it,
-as it can't be told who is who. Names learned are shown on the lines already
-there too, and kept in `settings.json` (`speakers_learned`). A speaker not
-named yet shows as `Portrait 57`. Portrait 119 is named `The Announcer`, as the
-game itself calls him ("Yell something back at the Announcer?"). That name isn't
-replaced by one learned (he calls out in the middle of fights, when the
-game's last script ran on a fighter). To name a
-speaker yourself (your name wins over a learned one), right-click the name
-line in the Dialogue tab, or press **Name speaker...** (it names the latest
-speaker). The name replaces the number on every line from that portrait,
-the ones already shown included, and is remembered in `settings.json` for
-next time (the command-line log uses it too). Leave the name empty to go back
-to the number. Text shown without a face (the emblem instead) is `Narration`.
+Talk to him as to anyone (click him with the look pointer, then the Look box's
+Talk button). His conversation is the game's kind, just him speaking:
 
-Each entry shows the speaker's portrait, as the game's own dialogue window
-does. Portraits and the title's lettering are read from your installed game
-at run time (GPLDATA.GFF and RESOURCE.GFF in the install folder the launcher
-remembers); nothing from the game is copied into Templar's Ledger. Without
-the game installed the window uses its own lettering and no portraits (the
-screenshots here are taken that way).
+- **With respect** ("We mean no harm. We're slaves too."), he owns up to
+  scribing spells on scraps of hide at night, to bribe a guard, and offers
+  them: **Show us what you have** opens the game's shop screen, with his six
+  scrolls, one of each:
 
-### How the dice log works
+  | Level | Scroll | Price |
+  |---|---|---|
+  | 1 | Magic Missile, Color Spray | 100 ceramic |
+  | 2 | Blur, Cat's Grace | 250 |
+  | 3 | Lightning Bolt, Haste | 500 |
 
-Every roll in the game goes through one function, Borland C++'s `rand()`.
+  Cat's Grace is there only with its rule on (see
+  [Rule changes](#rule-changes)). A preserver learns a scroll's spell as from
+  any of the game's (right-click it in the inventory, click its spell), by the
+  game's own rules: a spell of a level the preserver can cast. He remembers a
+  friend ("Back again? Keep your voice down.").
+- **During the escape**, with the alarm sounding (the game's own alarm, which
+  the pens' other slaves also answer to), he has only a line for the party,
+  by how he stands with them, and no talk: to a friend, "That's the alarm. So
+  it's you breaking out. Go, and go quickly: if they find you at my cell, I
+  burn with you."
+- **Calling him a defiler**, he answers back; take it back and he's friendly,
+  or **threaten to tell the templars** and he won't speak to the party again
+  until they make amends: **50 ceramic** (offered only to a party that has
+  it), or a plea that he wins over with a **Charisma check** (the character
+  talking rolls it).
 
-1. When you start the game with the dice log, the launcher writes
-   `dos\DSUNLOG.EXE`: a copy of the game's `DSUN.EXE` with a few small changes
-   (`dscompanion/gamepatch.py`). The start of `rand()`, the end of the saving
-   throw, the end of the AC calculation, the start of the routine that fills
-   the dialogue window and the start of the message box routine become
-   `INT 60h` to `64h`, the inventory screen's panel calls `INT 65h`, the
-   combat loop `INT F1h`, the USE screen `INT F2h`, the View Character screen
-   `INT F3h`, the end of the window redraw `INT F4h`, the Look box `INT F5h`
-   and `INT F6h`, the start of a monster's turn `INT F7h` (see In the
-   game; that one is in overlay code, which the game moves or unloads to load
-   the dialogue window's, so the helper puts its way back in a stack frame the
-   game's overlay manager fixes up, rather than returning to a stale address:
-   that used to restart a fight, or stop the game with "Stack overflow!"), and the places where AC and a saving throw's modifiers are added up
-   `INT F8h` and `INT F9h` (for [the Ring +1](#the-ring-1) and helms), each
-   weapon's line on the inventory screen `INT FAh`, and the start of a round's
-   movement `INT FBh` (for boots), a key the conversation window doesn't know
-   `INT FCh` and an item used on the map `INT FDh` (for
-   [picking pockets](#picking-pockets)), the two-weapon adjustment `INT FEh`
-   and the doubling of a save's d20 `INT F0h`, Cat's Grace `INT EDh`-`INT EFh` and a hidden thief's attack `INT EAh` and the class level cap `INT E7h` and a thief's hit dice `INT E6h` and `INT E5h` and the thief skills `INT E4h` and two-handed weapons `INT E3h` and Cat's
-   Grace's description and icon `INT E2h` and `INT E1h` (for
-   [rule changes](#rule-changes)), and
-   where the game makes room for its name table and reads it in `INT ECh` and
-   `INT EBh` (for [new item names](#new-item-names)), and its item type table
-   `INT E9h` and `INT E8h` (for [the slave pens' gear](#the-slave-pens-gear)), and
-   the start of the routines drawing the map's floor `INT E0h` and `INT DFh`
-   and of two that draw a rectangle of it again `INT DEh` and `INT DDh` (for
-   [shadows](#shadows)), and where the main loop asks where the pointer is
-   `INT DCh` (for [scrolling the map](#scrolling-the-map) and the
-   [dust](#dust)), and the start of the routine finding what is under the
-   pointer `INT DBh` (for [choosing an enemy](#choosing-an-enemy-tab-enter-and-the-rings)). The
-   copy also allocates a bigger buffer for the game's scripts (11,776 bytes
-   rather than 10,000, for
-   [Dinos and the Trustee](#dinos-and-the-trustee-on-kalzith-and-semyon)), and
-   looks for its data files in the current folder rather than next to itself. The helper also hooks DOS's `INT 21h`, to
-   open the launcher's copies of `SEGOBJEX.GFF`, `RESOURCE.GFF` (see
-   [Item icons](#item-icons)), `GPLDATA.GFF` and `RGN29.GFF` (see
-   [Kalzith](#kalzith), [Semyon](#semyon) and
-   [Dinos and the Trustee](#dinos-and-the-trustee-on-kalzith-and-semyon)), the mouse driver's `INT 33h`
-   (for [scrolling the map](#scrolling-the-map)) and the keyboard's `INT 16h`
-   (for Tab and Enter). DOSBox runs it from the game folder, so
-   it uses your saves as usual.
-2. `dos\DSCLOG.EXE` (source in `dos\dsclog.asm`) is a tiny DOS program loaded
-   into upper memory before the game, so the game loses no memory. It answers
-   those interrupts. Its `rand()` returns exactly the numbers the original
-   would and also records each call, what code called it, and that code's
-   arguments (dice count and sides, THAC0, AC...) in a ring buffer. Others
-   record the final saving throw total, the AC the game uses, and the text
-   of dialogues and messages (in a second buffer); the rest draw the in-game
-   additions and make the Ledger's items and the rule changes count.
-3. Templar's Ledger finds the buffer in DOSBox's memory and reads it every 50 ms.
-   It works out what each roll was for from the code that asked for it, and
-   reads the rest (names, weapons, spells, effects) from the game's own data.
-4. To keep bursts of unimportant randomness from crowding out the rolls that
-   matter, the helper only records calls from code it knows how to label,
-   unless **Show unlabelled rolls** is ticked.
+He is in **new games**: those that reach the slave pens with the Ledger's copies
+in use. (A save keeps the pens as they were when the party first went in.)
 
-Because the replacement produces identical numbers, the game plays exactly as
-it would without it, apart from what you choose on the Options tab (the
-Ring +1, picking pockets, the [rule changes](#rule-changes)), the Ledger's
-other additions (the slave pens' gear, the cooked vulture, Kalzith, Semyon,
-what the party wears, shadows, dust, rings, Tab and Enter, scrolling) and one
-fix that is
-always in the patched copy: no equipment penalty on thief skills (see
-[Thief skills](#thief-skills)).
+How: he is the game's own kind of person, in the Ledger's copies of three of
+its files, which the dice log's helper has the game open instead of the
+originals:
 
-Limitations:
-- Only the GOG release (`DSUN.EXE` of 611,408 bytes) is supported. With
-  another version the launcher starts the game without the dice log and says
-  why.
-- Outside combat, the thief skill, trap and ability checks and the character
-  creation rolls are labelled; other rolls there (for example treasure or
-  random encounters) show up only with **Show unlabelled rolls**, as raw
-  numbers.
-- A save-file load from the main menu is recognised, so the spells already
-  active in it aren't reported as new. Loading a save of the same party in the
-  middle of play isn't, and its effects may be listed as if just cast.
-- Dialogue speakers are portrait numbers until the log learns their names or
-  you name them (see above): the game doesn't keep a name with the dialogue.
-  A learned name is the creature the conversation was started on, so a scene
-  in which one face speaks for someone else would get that someone's name.
-- Weapon breaking was checked against the game's code, and the check's rolls
-  were seen in play, but no weapon happened to break during testing; the
-  game's own "is broken !" message is logged either way.
+- `SEGOBJEX.GFF`: object 1000 (a person's object with the Defiler's picture,
+  and a slave's record, Dinos's, with his name and a defiler's class), and his
+  scrolls' objects 1440 to 1445 (copies of the game's scroll object, with a
+  scroll's picture). The game teaches a scroll's spell only from an object
+  numbered 1400 to 1499 (any other it casts); its own end at 1432, and the
+  numbers after are pictures, most of them other objects' icons, which the copy
+  moves to pictures of their own (2440 to 2445). None of these objects is the
+  game's. Scrolls bought with earlier builds (objects 1001 to 1006, which cast
+  their spell) are renumbered wherever they are.
+- `RGN29.GFF`, the slave pens: an entry setting him in his pen.
+- `GPLDATA.GFF`: his conversation (script 218, after the game's 217), its entry
+  in the game's table of script entry points (which saves go by), the command
+  in the pens' script that runs it when he's talked to, and his portrait
+  (portrait 101, a number the game leaves free).
+
+His state is in the game's own flags (760 to 763: met, friendly, cold, his
+scrolls given; the game uses flags up to 755), so a save keeps it. The first
+time the party is in the pens, the Ledger puts his six scrolls among his
+things (from the game's free list, as for [the slave pens' gear](#the-slave-pens-gear)),
+once a game. If he is killed, the Ledger marks it (flag 772) and the others
+speak of him as dead (see
+[Dinos and the Trustee](#dinos-and-the-trustee-on-kalzith-and-semyon)); after
+the party's escape he is gone from the pens with everyone else.
+
+Killed, he leaves one of the scrolls he still had, chosen at random, a Cloak
+and a Quarterstaff (the game's own), in his body where he fell, and the Ledger
+logs it ("Kalzith leaves: Scroll of Blur, Quarterstaff, Cloak"). The game puts
+everything a dead person carried in the body; the Ledger takes the other
+scrolls out of it and puts the two in (flag 777, once). He can't carry the two
+while he still has scrolls to sell, since his shop offers everything he has.
+Once the party has bought all six, his shop isn't offered any more ("Anything
+left to sell?" "Nothing. You've bought every scrap of hide I had, and more
+takes time I don't have.", flag 778), and the Ledger gives him the two, worn
+(flag 776): only while the map is running, so never into an open talk or shop.
+(The dice log's helper counts the game's map loop; it doesn't run while a talk,
+menu or shop is open.) Killed then, he leaves the Cloak and the Quarterstaff in
+his body, as the game does with anything a dead person carried.
+
+He is a slave of the pens like the game's own (his record is Dinos's): attacked,
+he turns on the party as they do, and only the guards near him join the fight.
+
+![Kalzith's body opened in the game: a Scroll, the Cloak and the Quarterstaff](docs/kalzith-body.png)
+
+### Semyon
+
+Untie the arena's prisoner and he is **Semyon**, of the Veiled Alliance. He
+meets the party again in the arena's bone area, where they can recruit him to
+the Alliance. Recruited, he fights beside them in the next fight and, if he
+survives it, leaves: "That's enough for me. I'm leaving. I'll go find more
+members for the Alliance." (Some of his replies in the bone area send him off
+before that: "That's enough for me. I'll see you in the holding pens.", "Right,
+see you there!", or, still weak, "Why don't I meet you in the holding pen?")
+Each way, he walks out through the arena's entrance to the pens, where a
+script takes him off the map, and nothing in the pens brings him back.
+
+With the Ledger, if he left after the fight he helped in, he is there, in a pen
+of his own above Kalzith's, the first time the party is in the pens after it.
+His other ways out stay as in the game, and so does a Semyon who was killed: he
+isn't in the pens. Talk to him (Look, then Talk): he says why the templars tied
+him up in the arena (he was asking about the Veiled Alliance), passes on what he
+has heard (who carries keys), reminds the party where he hid his gem (the grain
+pots), and talks about the Alliance's plans, in his own voice from the arena.
+
+How: in the Ledger's copy of `GPLDATA.GFF`, the command that takes him off the
+map when he walks out after the fight (script 5 at 2400, run only from there)
+first sets the Ledger's flag 770; the game's other exits don't reach it. The
+Ledger sets flag 771 if it ever sees him dead (his record's hit points or
+status). The pens' script ends with, "if flag 770 is set, 771 isn't, and he
+isn't in his pen yet, make him there", the command the arena's script uses
+when he is untied (25h, his object 280), and the command that runs his
+conversation (script 219) when he's talked to, with its entry in the game's
+table of entry points. Flags 764 and 765 (his own: placed, met) keep the rest,
+so a save keeps him.
+
+His object is the arena's, made for a man who fights beside the party: on the
+party's side, and with 0 in a byte where every slave of the pens has 12. In his
+pen the pens' script makes him as they are, with the command the game's scripts
+use to change someone (40h: his fields 74, the side, to 4, theirs, and 70 to
+12), once (flag 779). Attacked, he is then like any of them: he turns on the
+party, and only guards near him join the fight; in a fight in the pens he isn't
+on the party's side. Like Kalzith's, his commands come after everything of the
+game's, which keeps its place.
+
+#### Breaking out with Scar
+
+A rare way through the arena: recruit Semyon just before the fight with Scar,
+take up Scar's offer to break out together, and head for the west exit. In the
+game, when the alarm goes up ("Gladiators escaping! Guards! Sound the
+alarms!"), Scar and his henchmen come along to the slave pens and Semyon is left
+behind. With the Ledger, if he is still in the arena, alive and on the party's
+side, he comes too: he stands beside Scar's men in the pens and fights the guards
+with them, on the party's side. Talked to then, he says: "Scar's gladiators and
+the Veiled Alliance, side by side! Who would have believed it? Stay close to
+Scar: he knows the way out, and I'm right behind you." He isn't made one of the
+pens' slaves while the escape lasts, and once the party is out through the
+grate, he is gone with everyone else.
+
+![The slave pens during the escape: Semyon, with his portrait, telling the party to stay close to Scar](docs/semyon-escape.png)
+
+How: the arena's script 3 moves Scar and his henchman to the pens (5Eh to region
+41) when the party reaches the west exit after Scar's plan is agreed. In the
+Ledger's copy, the henchman's move (at 1828) becomes a jump past the script's
+end, where that move is made, then Semyon's, to a square beside them (74, 68),
+if he is recruited (the game's flag 6), not seen dead (771), in the arena and
+not against the party (his field 74, the side, not 2); then the Ledger's flag
+782 is set and the script goes on where it was. With 782 set, the pens' script
+leaves him on the party's side, and his conversation has the breakout's line
+instead of his menu, until the escape (the game's flag 503).
+
+### Dinos and the Trustee on Kalzith and Semyon
+
+Dinos ("Who else is in here?") and the Trustee ("Who else is in the
+slavepens?") each answer questions about the others in the pens. With the
+Ledger their menus also ask about Kalzith, and about Semyon once he is in his
+pen ("What do you know about Kalzith?", "What can you tell me about
+Semyon?"). Kalzith's question waits until the Ledger has found him in the pens
+(the game's test for whether someone is there only knows the game's own
+people); Semyon's once he has been in his pen. As with the game's own
+questions, each is shown only until it's answered in that talk.
+
+![The Trustee's menu (left) and Dinos's (right), scrolled to the end: after the game's own questions about people, the new ones about Kalzith and Semyon, then "Let's change the subject." and "Goodbye."](docs/pens-asks.png)
+
+If either has been killed, they speak of him as they do of the game's dead:
+the Trustee asks "What was Kalzith like?" (or Semyon) instead, with an answer
+of its own, and Dinos keeps the question and answers it differently. The
+Ledger marks each death with a flag (772 Kalzith, 771 Semyon) when it sees his
+record dead.
+
+![The Trustee's menu with both dead (left): "What was Kalzith like?" and "What was Semyon like?" after the game's own questions; and his answer about Kalzith (right)](docs/pens-asks-dead.png)
+
+After the party's escape, when the game empties the pens ("They killed
+everybody except for myself", the Trustee says on the torture rack), Kalzith
+and Semyon are taken off the map too, the way the game takes the others (flag
+775), and Semyon is never put in his pen after it.
+
+How: in the Ledger's copy of `GPLDATA.GFF`, their scripts (139 and 146) keep
+every byte where it was, since the game's jumps go to fixed places. Two
+commands become jumps to code after the script's end: the one starting the
+menu's part goes to the same command followed by the new questions' flags
+(766-769, 773, 774), and the menu goes to a copy of it (the game's own bytes) with the
+new questions after its last about someone. Each then jumps back to where the
+game's script carries on.
+
+That makes the Trustee's script 10,898 bytes, and the game reads every script
+into one buffer of 10,000 bytes (a script that calls into another reads it in
+over its own). One of 9,800 bytes ran; one of 10,000 ended with "BAD GPL
+EXIT" (the game's own largest is 9,792). So the Ledger's copy of the game
+makes the buffer 11,776 bytes where it is allocated (`push dword 10000` at
+6A692h becomes 2E00h), about 1.7 KB more of the game's memory.
+
+### Item icons
+
+The Ledger's items have icons of their own on the inventory screen, made from
+the plain item's the way the game makes its own magic items' (the Obsidian
+Bloodwrath's is the obsidian long sword's with a few pixels in the colours the
+game cycles, so they flicker like fire):
+
+| Item | Icon |
+|---|---|
+| **Short Sword** | the metal long sword's, its blade four steps shorter, centred in the cell |
+| **Leather Chest Armor +1** | the leather's brightest pixels in the cycling fire colours |
+| **Cloak of Protection +1** | every other pixel of its lightest folds violet |
+| **Ring of Protection +1**, Pehtucl's | its gold band violet |
+| **Ring of Protection +1**, the arena's | its gold band in the cycling fire colours |
+| **Bone Helm** ([the bone scale set](#the-bone-scale-set)) | the leather Helm's, each shade of leather made the bone scale armour's of the same brightness |
+
+![Dream's backpack: under a long sword, the Short Sword, Leather Chest Armor +1, the Cloak of Protection +1, and Pehtucl's and the arena's Rings of Protection +1](docs/icons.png)
+
+On the map, dropped, each looks like the plain item. The violet is one no
+region's palette changes: the colours after it, violet in the game's own
+palette file, are each region's to set (red in the slave pens).
+
+How: the game reads its objects' pictures from `SEGOBJEX.GFF`. When it starts
+the game, the launcher writes `dos\SEGOBJEX.GFF`: the game's file (only read)
+with six objects and their pictures added at its end, its index grown to
+list them (in order of number, as the game looks them up) and a new table of
+contents after them (`dscompanion/icons.py`). The helper has the game open
+that copy instead of its own (its `INT 21h` hook: it opens the copy when the
+game opens `SEGOBJEX.GFF`, and notes that it has), and the Ledger gives the
+Ledger's items those objects' pictures. In a game without the copy, the Ledger
+puts the plain pictures back; a save with the new pictures loaded in the
+original game shows those items without an icon.
+
+### New item names
+
+An item names its entry in the game's name table by number. The game reads
+the table (GPLDATA's 322 names, 25 letters each) in as it starts and as a game
+is loaded, and none of it is free to take, so in games started with the dice
+log the helper makes room for 32 more each time and copies its own names into
+them, from number 322 on: the Ring of Protection's (322), the Thieves'
+Tools' (323), the Short Sword's (324), the Cloak of Protection's (325,
+"Cloak/Protectn") and Pehtucl's ring's (326, "Ring/Protection" as the arena's:
+an entry of its own tells the two rings apart, for their icons), the rest for
+items to come. Nothing in the game checks the
+numbers against its own 322 (its inventory, list, Look and View Character
+screens all read the name the same way), and the names are there before
+anything shows them, Ledger running or not.
+
+Earlier versions borrowed two of the game's own entries instead: one nothing
+named (the ring's) and "Rest icon", the label of the rest button's picture
+(the tools'). Once the table has the new names, the Ledger gives those entries
+back and renames rings and tools that named them, carried or lying anywhere in
+the region. In the original game, the ring and tools have no name of their
+own.
+
+## On the screen
+
+What the Ledger draws on the game's map. Each is switched on the Options tab's
+**On the screen** group.
+
+### What the party wears
+
+The party's figures on the map and in fights show what each one wears, and
+change as soon as their gear does (switch it off on the Options tab to see the
+game's own). The game draws each race and sex the same whatever they carry;
+the Ledger keeps the artist's pictures and adds to them, frame by frame,
+walking and fighting:
+
+| Worn | Shown |
+|---|---|
+| **Weapons and shields** | each kind its shape (dagger, sword, club, mace, axe, polearm, gythka, staff, a round shield), in its material's colours (wood, bone, stone, obsidian, metal); walking, a one-handed weapon is worn at the belt, hanging down and back like a scabbard, and two-handed ones are carried upright; in a fight they are in the hands and swung, and the shield is on the other forearm in every pose (placed by hand for each model where the arm is hidden or flung) |
+| **Bows and slings** | the bow and quiver on the back (the game draws the bow when shooting), a sling or chatkcha at the hip |
+| **Armour** | the character's own clothing recoloured toward its material, shade for shade (leather, bone, chain, plate, scale...): the chest piece above the waist, arm pieces at the wrists, leg pieces below the waist; on figures the artist drew mostly bare (the mul, the dwarf man) only their straps and loincloth change, so it shows little |
+| **Helms** | a circlet at the brow blended into the hair: a feather on leather, a dark stone on iron, low spikes on bone |
+| **Cloaks** | the human and half-elf woman's own cloak (its folds and swing as she walks and fights) fitted to the wearer, under the hair, in the cloak's colours; hers takes them too |
+| **Boots and belts** | the feet and the waist recoloured |
+
+The colours are muted ones no region's palette changes. A thri-kreen shows
+only weapons and shields (all it can use). Two party members of the same race
+and sex each show their own equipment: the game gives them one figure, so the
+second is moved to pictures of their own. A save made before the Ledger's
+copy (whose party still names the game's own pictures) is put right as soon
+as it is loaded.
+
+![The arena, three of the party as the game draws them (left) and as the Ledger shows them (right): leather armour and leggings recoloured, clubs and a sword worn at the hip, a bow on the back](docs/gear.png)
+
+How: the party's figures are objects 300 to 313 in `SEGOBJEX.GFF` (300 and
+the figure picked at character creation). The launcher's copy of the file
+(see [Item icons](#item-icons)) gives each its own walking and fighting
+pictures, the game's with room round them for gear (walking, 6 pixels at the
+sides and 2 above, as much as anything worn reaches; in a fight, 10), and free
+space after each in the file. The game draws a figure's whole picture at every
+step, so each picture is exactly as long as it needs to be. While the game
+runs, when someone's worn items change, the Ledger draws their pictures anew
+(`dscompanion/spritegear.py`, from where `dscompanion/spriteparts.py` finds the
+head, hair, hands and the rest in each frame), writes them into its copy of the
+file with their new lengths in the file's index (the game reads a picture's
+place and length there each time it loads one), takes the old ones out of the
+game's table of loaded pictures (the game frees them itself, as any it no
+longer uses), and empties the figure's slot on the map: the game loads the new
+pictures and draws them at once, in a few thousandths of a second
+(`dscompanion/sprites.py`). It then has the helper draw the view again (see
+[Shadows](#shadows)), so the shadows show the new outfit too. A picture the
+game loads later (in a fight, in another area) comes dressed, from the file.
+The copy also has a spare pair of pictures for each party place. Each thing on
+the map names the picture it is drawn with and the slot in the game's picture
+table it is drawn from; for a second member of the same figure the Ledger names
+their spare there and empties the slot, and the game loads the picture and
+fills it.
+
+### Shadows
+
+Every living figure on the map (the party, the people, the monsters; not the
+dead, nor items) casts a soft see-through shadow on the floor, its outline laid
+long toward the lower right, the way the walls' own shadows fall (the light on
+the game's maps comes from the upper left). The shadows are drawn on the floor
+before anything else, so every figure and wall stands on top of them: a shadow
+never covers another figure. Switch them off on the Options tab.
+
+![The slave pens and the arena, without shadows (left) and with them (right): each figure's outline darkened on the floor behind it, the floor's colours kept](docs/shadows.png)
+
+How: the launcher's copy of `DSUN.EXE` (see [How the dice log
+works](#how-the-dice-log-works)) calls DSCLOG when the game draws the floor of
+the view or of a rectangle of it. DSCLOG then lays each casting figure's
+current picture, flattened and stretched, onto the floor just drawn, darkening
+each pixel to the closest clearly darker colour of the area's palette (a table
+it makes from the palette when the Ledger asks: after each area change, once
+its fade-in is over, and now and then; the colours the game cycles, for water
+and fire, are never picked as darker ones). The rectangles the game draws again when a figure
+moves are widened by the length of a shadow, so none is left behind. The
+Ledger keeps DSCLOG's list of who casts one (`dscompanion/shadows.py`) and has
+DSCLOG draw the view again when it changes (from the game's main loop, as
+centring the view does: marking the figures changed instead, as the game's own
+code does to draw one again, can set one in a fight walking again).
+
+### Dust
+
+Anyone walking on sand or dirt raises little puffs of dust behind their feet,
+which spread, rise a little and fade in about a second. The walls and figures
+stand in front of them, as with the shadows. Switch it off on the Options tab.
+
+![Jellybelly walking across the arena's sand in a fight: puffs of dust behind her, spreading and fading](docs/dust.png)
+
+How: DSCLOG notes, each time round the game's main loop, how far each figure
+that casts a shadow has walked, and raises a puff a little behind and to one
+side of its feet every 6 pixels (the feet in turn). The puffs are drawn on the
+floor after the shadows, lightening it through a table of each colour's lighter
+one, which the Ledger makes from the area's palette (`dscompanion/dust.py`):
+only warm, middling colours (sand, dirt) have one, so stone, water and the
+figures take none. Each puff is dithered thinner toward its edge and as it
+fades, by a pattern fixed to the map, so a puff looks the same however much of
+it the game draws again. While anyone walks, the rectangle the game draws again
+round what moved is made to take the puffs in; once everyone stands, DSCLOG has
+the view drawn again a few times a second until the last puff is gone.
+
+## Controls
+
+Each is switched on the Options tab's **Controls** group.
+
+### Choosing an enemy: Tab, Enter and the rings
+
+In a fight, a red ring on the ground can mark the enemies, under their feet (the
+figures stand in it, as on their shadows). On a party member's turn, **Tab**
+chooses an enemy, the nearest first, then the next nearest (**Shift+Tab** goes
+back): its ring is drawn thicker and redder, the view scrolls to it if it is
+out of sight, and the log names it. **Enter** then attacks it, as clicking on
+it does (walking up to it first when it is out of reach), even where another
+figure stands in front of it. On the Options tab the rings are **none**, **only
+under the enemy chosen with Tab** (the default: none until Tab is pressed) or
+**under all the enemies** (the chosen one's thicker and redder); Tab and Enter
+have a switch of their own.
+
+![The arena fight with rings under all the enemies: the guard chosen with Tab (middle) has the thicker, redder ring](docs/rings.png)
+
+Tab and Enter also make attacking possible without aiming the mouse at all.
+
+How: DSCLOG hooks the keyboard (`INT 16h`) and takes Tab, Shift+Tab and, with an
+enemy chosen, Enter from what the game reads, counting them for the Ledger
+(`dscompanion/targeting.py`), which keeps the enemies marked and the chosen one
+(`dscompanion/rings.py`). The rings are drawn in the floor pass, after the
+shadows, through a table of each colour's redder one made from the palette. For
+Enter, DSCLOG puts the pointer at the enemy's feet and gives the game a left
+click there, from the main loop, while the routine that finds what is under the
+pointer (`DSUN.EXE` 25B52h, `INT DBh`) answers with the chosen enemy for half a
+second, whatever stands in front of it.
+
+### Scrolling the map
+
+Press the mouse wheel on the map and move the mouse: the map moves with the
+pointer, as if dragged, in fights too. In Windows, turning the wheel scrolls the
+map up and down while the game's window is in front, and sideways with Shift
+held (or a wheel that tilts). On the Options tab it can be switched off, or
+holding the right button made to drag the map as well (a right click, let go
+before the pointer has moved, still changes the pointer between walking, using
+and looking). The game still scrolls on its own when the pointer touches the
+screen's edge, and still brings the view back to whoever's turn it is in a
+fight.
+
+How: the game hears of the mouse's buttons from the mouse driver, through a
+handler it gives it (`INT 33h`, function 0Ch). DSCLOG hooks `INT 33h` and puts
+its own handler in between, which keeps the middle button (the wheel pressed)
+from the game, and, with the right button dragging too, keeps the right button
+from it while it is held: a click reaches the game when it is let go (pressed
+and released where it was pressed), a drag never does. The game's main loop asks where the pointer
+is (to scroll at the screen's edge); there DSCLOG has the game centre its view
+where the drag puts it, with the game's own routine (the one clicking on the
+overview map uses, which draws the view again), and keeps the pointer it reports
+off the edges meanwhile. DOSBox 0.74, GOG's, never passes the wheel on to the
+game, so the Ledger watches for it in Windows (a low-level mouse hook, only
+while DOSBox's window is in front) and tells DSCLOG how far to scroll
+(`dscompanion/scrolling.py`).
+
+The view can't be zoomed: the game draws a 320 by 200 screen at one scale,
+with the view's size built into its drawing code and its video memory pages.
+
+## Game speed
+
+About 96 times a second the game's timer lets it move each walking figure a
+step, once the view is drawn; a frame that takes longer loses the rest of that
+time, and walking slows and jerks. So everything drawn adds up: four figures
+rather than the leader alone (the game's manual says collapsing the party
+"speeds up the game"), the gear on them, the shadows, the dust.
+
+The launcher gives DOSBox more of the computer's time: 20,000 cycles a
+millisecond by default, where GOG's settings give 7,000. On the Options tab
+**Game speed** is GOG's own, that, or 30,000 (smoother still; animations run
+quicker, and it needs a faster computer). It applies the next time the game is
+started. Both of the Ledger's run on DOSBox's dynamic core (GOG's settings run
+this game on the slower normal core): the same cycles do more, and cost the
+computer about a third less.
+
+Measured in the arena with all four of the party in view, walking (the
+leader's speed in pixels a second; higher is smoother):
+
+| | Speed |
+|---|---|
+| The game without the Ledger, GOG's settings | 97 to 124 |
+| The game without the Ledger, 20,000 cycles | 232 to 253 |
+| The Ledger at 20,000, everything on the screen off | 223 |
+| ... what the party wears on | 170 |
+| ... shadows on | 138 |
+| ... everything on | 129 |
+
+So with everything on, the Ledger's default walks at least as smoothly as the
+game on GOG's own settings; with the shadows or the gear off, much more so.
+The pictures the Ledger draws the party's gear on are each exactly as long as
+their outfit, with only the room gear needs round the figure while walking (6
+pixels at the sides, 2 above; 10 in a fight): the game draws a walking figure's
+whole picture at every step (see [What the party wears](#what-the-party-wears)).
+
+### Suggested system requirements
+
+DOSBox runs the whole game on one processor core, so what counts is the speed
+of a single core, not how many there are. These are suggestions, not tested
+limits:
+
+| Game speed | Processor (one core's speed) | Memory |
+|---|---|---|
+| GOG's own | anything that runs GOG's release | 2 GB |
+| Faster (20,000 cycles, the default) | a dual-core from about 2010 on, 2 GHz or more (Intel Core i3 or AMD Phenom II) | 4 GB |
+| Fastest (30,000 cycles) | a processor from about 2015 on, 3 GHz or more (Intel Core i5 or AMD Ryzen) | 4 GB |
+
+The Ledger itself (Python and its window) needs about 100 MB of memory and
+little processor time. A screen of 1920×1080 or more shows the game's window
+at **Triple** size beside the Ledger's; on a smaller one choose **Double**.
+If the computer can't keep up, the sound crackles or stutters and the game
+slows instead of speeding up: choose the next setting down.
 
 ## Accessibility
 
@@ -2004,103 +2333,6 @@ WCAG 2.0 level AA:
   **Save...** on the Dice log and Dialogue tabs writes the log to a text file,
   and `python -m dscompanion dicelog` prints the same log (dialogue included) in
   a command prompt, which screen readers do read.
-
-## Using the viewer
-
-The party pane has two tabs:
-
-- **Characters** (Alt+C): a card for each character, laid out like the game's
-  View Character screen. It shows the figure for their race and sex (the one
-  on the character creation screen, read from your install) and their name.
-  Then HP and PSP as the game shows them (PSP in blue). Then their condition
-  (the game's Okay, Stunned, Out Cold, Dying, Dead, Animated, Petrified or
-  Gone, followed by any spells and effects on them, with the rounds or charges
-  each has left: `Blur (22 rounds)`, `Stoneskin (5 charges)`; from the game's own
-  clock and timers). Then the character
-  sheet: scores, sex, race and alignment, classes and levels, experience,
-  AC, THAC0 with each weapon ready (`THAC0: 15 with Wooden Club, 14 with
-  Wooden Bow (base 19)`), the saves as the d20 needed now (see
-  [In the game](#in-the-game-thac0-saves-and-thief-skills)), movement (and a
-  fight's, with boots: `Move: 12 (13 in a fight: boots)`) and attacks. AC is
-  the one the game last used in a fight, with the base AC beside it; before the
-  first fight only the base AC is known. Then what they wear and hold, by the
-  game's own slot names ("Right hand: Bone Long Sword", "Chest: Leather Chest
-  Armor"; "Carried" for anything in the backpack), with each item's material
-  and plus. Last, for spellcasters, their spell slots (see below), for
-  thieves their skills, and for rangers, with the stealth rule on, their
-  chances to hide and move silently (`Ranger skills now`). Scroll
-  with the mouse wheel, or Tab to the cards and use the arrow and Page keys.
-- **All fields** (Alt+A): every field the layout maps, in a table, with rows
-  of its own for the AC in a fight and what it's made of, THAC0 with each
-  weapon and the saves now, and at the end the spell slots, thief skills and
-  equipment.
-
-The other side has the **Dice log**, **Dialogue**, **Spells** and **Memory
-tools** tabs, and **Options** (Alt+O) with the Ledger's switches: what the
-dice log shows (unlabelled rolls, details), what it shows in the game (each
-turn's rolls and how much they say, monster descriptions) and the rule
-changes (helms, boots, two weapons, the spell save, doubled saves, Cat's
-Grace, hiding in shadows, levels up to 10, the thief skill table,
-half-giants' two-handed weapons), with the
-Ledger's additions to play after them: the Ring +1, picking pockets, what the
-party wears, shadows, dust, the rings in a fight (none, the chosen enemy's,
-or all), Tab and Enter, scrolling with the wheel (and the right button), and
-a button that gives each thief a set of Thieves' Tools now. The switches for the
-game are remembered for next time. In a window too small to show them all,
-the tab scrolls (scrollbar, mouse wheel, or arrow and page keys once it has
-the focus).
-
-![The Options tab](docs/options.png)
-
-**Spell slots.** `Priest spells left: 1st 5/5, 2nd 3/3, 3rd 2/2`
-means five first-level priest spells can still be cast out of five, and so
-on. Casting a spell uses one slot of its level, and resting fills them
-again. Wizard slots belong to preservers; priest slots belong to clerics,
-druids and rangers. A multi-class character's classes add up, for example a
-druid/preserver has both. The "most" is worked out the way the game does it
-when it refills them (its tables are read from memory):
-- Preservers: from their level only.
-- Clerics and druids: from their level plus a WIS bonus.
-- Rangers: from their level only, with their first slot at level 8.
-
-The game's WIS bonus doesn't depend on level, so it gives a 2nd-level druid
-with WIS 19 slots at the 2nd to 4th levels too, though a druid that level
-casts only 1st-level spells. Those aren't shown (here or in the game): only
-the spell levels the character's class levels reach, as in AD&D, where the
-WIS bonus counts only at levels the priest can cast. For a human dual-class character, a
-later class counts only while its level is below the first class's. Checked
-against two characters at the start of a new game, whose slots the game had
-just filled.
-
-For Shattered Lands the party is found automatically. The steps below are for
-mapping new fields, or for other layouts:
-
-1. Type a party member's name under **Locate by name** and press **Search**.
-2. Select the hit that is the character's record and press **Assign**.
-   In the hit list, the record shows its name followed by dots, since binary
-   data follows the name. A copy in a text buffer is followed by more text.
-   Slots 2–4 follow automatically if the party's records sit next to each other
-   in memory, as they do in save files. Otherwise assign each slot by name.
-3. The **character sheet** (XP, classes, levels, saves) is found automatically:
-   it carries the same ability scores and entity ID as the creature record.
-4. **Save layout** stores the addresses. They may change when you load a save
-   or restart the game. If a slot starts showing garbage, locate it again.
-
-The **Record bytes** panel shows the raw record. Bytes that change light up
-orange, and clicking a byte decodes it as u8/s8/u16/s16/u32. Use it to map
-fields that aren't known yet. Watch a byte change as you take damage, spend
-PSP, or equip armour, then add it to `layouts/shattered_lands.json` and press
-**Reload layout**.
-
-### Command-line mapping tools
-
-```
-python -m dscompanion find-text Daaki               # hex dump around each hit
-python -m dscompanion dump 0x1a2c 128               # hex dump an address
-python -m dscompanion search u8 23 --near 0x1a2c    # Cheat-Engine-style value search
-python -m dscompanion next 17                       # ...narrow after the value changes
-python -m dscompanion next decreased                # also: changed, unchanged, increased
-```
 
 ## What is known
 
@@ -2222,3 +2454,42 @@ nasm -f bin -o dos/DSCLOG.EXE dos/dsclog.asm
 The header's signature (`DSCLOGvU` now) goes up whenever the helper and the
 Ledger must change together (`HDR_SIG` in `dscompanion/dicelog.py`), so a
 Ledger never talks to an older helper.
+
+The post-game check that keeps an error on screen for the crash report is
+built the same way:
+
+```
+nasm -f bin -o dos/GAMEEND.COM dos/gameend.asm
+```
+
+### Mapping memory
+
+For Shattered Lands the party is found automatically. The steps below are for
+mapping new fields, or for other layouts:
+
+1. Type a party member's name under **Locate by name** and press **Search**.
+2. Select the hit that is the character's record and press **Assign**.
+   In the hit list, the record shows its name followed by dots, since binary
+   data follows the name. A copy in a text buffer is followed by more text.
+   Slots 2–4 follow automatically if the party's records sit next to each other
+   in memory, as they do in save files. Otherwise assign each slot by name.
+3. The **character sheet** (XP, classes, levels, saves) is found automatically:
+   it carries the same ability scores and entity ID as the creature record.
+4. **Save layout** stores the addresses. They may change when you load a save
+   or restart the game. If a slot starts showing garbage, locate it again.
+
+The **Record bytes** panel shows the raw record. Bytes that change light up
+orange, and clicking a byte decodes it as u8/s8/u16/s16/u32. Use it to map
+fields that aren't known yet. Watch a byte change as you take damage, spend
+PSP, or equip armour, then add it to `layouts/shattered_lands.json` and press
+**Reload layout**.
+
+### Command-line mapping tools
+
+```
+python -m dscompanion find-text Daaki               # hex dump around each hit
+python -m dscompanion dump 0x1a2c 128               # hex dump an address
+python -m dscompanion search u8 23 --near 0x1a2c    # Cheat-Engine-style value search
+python -m dscompanion next 17                       # ...narrow after the value changes
+python -m dscompanion next decreased                # also: changed, unchanged, increased
+```

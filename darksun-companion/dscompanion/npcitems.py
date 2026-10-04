@@ -151,6 +151,7 @@ def add_to(gd: GameData, creature: int, rec: bytes, slot: Optional[int] = None) 
     if kind != game.THING_ITEM:
         return False
     gd.guest.write(gd.ds * 16 + ring.FREE_ITEMS, it.item(item)[game.ITEM_NEXT:game.ITEM_NEXT + 2])
+    ring.took(item, f"an item (picture {struct.unpack_from('<H', rec, 0)[0]:04X}h) for creature {creature}")
     rec = bytearray(rec)
     struct.pack_into("<h", rec, game.ITEM_NEXT, first)
     rec[game.ITEM_SLOT] = cell

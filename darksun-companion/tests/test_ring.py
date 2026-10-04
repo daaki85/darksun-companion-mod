@@ -119,3 +119,57 @@ class WornTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class XpTests(unittest.TestCase):
+    def _body(self) -> bytes:
+        """A script laid out as the arena's (script 5): the body's routine at BODY_AT - 1 (clear,
+        the line, the click, clear, the end)."""
+        from dscompanion import gpl
+        pad_to = ring.BODY_AT - 1
+        sets, ends = divmod(pad_to, 5)
+        pad = gpl.encode([(0x16, [("n", 0), ("var", 14, 1)])] * sets + [(0x31, [])] * ends)
+        self.assertEqual(len(pad), pad_to)
+        return pad + gpl.encode([(0x2A, []), (ring.PRINT, [("n", 98), ("str", ring.NOTHING + " ")]),
+                                 (ring.PRINT, [("n", 98), ("var", 134, 2)]),
+                                 (ring.PRINT, [("n", 98), ("var", 134, 3)]), (0x31, []), (0x31, [])])
+
+    def test_with_xp(self):
+        """The line becomes a jump to the line, the click and the clearing, then, the first time
+        (XP_GIVEN), 50 XP by the game's routine for one person, and back to the routine's end; nothing of the
+        game's moves; once only; from the game's script when another change made it undecodable."""
+        from dscompanion import gpl
+        script = self._body()
+        out = ring.with_xp(script)
+        self.assertEqual(out[:ring.BODY_AT], script[:ring.BODY_AT])
+        self.assertEqual(out[ring.BODY_AT + 3:len(script)], script[ring.BODY_AT + 3:])
+        r = gpl._Reader(out, b"")
+        r.i = ring.BODY_AT
+        jump = gpl._op(r)
+        self.assertEqual((jump.code, jump.args), (ring.GOTO, [("n", len(script))]))
+        added = [(o.code, o.args) for o in gpl.decode(out[len(script):], b"")]
+        self.assertEqual(added[0], (ring.PRINT, [("n", 98), ("str", ring.NOTHING + " ")]))
+        self.assertEqual([c for c, _ in added[1:3]], [ring.PRINT, ring.PRINT])
+        self.assertEqual(added[3], (0x18, [("expr", ["(", ("var", 0x8D, ring.XP_GIVEN), "==", ("n", 0), ")"])]))
+        self.assertIn((0x16, [("n", 1), ("var", 13, ring.XP_GIVEN)]), added)
+        self.assertIn((0x16, [("n", ring.XP_REWARD), ring.XP_AMOUNT]), added)
+        self.assertIn((ring.CALL, list(ring.XP_ROUTINE)), added)
+        end = len(gpl.encode([(0x2A, []), (ring.PRINT, [("n", 98), ("str", ring.NOTHING + " ")]),
+                              (ring.PRINT, [("n", 98), ("var", 134, 2)]), (ring.PRINT, [("n", 98), ("var", 134, 3)])]))
+        self.assertEqual(added[-1], (ring.GOTO, [("n", ring.BODY_AT - 1 + end)]))
+        self.assertEqual(ring.with_xp(out, b"", script), out)
+        other = script[:ring.BODY_AT] + gpl.encode([(0x31, [])] * 45)
+        self.assertEqual(ring.with_xp(other), other)
+
+
+class FlagsTests(unittest.TestCase):
+    def test_no_flags_in_memory(self):
+        """With the flags' pointer null (the arena outside a script's run): no flag, and nothing
+        written (low memory left alone)."""
+        log = arena()
+        m = log.guest.mem
+        struct.pack_into("<I", m, DS * 16 + game.FLAGS_PTR, 0)
+        low = bytes(m[:0x400])
+        self.assertFalse(log.game.flag(ring.XP_GIVEN))
+        log.game.set_flag(ring.XP_GIVEN)
+        self.assertEqual(bytes(m[:0x400]), low)

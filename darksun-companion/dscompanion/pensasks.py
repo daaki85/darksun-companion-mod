@@ -214,10 +214,13 @@ def with_asks(script: bytes, field_types: bytes, first: str, asks: Sequence[Ask]
     return bytes(out)
 
 
-def script_chunks(chunks, field_types: bytes) -> dict:
-    """For the Ledger's copy of GPLDATA: Dinos's and the Trustee's talks with the questions."""
+def script_chunks(chunks, field_types: bytes, vulture: bool = True) -> dict:
+    """For the Ledger's copy of GPLDATA: Dinos's and the Trustee's talks with the questions (the
+    vulture's only with the vulture quest on)."""
     out = {}
     for number, first, asks, before in MENUS:
+        if VULTURE in asks and not vulture:
+            continue
         key = ("GPL ", number)
         if key in chunks:
             script = out.get(key, chunks[key])

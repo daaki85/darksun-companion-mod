@@ -676,6 +676,22 @@ class SaveTests(unittest.TestCase):
         self.assertEqual(log.unhurt(6.1, force=True),
                          ["  Mountain Stalker takes none of the 4 damage: a protection or resistance took it"])
 
+    def test_reduced_hits_seen_together(self):
+        """Two hits on a creature that halves weapons, seen as one fall of HP: both of them, and
+        no "takes none" later for the second."""
+        log = make_game()
+        m = log.guest.mem
+        stalker = CREATURES + STALKER * game.CREATURE_SIZE
+        struct.pack_into("<h", m, stalker, 30)
+        log.hp_changes(0.5)
+        log._weapon_reason = lambda index: "non-magical weapons do half"
+        log._hit(STALKER, 8, 1.0)
+        log._hit(STALKER, 6, 1.1)
+        struct.pack_into("<h", m, stalker, 23)
+        self.assertEqual(log.hp_changes(1.2),
+                         ["  Mountain Stalker now 23 HP (-7: 7 of the 14 rolled, non-magical weapons do half)"])
+        self.assertEqual(log.unhurt(1.2 + dicelog.HIT_WAIT, force=True), [])
+
     def test_doubled_roll(self):
         log = make_game()
         log.describe(self.save_roll(log, 7, spell=FIREBALL))
@@ -1185,8 +1201,12 @@ class RoundAndTurnTests(unittest.TestCase):
 
     def test_last_turn_then_first_turn(self):
         """Last in one round and first in the next: a new turn (a thief hides again); someone
-        else first: the last round's last turn isn't taken for a new one meanwhile."""
+        else first: the last round's last turn isn't taken for a new one meanwhile; one first
+        who can't act (out cold) passed over."""
         m = self.log.guest.mem
+        stalker = CREATURES + STALKER * game.CREATURE_SIZE
+        struct.pack_into("<h", m, stalker, 30)
+        m[stalker + game.CREATURE_STATUS] = game.STATUS_OKAY
         self.round(600)
         struct.pack_into("<h", m, DS * 16 + game.WHOSE_TURN, 1)
         self.assertEqual(self.log.turn_lines(), ["Daaki's turn"])
@@ -1198,6 +1218,13 @@ class RoundAndTurnTests(unittest.TestCase):
         self.assertEqual(self.log.turn_lines(), [])  # (still showing Daaki's last)
         struct.pack_into("<h", m, DS * 16 + game.WHOSE_TURN, 0x29)
         self.assertEqual(self.log.turn_lines(), ["Mountain Stalker's turn"])
+        # (the Stalker first in the next order but out cold: Daaki, last now, goes next)
+        struct.pack_into("<h", m, DS * 16 + game.WHOSE_TURN, 1)
+        self.assertEqual(self.log.turn_lines(), ["Daaki's turn"])
+        self.round(780)
+        m[stalker + game.CREATURE_STATUS] = game.OUT_COLD
+        self.log.round_order = [(0x29, "Mountain Stalker", 25), (1, "Daaki", 20)]
+        self.assertEqual(self.log.turn_lines(), ["Daaki's turn"])
 
     def test_the_rounds_order_comes_before_its_first_turn(self):
         m = self.log.guest.mem

@@ -351,6 +351,15 @@ DONE = 1  # the script's local ending a menu (as the game's merchants use 1 for 
 WINDOW = 4  # the lines the dialogue window shows
 
 
+# The escape's alarm: the game's flag, set as the guards raise it (the arena's breakout, script 3)
+# and tested by the pens' slaves to say so instead of their talk (scripts 142, 146)
+ALARM = 20
+ALARM_FRIENDLY = ("That's the alarm. So it's you breaking out. Go, and go quickly: if they find you "
+                  "at my cell, I burn with you.")
+ALARM_COLD = "The alarm's for you, isn't it? Good. Run, and let them chase you, not me."
+ALARM_STRANGER = "That's the alarm. Whoever you are, this is no time to talk. Go!"
+
+
 def _is(var, value) -> tuple:
     return ("expr", [var, "==", ("n", value)])
 
@@ -472,13 +481,24 @@ def conversation() -> bytes:
               "What do you want?")
         s.flag(MET, 1)
 
+    def greeting():
+        s.when(_is(cold_, 1), lambda: s.call("cold"),
+               lambda: s.when(_is(friendly, 1),
+                              lambda: (s.say("Back again? Keep your voice down."), s.call("friend")),
+                              lambda: (s.when(_is(met, 1), lambda: s.say("You again. Well?"), meeting),
+                                       s.call("first"))))
+
+    # the escape's alarm sounding (the game's flag ALARM), as the pens' other slaves have it: a
+    # line for the party, by how he stands with them, and no talk
+    def alarm():
+        s.when(_is(friendly, 1),
+               lambda: s.say(ALARM_FRIENDLY),
+               lambda: s.when(_is(cold_, 1), lambda: s.say(ALARM_COLD), lambda: s.say(ALARM_STRANGER)))
+        s.page()
+
     s.op(BEGIN)  # (every script of the game's opens so; its talk commands start after it)
     s.op(0x54, ("n", PORTRAIT))
-    s.when(_is(cold_, 1), lambda: s.call("cold"),
-           lambda: s.when(_is(friendly, 1),
-                          lambda: (s.say("Back again? Keep your voice down."), s.call("friend")),
-                          lambda: (s.when(_is(met, 1), lambda: s.say("You again. Well?"), meeting),
-                                   s.call("first"))))
+    s.when(_is(("var", 0x8D, ALARM), 1), alarm, greeting)
     return s.bytes()
 
 
@@ -518,31 +538,47 @@ def with_entry(entries: bytes, script: int = SCRIPT) -> bytes:
     return entries + ENTRY.pack(max((e[0] for e in table), default=-1) + 1, START, script)
 
 
-def script_chunks(gpldata: bytes) -> Dict[Tuple[str, int], bytes]:
+def script_chunks(gpldata: bytes, kalzith: bool = True, semyon: bool = True,
+                  vulture: bool = True, ring: bool = True) -> Dict[Tuple[str, int], bytes]:
     """For the Ledger's copy of GPLDATA: his conversation, and the master script running it (and
-    Semyon's, semyon.py)."""
+    Semyon's, semyon.py; Dinos's and the Trustee's questions, pensasks.py), each part only if
+    switched on (the Options tab's new content)."""
     chunks = read_gff(gpldata)
     if ("MAS ", MASTER) not in chunks:
         return {}
     field_types = next((v for k, v in chunks.items() if k[0] == "GPLX"), b"")[gpl.FIELD_TYPES_AT:]
-    out = {("GPL ", SCRIPT): conversation(), ("MAS ", MASTER): with_talk(chunks[("MAS ", MASTER)], field_types)}
-    if ENTRIES in chunks:
-        out[ENTRIES] = with_entry(chunks[ENTRIES])
-    face = portrait_chunk(chunks)
-    if face and ("PORT", PORTRAIT) not in chunks:
-        out[("PORT", PORTRAIT)] = face
-    # Semyon, in the pens as he promises (semyon.py): his part after Kalzith's
-    from . import semyon
-    out[("GPL ", semyon.SCRIPT)] = semyon.conversation()
-    out[("MAS ", MASTER)] = semyon.with_semyon(out[("MAS ", MASTER)], field_types)
-    if ENTRIES in out:
-        out[ENTRIES] = with_entry(out[ENTRIES], semyon.SCRIPT)
-    arena = ("GPL ", semyon.ARENA_TALK)
-    if arena in chunks:  # (his leaving after the fight marked)
-        out[arena] = semyon.with_exit(chunks[arena], field_types)
-    # Dinos and the Trustee asked about him and Semyon (pensasks.py)
+    out: Dict[Tuple[str, int], bytes] = {}
+    if kalzith:
+        out[("GPL ", SCRIPT)] = conversation()
+        out[("MAS ", MASTER)] = with_talk(chunks[("MAS ", MASTER)], field_types)
+        if ENTRIES in chunks:
+            out[ENTRIES] = with_entry(chunks[ENTRIES])
+        face = portrait_chunk(chunks)
+        if face and ("PORT", PORTRAIT) not in chunks:
+            out[("PORT", PORTRAIT)] = face
+    if semyon:  # Semyon, in the pens as he promises (semyon.py): his part after Kalzith's
+        from . import semyon as sm
+        out[("GPL ", sm.SCRIPT)] = sm.conversation()
+        out[("MAS ", MASTER)] = sm.with_semyon(out.get(("MAS ", MASTER), chunks[("MAS ", MASTER)]), field_types)
+        if ENTRIES in chunks:
+            out[ENTRIES] = with_entry(out.get(ENTRIES, chunks[ENTRIES]), sm.SCRIPT)
+        arena = ("GPL ", sm.ARENA_TALK)
+        if arena in chunks:  # (his leaving after the fight marked)
+            out[arena] = sm.with_exit(chunks[arena], field_types)
+        escape = ("GPL ", sm.ESCAPE_SCRIPT)
+        if escape in chunks:  # (taken along to the pens with Scar)
+            out[escape] = sm.with_escape(chunks[escape], field_types)
+    # Dinos and the Trustee asked about him and Semyon, and Dinos about the vulture (pensasks.py);
+    # the questions about either show only once he is in the pens (their flags)
     from . import pensasks
-    out.update(pensasks.script_chunks(chunks, field_types))
+    out.update(pensasks.script_chunks(chunks, field_types, vulture=vulture))
+    if ring:  # the XP for finding the arena's ring (ring.py), in the same script as Semyon's exit
+        from . import ring as rg
+        body = ("GPL ", rg.BODY_SCRIPT)
+        if body in chunks:
+            changed = rg.with_xp(out.get(body, chunks[body]), field_types, chunks[body])
+            if changed != out.get(body, chunks[body]):
+                out[body] = changed
     return out
 
 
@@ -684,6 +720,7 @@ def _unlink(gd, it, item: int) -> bool:
                 gd.guest.write(it.items + item * game.ITEM_SIZE + game.ITEM_NEXT,
                                struct.pack("<H", it.word(ring.FREE_ITEMS)))
                 gd.guest.write(gd.ds * 16 + ring.FREE_ITEMS, struct.pack("<H", item))
+                ring.took(item, "given back (Kalzith's)")
                 return True
             before, index = index, after
     return False
@@ -696,6 +733,7 @@ def _after(gd, it, item: int, rec: bytes) -> bool:
     if new >= game.NO_ITEM:
         return False
     gd.guest.write(gd.ds * 16 + ring.FREE_ITEMS, it.item(new)[game.ITEM_NEXT:game.ITEM_NEXT + 2])
+    ring.took(new, "an item of Kalzith's")
     rec = bytearray(rec)
     rec[game.ITEM_NEXT:game.ITEM_NEXT + 2] = it.item(item)[game.ITEM_NEXT:game.ITEM_NEXT + 2]
     gd.guest.write(it.items + new * game.ITEM_SIZE, bytes(rec))
@@ -799,9 +837,11 @@ def _write(source: str, dest: str, added) -> None:
     os.replace(tmp, dest)
 
 
-def write_scripts(source: str, dest: str) -> None:
-    """The game's GPLDATA.GFF (SOURCE, only read) with Kalzith's conversation, to DEST."""
-    _write(source, dest, script_chunks)
+def write_scripts(source: str, dest: str, kalzith: bool = True, semyon: bool = True, vulture: bool = True,
+                  ring: bool = True) -> None:
+    """The game's GPLDATA.GFF (SOURCE, only read) with Kalzith's conversation (and the rest of
+    the new content switched on), to DEST."""
+    _write(source, dest, lambda data: script_chunks(data, kalzith, semyon, vulture, ring))
 
 
 def write_region(source: str, dest: str) -> None:

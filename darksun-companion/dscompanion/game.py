@@ -592,8 +592,9 @@ class GameData:
         return index if kind == 2 else None
 
     def combatants(self) -> Dict[int, int]:
-        """{combatant: creature index} for every creature in the fight (or the area)."""
-        data = self.guest.read((self.load_seg + COMBATANTS_SEG) * 16 + COMBATANTS_OFF, 256 * 3)
+        """{combatant: creature index} for every creature in the fight (or the area): all THINGS
+        of the map's things (people put in later, such as Kalzith and Semyon, are past the 256th)."""
+        data = self.guest.read((self.load_seg + COMBATANTS_SEG) * 16 + COMBATANTS_OFF, THINGS * 3)
         out = {}
         for combatant in range(len(data) // 3):
             kind, index = struct.unpack_from("<Bh", data, combatant * 3)
@@ -647,11 +648,19 @@ class GameData:
                          struct.pack("<I", max(0, self.money() + amount) & 0xFFFFFFFF))
 
     def flag(self, n: int) -> bool:
-        at = far_pointer(self.guest, self.ds, FLAGS_PTR) + n // 8
-        return bool(self.guest.read(at, 1)[0] >> (n % 8) & 1)
+        """Flag N (False while the flags have no place in memory: their pointer is null at times,
+        such as in the arena outside a script's run)."""
+        flags = far_pointer(self.guest, self.ds, FLAGS_PTR)
+        if not flags:
+            return False
+        return bool(self.guest.read(flags + n // 8, 1)[0] >> (n % 8) & 1)
 
     def set_flag(self, n: int, on: bool = True) -> None:
-        at = far_pointer(self.guest, self.ds, FLAGS_PTR) + n // 8
+        """Flag N set (or cleared); nothing while the flags have no place in memory (see flag)."""
+        flags = far_pointer(self.guest, self.ds, FLAGS_PTR)
+        if not flags:
+            return
+        at = flags + n // 8
         byte = self.guest.read(at, 1)[0]
         self.guest.write(at, bytes([byte | 1 << (n % 8) if on else byte & ~(1 << (n % 8))]))
 
@@ -726,7 +735,7 @@ class GameData:
     def whose_turn(self) -> Optional[int]:
         """The combatant whose turn it is in a fight (the game's word at WHOSE_TURN)."""
         turn = self._word(WHOSE_TURN)
-        return turn if 0 <= turn < 256 else None
+        return turn if 0 <= turn < THINGS else None
 
     def game_time(self) -> Optional[int]:
         """Game seconds since the start (60 to a round): the dword the game keeps its clock in."""

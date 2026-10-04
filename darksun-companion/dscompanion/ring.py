@@ -8,10 +8,16 @@ says "There is nothing on the body." While the ring is still to be found, the Le
 DSCLOG show SEARCH_TEXT instead of that line (its text swap), and then puts the ring in the
 leader's backpack (give_ring): an item record from the game's free list. Once the party has
 it, the game keeps and saves it like any other item.
+
+Finding it is worth XP_REWARD XP to the one who searched, given as the game gives its quests'
+XP to one person (with_xp): its window, "Gerakis receives 50 experience points!", and the
+sound of a quest done, as the cooked vulture's meal (vulture.py).
 """
 
 import struct
-from typing import Optional
+import time
+from collections import deque
+from typing import Deque, Optional, Tuple
 
 from . import game
 from .game import GameData
@@ -26,6 +32,13 @@ THING_COUNT = 0x208  # objects 0-519; 320-519 are handed out from a free list
 FREE_THINGS, THINGS_USED = 0x4D72, 0x4C48  # DS: that list's first, and how many are out
 FREE_ITEMS = 0x4D76  # DS: the first free item record (each names the next at +04h)
 ITEM_CONTENTS = 0x08
+# The Ledger's own takings from that list (and givings back), the last ones, for a report on an
+# item gone missing (bonescale.Watch): (time, item, what for)
+TAKEN: Deque[Tuple[float, int, str]] = deque(maxlen=30)
+
+
+def took(item: int, what: str) -> None:
+    TAKEN.append((time.time(), item, what))
 # Its name, in the first of the entries DSCLOG adds after the game's 322 (names.py): the
 # inventory screen shows the name alone, the box an item's Look opens shows it with the plus
 # after it ("%Fs%+d": "Ring/Protection+1").
@@ -45,6 +58,20 @@ RING = bytes.fromhex("1cfa0000" "0f27") + struct.pack("<H", VALUE) + bytes.fromh
     struct.pack("<Hb", NAME_ENTRY, 1)
 MESSAGE = "{who} takes the Ring of Protection +1 (+1 AC, +1 on saves) from the Tied-up Prisoner's body."
 MAX_ITEMS = 200  # items followed before giving up (a damaged list)
+
+# The XP for finding it. The arena's script (BODY_SCRIPT) says NOTHING in a routine of its own,
+# at BODY_AT (clear the window, the line, wait for a click, clear): the line becomes a jump past
+# the script's end, where the line, the click and the clearing come, then, the first time only
+# (XP_GIVEN, set by the script), the XP: the amount, then the game's routine for one person
+# (script 74 at 171: the one searching, "<name> receives 50 experience points!" and the quest's
+# sound; at 135, as the vulture's meal, it is each party member). The script alone keeps the flag:
+# the Ledger can't, the game's flags having no place in memory outside its scripts' time.
+BODY_SCRIPT, BODY_AT = 5, 6833
+XP_REWARD = 50
+XP_GIVEN = 783  # (the Ledger's flag, set by the script)
+PRINT, GOTO, SET, CALL = 0x4F, 0x64, 0x16, 0x14
+XP_AMOUNT = ("var", 7, 16)  # the experience points the game's routine gives
+XP_ROUTINE = (("n", 171), ("n", 74))  # (offset, script): its routine for one person
 
 
 class Items:
@@ -129,7 +156,44 @@ def give_ring(gd: GameData) -> Optional[str]:
         if cell is None or item >= game.NO_ITEM:
             continue
         gd.guest.write(gd.ds * 16 + FREE_ITEMS, it.item(item)[game.ITEM_NEXT:game.ITEM_NEXT + 2])
+        took(item, "the Ring +1")
         gd.guest.write(it.items + item * game.ITEM_SIZE, RING)
         if pickpocket.give(gd, Items(gd), member, item, cell):
             return MESSAGE.format(who=gd.creature_name(member))
     return None
+
+
+def with_xp(script: bytes, field_types: bytes = b"", original: Optional[bytes] = None) -> bytes:
+    """The arena's script BODY_SCRIPT with the XP for finding the ring (see XP_REWARD). Nothing of
+    the game's moves. ORIGINAL: the game's script SCRIPT was made from by another change (Semyon's
+    exit, semyon.py: its jump doesn't decode as a whole), to find the line in. Unchanged if the
+    line at BODY_AT isn't NOTHING, followed by the click and the clearing (or is already the
+    jump)."""
+    from . import gpl
+    from .kalzith import _Script
+    original = original or script
+    try:
+        ops = gpl.decode(original, field_types)
+    except gpl.ScriptError:
+        return script
+    at = next((i for i, o in enumerate(ops) if o.at == BODY_AT), None)
+    if at is None or at + 3 >= len(ops):
+        return script
+    line = ops[at]
+    if script[line.at:ops[at + 3].at] != original[line.at:ops[at + 3].at]:
+        return script  # (already the jump)
+    if line.code != PRINT or line.args[1] != ("str", NOTHING + " ") or \
+            [o.code for o in ops[at + 1:at + 3]] != [PRINT, PRINT]:
+        return script
+    s = _Script()
+    for op in ops[at:at + 3]:  # the line (DSCLOG's text swap still finds it), the click, clear
+        s.op(op.code, *op.args)
+    s.when(("expr", ["(", ("var", 0x8D, XP_GIVEN), "==", ("n", 0), ")"]), lambda: (
+        s.flag(XP_GIVEN, 1),
+        s.op(SET, ("n", XP_REWARD), XP_AMOUNT), s.op(CALL, *XP_ROUTINE)))
+    s.op(GOTO, ("n", ops[at + 3].at))
+    out = bytearray(script) + s.bytes(base=len(script), end=False)
+    jump = gpl.encode_op((GOTO, [("n", len(script))]))
+    out[BODY_AT:BODY_AT + len(jump)] = jump
+    return bytes(out)
+

@@ -192,6 +192,13 @@ PATCHES = (
     Patch("hit", 0x25B52, bytes.fromhex("558bec83ec10"), _interrupt(VEC_HIT, 6)),
     Patch("thief_skill", 0x80307, bytes.fromhex("8bc6c1e00203d08bf2"),
           bytes((0xCD, VEC_THIEF_SKILL, 0x72, 0x80386 - 0x8030B)) + b"\x90" * 5),
+    # a bug of the game's own (DSUN.EXE 1DF3:142F, which makes two child pages of the view, frees
+    # them after): when the first can't be made, "jz" went to the freeing with the second's number
+    # never set, and the page routine was handed whatever was on the stack. Its size, read from past
+    # the pages' table, took the top of video memory's pages down into the game's code, the next
+    # pages were made there, and the game crashed (the opening fight, "Null pointer assignment").
+    # Now the first failing goes past both frees (the first is -1: nothing to free)
+    Patch("page_free", 0x248B3, bytes.fromhex("743b"), bytes.fromhex("7459")),
     # the scripts' buffer (one: a script called from another is read in over it): "push dword
     # 10000", its size, as it is allocated. A script of 9800 bytes ran, one of 10000 ended with
     # "BAD GPL EXIT" (the game's largest is 9792); the Trustee's, with the questions about
@@ -220,8 +227,12 @@ class PatchError(Exception):
     pass
 
 
-def patched(original: bytes) -> bytes:
-    """DSUN.EXE's bytes with the dice log patches applied."""
+# Patches that are switches on the Options tab: left out when off (their bytes still checked)
+EFFECTS_KEPT = ("effects_click_low", "effects_click_high")  # a click on the Effects screen keeps a spell
+
+
+def patched(original: bytes, skip=frozenset()) -> bytes:
+    """DSUN.EXE's bytes with the dice log patches applied (but those named in SKIP)."""
     if len(original) != GOG_SIZE:
         raise PatchError(f"DSUN.EXE is {len(original)} bytes; the dice log knows the GOG release "
                          f"({GOG_SIZE} bytes) only")
@@ -229,14 +240,16 @@ def patched(original: bytes) -> bytes:
     for p in PATCHES:
         if data[p.offset:p.offset + len(p.original)] != p.original:
             raise PatchError(f"DSUN.EXE is not the version the dice log knows ({p.name} differs)")
-        data[p.offset:p.offset + len(p.original)] = p.replacement
+        if p.name not in skip:
+            data[p.offset:p.offset + len(p.original)] = p.replacement
     return bytes(data)
 
 
-def write_patched(source: str, dest: str) -> None:
-    """Write the patched copy of `source` to `dest`, unless it is already there."""
+def write_patched(source: str, dest: str, skip=frozenset()) -> None:
+    """Write the patched copy of `source` to `dest` (but the patches in SKIP), unless it is
+    already there."""
     with open(source, "rb") as f:
-        data = patched(f.read())
+        data = patched(f.read(), skip)
     try:
         with open(dest, "rb") as f:
             if f.read() == data:

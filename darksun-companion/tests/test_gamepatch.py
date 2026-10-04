@@ -28,6 +28,16 @@ class GamePatchTests(unittest.TestCase):
         for p in gamepatch.PATCHES:
             self.assertEqual(len(p.replacement), len(p.original))
 
+    def test_skipped_patches_keep_the_games_bytes(self):
+        """A patch switched off (the Effects screen's click) is checked but left as the game's."""
+        original = fake_dsun()
+        patched = gamepatch.patched(bytes(original), frozenset(gamepatch.EFFECTS_KEPT))
+        names = {p.name for p in gamepatch.PATCHES}
+        self.assertTrue(set(gamepatch.EFFECTS_KEPT) <= names)
+        for p in gamepatch.PATCHES:
+            got = patched[p.offset:p.offset + len(p.original)]
+            self.assertEqual(got, p.original if p.name in gamepatch.EFFECTS_KEPT else p.replacement, p.name)
+
     def test_other_versions_are_refused(self):
         with self.assertRaisesRegex(gamepatch.PatchError, "GOG release"):
             gamepatch.patched(bytes(1000))
@@ -51,3 +61,11 @@ class GamePatchTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+    def test_page_free_skips_both_frees(self):
+        """The game's jz past a failed first page lands on the end of the freeing, not on it."""
+        p = next(p for p in gamepatch.PATCHES if p.name == "page_free")
+        jz_end = 0x1F4B3 + 2  # (in the image: the file less its 5400h header) 1DF3:1583 + 2
+        self.assertEqual(jz_end + p.original[1] - 0x1DF30, 0x15C0)  # the frees
+        self.assertEqual(jz_end + p.replacement[1] - 0x1DF30, 0x15DE)  # past them
+        self.assertEqual(p.offset - 0x5400, 0x1F4B3)

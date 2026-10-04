@@ -45,11 +45,27 @@ CLEARED = 775  # (the companion's) Kalzith and he taken off the map after the es
 GONE_AT = (255, 20, 20, 1)  # where the game puts the pens' people then (region 255: none)
 # His object is the arena's: on the party's side (as when he fights beside them), and with 0 where
 # every slave of the pens has 12 (the creature's byte 1Bh; the arena's Tied-up Prisoner has 0 too).
-# In the pens he is as the slaves are (as the game's scripts set anyone's, 40h: an object's field),
-# on their side (SIDE: 1 the party's, 2 against it, 4 neither) and with their 12 (STEADY), once
-# (SETTLED; also for one put in his pen before). Attacked, he is then as any of them is.
+# In his pen (PLACED: put there by the Ledger) he is as the slaves are (as the game's scripts set
+# anyone's, 40h: an object's field), on their side (SIDE: 1 the party's, 2 against it, 4 neither)
+# and with their 12 (STEADY), once (SETTLED; also for one put in his pen before). Attacked, he is then as any of them is.
 SET_FIELD, SIDE, NEUTRAL, STEADY, SLAVES_STEADY = 0x40, 74, 4, 70, 12
 SETTLED = 779
+
+# Breaking out with Scar (the game's script 3, when the party reaches the arena's west exit after
+# Scar's plan is agreed: "Gladiators escaping! Guards! Sound the alarms!"): the game takes Scar
+# and his henchman along to the slave pens (5Eh to region 41, at 76, 68), but nothing of Semyon's.
+# If he is recruited (the game's flag 6) and still in the arena, alive and not against the party,
+# he goes along too, beside them, on the party's side (ESCAPING): in the pens he talks as one
+# breaking out, and isn't made one of the slaves. After the escape he is gone with everyone else,
+# and, if he lived, the Trustee says he got away (GOT_AWAY).
+RECRUITED = 6
+GOT_AWAY = 29  # the game's flag: Semyon escaped on his own ("I'll wait here and guard the exit"), script 5
+ESCAPING = 782
+ESCAPE_SCRIPT, ESCAPE_AT = 3, 1828  # the henchman's move to the pens in it (Scar's is just before)
+HENCHMAN = 229
+BESIDE = -2  # (tiles, across) from where the henchman goes: the game puts Scar's group on one square
+WITH_US = 1  # (a side: the party's)
+AGAINST = 2  # (a side: against the party)
 
 
 def _flag(flag: int, value: int = 1) -> list:
@@ -70,13 +86,17 @@ def placement(base: int) -> bytes:
         s.flag(PLACED, 1)))
     present = ["(", ("op", (0x80, [kalzith.ACTOR, ("n", -SEMYON)])), ")", "<", ("n", 999)]
     here = ("expr", present)
-    s.when(("expr", _flag(SETTLED, 0) + ["and"] + _flag(ESCAPED, 0) + ["and", "("] + present + [")"]),
+    s.when(("expr", _flag(SETTLED, 0) + ["and"] + _flag(ESCAPED, 0) + ["and"] + _flag(PLACED)
+            + ["and", "("] + present + [")"]),
            lambda: (s.op(SET_FIELD, ("field", SEMYON, [SIDE]), ("n", NEUTRAL)),
                     s.op(SET_FIELD, ("field", SEMYON, [STEADY]), ("n", SLAVES_STEADY)), s.flag(SETTLED, 1)))
     s.when(("expr", _flag(ESCAPED) + ["and"] + _flag(CLEARED, 0)), lambda: (
         s.when(("expr", _flag(kalzith.STOCKED) + ["and"] + _flag(kalzith.DIED, 0)),
                lambda: s.op(REMOVE, ("n", -kalzith.OBJECT), *(("n", v) for v in GONE_AT))),
         s.when(here, lambda: s.op(REMOVE, ("n", -SEMYON), *(("n", v) for v in GONE_AT))),
+        # (broke out with the party and lived: the game's own word for a Semyon who escaped, so
+        # the Trustee says he got away, "snuck out through the benches", instead of "every one")
+        s.when(("expr", _flag(ESCAPING) + ["and"] + _flag(DIED, 0)), lambda: s.flag(GOT_AWAY, 1)),
         s.flag(CLEARED, 1)))
     s.op(kalzith.TALK, ("n", START), ("n", SCRIPT), ("n", -SEMYON))
     return s.bytes(base=base, end=False)
@@ -119,6 +139,43 @@ def with_exit(script: bytes, field_types: bytes = b"") -> bytes:
     return bytes(out)
 
 
+def with_escape(script: bytes, field_types: bytes = b"") -> bytes:
+    """The arena's script ESCAPE_SCRIPT with Semyon taken along to the pens with Scar: the
+    henchman's move at ESCAPE_AT becomes a jump past the script's end, where that move is made,
+    then Semyon's to a square beside them (BESIDE), on the party's side, if he is recruited,
+    alive, in the arena and not against the party (ESCAPING set), then a jump back to what follows it. Nothing of the game's moves. Unchanged if the
+    command at ESCAPE_AT isn't that move (or is already the jump)."""
+    try:
+        ops = gpl.decode(script, field_types)
+    except gpl.ScriptError:
+        return script
+    at = next((i for i, o in enumerate(ops) if o.at == ESCAPE_AT), None)
+    if at is None or at + 1 >= len(ops):
+        return script
+    op = ops[at]
+    if op.code != REMOVE or op.args[0] != ("n", -HENCHMAN):
+        return script
+    s = _Script()
+    s.op(op.code, *op.args)
+    here = ["(", ("op", (0x80, [kalzith.ACTOR, ("n", -SEMYON)])), ")", "<", ("n", 999)]
+    recruited = ("expr", _flag(RECRUITED) + ["and"] + _flag(DIED, 0) + ["and", "("] + here + [")"])
+    # (his side read only once he is known to be on the map: the game works out a whole test)
+    not_against = ("expr", ["(", ("field", SEMYON, [SIDE]), "!=", ("n", AGAINST), ")"])
+    region, (_, x), y, last = op.args[1], op.args[2], op.args[3], op.args[4]
+    spot = (region, ("n", x + BESIDE), y, last)
+
+    def along():
+        s.op(SET_FIELD, ("field", SEMYON, [SIDE]), ("n", WITH_US))
+        s.op(REMOVE, ("n", -SEMYON), *spot)
+        s.flag(ESCAPING, 1)
+
+    s.when(recruited, lambda: s.when(not_against, along))
+    s.op(GOTO, ("n", ops[at + 1].at))
+    out = bytearray(script) + s.bytes(base=len(script), end=False)
+    out[ESCAPE_AT:ESCAPE_AT + 3] = gpl.encode_op((GOTO, [("n", len(script))]))
+    return bytes(out)
+
+
 def watch(gd) -> bool:
     """DIED set once a creature named Semyon is dead (in the arena's fight, or anywhere): he
     isn't put in the pens then, and Dinos and the Trustee speak of him as dead. True when it was
@@ -158,12 +215,21 @@ def conversation() -> bytes:
                     "will learn to fear the desert. But first, you have to get out of these pens."), ALWAYS),
                 ("Farewell.", farewell, ALWAYS)])
 
+    def breaking_out():
+        s.say("Scar's gladiators and the Veiled Alliance, side by side! Who would have believed it? "
+              "Stay close to Scar: he knows the way out, and I'm right behind you.")
+        s.page()
+
+    def at_home():
+        s.when(_is(met, 1),
+               lambda: s.say("Hail, comrade! Still in one piece, I see."),
+               lambda: (s.say("There you are! I told you I'd see you in the holding pens. Keep your "
+                              "voice down: the walls in here have ears."), s.flag(MET, 1)))
+        s.call("menu")
+
     s.sub("menu", menu)
     s.op(kalzith.BEGIN)
     s.op(0x54, ("n", PORTRAIT))
-    s.when(_is(met, 1),
-           lambda: s.say("Hail, comrade! Still in one piece, I see."),
-           lambda: (s.say("There you are! I told you I'd see you in the holding pens. Keep your "
-                          "voice down: the walls in here have ears."), s.flag(MET, 1)))
-    s.call("menu")
+    escaping = ("expr", _flag(ESCAPING) + ["and"] + _flag(ESCAPED, 0))
+    s.when(escaping, breaking_out, at_home)
     return s.bytes()

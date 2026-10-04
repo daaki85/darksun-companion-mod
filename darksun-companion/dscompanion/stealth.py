@@ -112,9 +112,10 @@ def worn_bonus(gd: GameData, creature: int, slot: int, bonus: int, name: str) ->
     return 0, ""
 
 
-def turn(gd: GameData, combatant: int, roll: Callable[[], int]) -> Tuple[List[str], bool]:
+def turn(gd: GameData, combatant: int, roll: Callable[[], int], gear: bool = True) -> Tuple[List[str], bool]:
     """A party member's turn has come in a fight: if a thief or a ranger, the hiding and moving
-    silently. (log lines, whether their next attack is from behind)."""
+    silently, with a worn cloak's and boots' bonuses if GEAR. (log lines, whether their next
+    attack is from behind)."""
     creature = gd.combatant_creature(combatant)
     if creature is None or creature >= game.PARTY_SIZE:
         return [], False
@@ -125,7 +126,7 @@ def turn(gd: GameData, combatant: int, roll: Callable[[], int]) -> Tuple[List[st
         hide, of = ranger_chance(gd, creature, HIDE), ranger_chance
     if hide is None:
         return [], False
-    extra, note = worn_bonus(gd, creature, game.CLOAK_SLOT, CLOAK_HIDE, "cloak")
+    extra, note = worn_bonus(gd, creature, game.CLOAK_SLOT, CLOAK_HIDE, "cloak") if gear else (0, "")
     shown = f"{hide}{note} = {min(MOST, hide + extra)}" if extra else f"{hide}"
     hide = min(MOST, hide + extra)
     who = gd.creature_name(creature)
@@ -146,7 +147,7 @@ def turn(gd: GameData, combatant: int, roll: Callable[[], int]) -> Tuple[List[st
     if not hidden:
         return lines, False
     quiet = of(gd, creature, MOVE) or 0
-    extra, note = worn_bonus(gd, creature, game.FOOT, BOOTS_QUIET, "boots")
+    extra, note = worn_bonus(gd, creature, game.FOOT, BOOTS_QUIET, "boots") if gear else (0, "")
     boots = f" ({quiet}{note})" if extra else ""
     quiet = min(MOST, quiet + extra)
     d100 = roll()

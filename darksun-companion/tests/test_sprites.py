@@ -9,10 +9,15 @@ import unittest
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from dscompanion import art, sprites, spritegear as sg
+from dscompanion import art, gff, icons, sprites, spritegear as sg
 from test_spriteparts import rows
 
 SWORD, METAL = 63, 4
+
+
+def read(path):
+    with open(path, "rb") as f:
+        return f.read()
 
 
 def game_chunks():
@@ -32,64 +37,67 @@ class SpriteTests(unittest.TestCase):
         self.assertEqual(art.decode_frame(chunk, 1)[2], rows())
 
     def test_new_chunks(self):
-        """The object points at a pair of its own: the game's frames with room round them, at a
-        fixed size with room to spare, its marker at the end."""
+        """Object 300 pointing at its own pair of pictures, each as long as it needs be: walking,
+        the room gear needs there (sprites.room); in a fight, all of PAD."""
         new = sprites.new_chunks(game_chunks())
         walk, fight = sprites.picture_ids(300)
         self.assertEqual((walk, fight), (2450, 2451))
         self.assertEqual(struct.unpack_from("<H", new[("OJFF", 300)], sprites.OJFF_PICTURE)[0], walk)
         chunk = new[("BMP ", walk)]
         self.assertEqual(struct.unpack_from("<I", chunk, 0)[0], len(chunk))
-        self.assertTrue(chunk.endswith(sprites.MARKER + bytes([0, 0])))
-        self.assertTrue(new[("BMP ", fight)].endswith(sprites.MARKER + bytes([0, 1])))
         self.assertEqual(struct.unpack_from("<H", chunk, 4)[0], 15)
-        self.assertEqual(art.decode_frame(chunk, 0)[2], sg.padded(rows(), sprites.PAD))
+        self.assertEqual(art.decode_frame(chunk, 0)[2], sprites.trimmed(sg.padded(rows(), sprites.PAD), False))
+        frame = art.decode_frame(chunk, 0)[2]
+        self.assertEqual((len(frame[0]), len(frame)), (len(rows()[0]) + 2 * sprites.WALK_SIDE, len(rows()) + sprites.WALK_TOP))
+        self.assertEqual(len(art.decode_frame(new[("BMP ", fight)], 0)[2][0]),
+                         len(art.decode_frame(game_chunks()[("BMP ", 2096)], 0)[2][0]) + 2 * sprites.PAD)
+
+    def test_room_in_the_copy(self):
+        """In the copy each party picture has room after it for its bulkiest outfit, not counted
+        in its length (the game loads, and draws, only what the index says)."""
+        from test_icons import ranged_gff
+        chunks = game_chunks()
+        data = ranged_gff({"OJFF": {300: chunks[("OJFF", 300)]},
+                           "BMP ": {k[1]: v for k, v in chunks.items() if k[0] == "BMP "}})
+        new = sprites.new_chunks(chunks)
+        room = sprites.new_room(chunks, new)
+        out = icons.with_chunks(data, new, room)
+        places = gff.index_places(out, "BMP ")
+        pics = sprites.Pictures(chunks)
+        walk, fight = sprites.picture_ids(300)
+        for picture, combat in ((walk, False), (fight, True)):
+            entry, offset, length = places[picture]
+            self.assertEqual(out[offset:offset + length], new[("BMP ", picture)])
+            self.assertEqual(length + room[("BMP ", picture)], pics.room(300, combat))
+            self.assertEqual(struct.unpack_from("<II", out, entry), (offset, length))
+        self.assertEqual(gff.read_gff(out)[("BMP ", walk)], new[("BMP ", walk)])
+        ordered = sorted(places.values(), key=lambda p: p[1])  # (nothing overlaps the room)
+        for (_, a, n), (_, b, _) in zip(ordered, ordered[1:]):
+            if a in (places[walk][1], places[fight][1]):
+                self.assertGreaterEqual(b - a, pics.room(300, a == places[fight][1]))
 
     def test_dressed_fits(self):
-        """A picture in an outfit is the same size as the plain one (it goes where that was)."""
+        """The bulkiest outfit fits the room kept for the picture."""
         pics = sprites.Pictures(game_chunks())
         plain = pics.build(300, False, {}, ())
         dressed = pics.build(300, False, {"right": (SWORD, METAL), "cloak": (65, 5), "boots": (68, 5)}, (57,))
-        self.assertEqual(len(plain), len(dressed))
-        self.assertNotEqual(plain, dressed)
+        self.assertGreater(len(dressed), len(plain))
+        self.assertLessEqual(len(dressed), pics.room(300, False))
         self.assertNotEqual(art.decode_frame(dressed, 0)[2], art.decode_frame(plain, 0)[2])
 
-    def test_too_big(self):
-        with self.assertRaises(ValueError):
-            sprites.sized(bytes(100), 50, 300, False)
-
-    def test_written_to_the_copy(self):
-        """The Ledger's copy of SEGOBJEX: each picture's place found by its marker, and a dressed
-        one written over the plain one there."""
-        pics = sprites.Pictures(game_chunks())
-        plain = pics.build(300, True, {}, ())
-        dressed = pics.build(300, True, {"right": (SWORD, METAL)}, ())
-        with tempfile.TemporaryDirectory() as d:
-            path = os.path.join(d, "SEGOBJEX.GFF")
-            with open(path, "wb") as f:
-                f.write(b"head" * 10 + plain + b"rest")
-            dresser = sprites.Dresser.__new__(sprites.Dresser)
-            dresser.copy_file = path
-            with open(path, "rb") as f:
-                dresser.in_file = sprites.places(f.read())
-            self.assertEqual(dresser.in_file, {(300, True): (40, len(plain))})
-            dresser._to_file((300, True), dressed)
-            data = open(path, "rb").read()
-            self.assertEqual(data[40:40 + len(dressed)], dressed)
-            self.assertTrue(data.endswith(b"rest"))
-
     def test_spares(self):
-        """A spare pair for each party place, with room for any model, marked after the 14."""
-        new = sprites.new_chunks(game_chunks())
+        """A spare pair for each party place, with room for any model."""
+        chunks = game_chunks()
+        new = sprites.new_chunks(chunks)
+        room = sprites.new_room(chunks, new)
+        pics = sprites.Pictures(chunks)
         for k, obj in enumerate(sprites.SPARES):
             walk, fight = sprites.picture_ids(obj)
             self.assertEqual(walk, 2478 + 2 * k)
-            self.assertTrue(new[("BMP ", walk)].endswith(sprites.MARKER + bytes([14 + k, 0])))
-            self.assertTrue(new[("BMP ", fight)].endswith(sprites.MARKER + bytes([14 + k, 1])))
+            self.assertIn(("BMP ", walk), new)
+            self.assertIn(("BMP ", fight), new)
             self.assertNotIn(("OJFF", obj), new)
-        pics = sprites.Pictures(game_chunks())
-        self.assertEqual(len(pics.build(sprites.SPARES[1], False, {"right": (SWORD, METAL)}, (), 2095)),
-                         pics.spare_capacity(False))
+            self.assertEqual(len(new[("BMP ", walk)]) + room[("BMP ", walk)], pics.spare_capacity(False))
 
     def test_same_figure_a_spare(self):
         """The second member of a figure is dressed in their place's spare pair."""
@@ -101,7 +109,8 @@ class SpriteTests(unittest.TestCase):
     def test_pointed_at_the_spare(self):
         """On the map: the member's picture named the spare and their slot emptied (the game loads
         it); the first member left as they were; back to their own when no longer sharing; a save's
-        picture of the game's own made the Ledger's."""
+        picture of the game's own made the Ledger's; one whose pictures are written anew loaded
+        again."""
         gd = FakeGame(figures=[0, 0])
         shared, spare = sprites.picture_ids(300), sprites.picture_ids(315)
         gd.entry(0, shared[0], 3)
@@ -109,16 +118,16 @@ class SpriteTests(unittest.TestCase):
         dresser = sprites.Dresser.__new__(sprites.Dresser)
         dresser.gd = gd
         dresser.pics = sprites.Pictures(game_chunks())
+        dresser.request_redraw = None
         self.assertTrue(dresser._point(1, 300, 315))
         self.assertEqual(gd.entry_fields(1), (spare[0], sprites.NO_SLOT))
         self.assertFalse(dresser._point(0, 300, 300))
         self.assertEqual(gd.entry_fields(0), (shared[0], 3))
         entry0 = gd.ds * 16 + sprites.MAP_ENTRIES
         self.assertEqual(gd.guest.read(entry0, 1)[0] & sprites.MAP_CHANGED, 0)
-        dresser._point(0, 300, 300, redraw=True)  # (its picture rewritten: drawn again)
+        self.assertTrue(dresser._point(0, 300, 300, reload=True))  # (its pictures written anew)
+        self.assertEqual(gd.entry_fields(0), (shared[0], sprites.NO_SLOT))
         self.assertEqual(gd.guest.read(entry0, 1)[0] & sprites.MAP_CHANGED, sprites.MAP_CHANGED)
-        self.assertEqual(gd.guest.read(entry0 + sprites.MAP_ENTRY_SIZE, 1)[0] & sprites.MAP_CHANGED,
-                         sprites.MAP_CHANGED)  # (and the one moved)
         gd.entry(1, spare[0], 4)
         self.assertFalse(dresser._point(1, 300, 315))  # (already: left alone)
         self.assertTrue(dresser._point(1, 300, 300))
@@ -128,97 +137,120 @@ class SpriteTests(unittest.TestCase):
         gd.guest.write(at, bytes([9, 26]))
         self.assertTrue(dresser._point(0, 300, 300))
         self.assertEqual(gd.entry_fields(0), (shared[0], sprites.NO_SLOT))
-        self.assertEqual(gd.guest.read(at, 2), bytes([9 + sprites.PAD, 26 + sprites.PAD]))  # (where ours has room)
+        self.assertEqual(gd.guest.read(at, 2), bytes([9 + sprites.WALK_SIDE, 26 + sprites.WALK_TOP]))  # (where ours has room)
 
-    def test_only_its_own_copies_rewritten(self):
-        """A copy is written over only while it is still the picture last written (or the copy
-        file's, which the game loads): memory the game has since given to another picture (a
-        monster's, after a fight) is left alone, and no longer counted as a copy."""
-        pics = sprites.Pictures(game_chunks())
-        plain = pics.build(300, False, {}, ())
-        outfits = [({}, ()), ({"right": (SWORD, METAL)}, ()), ({"cloak": (65, 5)}, ())]
-        worn, sprites.worn = sprites.worn, lambda gd, member: outfits[0]
-        self.addCleanup(setattr, sprites, "worn", worn)
-        with tempfile.TemporaryDirectory() as d:
-            path = os.path.join(d, "SEGOBJEX.GFF")
-            with open(path, "wb") as f:
-                f.write(b"head" * 10 + plain)
-            dresser = sprites.Dresser.__new__(sprites.Dresser)
-            dresser.gd, dresser.pics = FakeGame(figures=[0]), pics
-            dresser.copy_file, dresser.in_file = path, {(300, False): (40, len(plain))}
-            dresser.shown, dresser.chunks, dresser._rescans, dresser._versions = {}, {}, [], {}
-            dresser._scanned, dresser._scan = 0.0, lambda: None
-            first, second = 0x20000, 0x40000
-            for at in (first, second):
-                dresser.gd.guest.write(at, plain)
-            dresser.copies = {(300, False): [first, second]}
-            outfits[0] = outfits[1]
-            dresser.update(True, 1.0)
-            sword = pics.build(300, False, *outfits[1])
-            for at in (first, second):
-                self.assertEqual(dresser.gd.guest.read(at, len(sword)), sword)
-            monster = b"another picture" * 20
-            dresser.gd.guest.write(second + 100, monster)  # (loaded where the second one was)
-            outfits[0] = outfits[2]
-            dresser.update(True, 2.0)
-            cloak = pics.build(300, False, *outfits[2])
-            self.assertEqual(dresser.gd.guest.read(first, len(cloak)), cloak)
-            self.assertEqual(dresser.gd.guest.read(second + 100, len(monster)), monster)
-            self.assertEqual(dresser.copies[(300, False)], [first])
+    def test_in_a_fight_the_view_redrawn(self):
+        """Written anew in a fight: the view drawn again (DSCLOG), the figure not marked changed
+        (that can set it walking)."""
+        gd = FakeGame(figures=[0])
+        gd.entry(0, sprites.picture_ids(300)[0], 3)
+        dresser = sprites.Dresser.__new__(sprites.Dresser)
+        dresser.gd, dresser.pics = gd, sprites.Pictures(game_chunks())
+        asked = []
+        dresser.request_redraw = lambda: asked.append(True)
+        self.assertTrue(dresser._point(0, 300, 300, reload=True))
+        self.assertEqual(asked, [True])
+        self.assertEqual(gd.entry_fields(0)[1], sprites.NO_SLOT)
+        self.assertEqual(gd.guest.read(gd.ds * 16 + sprites.MAP_ENTRIES, 1)[0] & sprites.MAP_CHANGED, 0)
 
-    def test_an_older_version_loaded(self):
-        """The game loads the picture from the file copy, which still holds an older outfit (on
-        Windows the file can't always be written while DOSBox has it open): that copy is the
-        Ledger's, and dressed in what is worn now; after an outfit change, so is one with the
-        outfit before."""
-        pics = sprites.Pictures(game_chunks())
-        plain = pics.build(300, False, {}, ())
+    def dressed_copy(self, d, figures=(0,)):
+        """A Dresser for FIGURES with a copy of SEGOBJEX (as the launcher writes it) in D."""
+        from test_icons import ranged_gff
+        chunks = game_chunks()
+        data = ranged_gff({"OJFF": {300: chunks[("OJFF", 300)]},
+                           "BMP ": {k[1]: v for k, v in chunks.items() if k[0] == "BMP "}})
+        new = sprites.new_chunks(chunks)
+        path = os.path.join(d, "SEGOBJEX.GFF")
+        with open(path, "wb") as f:
+            f.write(icons.with_chunks(data, new, sprites.new_room(chunks, new)))
+        dresser = sprites.Dresser.__new__(sprites.Dresser)
+        dresser.gd, dresser.pics = FakeGame(figures=list(figures)), sprites.Pictures(chunks)
+        dresser.copy_file, dresser.places, dresser._stamp = path, {}, None
+        dresser.shown, dresser.request_redraw, dresser._redraw_at = {}, None, None
+        return dresser, path
+
+    def test_outfit_written_to_the_copy(self):
+        """A new outfit: both pictures written into the copy at their own length (the index says
+        so), the game's loaded ones taken out of its table, the figure loaded again; nothing more
+        while it stays the same."""
         outfits = [({"right": (SWORD, METAL)}, ())]
         worn, sprites.worn = sprites.worn, lambda gd, member: outfits[0]
         self.addCleanup(setattr, sprites, "worn", worn)
         with tempfile.TemporaryDirectory() as d:
-            path = os.path.join(d, "SEGOBJEX.GFF")
-            with open(path, "wb") as f:
-                f.write(b"head" * 10 + plain)
-            dresser = sprites.Dresser.__new__(sprites.Dresser)
-            dresser.gd, dresser.pics = FakeGame(figures=[0]), pics
-            dresser.copy_file, dresser.in_file = path, {(300, False): (40, len(plain))}
-            dresser.shown, dresser.chunks, dresser._rescans, dresser._versions = {}, {}, [], {}
-            dresser._scanned, dresser._scan = 0.0, lambda: None
-            dresser._to_file = lambda key, chunk: None  # (the file can't be written)
-            dresser.copies = {}
-            dresser.update(True, 1.0)  # (dressed: nothing loaded yet)
-            at = 0x30000
-            dresser.gd.guest.write(at, plain)  # (the arena's: loaded from the file, plain)
-            dresser.copies = {(300, False): [at]}
-            dresser.update(True, 2.0)
-            sword = pics.build(300, False, *outfits[0])
-            self.assertEqual(dresser.gd.guest.read(at, len(sword)), sword)
-            outfits[0] = ({"cloak": (65, 5)}, ())
-            dresser.update(True, 3.0)
-            self.assertEqual(dresser.gd.guest.read(at, len(sword)), pics.build(300, False, *outfits[0]))
+            dresser, path = self.dressed_copy(d)
+            gd = dresser.gd
+            walk, fight = sprites.picture_ids(300)
+            gd.entry(0, walk, 7)
+            gd.loaded([1234, walk, fight, 99])
+            self.assertEqual(dresser.update(True, 1.0), [300])
+            data = read(path)
+            places = gff.index_places(data, "BMP ")
+            for picture, combat in ((walk, False), (fight, True)):
+                chunk = dresser.pics.build(300, combat, *outfits[0])
+                _, offset, length = places[picture]
+                self.assertEqual(data[offset:offset + length], chunk)
+                self.assertEqual(gff.read_gff(data)[("BMP ", picture)], chunk)
+            self.assertEqual(gd.loaded_numbers(), [1234, sprites.STALE, sprites.STALE, 99])
+            self.assertEqual(gd.entry_fields(0), (walk, sprites.NO_SLOT))
+            gd.entry(0, walk, 8)  # (the game has loaded it)
+            self.assertEqual(dresser.update(True, 2.0), [])
+            self.assertEqual(gd.entry_fields(0), (walk, 8))
+            outfits[0] = ({}, ())  # (taken off: plain again, as long as the plain one)
+            self.assertEqual(dresser.update(True, 3.0), [300])
+            data = read(path)
+            self.assertEqual(gff.read_gff(data)[("BMP ", walk)], dresser.pics.build(300, False, {}, ()))
 
-    def test_rescans_after_an_area_change(self):
-        """Memory looked through every RESCAN, and soon after an area change (its pictures are
-        loaded anew) at each of AREA_RESCANS."""
-        dresser = sprites.Dresser.__new__(sprites.Dresser)
-        dresser.gd = FakeGame(figures=[])
-        dresser.pics = sprites.Pictures(game_chunks())
-        dresser.shown, dresser.chunks, dresser.copies, dresser._versions = {}, {}, {}, {}
-        dresser._scanned, dresser._rescans = -sprites.RESCAN, []
-        scans = []
-        dresser._scan = lambda: scans.append(True)
-        dresser.update(True, 0.0)
-        dresser.update(True, 1.0)
-        self.assertEqual(len(scans), 1)
-        dresser.area_changed(1.0)
-        times = [1.0 + t for t in sprites.AREA_RESCANS]
-        for now in times:
-            dresser.update(True, now - 0.01)
-            before = len(scans)
-            dresser.update(True, now)
-            self.assertEqual(len(scans), before + 1)
-        self.assertEqual(dresser._rescans, [])
+    def test_view_redrawn_after(self):
+        """Shortly after pictures are loaded anew the view is drawn again (their shadows: the floor
+        is drawn before the figures, while the new picture was still loading)."""
+        outfits = [({"right": (SWORD, METAL)}, ())]
+        worn, sprites.worn = sprites.worn, lambda gd, member: outfits[0]
+        self.addCleanup(setattr, sprites, "worn", worn)
+        with tempfile.TemporaryDirectory() as d:
+            dresser, path = self.dressed_copy(d)
+            asked = []
+            dresser.request_redraw = lambda: asked.append(True)
+            dresser.gd.entry(0, sprites.picture_ids(300)[0], 7)
+            dresser.update(True, 1.0)
+            self.assertEqual(len(asked), 1)  # (at once: the figure loaded and drawn)
+            dresser.update(True, 1.0 + sprites.REDRAW_AFTER / 2)
+            self.assertEqual(len(asked), 1)
+            dresser.update(True, 1.0 + sprites.REDRAW_AFTER)
+            self.assertEqual(len(asked), 2)
+            dresser.update(True, 5.0)
+            self.assertEqual(len(asked), 2)
+
+    def test_copy_written_anew(self):
+        """The launcher writes the copy anew (plain) for the next game: the outfit written again."""
+        outfits = [({"right": (SWORD, METAL)}, ())]
+        worn, sprites.worn = sprites.worn, lambda gd, member: outfits[0]
+        self.addCleanup(setattr, sprites, "worn", worn)
+        with tempfile.TemporaryDirectory() as d:
+            dresser, path = self.dressed_copy(d)
+            plain = read(path)
+            dresser.update(True, 1.0)
+            with open(path, "wb") as f:
+                f.write(plain + b"\0")  # (written anew: another size, another time)
+            self.assertEqual(dresser.update(True, 2.0), [300])
+            data = read(path)
+            walk = sprites.picture_ids(300)[0]
+            self.assertEqual(gff.read_gff(data)[("BMP ", walk)], dresser.pics.build(300, False, *outfits[0]))
+
+    def test_copy_not_writable(self):
+        """The copy can't be written: nothing changed in the game, tried again next time."""
+        outfits = [({"right": (SWORD, METAL)}, ())]
+        worn, sprites.worn = sprites.worn, lambda gd, member: outfits[0]
+        self.addCleanup(setattr, sprites, "worn", worn)
+        with tempfile.TemporaryDirectory() as d:
+            dresser, path = self.dressed_copy(d)
+            walk = sprites.picture_ids(300)[0]
+            dresser.gd.entry(0, walk, 7)
+            real = dresser._write
+            dresser._write = lambda pictures: False
+            self.assertEqual(dresser.update(True, 1.0), [])
+            self.assertEqual(dresser.gd.entry_fields(0), (walk, 7))
+            dresser._write = real
+            self.assertEqual(dresser.update(True, 2.0), [300])
 
 
 class FakeGuest:
@@ -254,6 +286,18 @@ class FakeGame:
         at = self.ds * 16 + sprites.MAP_ENTRIES + combatant * sprites.MAP_ENTRY_SIZE
         self.guest.write(at + sprites.MAP_PICTURE, struct.pack("<H", picture))
         self.guest.write(at + sprites.MAP_SLOT, struct.pack("<H", slot))
+
+    def loaded(self, numbers):
+        """The game's table of the pictures it has loaded: these NUMBERS."""
+        self.guest.write(self.ds * 16 + sprites.PICTURE_COUNT, struct.pack("<H", len(numbers)))
+        base = (self.load_seg + sprites.PICTURE_TABLE_SEG) * 16
+        for k, n in enumerate(numbers):
+            self.guest.write(base + k * sprites.PICTURE_ENTRY, struct.pack("<H", n))
+
+    def loaded_numbers(self):
+        count, = struct.unpack("<H", self.guest.read(self.ds * 16 + sprites.PICTURE_COUNT, 2))
+        base = (self.load_seg + sprites.PICTURE_TABLE_SEG) * 16
+        return [struct.unpack("<H", self.guest.read(base + k * sprites.PICTURE_ENTRY, 2))[0] for k in range(count)]
 
     def entry_fields(self, combatant):
         at = self.ds * 16 + sprites.MAP_ENTRIES + combatant * sprites.MAP_ENTRY_SIZE
