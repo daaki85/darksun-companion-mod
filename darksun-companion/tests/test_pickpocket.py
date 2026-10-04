@@ -102,6 +102,12 @@ class PickTests(unittest.TestCase):
         struct.pack_into("<h", self.m, (LOAD_SEG + game.TALK_SEG) * 16 + game.TALK_TARGET, 2)  # a party member
         self.assertIsNone(self.attempt())
 
+    def test_no_ones_turn(self):
+        """Between areas no one leads (the turn out of range): no try, and no error."""
+        struct.pack_into("<H", self.m, DS * 16 + game.WHOSE_TURN, 0xFFFF)
+        self.assertIsNone(self.log.game.whose_turn())
+        self.assertIsNone(self.attempt())
+
 
 if __name__ == "__main__":
     unittest.main()

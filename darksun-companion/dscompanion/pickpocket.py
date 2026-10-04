@@ -143,7 +143,7 @@ def attempt(gd: GameData, tried: set, roll: Callable[[], int] = lambda: random.r
         return None
     npc = gd.creature_name(who)
     leader = gd.whose_turn()
-    if not 0 <= leader < game.PARTY_SIZE:
+    if leader is None or not 0 <= leader < game.PARTY_SIZE:  # (no one's turn: between areas)
         return None
     thief = gd.creature_name(leader)
     chance = _skill(gd, leader, "pick pockets")

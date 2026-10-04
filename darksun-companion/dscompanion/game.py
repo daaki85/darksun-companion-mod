@@ -648,11 +648,19 @@ class GameData:
                          struct.pack("<I", max(0, self.money() + amount) & 0xFFFFFFFF))
 
     def flag(self, n: int) -> bool:
-        at = far_pointer(self.guest, self.ds, FLAGS_PTR) + n // 8
-        return bool(self.guest.read(at, 1)[0] >> (n % 8) & 1)
+        """Flag N (False while the flags have no place in memory: their pointer is null at times,
+        such as in the arena outside a script's run)."""
+        flags = far_pointer(self.guest, self.ds, FLAGS_PTR)
+        if not flags:
+            return False
+        return bool(self.guest.read(flags + n // 8, 1)[0] >> (n % 8) & 1)
 
     def set_flag(self, n: int, on: bool = True) -> None:
-        at = far_pointer(self.guest, self.ds, FLAGS_PTR) + n // 8
+        """Flag N set (or cleared); nothing while the flags have no place in memory (see flag)."""
+        flags = far_pointer(self.guest, self.ds, FLAGS_PTR)
+        if not flags:
+            return
+        at = flags + n // 8
         byte = self.guest.read(at, 1)[0]
         self.guest.write(at, bytes([byte | 1 << (n % 8) if on else byte & ~(1 << (n % 8))]))
 
