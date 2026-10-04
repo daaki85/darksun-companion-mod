@@ -203,7 +203,7 @@ def conversation() -> bytes:
 
     def breaking_out():
         s.say("Scar's gladiators and the Veiled Alliance, side by side! Who would have believed it? "
-              "Keep moving: the grate is in the northwest, and I'm right behind you.")
+              "Stay close to Scar: he knows the way out, and I'm right behind you.")
         s.page()
 
     def at_home():

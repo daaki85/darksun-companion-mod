@@ -1009,12 +1009,12 @@ alarms!"), Scar and his henchmen come along to the slave pens and Semyon is left
 behind. With the Ledger, if he is still in the arena, alive and on the party's
 side, he comes too: he stands beside Scar's men in the pens and fights the guards
 with them, on the party's side. Talked to then, he says: "Scar's gladiators and
-the Veiled Alliance, side by side! Who would have believed it? Keep moving: the
-grate is in the northwest, and I'm right behind you." He isn't made one of the
+the Veiled Alliance, side by side! Who would have believed it? Stay close to
+Scar: he knows the way out, and I'm right behind you." He isn't made one of the
 pens' slaves while the escape lasts, and once the party is out through the
 grate, he is gone with everyone else.
 
-![The slave pens during the escape: Semyon, with his portrait, telling the party to make for the grate](docs/semyon-escape.png)
+![The slave pens during the escape: Semyon, with his portrait, telling the party to stay close to Scar](docs/semyon-escape.png)
 
 How: the arena's script 3 moves Scar and his henchman to the pens (5Eh to region
 41) when the party reaches the west exit after Scar's plan is agreed. In the
