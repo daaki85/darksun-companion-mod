@@ -212,12 +212,28 @@ pockets, the rule changes); the slave pens' gear and the cooked vulture work
 there too. If anything goes wrong it says so in a message box and
 writes the details to `play.log`.
 
-**If DOSBox closes by itself:** when the game stops with an error, DOSBox now
-waits with the game's message on screen ("The game stopped with an error",
-then press a key), rather than closing over it. With the game started from the
-Ledger, the dice log also says how DOSBox closed: `DOSBox closed: it crashed
-(an access violation, code C0000005h)` means DOSBox itself failed, not the
-game. Either message, and what was happening at the time, says where to look.
+**If DOSBox closes by itself:** when the game stops with an error (such as
+"Null pointer assignment"), DOSBox now waits with the game's message on screen
+("The game stopped with an error", then press a key) rather than closing over
+it. With the game started from the Ledger (or either `.bat` file), the dice log
+also says how DOSBox closed: `DOSBox closed: it crashed (an access violation,
+code C0000005h)` means DOSBox itself failed, not the game.
+
+**Crash reports:** either way, the Ledger saves a crash report in the
+`crash-logs` folder (beside `Start Templar's Ledger.bat`), named for the time,
+such as `crash-logs\crash-2026-10-04-213012.txt`, and says so in the dice log
+(or, with `Play Dark Sun (in-game rolls).bat`, in a message box). It holds:
+- how DOSBox closed (its exit code), and what the game left on the screen;
+- how long the game ran, and the Ledger's switches and game speed (not where the
+  game is installed, nor the party's names);
+- DOSBox's own `stdout.txt` and `stderr.txt` from that run, if it wrote them;
+- any writes into the game the Ledger refused as unsafe;
+- the last 300 lines of the dice log and the last 80 of the dialogue.
+
+Send the file along with what you were doing just before. A game closed the
+usual way (Exit to DOS, or closing DOSBox's window) writes no report. With the
+game started from GOG's own shortcut, the Ledger can't see how it closed, so
+there is no report.
 
 **Checking a save file (no game needed):** drag a `SAVEnn.SAV` file from the
 game folder onto **`Show Save.bat`**.
@@ -1188,6 +1204,24 @@ a step every 56 ms with everything on, 32 ms with the shadows off or
 everything off; at 20,000 cycles with everything on, 32 ms; at 30,000, 24 ms.
 What the party wears on their figures costs nothing measurable.
 
+#### Suggested system requirements
+
+DOSBox runs the whole game on one processor core, so what counts is the speed
+of a single core, not how many there are. These are suggestions, not tested
+limits:
+
+| Game speed | Processor (one core's speed) | Memory |
+|---|---|---|
+| GOG's own | anything that runs GOG's release | 2 GB |
+| Faster (20,000 cycles, the default) | a dual-core from about 2010 on, 2 GHz or more (Intel Core i3 or AMD Phenom II) | 4 GB |
+| Fastest (30,000 cycles) | a processor from about 2015 on, 3 GHz or more (Intel Core i5 or AMD Ryzen) | 4 GB |
+
+The Ledger itself (Python and its window) needs about 100 MB of memory and
+little processor time. A screen of 1920×1080 or more shows the game's window
+at **Triple** size beside the Ledger's; on a smaller one choose **Double**.
+If the computer can't keep up, the sound crackles or stutters and the game
+slows instead of speeding up: choose the next setting down.
+
 ### Dust
 
 Anyone walking on sand or dirt raises little puffs of dust behind their feet,
@@ -2078,19 +2112,30 @@ The party pane has two tabs:
   equipment.
 
 The other side has the **Dice log**, **Dialogue**, **Spells** and **Memory
-tools** tabs, and **Options** (Alt+O) with the Ledger's switches: what the
-dice log shows (unlabelled rolls, details), what it shows in the game (each
-turn's rolls and how much they say, monster descriptions) and the rule
-changes (helms, boots, two weapons, the spell save, doubled saves, Cat's
-Grace, hiding in shadows, levels up to 10, the thief skill table,
-half-giants' two-handed weapons), with the
-Ledger's additions to play after them: the Ring +1, picking pockets, what the
-party wears, shadows, dust, the rings in a fight (none, the chosen enemy's,
-or all), Tab and Enter, scrolling with the wheel (and the right button), and
-a button that gives each thief a set of Thieves' Tools now. The switches for the
-game are remembered for next time. In a window too small to show them all,
-the tab scrolls (scrollbar, mouse wheel, or arrow and page keys once it has
-the focus).
+tools** tabs, and **Options** (Alt+O) with the Ledger's switches, in groups:
+
+- **Dice log**: unlabelled rolls, and the details behind each roll.
+- **In the game**: each turn's rolls and how much they say, monster
+  descriptions.
+- **Rule changes**: helms, boots, two weapons, half-giants' two-handed
+  weapons, the spell save, doubled saves, Cat's Grace, levels up to 10, the
+  thief skill table, hiding in shadows (and under it, a worn cloak's and
+  boots' bonuses).
+- **New content**: Kalzith, Semyon, the cooked vulture, the slave pens' gear,
+  the Ring +1, picking pockets, and a button that gives each thief a set of
+  Thieves' Tools now. Kalzith, Semyon and the vulture are put in the game's
+  copies the next time it is started; what a saved game already has (people
+  met, items given) stays in it.
+- **On the screen**: what the party wears, shadows, dust, and the rings in a
+  fight (none, the chosen enemy's, or all).
+- **Controls**: Tab and Enter, scrolling with the wheel (and the right
+  button), and a click on the Effects screen keeping a spell.
+- **Game speed** (see [Game speed](#game-speed)).
+
+All are on by default except unlabelled rolls, each turn's rolls in the game
+and the right button, and are remembered for next time. In a window too small
+to show them all, the tab scrolls (scrollbar, mouse wheel, or arrow and page
+keys once it has the focus).
 
 ![The Options tab](docs/options.png)
 

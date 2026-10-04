@@ -28,6 +28,16 @@ class GamePatchTests(unittest.TestCase):
         for p in gamepatch.PATCHES:
             self.assertEqual(len(p.replacement), len(p.original))
 
+    def test_skipped_patches_keep_the_games_bytes(self):
+        """A patch switched off (the Effects screen's click) is checked but left as the game's."""
+        original = fake_dsun()
+        patched = gamepatch.patched(bytes(original), frozenset(gamepatch.EFFECTS_KEPT))
+        names = {p.name for p in gamepatch.PATCHES}
+        self.assertTrue(set(gamepatch.EFFECTS_KEPT) <= names)
+        for p in gamepatch.PATCHES:
+            got = patched[p.offset:p.offset + len(p.original)]
+            self.assertEqual(got, p.original if p.name in gamepatch.EFFECTS_KEPT else p.replacement, p.name)
+
     def test_other_versions_are_refused(self):
         with self.assertRaisesRegex(gamepatch.PatchError, "GOG release"):
             gamepatch.patched(bytes(1000))

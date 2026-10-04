@@ -14,6 +14,7 @@ import os
 import string
 import struct
 import subprocess
+import time
 from typing import Dict, List, Optional, Tuple
 
 from . import gamepatch, gff, gpl, icons, kalzith
@@ -180,22 +181,35 @@ def write_conf(game_dir: str, path: str = CONF, dice_log: bool = True) -> str:
     lines += [f'mount d "{DOS_DIR}"', "c:"]
     # the game runs from C: (the game folder), where the patched copy looks for its files
     lines += [r"lh d:\dsclog.exe", "cls", "d:\\" + PATCHED_EXE.lower()] if dice_log else ["darksun"]
-    # a game that stops with an error ("Stack overflow!", "Abnormal program termination") leaves
-    # its message on screen until a key is pressed, rather than DOSBox closing over it
-    lines += ["if errorlevel 1 echo.", "if errorlevel 1 echo The game stopped with an error (above).",
-              "if errorlevel 1 pause", "exit", ""]
+    # a game that stops with an error ("Null pointer assignment", "Stack overflow!") leaves its
+    # message on screen until a key is pressed, rather than DOSBox closing over it, and saved for
+    # the crash report (GAMEEND.COM: the screen's text, or a return code other than 0)
+    lines += ["d:\\" + GAME_END_COM.lower(), "exit", ""]
     with open(path, "w", newline="\r\n") as f:
         f.write("\n".join(lines))
     return path
 
 
-def prepare_patched_game(game_dir: str) -> Optional[str]:
+# The Options tab's new content and game changes (settings keys), each on unless switched off;
+# the game's copies are written with them as they stand when it is started
+CONTENT = ("kalzith", "semyon", "vulture", "pens_gear", "effects_kept", "stealth_gear")
+
+
+def content(settings: dict) -> dict:
+    """{key: on} for each of CONTENT (on unless the settings say False)."""
+    return {key: settings.get(key, True) is not False for key in CONTENT}
+
+
+def prepare_patched_game(game_dir: str, settings: Optional[dict] = None) -> Optional[str]:
     """Write DSUNLOG.EXE next to DSCLOG.EXE, and the copies of the game's files with the
     companion's additions: SEGOBJEX.GFF with its item icons (icons.py; without it the items keep
     the plain icons) and Kalzith's object, RESOURCE.GFF with Cat's Grace's icon, GPLDATA.GFF and
-    RGN29.GFF with Kalzith (kalzith.py). Returns why the game can't be patched, or None."""
+    RGN29.GFF with Kalzith (kalzith.py), each addition only if switched on in SETTINGS (CONTENT;
+    the saved settings if none given). Returns why the game can't be patched, or None."""
+    on = content(load_settings() if settings is None else settings)
+    skip = frozenset() if on["effects_kept"] else frozenset(gamepatch.EFFECTS_KEPT)
     try:
-        gamepatch.write_patched(_find_file(game_dir, "DSUN.EXE"), os.path.join(DOS_DIR, PATCHED_EXE))
+        gamepatch.write_patched(_find_file(game_dir, "DSUN.EXE"), os.path.join(DOS_DIR, PATCHED_EXE), skip)
     except (gamepatch.PatchError, OSError) as e:
         return str(e)
     objects_ok = False
@@ -207,12 +221,24 @@ def prepare_patched_game(game_dir: str) -> Optional[str]:
         pass  # no icons of our own: the game's plain ones
     # Kalzith, the slave pens' defiler: in his pen and with his conversation only if the objects
     # copy has him too (the pens naming an object that isn't there would stop the game)
+    # (Semyon, the vulture and the pens' questions are in the scripts' copy too: with Kalzith off,
+    # or no objects copy with him, it is written without him, and the pens' region is the game's)
+    with_kalzith = on["kalzith"] and objects_ok
+    files = [(kalzith.SCRIPTS_FILE, lambda source, dest: kalzith.write_scripts(
+        source, dest, with_kalzith, on["semyon"], on["vulture"]))]
+    if with_kalzith:
+        files.append((kalzith.REGION_FILE, kalzith.write_region))
     try:
-        for name, write in ((kalzith.SCRIPTS_FILE, kalzith.write_scripts), (kalzith.REGION_FILE, kalzith.write_region)):
-            source = _find_file(game_dir, name) if objects_ok else None
+        for name, write in files:
+            source = _find_file(game_dir, name)
             if not source:
                 raise OSError(f"no {name}")
             write(source, os.path.join(DOS_DIR, name))
+        if not with_kalzith:
+            try:
+                os.remove(os.path.join(DOS_DIR, kalzith.REGION_FILE))
+            except FileNotFoundError:
+                pass  # (no region copy to take away)
     except (gff.GffError, OSError, KeyError, struct.error, ValueError, IndexError, gpl.ScriptError):
         for name in (kalzith.SCRIPTS_FILE, kalzith.REGION_FILE):  # (all or nothing: the game's own)
             try:
@@ -243,6 +269,79 @@ def closed_line(code: int) -> str:
     return f"DOSBox closed with exit code {code}."
 
 
+# GAMEEND.COM, run after the game, notes in GAMEEND.TXT (in DOS_DIR) how the game stopped with an
+# error; the Ledger's crash reports go in CRASH_DIR
+GAME_END_COM = "GAMEEND.COM"
+GAME_END = os.path.join(DOS_DIR, "GAMEEND.TXT")
+CRASH_DIR = os.path.join(HERE, "crash-logs")
+DOSBOX_OUTPUT = ("stdout.txt", "stderr.txt")  # DOSBox's own messages with -noconsole (its folder)
+
+
+def game_end_note() -> Optional[str]:
+    """What GAMEEND.COM saved of the game stopping with an error (its return code, video mode,
+    and the screen's text), or None if it ended as usual."""
+    try:
+        with open(GAME_END, encoding="cp437", errors="replace") as f:
+            return f.read().rstrip()
+    except OSError:
+        return None
+
+
+def dosbox_output(game_dir: str, since: float) -> Dict[str, str]:
+    """DOSBox's stdout.txt and stderr.txt (in its folder; only read) written since SINCE."""
+    out: Dict[str, str] = {}
+    folder = _find_file(game_dir, "DOSBOX") if game_dir else None
+    for name in DOSBOX_OUTPUT if folder else ():
+        path = _find_file(folder, name)
+        try:
+            if path and os.path.getmtime(path) >= since:
+                with open(path, encoding="utf-8", errors="replace") as f:
+                    out[name] = f.read()[-20000:].rstrip()
+        except OSError:
+            pass
+    return out
+
+
+def crash_report(code: int, note: Optional[str], settings: dict, dice: str, dialogue: str,
+                 refused: List[str], output: Dict[str, str], started: float, now: float) -> str:
+    """The text of a crash report: how DOSBox closed, what the game left on screen, the switches,
+    and the end of the dice log and the dialogue."""
+    stamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(now))
+    lines = [f"Templar's Ledger crash report, {stamp}", "", closed_line(code)]
+    if started:
+        lines.append(f"The game ran for {round((now - started) / 60)} minutes.")
+    if note:
+        lines += ["", "The game stopped with an error. On the screen:", note]
+    lines += ["", "Settings:"] + [f"  {key}: {value!r}" for key, value in sorted(settings.items())
+                                  if key != "game_dir" and isinstance(value, (bool, int, float, str))]
+    if refused:
+        lines += ["", "Writes the Ledger refused (a pointer read while the game had it empty):"]
+        lines += ["  " + r for r in refused[-50:]]
+    for name, text in output.items():
+        lines += ["", f"DOSBox's {name}:", text]
+    lines += ["", "The dice log's last lines:", _last_lines(dice, 300),
+              "", "The dialogue's last lines:", _last_lines(dialogue, 80), ""]
+    return "\n".join(lines)
+
+
+def _last_lines(text: str, count: int) -> str:
+    return "\n".join(text.rstrip().splitlines()[-count:]) or "(empty)"
+
+
+def write_crash_report(text: str, now: float, folder: str = CRASH_DIR) -> str:
+    """Save a crash report as crash-logs/crash-YYYY-MM-DD-HHMMSS.txt (a number after it if there
+    is one already); returns its path."""
+    os.makedirs(folder, exist_ok=True)
+    stem = os.path.join(folder, time.strftime("crash-%Y-%m-%d-%H%M%S", time.localtime(now)))
+    path, n = stem + ".txt", 1
+    while os.path.exists(path):  # (two in the same second)
+        n += 1
+        path = f"{stem}-{n}.txt"
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(text)
+    return path
+
+
 def launch(game_dir: str) -> Tuple[subprocess.Popen, Optional[str]]:
     """Start the game. Returns DOSBox's process and, if the dice log can't run, why."""
     dosbox_dir = _find_file(game_dir, "DOSBOX")
@@ -251,6 +350,10 @@ def launch(game_dir: str) -> Tuple[subprocess.Popen, Optional[str]]:
     if not dosbox_dir or not settings_conf:
         raise LaunchError(f"{game_dir} does not look like the GOG install of Shattered Lands")
     problem = prepare_patched_game(game_dir)
+    try:
+        os.remove(GAME_END)  # (the last game's)
+    except OSError:
+        pass
     conf = write_conf(game_dir, dice_log=problem is None)
     return subprocess.Popen(
         [_find_file(dosbox_dir, "DOSBox.exe"), "-conf", settings_conf, "-conf", conf, "-noconsole"],

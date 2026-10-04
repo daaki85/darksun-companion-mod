@@ -192,6 +192,16 @@ class PensAsksTests(unittest.TestCase):
         out = pensasks.script_chunks(chunks, b"")
         self.assertEqual(set(out), {("GPL ", pensasks.DINOS_SCRIPT)})
 
+    def test_vulture_switched_off(self):
+        """With the vulture quest off, Dinos's first menu is the game's."""
+        first = _game_like().replace(gpl.encode_expr(("str", "  What do you know about Gilal?")),
+                                     gpl.encode_expr(("str", "<name>")))
+        number = next(m[0] for m in pensasks.MENUS if pensasks.VULTURE in m[2])
+        chunks = {("GPL ", number): first}
+        self.assertIn(("GPL ", number), pensasks.script_chunks(chunks, b""))
+        out = pensasks.script_chunks(chunks, b"", vulture=False)
+        self.assertEqual(out.get(("GPL ", number), first), first)
+
 
 if __name__ == "__main__":
     unittest.main()

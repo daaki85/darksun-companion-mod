@@ -1,6 +1,7 @@
 """Command line entry point: python -m dscompanion <command> ..."""
 
 import argparse
+import collections
 import os
 import sys
 
@@ -232,10 +233,11 @@ def cmd_launch(args) -> None:
     from . import launch
     game_dir = _game_dir(args)
     print(f"Starting Shattered Lands from {game_dir}")
-    _, problem = launch.launch(game_dir)
+    dosbox, problem = launch.launch(game_dir)
     if problem:
         print(f"The dice log can't run with this copy of the game ({problem}); starting the game without it.")
-    cmd_view(args)
+    from .viewer import run
+    run(Layout.load(args.layout), lambda: connect(args), dosbox, game_dir)
 
 
 def cmd_play(args) -> None:
@@ -287,6 +289,9 @@ def cmd_play(args) -> None:
         log.popups = log.popups and not args.no_popups
         log.speaker_names = launch.speaker_names()
         log.learned_speakers = launch.learned_speakers()
+        started = time.time()
+        said = collections.deque(maxlen=300)  # the dice log's and dialogue's last lines, for a crash report
+        talk = collections.deque(maxlen=80)
         attached = False
         while dosbox.poll() is None:
             if not attached:
@@ -300,8 +305,9 @@ def cmd_play(args) -> None:
                 log.detach()
                 attached = False
                 continue
-            log.lines()
-            log.take_dialogue()
+            said.extend(log.lines())
+            for entry in log.take_dialogue():
+                talk.extend(line for line in (entry.text, *entry.replies, entry.chosen and "You chose: " + entry.chosen) if line)
             learned = log.take_speakers()
             if learned:
                 launch.add_learned_speakers(learned)
@@ -312,6 +318,13 @@ def cmd_play(args) -> None:
             if given:
                 launch.add_tools_given(given)
             time.sleep(0.02)
+        crash = launch.game_end_note()
+        if dosbox.returncode != 0 or crash:
+            refused = list(guest.refused) if hasattr(guest, "refused") else []
+            path = launch.write_crash_report(launch.crash_report(
+                dosbox.returncode, crash, settings, "\n".join(said), "\n".join(talk), refused,
+                launch.dosbox_output(game_dir, started), started, time.time()), time.time())
+            tell(f"{launch.closed_line(dosbox.returncode)}\n\nA crash report is saved in {path}.")
     except (CliError, launch.LaunchError) as e:
         tell(str(e))
     except Exception:

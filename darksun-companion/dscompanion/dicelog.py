@@ -332,6 +332,9 @@ class DiceLog:
         self.show_shadows = True  # shadows under the figures on the map (shadows.py)
         self._shadows = shadows.Shadows()
         self.show_dust = True  # dust raised by walkers on sand and dirt (dust.py)
+        self.pens_gear = True  # the slave pens' gear for Kurzak, Legcrusher, Pehtucl, the bone scale set
+        self.vulture_on = True  # the cooked vulture quest (vulture.py)
+        self.stealth_gear = True  # a worn cloak's and boots' bonuses to hiding (stealth.py)
         self._dust = dust.Dust()
         self.ring_mode = rings.ONLY_CHOSEN  # rings in a fight: off, the chosen enemy's, all the enemies' (rings.py)
         self._rings = rings.Rings()
@@ -550,7 +553,7 @@ class DiceLog:
             it = ring.Items(self.game)
             rec = it.item(item) if item < game.NO_ITEM else b""
             kind, index = it.thing(thing) if 0 <= thing < ring.THING_COUNT else (None, None)
-            meal = vulture.use(self.game, rec, index, self._fighting()) if rec and kind == 2 else None
+            meal = vulture.use(self.game, rec, index, self._fighting()) if rec and kind == 2 and self.vulture_on else None
             if meal is not None:
                 taken = 2 if meal.used_up else True
                 result = pickpocket.Attempt(meal.text, meal.log)
@@ -613,6 +616,9 @@ class DiceLog:
         self.show_shadows = bool(settings.get("shadows", True))
         self.scroll_map = bool(settings.get("scroll_map", True))
         self.show_dust = bool(settings.get("dust", True))
+        self.pens_gear = bool(settings.get("pens_gear", True))
+        self.vulture_on = bool(settings.get("vulture", True))
+        self.stealth_gear = bool(settings.get("stealth_gear", True))
         self.ring_mode = rings.mode(settings)
         self.use_targeting = bool(settings.get("targeting", True))
         self.scroll_right = bool(settings.get("scroll_right", False))
@@ -991,7 +997,7 @@ class DiceLog:
             ring.name_items(self.game, self.rules)
             if not names.update(self.game, self.tsr_hdr):
                 return out  # no names for them yet: none given
-            if npcitems.types_ready(self.game, self.tsr_hdr):  # Kurzak's, Legcrusher's, Pehtucl's
+            if self.pens_gear and npcitems.types_ready(self.game, self.tsr_hdr):  # Kurzak's, Legcrusher's, Pehtucl's
                 before = set(self.tools_given)
                 out += npcitems.place(self.game, self.tools_given)
                 out += bonescale.place(self.game, self.tools_given)  # the bone scale armour's set
@@ -999,7 +1005,8 @@ class DiceLog:
                 self._tools_new += sorted(self.tools_given - before)
             kalzith.stock(self.game, bool(self.rules & game.RULE_CATS_GRACE))  # (once a game, by its flag)
             semyon.watch(self.game)  # (killed: never put in the pens)
-            out += vulture.meal(self.game)  # (Dinos's script has set its flag: XP and a full rest)
+            if self.vulture_on:
+                out += vulture.meal(self.game)  # (Dinos's script has set its flag: XP and a full rest)
             if kalzith.watch(self.game):  # (killed: Dinos and the Trustee speak of him so)
                 left = kalzith.loot(self.game)  # (one of his scrolls, his Cloak and Quarterstaff)
                 if left:
@@ -1400,7 +1407,7 @@ class DiceLog:
         out = [f"{name}'s turn"] if name != "?" else []
         if self.rules & game.RULE_STEALTH and turn < game.PARTY_SIZE:
             try:
-                lines, hidden = stealth.turn(self.game, turn, self.stealth_roll)
+                lines, hidden = stealth.turn(self.game, turn, self.stealth_roll, self.stealth_gear)
             except (struct.error, IndexError, ValueError):
                 lines, hidden = [], False
             out += lines

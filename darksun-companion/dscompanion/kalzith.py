@@ -518,34 +518,40 @@ def with_entry(entries: bytes, script: int = SCRIPT) -> bytes:
     return entries + ENTRY.pack(max((e[0] for e in table), default=-1) + 1, START, script)
 
 
-def script_chunks(gpldata: bytes) -> Dict[Tuple[str, int], bytes]:
+def script_chunks(gpldata: bytes, kalzith: bool = True, semyon: bool = True,
+                  vulture: bool = True) -> Dict[Tuple[str, int], bytes]:
     """For the Ledger's copy of GPLDATA: his conversation, and the master script running it (and
-    Semyon's, semyon.py)."""
+    Semyon's, semyon.py; Dinos's and the Trustee's questions, pensasks.py), each part only if
+    switched on (the Options tab's new content)."""
     chunks = read_gff(gpldata)
     if ("MAS ", MASTER) not in chunks:
         return {}
     field_types = next((v for k, v in chunks.items() if k[0] == "GPLX"), b"")[gpl.FIELD_TYPES_AT:]
-    out = {("GPL ", SCRIPT): conversation(), ("MAS ", MASTER): with_talk(chunks[("MAS ", MASTER)], field_types)}
-    if ENTRIES in chunks:
-        out[ENTRIES] = with_entry(chunks[ENTRIES])
-    face = portrait_chunk(chunks)
-    if face and ("PORT", PORTRAIT) not in chunks:
-        out[("PORT", PORTRAIT)] = face
-    # Semyon, in the pens as he promises (semyon.py): his part after Kalzith's
-    from . import semyon
-    out[("GPL ", semyon.SCRIPT)] = semyon.conversation()
-    out[("MAS ", MASTER)] = semyon.with_semyon(out[("MAS ", MASTER)], field_types)
-    if ENTRIES in out:
-        out[ENTRIES] = with_entry(out[ENTRIES], semyon.SCRIPT)
-    arena = ("GPL ", semyon.ARENA_TALK)
-    if arena in chunks:  # (his leaving after the fight marked)
-        out[arena] = semyon.with_exit(chunks[arena], field_types)
-    escape = ("GPL ", semyon.ESCAPE_SCRIPT)
-    if escape in chunks:  # (taken along to the pens with Scar)
-        out[escape] = semyon.with_escape(chunks[escape], field_types)
-    # Dinos and the Trustee asked about him and Semyon (pensasks.py)
+    out: Dict[Tuple[str, int], bytes] = {}
+    if kalzith:
+        out[("GPL ", SCRIPT)] = conversation()
+        out[("MAS ", MASTER)] = with_talk(chunks[("MAS ", MASTER)], field_types)
+        if ENTRIES in chunks:
+            out[ENTRIES] = with_entry(chunks[ENTRIES])
+        face = portrait_chunk(chunks)
+        if face and ("PORT", PORTRAIT) not in chunks:
+            out[("PORT", PORTRAIT)] = face
+    if semyon:  # Semyon, in the pens as he promises (semyon.py): his part after Kalzith's
+        from . import semyon as sm
+        out[("GPL ", sm.SCRIPT)] = sm.conversation()
+        out[("MAS ", MASTER)] = sm.with_semyon(out.get(("MAS ", MASTER), chunks[("MAS ", MASTER)]), field_types)
+        if ENTRIES in chunks:
+            out[ENTRIES] = with_entry(out.get(ENTRIES, chunks[ENTRIES]), sm.SCRIPT)
+        arena = ("GPL ", sm.ARENA_TALK)
+        if arena in chunks:  # (his leaving after the fight marked)
+            out[arena] = sm.with_exit(chunks[arena], field_types)
+        escape = ("GPL ", sm.ESCAPE_SCRIPT)
+        if escape in chunks:  # (taken along to the pens with Scar)
+            out[escape] = sm.with_escape(chunks[escape], field_types)
+    # Dinos and the Trustee asked about him and Semyon, and Dinos about the vulture (pensasks.py);
+    # the questions about either show only once he is in the pens (their flags)
     from . import pensasks
-    out.update(pensasks.script_chunks(chunks, field_types))
+    out.update(pensasks.script_chunks(chunks, field_types, vulture=vulture))
     return out
 
 
@@ -802,9 +808,10 @@ def _write(source: str, dest: str, added) -> None:
     os.replace(tmp, dest)
 
 
-def write_scripts(source: str, dest: str) -> None:
-    """The game's GPLDATA.GFF (SOURCE, only read) with Kalzith's conversation, to DEST."""
-    _write(source, dest, script_chunks)
+def write_scripts(source: str, dest: str, kalzith: bool = True, semyon: bool = True, vulture: bool = True) -> None:
+    """The game's GPLDATA.GFF (SOURCE, only read) with Kalzith's conversation (and the rest of
+    the new content switched on), to DEST."""
+    _write(source, dest, lambda data: script_chunks(data, kalzith, semyon, vulture))
 
 
 def write_region(source: str, dest: str) -> None:

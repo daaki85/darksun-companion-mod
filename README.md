@@ -107,7 +107,18 @@ Release **1.0.0** is pull requests #1 to #13. Its notes are in
 - **Game speed on the Options tab:** the launcher gives DOSBox 20,000 cycles
   by default, at which walking with shadows, dust and rings on is as smooth as
   the game without them (at GOG's speed it was slower and choppy); GOG's own
-  speed and 30,000 can be chosen.
+  speed and 30,000 can be chosen, with suggested system requirements for each
+  in the companion's README.
+- **New content switches:** Kalzith, Semyon, the cooked vulture, the slave
+  pens' gear, a worn cloak's and boots' bonuses to hiding, and the Effects
+  screen's click keeping a spell can each be switched off on the Options tab.
+  The Options tab is regrouped so related switches sit together: Dice log, In
+  the game, Rule changes, New content, On the screen, Controls and Game speed.
+- **Crash reports:** when DOSBox crashes or the game stops with an error (such
+  as "Null pointer assignment", which used to close DOSBox at once), the
+  game's message stays on screen and the Ledger saves a report in
+  `crash-logs` with how it closed, what was on screen, the switches, and the
+  end of the dice log and dialogue.
 - **The Trustee knows Semyon got away:** if Semyon broke out with the party and
   lived, the Trustee says so after the escape (the game's own line for a Semyon
   who escaped), instead of "Every single one" for all the pens.

@@ -220,8 +220,12 @@ class PatchError(Exception):
     pass
 
 
-def patched(original: bytes) -> bytes:
-    """DSUN.EXE's bytes with the dice log patches applied."""
+# Patches that are switches on the Options tab: left out when off (their bytes still checked)
+EFFECTS_KEPT = ("effects_click_low", "effects_click_high")  # a click on the Effects screen keeps a spell
+
+
+def patched(original: bytes, skip=frozenset()) -> bytes:
+    """DSUN.EXE's bytes with the dice log patches applied (but those named in SKIP)."""
     if len(original) != GOG_SIZE:
         raise PatchError(f"DSUN.EXE is {len(original)} bytes; the dice log knows the GOG release "
                          f"({GOG_SIZE} bytes) only")
@@ -229,14 +233,16 @@ def patched(original: bytes) -> bytes:
     for p in PATCHES:
         if data[p.offset:p.offset + len(p.original)] != p.original:
             raise PatchError(f"DSUN.EXE is not the version the dice log knows ({p.name} differs)")
-        data[p.offset:p.offset + len(p.original)] = p.replacement
+        if p.name not in skip:
+            data[p.offset:p.offset + len(p.original)] = p.replacement
     return bytes(data)
 
 
-def write_patched(source: str, dest: str) -> None:
-    """Write the patched copy of `source` to `dest`, unless it is already there."""
+def write_patched(source: str, dest: str, skip=frozenset()) -> None:
+    """Write the patched copy of `source` to `dest` (but the patches in SKIP), unless it is
+    already there."""
     with open(source, "rb") as f:
-        data = patched(f.read())
+        data = patched(f.read(), skip)
     try:
         with open(dest, "rb") as f:
             if f.read() == data:
