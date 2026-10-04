@@ -146,7 +146,7 @@ class SpriteTests(unittest.TestCase):
             dresser = sprites.Dresser.__new__(sprites.Dresser)
             dresser.gd, dresser.pics = FakeGame(figures=[0]), pics
             dresser.copy_file, dresser.in_file = path, {(300, False): (40, len(plain))}
-            dresser.shown, dresser.chunks, dresser._rescans = {}, {}, []
+            dresser.shown, dresser.chunks, dresser._rescans, dresser._versions = {}, {}, [], {}
             dresser._scanned, dresser._scan = 0.0, lambda: None
             first, second = 0x20000, 0x40000
             for at in (first, second):
@@ -166,13 +166,45 @@ class SpriteTests(unittest.TestCase):
             self.assertEqual(dresser.gd.guest.read(second + 100, len(monster)), monster)
             self.assertEqual(dresser.copies[(300, False)], [first])
 
+    def test_an_older_version_loaded(self):
+        """The game loads the picture from the file copy, which still holds an older outfit (on
+        Windows the file can't always be written while DOSBox has it open): that copy is the
+        Ledger's, and dressed in what is worn now; after an outfit change, so is one with the
+        outfit before."""
+        pics = sprites.Pictures(game_chunks())
+        plain = pics.build(300, False, {}, ())
+        outfits = [({"right": (SWORD, METAL)}, ())]
+        worn, sprites.worn = sprites.worn, lambda gd, member: outfits[0]
+        self.addCleanup(setattr, sprites, "worn", worn)
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "SEGOBJEX.GFF")
+            with open(path, "wb") as f:
+                f.write(b"head" * 10 + plain)
+            dresser = sprites.Dresser.__new__(sprites.Dresser)
+            dresser.gd, dresser.pics = FakeGame(figures=[0]), pics
+            dresser.copy_file, dresser.in_file = path, {(300, False): (40, len(plain))}
+            dresser.shown, dresser.chunks, dresser._rescans, dresser._versions = {}, {}, [], {}
+            dresser._scanned, dresser._scan = 0.0, lambda: None
+            dresser._to_file = lambda key, chunk: None  # (the file can't be written)
+            dresser.copies = {}
+            dresser.update(True, 1.0)  # (dressed: nothing loaded yet)
+            at = 0x30000
+            dresser.gd.guest.write(at, plain)  # (the arena's: loaded from the file, plain)
+            dresser.copies = {(300, False): [at]}
+            dresser.update(True, 2.0)
+            sword = pics.build(300, False, *outfits[0])
+            self.assertEqual(dresser.gd.guest.read(at, len(sword)), sword)
+            outfits[0] = ({"cloak": (65, 5)}, ())
+            dresser.update(True, 3.0)
+            self.assertEqual(dresser.gd.guest.read(at, len(sword)), pics.build(300, False, *outfits[0]))
+
     def test_rescans_after_an_area_change(self):
         """Memory looked through every RESCAN, and soon after an area change (its pictures are
         loaded anew) at each of AREA_RESCANS."""
         dresser = sprites.Dresser.__new__(sprites.Dresser)
         dresser.gd = FakeGame(figures=[])
         dresser.pics = sprites.Pictures(game_chunks())
-        dresser.shown, dresser.chunks, dresser.copies = {}, {}, {}
+        dresser.shown, dresser.chunks, dresser.copies, dresser._versions = {}, {}, {}, {}
         dresser._scanned, dresser._rescans = -sprites.RESCAN, []
         scans = []
         dresser._scan = lambda: scans.append(True)

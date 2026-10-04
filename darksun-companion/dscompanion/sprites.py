@@ -182,6 +182,7 @@ def places(data: bytes) -> Dict[Tuple[int, bool], Tuple[int, int]]:
     return out
 
 
+VERSIONS = 16  # a picture's versions remembered as the Ledger's (its outfits, the file's)
 RESCAN = 10.0  # seconds between looks through the game's memory for copies not yet found
 AREA_RESCANS = (0.5, 2.0, 5.0)  # ... and after an area change, these seconds after it
 
@@ -211,6 +212,7 @@ class Dresser:
         self.shown: Dict[int, tuple] = {}  # object: the outfit it shows
         self.request_redraw: Optional[Callable[[], None]] = None  # has the view drawn again (DSCLOG)
         self.chunks: Dict[Tuple[int, bool], bytes] = {}  # (object, combat): the picture written
+        self._versions: Dict[Tuple[int, bool], List[bytes]] = {}  # ... and its versions before
         self.copies: Dict[Tuple[int, bool], List[int]] = {}  # ... and where its copies are
         self._scanned = -RESCAN
         self._rescans: List[float] = []  # (looks through memory soon after an area change)
@@ -351,7 +353,21 @@ class Dresser:
                 pic = (obj, combat)
                 if not fresh and self._current(pic):
                     continue
-                before = self.chunks.get(pic) or self._from_file(pic)
+                # every version of the picture that is the Ledger's: each it has written, and the
+                # one in its copy of the file now (what the game loads: on Windows, writing the
+                # file while DOSBox has it open can fail, leaving an older one there)
+                ours = self._versions.setdefault(pic, [])
+                if not ours:  # (and the plain one, as the Ledger first writes the file)
+                    try:
+                        ours.append(self.pics.build(obj, combat, {}, (), model))
+                    except ValueError:
+                        pass
+                if pic in self.chunks and self.chunks[pic] not in ours:
+                    ours.append(self.chunks[pic])
+                in_file = self._from_file(pic)
+                if in_file is not None and in_file not in ours:
+                    ours.append(in_file)
+                del ours[1:-VERSIONS]  # (the plain one kept)
                 if fresh or pic not in self.chunks:
                     try:
                         self.chunks[pic] = self.pics.build(obj, combat, outfit[0], outfit[1], model)
@@ -364,10 +380,10 @@ class Dresser:
                     # only over a copy still all ours: the game frees a picture and loads others
                     # where it was (a monster's, an area's), and those are left alone
                     held = self.gd.guest.read(start, len(chunk))
-                    if held != chunk and held == before:
+                    if held != chunk and held in ours:
                         self.gd.guest.write(start, chunk)
                         wrote = True
-                    if held in (chunk, before):
+                    if held == chunk or held in ours:
                         kept.append(start)
                 if pic in self.copies:
                     self.copies[pic] = kept
