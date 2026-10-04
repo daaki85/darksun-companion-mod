@@ -592,8 +592,9 @@ class GameData:
         return index if kind == 2 else None
 
     def combatants(self) -> Dict[int, int]:
-        """{combatant: creature index} for every creature in the fight (or the area)."""
-        data = self.guest.read((self.load_seg + COMBATANTS_SEG) * 16 + COMBATANTS_OFF, 256 * 3)
+        """{combatant: creature index} for every creature in the fight (or the area): all THINGS
+        of the map's things (people put in later, such as Kalzith and Semyon, are past the 256th)."""
+        data = self.guest.read((self.load_seg + COMBATANTS_SEG) * 16 + COMBATANTS_OFF, THINGS * 3)
         out = {}
         for combatant in range(len(data) // 3):
             kind, index = struct.unpack_from("<Bh", data, combatant * 3)
@@ -726,7 +727,7 @@ class GameData:
     def whose_turn(self) -> Optional[int]:
         """The combatant whose turn it is in a fight (the game's word at WHOSE_TURN)."""
         turn = self._word(WHOSE_TURN)
-        return turn if 0 <= turn < 256 else None
+        return turn if 0 <= turn < THINGS else None
 
     def game_time(self) -> Optional[int]:
         """Game seconds since the start (60 to a round): the dword the game keeps its clock in."""

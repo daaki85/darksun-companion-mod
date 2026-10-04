@@ -7,6 +7,7 @@ that): LIGHT, a byte for each colour, its lighter one among the palette's, or 0.
 """
 
 import colorsys
+import functools
 import struct
 from typing import Optional
 
@@ -28,6 +29,7 @@ def _lum(c) -> float:
     return 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2]
 
 
+@functools.lru_cache(maxsize=8)  # (the same palette, the same table: worked out once)
 def light_table(dac: bytes) -> bytes:
     """Each colour's lighter one (keeping its hue) for the ground's colours, 0 for the rest.
     DAC: the palette as the VGA has it, 3 bytes of 0-63 for each colour."""

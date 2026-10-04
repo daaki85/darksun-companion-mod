@@ -198,6 +198,20 @@ class SpriteTests(unittest.TestCase):
             dresser.update(True, 3.0)
             self.assertEqual(dresser.gd.guest.read(at, len(sword)), pics.build(300, False, *outfits[0]))
 
+    def test_scan_finds_each_copy_once(self):
+        """Two copies of a picture near each other in memory, and one of another: each found,
+        once (by its size when the Ledger knows it, else by a search)."""
+        pics = sprites.Pictures(game_chunks())
+        walk, fight = pics.build(300, False, {}, ()), pics.build(300, True, {}, ())
+        dresser = sprites.Dresser.__new__(sprites.Dresser)
+        dresser.gd = FakeGame(figures=[0])
+        dresser.in_file, dresser.chunks = {(300, False): (0, len(walk))}, {}
+        spots = (0x20000, 0x20000 + len(walk) + 40, 0x30000)
+        for at, chunk in zip(spots, (walk, walk, fight)):
+            dresser.gd.guest.write(at, chunk)
+        dresser._scan()
+        self.assertEqual(dresser.copies, {(300, False): [spots[0], spots[1]], (300, True): [spots[2]]})
+
     def test_rescans_after_an_area_change(self):
         """Memory looked through every RESCAN, and soon after an area change (its pictures are
         loaded anew) at each of AREA_RESCANS."""

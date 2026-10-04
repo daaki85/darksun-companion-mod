@@ -104,6 +104,27 @@ Release **1.0.0** is pull requests #1 to #13. Its notes are in
   with Scar's men, fights the guards on the party's side, and has a line of his
   own for the breakout. In the game he was left behind in the arena.
 
+**Fixed** (from a review of the code)
+- **Clicks after Tab + Enter:** for a few seconds after Enter, anything the
+  next character clicked could still count as the enemy chosen before. The
+  enemy is now let go as soon as the choice is (at the next turn).
+- **Kalzith and Semyon in fights:** people past the map's 256th thing (as they
+  are in the pens) were missing from the Ledger's list of who is in a fight:
+  no ring, no Tab, no HP lines, no "killed" line for them.
+- **A thief who went last and is next** after someone first who can't act (out
+  cold, dead) lost their turn line and hiding roll.
+- **Two halved hits seen together** (non-magical weapons on a creature that
+  halves them) were put down to the first, and the second later logged as
+  doing nothing.
+- **The mouse wheel's watch** (Windows) was started again on every reconnect
+  without stopping the last one.
+- **Kalzith only with his object:** a copy of the game whose objects lack what
+  he is made from no longer gets his scripts (which would name an object that
+  isn't there); a clash over his scrolls' pictures no longer loses every icon.
+- **Speed:** the gear writer's look through the game's memory sizes each
+  picture once instead of searching again for every copy; the rings' and dust's
+  colour tables are worked out once for a palette, not every 30 seconds.
+
 ### Pull request #14 ([merged 2026-10-04](https://github.com/daaki85/darksun-companion-mod/pull/14))
 
 **Added**

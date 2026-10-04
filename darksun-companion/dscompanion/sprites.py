@@ -163,6 +163,23 @@ def worn(gd: GameData, member: int) -> Tuple[Dict[str, Tuple[int, int]], Tuple[i
     return gear, tuple(sorted(armour))
 
 
+def _start(data: bytes, at: int, size: int = 0) -> Optional[int]:
+    """Where the picture whose marker is at AT starts in DATA: SIZE bytes before the marker's end
+    if its size word says so, or (no SIZE known) the nearest start whose size word fits."""
+    sizes = (size,) if size else range(64, 400000)
+    for size in sizes:
+        start = at + MARKER_SIZE - size
+        if start < 0:
+            break
+        if struct.unpack_from("<I", data, start)[0] == size:
+            return start
+    return None
+
+
+def _key(data: bytes, at: int) -> Tuple[int, bool]:
+    return PARTY_OBJECTS[0] + data[at + len(MARKER)], bool(data[at + len(MARKER) + 1])
+
+
 def places(data: bytes) -> Dict[Tuple[int, bool], Tuple[int, int]]:
     """Where each party object's pictures are in DATA (the Ledger's copy of SEGOBJEX, or the
     game's memory): {(object, combat): (offset, size)}, by the marker at each one's end and the
@@ -170,14 +187,9 @@ def places(data: bytes) -> Dict[Tuple[int, bool], Tuple[int, int]]:
     out: Dict[Tuple[int, bool], Tuple[int, int]] = {}
     at = data.find(MARKER)
     while at >= 0:
-        key = (PARTY_OBJECTS[0] + data[at + len(MARKER)], bool(data[at + len(MARKER) + 1]))
-        for size in range(64, 400000):
-            start = at + MARKER_SIZE - size
-            if start < 0:
-                break
-            if struct.unpack_from("<I", data, start)[0] == size:
-                out[key] = (start, size)
-                break
+        start = _start(data, at)
+        if start is not None:
+            out[_key(data, at)] = (start, at + MARKER_SIZE - start)
         at = data.find(MARKER, at + 1)
     return out
 
@@ -316,10 +328,12 @@ class Dresser:
         mem = self.gd.guest.read(0, self.gd.guest.size)
         self.copies = {}
         at = mem.find(MARKER)
-        while at >= 0:  # (a picture can be loaded more than once: each copy)
-            for key, (start, _) in places(mem[max(0, at - 400000):at + MARKER_SIZE]).items():
-                if mem[at + len(MARKER):at + MARKER_SIZE] == bytes([key[0] - PARTY_OBJECTS[0], key[1]]):
-                    self.copies.setdefault(key, []).append(max(0, at - 400000) + start)
+        while at >= 0:  # (a picture can be loaded more than once: each copy, once)
+            key = _key(mem, at)
+            known = self.in_file.get(key, (0, 0))[1] or len(self.chunks.get(key, b""))
+            start = _start(mem, at, known)  # (its size known: one look, not a search)
+            if start is not None:
+                self.copies.setdefault(key, []).append(start)
             at = mem.find(MARKER, at + 1)
 
     def _current(self, key: Tuple[int, bool]) -> bool:

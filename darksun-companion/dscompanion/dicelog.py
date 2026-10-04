@@ -896,6 +896,13 @@ class DiceLog:
     def detach(self) -> None:
         self.rand_addr = None
 
+    def close(self) -> None:
+        """Done with: the mouse wheel's watch (a hook of Windows') stopped, so a new DiceLog's
+        doesn't run beside it."""
+        if self._wheel is not None:
+            self._wheel.stop()
+            self._wheel = None
+
     # ---- reading ----------------------------------------------------------------
 
     def poll(self) -> List[Entry]:
@@ -1188,9 +1195,12 @@ class DiceLog:
         while hits and lost - taken >= hits[0]:
             taken += hits.pop(0)
         if hits and not taken and lost:  # (less than the hit)
-            rolled = hits.pop(0)
-            taken = lost
             reason = self._weapon_reason(index)
+            if reason and len(hits) > 1:  # (all of them cut down alike, seen as one fall)
+                rolled, hits[:] = sum(hits), []
+            else:
+                rolled = hits.pop(0)
+            taken = lost
             note = f": {lost} of the {rolled} rolled" + (f", {reason}" if reason else "")
         if hits:
             entry["hp"] = hp
@@ -1377,7 +1387,7 @@ class DiceLog:
         turn = self.game.whose_turn()
         if turn is None or turn == self._turn:
             return []
-        first = self.round_order[0][0] if self.round_order else None
+        first = self._first_able()
         if self._turn is None and turn == self._stale_turn and first is not None and first != turn:
             return []  # (the last round's last turn, still shown before the new round's first)
         self._turn, self._stale_turn = turn, None
@@ -1396,6 +1406,16 @@ class DiceLog:
             out += lines
             self._set_stealth(hidden, turn)
         return out
+
+    def _first_able(self) -> Optional[int]:
+        """The first in the round's order who can act (alive and up: one down is passed over)."""
+        for combatant, _, _ in self.round_order or ():
+            index = self.game.combatant_creature(combatant)
+            rec = self.game.creature(index) if index is not None else b""
+            if len(rec) > game.CREATURE_STATUS and struct.unpack_from("<h", rec, 0)[0] > 0 \
+                    and rec[game.CREATURE_STATUS] == game.STATUS_OKAY:
+                return combatant
+        return None
 
     def _fighting(self) -> bool:
         """In a fight, by the game's own flag (game time barely moves outside fights, so the time

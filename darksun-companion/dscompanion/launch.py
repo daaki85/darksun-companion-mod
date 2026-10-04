@@ -184,8 +184,7 @@ def prepare_patched_game(game_dir: str) -> Optional[str]:
     try:
         objects = _find_file(game_dir, icons.OBJECTS_FILE)
         if objects:
-            icons.write_objects(objects, os.path.join(DOS_DIR, icons.OBJECTS_FILE))
-            objects_ok = True
+            objects_ok = icons.write_objects(objects, os.path.join(DOS_DIR, icons.OBJECTS_FILE))
     except (gff.GffError, OSError, KeyError, struct.error, ValueError):
         pass  # no icons of our own: the game's plain ones
     # Kalzith, the slave pens' defiler: in his pen and with his conversation only if the objects

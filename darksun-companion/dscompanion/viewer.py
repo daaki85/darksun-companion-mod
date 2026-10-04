@@ -442,9 +442,14 @@ class Viewer:
             with open(path, "w", encoding="utf-8") as f:
                 f.write(widget.get("1.0", "end-1c"))
 
+    def _drop_dice(self) -> None:
+        if self.dice is not None:
+            self.dice.close()
+        self.dice = None
+
     def reconnect(self, quiet: bool = False) -> None:
         self.ds = None
-        self.dice = None
+        self._drop_dice()
         try:
             self.guest = self.connect()
         except Exception as e:  # shown to the user, who can fix it and retry
@@ -590,7 +595,7 @@ class Viewer:
 
     def _disconnected(self, err: Exception) -> None:
         self.guest = None
-        self.dice = None
+        self._drop_dice()
         self.ds = None
         self.status.set(f"Disconnected ({err}). Waiting for DOSBox...")
         self.dice_status.set("Waiting for the game...")
@@ -601,6 +606,7 @@ class Viewer:
         try:
             if self.dice:
                 self.dice.detach()
+                self.dice.close()
         except Exception:
             pass
         self.root.destroy()

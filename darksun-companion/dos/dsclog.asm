@@ -4533,6 +4533,8 @@ target_click:
 probe_hit:
         cmp byte [cs:hit_forced], 0
         je .plain
+        cmp word [cs:hit_target], 0xFFFF
+        je .over                        ; (no enemy chosen any more: a new turn, the click's done)
         push ax
         mov ax, [cs:main_ticks]
         sub ax, [cs:hit_until]

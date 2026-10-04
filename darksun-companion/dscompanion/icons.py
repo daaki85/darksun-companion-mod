@@ -270,8 +270,9 @@ def write_resources(source: str, dest: str) -> None:
     os.replace(tmp, dest)
 
 
-def write_objects(source: str, dest: str) -> None:
-    """The game's SEGOBJEX.GFF (SOURCE, only read) with the companion's icons, to DEST."""
+def write_objects(source: str, dest: str) -> bool:
+    """The game's SEGOBJEX.GFF (SOURCE, only read) with the companion's icons, to DEST. Whether
+    Kalzith's object is in it (his scripts name it: without it they mustn't be written)."""
     with open(source, "rb") as f:
         data = f.read()
     from . import sprites
@@ -282,12 +283,17 @@ def write_objects(source: str, dest: str) -> None:
     except (KeyError, ValueError, IndexError, struct.error):
         pass
     from . import kalzith
-    added.update(kalzith.object_chunks(chunks))  # (the slave pens' defiler)
+    try:
+        his = kalzith.object_chunks(chunks)  # (the slave pens' defiler)
+    except KeyError:  # (a number of his taken in this copy of the game: no Kalzith, the rest kept)
+        his = {}
+    added.update(his)
     out = with_chunks(data, added)
     tmp = dest + ".tmp"
     with open(tmp, "wb") as f:
         f.write(out)
     os.replace(tmp, dest)
+    return ("OJFF", kalzith.OBJECT) in his
 
 
 # The companion's items, and the plain pictures they keep in a game that hasn't the copy
