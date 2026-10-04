@@ -371,6 +371,7 @@ class DiceLog:
         # damage, in order ("hits"), when the last landed ("at"), its HP then ("hp")
         self._tables: Optional[monsters.MonsterTables] = None  # the monster kinds (read once)
         self._round, self._round_time = 0, None  # this fight's round, and the game time it began
+        self._stale_turn: Optional[int] = None  # the last round's last turn, until the new one's first
         self._save_rolls: Dict[Tuple[int, int], int] = {}  # (SS, save frame BP) -> natural d20
         self._effects: Optional[Counter] = None
         self._party: Optional[bytes] = None
@@ -1376,7 +1377,10 @@ class DiceLog:
         turn = self.game.whose_turn()
         if turn is None or turn == self._turn:
             return []
-        self._turn = turn
+        first = self.round_order[0][0] if self.round_order else None
+        if self._turn is None and turn == self._stale_turn and first is not None and first != turn:
+            return []  # (the last round's last turn, still shown before the new round's first)
+        self._turn, self._stale_turn = turn, None
         self._acted.add(turn)
         self._set_stealth(False)  # the last turn's hiding is over
         now = self.game.game_time()
@@ -1510,6 +1514,9 @@ class DiceLog:
         self.round_number = number
         self.round_order = [(combatant, name, score) for score, _, _, _, combatant, name in rows]
         self._acted = set()
+        # a new round: its first turn is a new turn even for whoever had the last one (a thief
+        # last in one round and first in the next still hides), so that one is forgotten
+        self._stale_turn, self._turn = self._turn, None
         order = ", ".join(r[2] for r in rows)
         out = [f"Round {number}" + (f": {order}" if order else "") if number else f"Initiative: {order}"]
         for score, tie, who, steps, _, _ in rows:

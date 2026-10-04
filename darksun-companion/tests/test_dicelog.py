@@ -1183,6 +1183,22 @@ class RoundAndTurnTests(unittest.TestCase):
         struct.pack_into("<h", m, DS * 16 + game.WHOSE_TURN, 0x29)
         self.assertEqual(self.log.turn_lines(), ["Mountain Stalker's turn"])
 
+    def test_last_turn_then_first_turn(self):
+        """Last in one round and first in the next: a new turn (a thief hides again); someone
+        else first: the last round's last turn isn't taken for a new one meanwhile."""
+        m = self.log.guest.mem
+        self.round(600)
+        struct.pack_into("<h", m, DS * 16 + game.WHOSE_TURN, 1)
+        self.assertEqual(self.log.turn_lines(), ["Daaki's turn"])
+        self.round(660)
+        self.log.round_order = [(1, "Daaki", 25)]
+        self.assertEqual(self.log.turn_lines(), ["Daaki's turn"])
+        self.round(720)
+        self.log.round_order = [(0x29, "Mountain Stalker", 25), (1, "Daaki", 20)]
+        self.assertEqual(self.log.turn_lines(), [])  # (still showing Daaki's last)
+        struct.pack_into("<h", m, DS * 16 + game.WHOSE_TURN, 0x29)
+        self.assertEqual(self.log.turn_lines(), ["Mountain Stalker's turn"])
+
     def test_the_rounds_order_comes_before_its_first_turn(self):
         m = self.log.guest.mem
         self.round(600)
