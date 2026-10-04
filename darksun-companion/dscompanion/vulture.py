@@ -28,7 +28,7 @@ STATUS_DEAD = 5
 DOWN = (2, 3, 4)  # Stunned, Out Cold, Dying: up again after the meal
 
 MEAL_TEXT = ("A vulture! Give it here. A pinch of salt, some agafari leaf, slow over the coals... "
-             "Sit down and eat with me. Then sleep: you'll wake up feeling like new.")
+             "Sit down and eat with me. A meal like this puts the strength back in you.")
 
 
 class Use(NamedTuple):
