@@ -158,7 +158,7 @@ class PensAsksTests(unittest.TestCase):
         """In Dinos's first menu, just before "Goodbye.", shown while the party carries the cooked
         vulture (the game's 33h test on the party, as the reply's own condition: the menu has no
         part start to set a flag at); chosen: his answer, the vulture taken, the quest's sound,
-        MEAL set, and the reward said."""
+        MEAL set, and the XP given by the game's routine for it (its window and the quest's sound)."""
         first = _game_like().replace(gpl.encode_expr(("str", "  What do you know about Gilal?")),
                                      gpl.encode_expr(("str", "<name>")))
         out = pensasks.with_asks(first, b"", "<name>", (pensasks.VULTURE,), "Goodbye.")
@@ -174,11 +174,11 @@ class PensAsksTests(unittest.TestCase):
                          (0x33, [("n", pensasks.PARTY), 77, 80, [(72, 4, ("n", -vulture.COOKED))]]))
         codes = [(o.code, o.args) for o in ops]
         self.assertIn((pensasks.TAKE, [("n", 1), ("n", -vulture.COOKED), ("n", pensasks.PARTY), ("n", 9999)]), codes)
-        self.assertIn((pensasks.SOUND, [("n", pensasks.QUEST_SOUND)]), codes)
         self.assertIn((0x16, [("n", 1), ("var", 13, vulture.MEAL)]), codes)
         said = " ".join(gpl.strings(ops)).replace("  ", " ")
         self.assertIn("A vulture! Give it here.", said)
-        self.assertIn("100 EXP", said)
+        xp = codes.index((0x16, [("n", vulture.XP_REWARD), pensasks.PARTY_XP]))  # (the game's XP routine)
+        self.assertEqual(codes[xp + 1], (pensasks.CALL, list(pensasks.XP_ROUTINE)))
         self.assertEqual([m[1] for m in pensasks.MENUS if pensasks.VULTURE in m[2]], ["<name>"])
 
     def test_buffer(self):

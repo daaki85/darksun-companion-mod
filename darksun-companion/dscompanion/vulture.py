@@ -27,9 +27,8 @@ SHEET_MAX_PSP = 0x0C
 STATUS_DEAD = 5
 DOWN = (2, 3, 4)  # Stunned, Out Cold, Dying: up again after the meal
 
-MEAL_TEXT = ("A vulture! Give it here. A little salt, some agafari leaf, slow over the coals... Sit, "
-             "eat with me: the best meal in the pens!")
-REWARD = f"For sharing the vulture with Dinos, each of you earns {XP_REWARD} EXP, and you are fully rested."
+MEAL_TEXT = ("A vulture! Give it here. A pinch of salt, some agafari leaf, slow over the coals... "
+             "Sit down and eat with me. Then sleep: you'll wake up feeling like new.")
 
 
 class Use(NamedTuple):
@@ -74,16 +73,14 @@ def rest(gd: GameData, member: int) -> None:
 
 
 def eat(gd: GameData) -> List[str]:
-    """Each party member there is, alive: XP_REWARD XP and a full rest. For the dice log."""
+    """Each party member there is, alive: a full rest (the XP is given by the game). For the dice log."""
     party = _party(gd)
-    for member in party:
-        at = _sheet_at(gd, member)
-        xp, = struct.unpack("<I", gd.guest.read(at + game.SHEET_XP, 4))
-        gd.guest.write(at + game.SHEET_XP, struct.pack("<I", xp + XP_REWARD))
+    for member in party:  # (the XP is the game's, given by Dinos's script)
         rest(gd, member)
     names = ", ".join(gd.creature_name(m) for m in party)
-    return [f"Dinos cooks the vulture and the party eats with him: {names} +{XP_REWARD} XP each, "
-            "and restored as after a full rest (HP, PSP and spell slots)"]
+    return [f"Dinos cooks the vulture and the party eats with him: {names} restored as after a full "
+            f"rest (HP, PSP and spell slots); the game gives each {XP_REWARD} XP (split among a "
+            "multi-class character's classes)"]
 
 
 def meal(gd: GameData) -> List[str]:

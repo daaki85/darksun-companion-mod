@@ -70,19 +70,24 @@ class Ask(NamedTuple):
 
 # The cooked vulture (vulture.py): the party asks Dinos about it while one of them carries it (the
 # game's 33h test, as the campfire's script asks about the plucked one). He takes it (5Ch, as the
-# campfire takes the plucked one), and they eat together: the quest's sound (5Dh 53, as the
-# game's quests), the reward said as the game's quests say theirs, and the Ledger's flag MEAL,
-# on which it gives each their XP and a full rest.
-PARTY, TAKE, SOUND, QUEST_SOUND = 32766, 0x5C, 0x5D, 53
+# campfire takes the plucked one), and they eat together: the Ledger's flag MEAL, on which it
+# gives each a full rest, and the XP as the game's quests give theirs (its routine: the window,
+# the words and the quest's sound).
+PARTY, TAKE = 32766, 0x5C
+PARTY_XP = ("var", 7, 16)  # the experience points the game's routine gives each party member
+CALL, XP_ROUTINE = 0x14, (("n", 135), ("n", 74))  # (offset, script): its routine for them
 CARRIED = ("op", (0x33, [("n", PARTY), 77, 80, [(72, 4, ("n", -vulture.COOKED))]]))
 
 
 def _meal(s: _Script) -> None:
     s.op(TAKE, ("n", 1), ("n", -vulture.COOKED), ("n", PARTY), ("n", 9999))
-    s.op(SOUND, ("n", QUEST_SOUND))
     s.flag(vulture.MEAL, 1)
     s.page()
-    s.say(vulture.REWARD)
+    # the XP as the game's quests give it: the amount, then the game's routine for it (script 74
+    # at 135: its own window, "Each party member receives 100 experience points!", and the
+    # quest's sound), as Dinos's own script does for Gilal (350)
+    s.op(0x16, ("n", vulture.XP_REWARD), PARTY_XP)
+    s.op(CALL, *XP_ROUTINE)
 
 
 # As the game's people do for the dead: the Trustee asks "What was X like?" instead, Dinos keeps
