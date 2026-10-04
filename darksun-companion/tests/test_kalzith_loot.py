@@ -26,7 +26,7 @@ class LootTests(unittest.TestCase):
         self.m = m
         self.flags = {kalzith.DIED}
         self.gd.flag = lambda n: n in self.flags
-        self.gd.set_flag = lambda n, on=True: self.flags.add(n)
+        self.gd.set_flag = lambda n, on=True: self.flags.add(n) if on else self.flags.discard(n)
         struct.pack_into("<Bh", m, THINGS + PILE * 3, game.THING_ITEM, 80)
         struct.pack_into("<Bh", m, THINGS + BAG * 3, game.THING_ITEM, 83)
         struct.pack_into("<hhh", m, CREATURES + 8, BAG, game.NO_ITEM, game.NO_ITEM)
@@ -95,13 +95,34 @@ class SoldOutTests(unittest.TestCase):
 
     def test_sold_out(self):
         struct.pack_into("<Bh", self.m, THINGS + PILE * 3, game.THING_ITEM, game.NO_ITEM)
-        self.assertEqual(kalzith.sold_out(self.gd, False), [])  # (a talk or the shop open: later)
+        self.gd.talk_target = lambda: None
+        self.assertEqual(kalzith.sold_out(self.gd, False), [])  # (a game loading: nothing)
+        self.assertNotIn(kalzith.SOLD_OUT, self.flags)
+        self.gd.talk_target = lambda: kalzith.NAME
+        self.assertEqual(kalzith.sold_out(self.gd, False), [])  # (his talk or shop open: later)
         self.assertIn(kalzith.SOLD_OUT, self.flags)
         self.assertNotIn(kalzith.DRESSED, self.flags)
         self.assertEqual(kalzith.sold_out(self.gd, True), ["Quarterstaff", "Cloak"])
         self.assertEqual(self.worn(), {1019: kalzith.RIGHT_HAND, 1053: game.CLOAK_SLOT})
         self.assertIn(kalzith.DRESSED, self.flags)
         self.assertEqual(kalzith.sold_out(self.gd, True), [])
+
+    def test_marked_by_mistake(self):
+        """Marked sold out while he still has scrolls (a game loading with another's people, or
+        an earlier build's numbers): his shop back, once the map's main loop runs; an earlier
+        build's scrolls count as his."""
+        items = ring.Items(self.gd)
+        for index, _ in list(items.chain(PILE)):  # (all three by an earlier build's numbers)
+            at = items.items + index * game.ITEM_SIZE
+            k = -struct.unpack_from("<h", self.m, at)[0] - kalzith.SCROLL_OBJECT
+            struct.pack_into("<h", self.m, at, -(kalzith.OLD_SCROLL_OBJECT + k))
+        self.flags.add(kalzith.SOLD_OUT)
+        self.gd.talk_target = lambda: None
+        self.assertEqual(kalzith.sold_out(self.gd, False), [])
+        self.assertIn(kalzith.SOLD_OUT, self.flags)  # (not during a load)
+        self.assertEqual(kalzith.sold_out(self.gd, True), [])
+        self.assertNotIn(kalzith.SOLD_OUT, self.flags)
+        self.assertNotIn(kalzith.DRESSED, self.flags)
 
     def test_dead(self):
         struct.pack_into("<Bh", self.m, THINGS + PILE * 3, game.THING_ITEM, game.NO_ITEM)

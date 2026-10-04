@@ -617,23 +617,30 @@ def _index(gd) -> Optional[int]:
 
 def sold_out(gd, quiet: bool) -> List[str]:
     """In the pens, with him alive and stocked: SOLD_OUT once none of his scrolls is left on him;
-    then, when QUIET (the map's main loop running: no talk, menu or shop open, so never into an
-    open shop), the Cloak and Quarterstaff on him, worn, once (DRESSED). What was given, by name."""
+    then the Cloak and Quarterstaff on him, worn, once (DRESSED). SOLD_OUT while talking with him
+    (the last one just bought) or when QUIET (the map's main loop running: no talk, menu or shop
+    open), never while a game loads, when one game's flags can be read with another's people; his
+    things only when QUIET (never into an open shop). His scrolls are counted by
+    either number (an earlier build's, until mended), and a game marked sold out while he still
+    has some has its shop back. What was given, by name."""
     from . import npcitems, ring
-    if gd.region() != REGION or not gd.flag(STOCKED) or gd.flag(DIED) or gd.flag(DRESSED):
+    if gd.region() != REGION or not gd.flag(STOCKED) or gd.flag(DIED):
         return []
     index = _index(gd)
     if index is None:
         return []
-    if not gd.flag(SOLD_OUT):
-        it = ring.Items(gd)
-        mine = {-(SCROLL_OBJECT + k) for k in range(len(SCROLLS))}
-        rec = gd.creature(index)
-        carried = [r for o in game.CREATURE_ITEM_LISTS for _, r in it.chain(struct.unpack_from("<h", rec, o)[0])]
-        if any(struct.unpack_from("<h", r, ITEM_OBJECT)[0] in mine for r in carried):
-            return []
+    it = ring.Items(gd)
+    mine = {-(first + k) for k in range(len(SCROLLS)) for first in (SCROLL_OBJECT, OLD_SCROLL_OBJECT)}
+    rec = gd.creature(index)
+    carried = [r for o in game.CREATURE_ITEM_LISTS for _, r in it.chain(struct.unpack_from("<h", rec, o)[0])]
+    if any(struct.unpack_from("<h", r, ITEM_OBJECT)[0] in mine for r in carried):
+        if gd.flag(SOLD_OUT) and quiet:
+            gd.set_flag(SOLD_OUT, False)  # (marked by mistake: his shop back)
+        return []
+    talking = getattr(gd, "talk_target", lambda: None)() == NAME  # (the last one just bought)
+    if (quiet or talking) and not gd.flag(SOLD_OUT):
         gd.set_flag(SOLD_OUT)
-    if not quiet:
+    if not quiet or gd.flag(DRESSED) or not gd.flag(SOLD_OUT):
         return []
     given = []
     for template, slot, name in ((QUARTERSTAFF_TEMPLATE, RIGHT_HAND, "Quarterstaff"), (CLOAK_TEMPLATE, game.CLOAK_SLOT, "Cloak")):
