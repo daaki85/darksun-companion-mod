@@ -618,6 +618,20 @@ class SaveTests(unittest.TestCase):
         struct.pack_into("<h", m, stalker, 25)
         self.assertEqual(log.hp_changes(31.0), ["  Mountain Stalker now 25 HP (+5)"])
 
+    def test_regeneration(self):
+        """A hit point back by itself, CON 20 or more (the game's own rule): said so."""
+        log = make_game()
+        m = log.guest.mem
+        stalker = CREATURES + STALKER * game.CREATURE_SIZE
+        struct.pack_into("<h", m, stalker, 20)
+        m[stalker + game.CREATURE_ABILITIES + 2] = 22
+        log.hp_changes(0.5)
+        struct.pack_into("<h", m, stalker, 21)
+        self.assertEqual(log.hp_changes(1.0), ["  Mountain Stalker regenerates 1 HP (CON 22), now 21 HP"])
+        m[stalker + game.CREATURE_ABILITIES + 2] = 19
+        struct.pack_into("<h", m, stalker, 22)
+        self.assertEqual(log.hp_changes(2.0), ["  Mountain Stalker now 22 HP (+1)"])
+
     def test_a_hit_during_a_spell_is_not_the_spells(self):
         log = make_game()
         m = log.guest.mem

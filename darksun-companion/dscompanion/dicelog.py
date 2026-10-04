@@ -155,6 +155,7 @@ KIND_ROLL, KIND_SAVE, KIND_AC = 0, 1, 2
 POPUP_DETAIL, POPUP_SHORT, POPUP_MINIMAL = "detail", "short", "minimal"
 POPUP_LEVELS = (POPUP_MINIMAL, POPUP_SHORT, POPUP_DETAIL)
 # a spell's result in the log, for the least of them: "  Slig takes 9 from Fireball, now 9/18 HP"
+REGENERATES = 20  # CON from which a creature regains a hit point now and then by itself
 SPELL_RESULT = re.compile(r"^\s+(.+? (?:takes \d+|regains \d+ HP) from [^,]+)")
 
 
@@ -1159,6 +1160,9 @@ class DiceLog:
                 out.append(f"  {who} regains {hp - before} HP from {self._spell_name}, {left}")
             elif hp < before:
                 out.append(f"  {who} {left} (-{before - hp}{resisted})")
+            elif hp - before == 1 and rec[game.CREATURE_ABILITIES + 2] >= REGENERATES:
+                con = rec[game.CREATURE_ABILITIES + 2]  # (as AD&D's CON 20 and more: the game's own)
+                out.append(f"  {who} regenerates 1 HP (CON {con}), {left}")
             else:
                 out.append(f"  {who} {left} (+{hp - before})")
         self._hp = current

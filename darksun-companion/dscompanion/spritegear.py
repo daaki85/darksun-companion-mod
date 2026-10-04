@@ -803,7 +803,10 @@ CLOTHES: Dict[int, Tuple[int, ...]] = {
     2070: (254, 208, 209, 210),
     2072: (254, 208, 209, 207, 19, 210, 205, 49, 211, 212),
     2074: (254, 208, 209, 210, 211),
-    2093: (254, 208, 209, 48, 210, 23, 50),
+    # the mul wears only a harness: his skin (bare but for it) under armour too, the head kept
+    # out as for all; dark to light by brightness, harness and skin together
+    2093: (254, 208, 129, 209, 128, 48, 134, 135, 210, 136, 137, 23, 138, 139, 140, 50, 141, 142, 143,
+           151, 152, 153),
     2095: (254, 48, 20, 210, 23, 212, 50, 213, 29),
     2099: (254,),
 }
