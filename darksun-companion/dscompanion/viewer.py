@@ -353,6 +353,16 @@ class Viewer:
         self.show_dust = tk.BooleanVar(value=bool(settings.get("dust", True)))
         ttk.Checkbutton(rules, text="Dust raised behind the feet of anyone walking on sand or dirt",
                         variable=self.show_dust, command=self._popups_changed).pack(anchor="w", pady=(4, 0))
+        speed = settings.get("cycles", launch.DEFAULT_SPEED)
+        self.game_speed = tk.StringVar(value=str(speed if speed in launch.SPEEDS or speed == launch.GOG_SPEED
+                                                 else launch.DEFAULT_SPEED))
+        ttk.Label(rules, text="Game speed, from the next time you start the game:").pack(
+            anchor="w", pady=(4, 0))
+        for value, text in ((launch.GOG_SPEED, "... GOG's own (walking can be choppy with shadows and dust)"),
+                            ("20000", "... faster: smooth walking with shadows and dust (the default)"),
+                            ("30000", "... fastest: smoother still, quicker animations (needs a faster PC)")):
+            ttk.Radiobutton(rules, text=text, value=value, variable=self.game_speed,
+                            command=self._speed_chosen).pack(anchor="w", padx=(16, 0))
         self.ring_mode = tk.StringVar(value=rings.mode(settings))
         ttk.Label(rules, text="Red rings on the ground in a fight:").pack(anchor="w", pady=(4, 0))
         for value, text in ((rings.OFF, "... none"),
@@ -749,6 +759,14 @@ class Viewer:
         launch.save_settings(settings)
         self.status.set(f"Game window: {self.window_choice.get()}, from the next time you start the game "
                         "(Alt+Enter switches full screen while playing).")
+
+    def _speed_chosen(self) -> None:
+        """Remember the game's speed; it applies the next time the game is started."""
+        value = self.game_speed.get()
+        settings = launch.load_settings()
+        settings["cycles"] = value if value == launch.GOG_SPEED else int(value)
+        launch.save_settings(settings)
+        self.status.set("Game speed: from the next time you start the game.")
 
     def _popups_changed(self) -> None:
         on = self.popups.get()

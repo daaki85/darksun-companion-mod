@@ -48,6 +48,14 @@ class LaunchTests(unittest.TestCase):
         self.assertIn("C0000005h", launch.closed_line(-1073741819))  # (the same, as a signed int)
         self.assertEqual(launch.closed_line(3), "DOSBox closed with exit code 3.")
 
+    def test_game_speed(self):
+        """20000 cycles unless asked otherwise (smooth walking with shadows and dust); GOG's own
+        when asked; nothing else taken."""
+        self.assertEqual(launch.cpu_lines({}), ["[cpu]", "cycles=fixed 20000", ""])
+        self.assertEqual(launch.cpu_lines({"cycles": 30000}), ["[cpu]", "cycles=fixed 30000", ""])
+        self.assertEqual(launch.cpu_lines({"cycles": "gog"}), [])
+        self.assertEqual(launch.cpu_lines({"cycles": 99999}), ["[cpu]", "cycles=fixed 20000", ""])
+
     def test_a_window_three_times_the_game_unless_asked_otherwise(self):
         self.assertEqual(launch.display_lines({}),
                          ["[sdl]", "fullscreen=false", "[render]", "aspect=true", "scaler=normal3x", ""])

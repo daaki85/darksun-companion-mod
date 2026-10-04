@@ -104,6 +104,14 @@ Release **1.0.0** is pull requests #1 to #13. Its notes are in
   with Scar's men, fights the guards on the party's side, and has a line of his
   own for the breakout. In the game he was left behind in the arena.
 
+- **Game speed on the Options tab:** the launcher gives DOSBox 20,000 cycles
+  by default, at which walking with shadows, dust and rings on is as smooth as
+  the game without them (at GOG's speed it was slower and choppy); GOG's own
+  speed and 30,000 can be chosen.
+- **The Trustee knows Semyon got away:** if Semyon broke out with the party and
+  lived, the Trustee says so after the escape (the game's own line for a Semyon
+  who escaped), instead of "Every single one" for all the pens.
+
 **Fixed** (from a review of the code)
 - **Clicks after Tab + Enter:** for a few seconds after Enter, anything the
   next character clicked could still count as the enemy chosen before. The

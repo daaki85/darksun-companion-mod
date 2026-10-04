@@ -153,9 +153,27 @@ def display_lines(settings: dict) -> List[str]:
             "scaler=" + ("none" if scale == 1 else SCALERS[scale]), ""]
 
 
+# The game's speed: DOSBox's emulated CPU (fixed cycles: instructions a millisecond). The game
+# moves a walking figure a step each time it draws the view, so drawing the Ledger's shadows, dust
+# and rings too makes each step take longer: at GOG's speed walking turns choppy. 20000 walks as
+# smoothly with them as GOG's 12000 without; 30000 smoother still (and quicker animations).
+GOG_SPEED, SPEEDS, DEFAULT_SPEED = "gog", (20000, 30000), 20000
+
+
+def cpu_lines(settings: dict) -> List[str]:
+    """DOSBox's CPU speed, over GOG's settings: `cycles` 20000 (the default) or 30000; "gog"
+    keeps GOG's own."""
+    speed = settings.get("cycles", DEFAULT_SPEED)
+    if speed == GOG_SPEED:
+        return []
+    speed = speed if speed in SPEEDS else DEFAULT_SPEED
+    return ["[cpu]", f"cycles=fixed {speed}", ""]
+
+
 def write_conf(game_dir: str, path: str = CONF, dice_log: bool = True) -> str:
     """Our replacement for dosbox_darksun_single.conf. Without the dice log it just runs the game."""
-    lines = display_lines(load_settings())
+    settings = load_settings()
+    lines = display_lines(settings) + cpu_lines(settings)
     lines += ["[autoexec]", "@echo off", "cls", 'mount c ".."']
     if os.path.isdir(os.path.join(game_dir, "cloud_saves")):
         lines.append(r'mount C "..\cloud_saves" -t overlay')  # where GOG keeps the saves

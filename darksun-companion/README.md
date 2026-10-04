@@ -1172,6 +1172,22 @@ DSCLOG draw the view again when it changes (from the game's main loop, as
 centring the view does: marking the figures changed instead, as the game's own
 code does to draw one again, can set one in a fight walking again).
 
+### Game speed
+
+The game moves a walking figure one step each time it draws the view, so
+anything drawn with it (the shadows above all, the dust and the rings less)
+makes each step take longer: at GOG's speed for DOSBox, walking turns slower and
+choppy with them on. The launcher gives DOSBox more of the computer's time
+(20,000 cycles a millisecond), at which walking is as smooth with them as the
+game's own without them. On the Options tab **Game speed** is GOG's own, that
+(the default) or 30,000 (smoother still; animations run quicker, and it needs a
+faster computer). It applies the next time the game is started.
+
+Measured in the slave pens, four of the party walking, at 12,000 cycles:
+a step every 56 ms with everything on, 32 ms with the shadows off or
+everything off; at 20,000 cycles with everything on, 32 ms; at 30,000, 24 ms.
+What the party wears on their figures costs nothing measurable.
+
 ### Dust
 
 Anyone walking on sand or dirt raises little puffs of dust behind their feet,

@@ -56,8 +56,10 @@ SETTLED = 779
 # and his henchman along to the slave pens (5Eh to region 41, at 76, 68), but nothing of Semyon's.
 # If he is recruited (the game's flag 6) and still in the arena, alive and not against the party,
 # he goes along too, beside them, on the party's side (ESCAPING): in the pens he talks as one
-# breaking out, and isn't made one of the slaves. After the escape he is gone with everyone else.
+# breaking out, and isn't made one of the slaves. After the escape he is gone with everyone else,
+# and, if he lived, the Trustee says he got away (GOT_AWAY).
 RECRUITED = 6
+GOT_AWAY = 29  # the game's flag: Semyon escaped on his own ("I'll wait here and guard the exit"), script 5
 ESCAPING = 782
 ESCAPE_SCRIPT, ESCAPE_AT = 3, 1828  # the henchman's move to the pens in it (Scar's is just before)
 HENCHMAN = 229
@@ -92,6 +94,9 @@ def placement(base: int) -> bytes:
         s.when(("expr", _flag(kalzith.STOCKED) + ["and"] + _flag(kalzith.DIED, 0)),
                lambda: s.op(REMOVE, ("n", -kalzith.OBJECT), *(("n", v) for v in GONE_AT))),
         s.when(here, lambda: s.op(REMOVE, ("n", -SEMYON), *(("n", v) for v in GONE_AT))),
+        # (broke out with the party and lived: the game's own word for a Semyon who escaped, so
+        # the Trustee says he got away, "snuck out through the benches", instead of "every one")
+        s.when(("expr", _flag(ESCAPING) + ["and"] + _flag(DIED, 0)), lambda: s.flag(GOT_AWAY, 1)),
         s.flag(CLEARED, 1)))
     s.op(kalzith.TALK, ("n", START), ("n", SCRIPT), ("n", -SEMYON))
     return s.bytes(base=base, end=False)

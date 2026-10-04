@@ -182,6 +182,11 @@ class SemyonTests(unittest.TestCase):
         sets = [(o.args[1][2], o.args[0][1]) for o in ops if o.code == 0x16]
         self.assertIn((semyon.CLEARED, 1), sets)
         self.assertTrue(_ifs_closed(ops))
+        # (broke out with the party and lived: the game's flag for a Semyon who got away)
+        got_away = next(i for i, o in enumerate(ops) if o.code == 0x16 and o.args[1] == ("var", 13, semyon.GOT_AWAY))
+        test = max((o for o in ops[:got_away] if o.code == 0x18), key=lambda o: o.at).args[0][1]
+        self.assertEqual(test, ["(", ("var", 0x8D, semyon.ESCAPING), "==", ("n", 1), ")", "and",
+                                "(", ("var", 0x8D, semyon.DIED), "==", ("n", 0), ")"])
 
     def test_settled(self):
         """In his pen, once (SETTLED), before the escape: as the pens' slaves are, on their side
