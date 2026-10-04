@@ -54,6 +54,21 @@ class StealthTests(unittest.TestCase):
         self.assertEqual(lines[0], "Dag hides in shadows: d100 = 8, needs 8 or less (16, halved in daylight) -> hidden")
         self.assertTrue(lines[1].startswith("  Dag moves silently: d100 = 16, needs 16 or less -> unheard"))
 
+    def test_cloak_and_boots(self):
+        """Worn, a cloak adds 10 to hiding in shadows (before daylight halves it) and boots 10 to
+        moving silently; carried, nothing."""
+        cloak, boots = bytearray(game.ITEM_SIZE), bytearray(game.ITEM_SIZE)
+        cloak[game.ITEM_SLOT], boots[game.ITEM_SLOT] = game.CLOAK_SLOT, game.FOOT
+        worn = [(1, bytes(cloak), b""), (2, bytes(boots), b"")]
+        self.gd._worn = lambda member: iter(worn)
+        lines, hidden = stealth.turn(self.gd, 0, rolls(13, 26))
+        self.assertTrue(hidden)
+        self.assertEqual(lines[0], "Dag hides in shadows: d100 = 13, needs 13 or less "
+                                   "(16 +10 cloak = 26, halved in daylight) -> hidden")
+        self.assertTrue(lines[1].startswith("  Dag moves silently: d100 = 26, needs 26 (16 +10 boots) or less -> unheard"))
+        worn[:] = []
+        self.assertIn("needs 8 or less (16, halved in daylight)", stealth.turn(self.gd, 0, rolls(99))[0][0])
+
     def test_seen(self):
         self.assertEqual(stealth.turn(self.gd, 0, rolls(9)),
                          (["Dag hides in shadows: d100 = 9, needs 8 or less (16, halved in daylight) -> seen"], False))

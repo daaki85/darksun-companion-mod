@@ -618,6 +618,20 @@ class SaveTests(unittest.TestCase):
         struct.pack_into("<h", m, stalker, 25)
         self.assertEqual(log.hp_changes(31.0), ["  Mountain Stalker now 25 HP (+5)"])
 
+    def test_regeneration(self):
+        """A hit point back by itself, CON 20 or more (the game's own rule): said so."""
+        log = make_game()
+        m = log.guest.mem
+        stalker = CREATURES + STALKER * game.CREATURE_SIZE
+        struct.pack_into("<h", m, stalker, 20)
+        m[stalker + game.CREATURE_ABILITIES + 2] = 22
+        log.hp_changes(0.5)
+        struct.pack_into("<h", m, stalker, 21)
+        self.assertEqual(log.hp_changes(1.0), ["  Mountain Stalker regenerates 1 HP (CON 22), now 21 HP"])
+        m[stalker + game.CREATURE_ABILITIES + 2] = 19
+        struct.pack_into("<h", m, stalker, 22)
+        self.assertEqual(log.hp_changes(2.0), ["  Mountain Stalker now 22 HP (+1)"])
+
     def test_a_hit_during_a_spell_is_not_the_spells(self):
         log = make_game()
         m = log.guest.mem
@@ -625,12 +639,42 @@ class SaveTests(unittest.TestCase):
         struct.pack_into("<h", m, stalker, 30)
         log.hp_changes(0.5)
         log._spell_cast(FIREBALL, 1.0)
-        log._hits[STALKER] = 12  # a weapon hit logged just before
+        log._hit(STALKER, 12, 1.0)  # a weapon hit logged just before
         struct.pack_into("<h", m, stalker, 12)
         self.assertEqual(log.hp_changes(1.5), ["  Mountain Stalker takes 6 from Fireball and 12 from the hit, now 12 HP"])
-        log._hits[STALKER] = 5
+        log._hit(STALKER, 5, 2.0)
         struct.pack_into("<h", m, stalker, 7)
         self.assertEqual(log.hp_changes(2.0), ["  Mountain Stalker now 7 HP (-5)"])
+
+    def test_a_hit_that_takes_no_hp(self):
+        """A weapon hit whose target loses no HP (HIT_WAIT on, or at the next round): said so;
+        one that takes less than was rolled: how much."""
+        log = make_game()
+        m = log.guest.mem
+        stalker = CREATURES + STALKER * game.CREATURE_SIZE
+        struct.pack_into("<h", m, stalker, 30)
+        log.hp_changes(0.5)
+        log._hit(STALKER, 9, 1.0)
+        self.assertEqual(log.hp_changes(2.0), [])  # (not yet: the game may not have taken it off)
+        self.assertEqual(log.hp_changes(1.0 + dicelog.HIT_WAIT),
+                         ["  Mountain Stalker takes none of the 9 damage: a protection or resistance took it"])
+        log._hit(STALKER, 10, 5.0)
+        struct.pack_into("<h", m, stalker, 25)
+        self.assertEqual(log.hp_changes(5.5), ["  Mountain Stalker now 25 HP (-5: 5 of the 10 rolled)"])
+        log._hit(STALKER, 9, 7.0)  # two hits before the HP is seen: taken one at a time
+        log._hit(STALKER, 10, 7.1)
+        struct.pack_into("<h", m, stalker, 16)
+        self.assertEqual(log.hp_changes(7.2), ["  Mountain Stalker now 16 HP (-9)"])
+        struct.pack_into("<h", m, stalker, 6)
+        self.assertEqual(log.hp_changes(7.3), ["  Mountain Stalker now 6 HP (-10)"])
+        struct.pack_into("<h", m, stalker, 0)
+        log._hit(STALKER, 9, 8.0)  # (more than its HP: not resisted)
+        self.assertEqual(log.hp_changes(8.1), ["  Mountain Stalker now 0 HP (-6)"])
+        struct.pack_into("<h", m, stalker, 30)
+        log.hp_changes(8.2)
+        log._hit(STALKER, 4, 9.0)
+        self.assertEqual(log.unhurt(6.1, force=True),
+                         ["  Mountain Stalker takes none of the 4 damage: a protection or resistance took it"])
 
     def test_doubled_roll(self):
         log = make_game()
@@ -830,6 +874,54 @@ class NewLinesTests(unittest.TestCase):
         self.assertEqual(tracker.check(2.2), [])  # waits for the others' XP
         self.assertEqual(tracker.check(3.0), ["XP: Dag +125 (for Mountain Stalker 500)"])
 
+    def test_leaving_an_area_kills_no_one(self):
+        """Going to another area the game drops the old area's people and clears or reuses their
+        records: no deaths logged (once every guard of the arena was "killed" on leaving the pens).
+        One creature gone from the fight with its own record dead is still a kill."""
+        def setup(extra):
+            log = make_game()
+            m = log.guest.mem
+            table = (LOAD_SEG + game.COMBATANTS_SEG) * 16 + game.COMBATANTS_OFF
+            for k, creature in enumerate(extra):
+                rec = CREATURES + creature * game.CREATURE_SIZE
+                m[rec + game.CREATURE_NAME:rec + game.CREATURE_NAME + 5] = b"Guard"
+                struct.pack_into("<h", m, rec, 30)
+                struct.pack_into("<Bh", m, table + (0x30 + k) * 3, 2, creature)
+            struct.pack_into("<h", m, CREATURES + STALKER * game.CREATURE_SIZE, 20)
+            log.tracker.check(1.0)
+            return log, m, table
+
+        def drop(m, table, combatants):
+            for c in combatants:
+                struct.pack_into("<Bh", m, table + c * 3, 0, 0)
+
+        # a new area: the table emptied, the records zeroed
+        log, m, table = setup([4, 5])
+        struct.pack_into("<H", m, DS * 16 + game.REGION, 0x2A)
+        drop(m, table, (0x29, 0x30, 0x31))
+        for creature in (4, 5, STALKER):
+            rec = CREATURES + creature * game.CREATURE_SIZE
+            m[rec:rec + game.CREATURE_SIZE] = bytes(game.CREATURE_SIZE)
+        self.assertEqual(log.tracker.check(2.0), [])
+        # the area number not yet changed: all of them gone at once, their records cleared of HP
+        log, m, table = setup([4, 5])
+        drop(m, table, (0x29, 0x30, 0x31))
+        for creature in (4, 5, STALKER):
+            struct.pack_into("<h", m, CREATURES + creature * game.CREATURE_SIZE, 0)
+        self.assertEqual(log.tracker.check(2.0), [])
+        # one gone with its record reused by someone else
+        log, m, table = setup([4])
+        drop(m, table, (0x30,))
+        rec = CREATURES + 4 * game.CREATURE_SIZE
+        m[rec + game.CREATURE_NAME:rec + game.CREATURE_NAME + 5] = b"Slave"
+        struct.pack_into("<h", m, rec, 0)
+        self.assertEqual(log.tracker.check(2.0), [])
+        # one gone, its own record dead: killed
+        log, m, table = setup([4])
+        drop(m, table, (0x30,))
+        struct.pack_into("<h", m, CREATURES + 4 * game.CREATURE_SIZE, -2)
+        self.assertEqual([l.split(" (")[0] for l in log.tracker.check(2.0)], ["Guard is killed"])
+
     def test_pockets_tried_after_a_save_forgotten_on_loading_it(self):
         """A pocket tried (and the thief caught) after the game was saved can be tried again once
         that save is loaded: the game's clock goes back past the try."""
@@ -847,6 +939,16 @@ class NewLinesTests(unittest.TestCase):
         log.lines(now=3.0)
         self.assertEqual(log.take_picked(), ["Dag|41|7|Trader@500"])
         self.assertEqual(log.picked, {"Dag|41|7|Trader"})
+
+    def test_pockets_of_another_game_forgotten_in_a_new_one(self):
+        """The Ledger started with a new game under way (same party names): the tries of the
+        last game, later than this game's clock, are forgotten at once; earlier ones stay."""
+        log = make_game()
+        log.load_picked(["Dag|41|7|Kurzak@5000", "Dag|41|8|Guard@100"])
+        set_clock(log, 300)  # a new game, 300 seconds in
+        log.lines(now=1.0)
+        self.assertEqual(log.picked, {"Dag|41|8|Guard"})
+        self.assertEqual(log.take_picked(), ["Dag|41|8|Guard@100"])
 
     def test_xp_taken_and_given_back(self):
         """Going between areas the game takes the XP away and gives it back: nothing logged. A
@@ -1078,6 +1180,22 @@ class RoundAndTurnTests(unittest.TestCase):
         struct.pack_into("<h", m, DS * 16 + game.WHOSE_TURN, 1)
         self.assertEqual(self.log.turn_lines(), ["Daaki's turn"])
         self.assertEqual(self.log.turn_lines(), [])  # still Daaki's
+        struct.pack_into("<h", m, DS * 16 + game.WHOSE_TURN, 0x29)
+        self.assertEqual(self.log.turn_lines(), ["Mountain Stalker's turn"])
+
+    def test_last_turn_then_first_turn(self):
+        """Last in one round and first in the next: a new turn (a thief hides again); someone
+        else first: the last round's last turn isn't taken for a new one meanwhile."""
+        m = self.log.guest.mem
+        self.round(600)
+        struct.pack_into("<h", m, DS * 16 + game.WHOSE_TURN, 1)
+        self.assertEqual(self.log.turn_lines(), ["Daaki's turn"])
+        self.round(660)
+        self.log.round_order = [(1, "Daaki", 25)]
+        self.assertEqual(self.log.turn_lines(), ["Daaki's turn"])
+        self.round(720)
+        self.log.round_order = [(0x29, "Mountain Stalker", 25), (1, "Daaki", 20)]
+        self.assertEqual(self.log.turn_lines(), [])  # (still showing Daaki's last)
         struct.pack_into("<h", m, DS * 16 + game.WHOSE_TURN, 0x29)
         self.assertEqual(self.log.turn_lines(), ["Mountain Stalker's turn"])
 

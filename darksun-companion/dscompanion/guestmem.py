@@ -11,6 +11,7 @@ To find the block we look for two things DOSBox always sets up:
     entries point into the BIOS segment 0xF000
 """
 
+import os
 import re
 from typing import List, Optional
 
@@ -27,11 +28,19 @@ class GuestMemoryError(Exception):
     pass
 
 
+LOW_MEMORY = 0x600  # the interrupt vectors, the BIOS's data and DOS's own: never the Ledger's to write
+
+
 class GuestMemory:
     def __init__(self, proc: ProcessMemory, base: int, size: int):
         self.proc = proc
         self.base = base  # host address of guest address 0
         self.size = size
+        # ranges no write of the Ledger's may touch: {name: (start, end)}; the game's data
+        # segment's first bytes are added once it is known (GameData). A write there could only
+        # come from a pointer read while the game has it empty (0:offset): refused and noted
+        self.guarded = {"low memory": (0, LOW_MEMORY)}
+        self.refused: List[str] = []
 
     def read(self, addr: int, size: int) -> bytes:
         """Read guest memory, clipped to the guest RAM bounds."""
@@ -44,6 +53,10 @@ class GuestMemory:
     def write(self, addr: int, data: bytes) -> None:
         if addr < 0 or addr + len(data) > self.size:
             raise GuestMemoryError(f"Write at guest {addr:#x} is outside guest RAM")
+        for name, (start, end) in self.guarded.items():
+            if addr < end and addr + len(data) > start:
+                self.refused.append(f"{len(data)} bytes at {addr:#x} ({name}), from {_caller()}")
+                return
         self.proc.write(self.base + addr, data)
 
     def snapshot(self) -> bytes:
@@ -57,6 +70,13 @@ class GuestMemory:
         data = self.snapshot() if data is None else data
         flags = re.IGNORECASE if ignore_case else 0
         return [m.start() for m in re.finditer(re.escape(pattern), data, flags)]
+
+
+def _caller() -> str:
+    """Where in the Ledger the write came from: its last few calls outside this file."""
+    import traceback
+    frames = [f for f in traceback.extract_stack()[:-2] if os.path.basename(f.filename) != "guestmem.py"]
+    return " < ".join(f"{os.path.basename(f.filename)}:{f.lineno} {f.name}" for f in reversed(frames[-4:]))
 
 
 def _looks_like_ivt(ivt: bytes) -> bool:
