@@ -306,6 +306,21 @@ def dosbox_output(game_dir: str, since: float) -> Dict[str, str]:
     return out
 
 
+# The Options tab's switches and their defaults (what a key missing from settings.json means)
+SWITCH_DEFAULTS = {"turn_popups": False, "monster_info": True, "arena_ring": True, "pickpockets": True,
+                   "pick_key": False, "show_gear": True, "shadows": True, "dust": True, "rings": "chosen",
+                   "targeting": True, "scroll_map": True, "scroll_right": False, "cycles": DEFAULT_SPEED}
+
+
+def effective_switches(settings: dict) -> Dict[str, object]:
+    """Every switch as the Ledger uses it: as set, else its default (rule changes and content: on)."""
+    from . import game
+    out: Dict[str, object] = {key: settings.get(key, default) for key, default in SWITCH_DEFAULTS.items()}
+    out.update(content(settings))
+    out.update({key: bool(settings.get(key, True)) for key, _ in game.RULE_SETTINGS})
+    return out
+
+
 def crash_report(code: int, note: Optional[str], settings: dict, dice: str, dialogue: str,
                  refused: List[str], output: Dict[str, str], started: float, now: float) -> str:
     """The text of a crash report: how DOSBox closed, what the game left on screen, the switches,
@@ -316,8 +331,8 @@ def crash_report(code: int, note: Optional[str], settings: dict, dice: str, dial
         lines.append(f"The game ran for {round((now - started) / 60)} minutes.")
     if note:
         lines += ["", "The game stopped with an error. On the screen:", note]
-    lines += ["", "Settings:"] + [f"  {key}: {value!r}" for key, value in sorted(settings.items())
-                                  if key != "game_dir" and isinstance(value, (bool, int, float, str))]
+    lines += ["", "Switches (as set on the Options tab, else the default):"]
+    lines += [f"  {key}: {value!r}" for key, value in sorted(effective_switches(settings).items())]
     if refused:
         lines += ["", "Writes the Ledger refused (a pointer read while the game had it empty):"]
         lines += ["  " + r for r in refused[-50:]]

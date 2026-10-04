@@ -139,8 +139,8 @@ records; this ledger keeps the ones the game doesn't show you.
   Prisoner's body in the arena, an item of the Ledger's own (see
   [The Ring +1](#the-ring-1)).
 - **Picking pockets:** a thief can try anyone's pockets, with the Thieves'
-  Tools every thief now carries or with P in a conversation, a move silently
-  roll deciding whether a fumble is noticed (see
+  Tools every thief now carries (or, if ticked, with P in a conversation), a
+  move silently roll deciding whether a fumble is noticed (see
   [Picking pockets](#picking-pockets)).
 - **A use for the cooked vulture:** ask Dinos in the slave pens about it, and he
   cooks it properly for the party (see [The cooked vulture](#the-cooked-vulture)).
@@ -1664,8 +1664,10 @@ a saving throw's modifiers, it starts from the pluses of the rings worn. So:
 ### Picking pockets
 
 The game has one pocket to pick, in the Trustee's conversation (his key). With
-**P in a conversation** ticked on the Options tab (it is by default), a thief
-can try anyone's, two ways, with the thief as the party's leader (keys 1-4):
+**Picking pockets** ticked on the Options tab (it is by default), a thief can
+try anyone's with Thieves' Tools; with its **... or the leader, a thief, presses
+P in a conversation** ticked too (it is off by default), also with P, the
+thief as the party's leader (keys 1-4):
 
 - **Thieving tools.** Every thief starts a new game with a set in their
   backpack, in its first free cell (the log says so); a thief who joins later, or one in a game
@@ -1682,7 +1684,7 @@ can try anyone's, two ways, with the thief as the party's leader (keys 1-4):
   up in the game's message window, and the tools stay on the pointer for the
   next one. (Clicking open ground drops them, as with anything carried.) Not in
   a fight: there's no time for it then, and the tools stay on the pointer.
-- **P in a conversation.** In a conversation, press **P**.
+- **P in a conversation** (if ticked). In a conversation, press **P**.
 
 Either way, the Ledger rolls the leader's pick pockets chance as
 it stands now (effects counted, as in the thief rows):

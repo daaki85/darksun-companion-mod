@@ -92,7 +92,7 @@ section image follows=mz vstart=0
 
 ; ---- header, found by the companion via SIG (16-byte aligned) ----
 hdr:
-sig      db 'DSCLOGvU'          ; +0
+sig      db 'DSCLOGvV'          ; +0
 seq      dw 0                   ; +8   entries written so far (wraps at 65536)
 widx     dw 0                   ; +10  ring slot the next entry goes to
 nent     dw NENT                ; +12
@@ -156,7 +156,8 @@ pick_seq   dw 0                 ; +172 P pressed in a conversation (PROBE_PICK c
 pick_reply dw 0                 ; +174 ... and set to it by the companion once PICK_TEXT is ready
 pick_off   dw pick_text         ; +176 offset of PICK_TEXT: what came of it, NUL-terminated (empty:
                                 ;      nothing to show)
-pick_on    dw 0                 ; +178 the companion sets 1 to take P as picking a pocket
+pick_on    dw 0                 ; +178 the companion sets bit 0 for the thieving tools on someone to pick
+                                ;      their pocket, and bit 1 too to take P in a conversation as that
 use_seq    dw 0                 ; +180 an item used on something on the map (PROBE_USE_ITEM counts) ...
 use_reply  dw 0                 ; +182 ... and set to it by the companion once it has had its say
 use_who    dw 0                 ; +184 the object it was used on
@@ -1124,14 +1125,15 @@ probe_next:
 PICK_JUMP equ 0x7DD70 - 0x7D9FF ; (DSUN.EXE) the JMP's target less the address after the INT
 PICK_KEY  equ -0x0C             ; the key, at the key handler's BP-0Ch: scan code, character
 PICK_WAIT equ 9                 ; timer ticks
+PICK_KEY_ON equ 2               ; (pick_on: P in a conversation too)
 probe_pick:
         sti
         pushad
         push es
         mov bx, sp              ; the interrupt frame at BX+34: IP, CS, flags
         add word [ss:bx + 34], PICK_JUMP  ; go on where the JMP went
-        cmp word [cs:pick_on], 0
-        je .out
+        test word [cs:pick_on], PICK_KEY_ON
+        jz .out
         mov ax, [bp + PICK_KEY]
         and al, 0xDF            ; p or P
         cmp ax, 0x1950

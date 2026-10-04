@@ -31,7 +31,7 @@ from .guestmem import GuestMemory
 from .textlog import KIND_MESSAGE, KIND_PORTRAIT, KIND_TEXT, Dialogue, DialogueEntry, TextBuffer
 from .tracker import PartyTracker
 
-HDR_SIG = b"DSCLOGvU"
+HDR_SIG = b"DSCLOGvV"
 # DSCLOG's header: the in-game turn summaries (see PROBE_TURN in dos/dsclog.asm)
 TSR_TURN_SEQ, TSR_REPLY_SEQ, TSR_POPUPS, TSR_MSG_OFF, TSR_ENDED, TSR_HDR_OFF = 138, 140, 142, 144, 146, 20
 MSG_SIZE = 900
@@ -52,6 +52,7 @@ BIOS_TIMER = 0x46C
 TSR_RULES = 170
 TSR_MAIN_TICKS = 260  # the map's main loop run (counted)
 TSR_PICK_SEQ, TSR_PICK_REPLY, TSR_PICK_OFF, TSR_PICK_ON, PICK_SIZE = 172, 174, 176, 178, 240
+PICK_TOOLS, PICK_KEY = 1, 2  # (TSR_PICK_ON: the thieving tools on someone; P in a conversation too)
 TSR_USE_SEQ, TSR_USE_REPLY, TSR_USE_WHO, TSR_USE_TAKEN, TSR_USE_ITEM = 180, 182, 184, 186, 188
 TSR_SWAP_ON, TSR_SWAP_SEQ, TSR_SWAP_OFF, SWAP_SIZE, SWAP_TEXT_SIZE = 190, 192, 194, 64, 240
 RULE_HELMS, RULE_BOOTS = game.RULE_HELMS, game.RULE_BOOTS
@@ -327,7 +328,8 @@ class DiceLog:
         self.popup_level = POPUP_DETAIL  # ... with the dice log's lines, in short, or the results only
         self.monster_info = True  # monsters' defences in the game's Look box (set_monster_info)
         self.arena_ring = True  # put the Ring +1 on the Tied-up Prisoner's body in the arena (ring.py)
-        self.pickpockets = True  # P in a conversation picks a pocket (pickpocket.py)
+        self.pickpockets = True  # the thieving tools pick a pocket (pickpocket.py, tools.py)
+        self.pick_key = False  # ... and so does P in a conversation
         self.show_gear = True  # the party's map sprites dressed in what they wear (sprites.py)
         self.show_shadows = True  # shadows under the figures on the map (shadows.py)
         self._shadows = shadows.Shadows()
@@ -454,11 +456,15 @@ class DiceLog:
         if self.tsr_hdr is not None:
             self.guest.write(self.tsr_hdr + TSR_POPUPS, struct.pack("<H", int(on)))
 
-    def set_pickpockets(self, on: bool) -> None:
-        """Take P in a conversation as the leader trying the pocket of the person talked to."""
+    def set_pickpockets(self, on: bool, key: Optional[bool] = None) -> None:
+        """Picking pockets (ON): the thieving tools used on someone, and with KEY, P in a
+        conversation, as the leader trying the pocket of the person talked to."""
         self.pickpockets = on
+        if key is not None:
+            self.pick_key = key
         if self.tsr_hdr is not None:
-            self.guest.write(self.tsr_hdr + TSR_PICK_ON, struct.pack("<H", int(on)))
+            flags = (PICK_TOOLS | (PICK_KEY if self.pick_key else 0)) if on else 0
+            self.guest.write(self.tsr_hdr + TSR_PICK_ON, struct.pack("<H", flags))
 
     def load_picked(self, entries) -> None:
         """The pockets tried, as remembered (settings.json): "key@game time" (or a bare key, from
@@ -611,6 +617,7 @@ class DiceLog:
         self.monster_info = bool(settings.get("monster_info", True))
         self.arena_ring = bool(settings.get("arena_ring", True))
         self.pickpockets = bool(settings.get("pickpockets", True))
+        self.pick_key = bool(settings.get("pick_key", False))
         self.show_gear = bool(settings.get("show_gear", True))
         self.show_shadows = bool(settings.get("shadows", True))
         self.scroll_map = bool(settings.get("scroll_map", True))

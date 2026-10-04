@@ -41,6 +41,9 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
   who escaped), instead of "Every single one" for all the pens.
 
 **Changed**
+- **Picking pockets with the Thieves' Tools only, by default:** the Options
+  tab's switch is now about the tools, and P in a conversation is a choice
+  under it, off unless ticked.
 - **The READMEs reorganised,** each with a table of contents: the guide's
   sections grouped as the Options tab is (the Ledger's window, the dice log,
   in the game, rule changes, new content, on the screen, controls, game speed),

@@ -363,9 +363,12 @@ class Viewer:
         ttk.Checkbutton(new, text="A Ring of Protection +1 on the arena's Tied-up Prisoner (search his body)",
                         variable=self.arena_ring, command=self._popups_changed).pack(anchor="w", pady=(4, 0))
         self.pickpockets = tk.BooleanVar(value=bool(settings.get("pickpockets", True)))
-        ttk.Checkbutton(new, text="P in a conversation: the leader, a thief, tries the other's pockets "
-                        "(until caught)", variable=self.pickpockets,
+        ttk.Checkbutton(new, text="Picking pockets: a thief uses Thieves' Tools on someone in sight (each "
+                        "thief gets a set), until caught", variable=self.pickpockets,
                         command=self._popups_changed).pack(anchor="w", pady=(4, 0))
+        self.pick_key = tk.BooleanVar(value=bool(settings.get("pick_key", False)))
+        ttk.Checkbutton(new, text="... or the leader, a thief, presses P in a conversation",
+                        variable=self.pick_key, command=self._popups_changed).pack(anchor="w", padx=(20, 0))
         ttk.Button(new, text="Give thieving tools now", command=self.give_tools).pack(anchor="w", pady=(8, 0))
 
         # how the game looks
@@ -740,6 +743,7 @@ class Viewer:
                 self.dice.monster_info = self.monster_info.get()
                 self.dice.arena_ring = self.arena_ring.get()
                 self.dice.pickpockets = self.pickpockets.get()
+                self.dice.pick_key = self.pick_key.get()
                 self.dice.show_gear = self.show_gear.get()
                 self.dice.show_shadows = self.show_shadows.get()
                 self.dice.show_dust = self.show_dust.get()
@@ -839,6 +843,7 @@ class Viewer:
         settings["monster_info"] = self.monster_info.get()
         settings["arena_ring"] = self.arena_ring.get()
         settings["pickpockets"] = self.pickpockets.get()
+        settings["pick_key"] = self.pick_key.get()
         settings["show_gear"] = self.show_gear.get()
         settings["shadows"] = self.show_shadows.get()
         settings["dust"] = self.show_dust.get()
@@ -858,7 +863,7 @@ class Viewer:
             self.dice.popup_level = self.popup_level.get()
             self.dice.set_monster_info(self.monster_info.get())
             self.dice.arena_ring = self.arena_ring.get()
-            self.dice.set_pickpockets(self.pickpockets.get())
+            self.dice.set_pickpockets(self.pickpockets.get(), self.pick_key.get())
             self.dice.show_gear = self.show_gear.get()
             self.dice.show_shadows = self.show_shadows.get()
             self.dice.show_dust = self.show_dust.get()
