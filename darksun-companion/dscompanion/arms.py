@@ -2,7 +2,8 @@
 
 - The 2 handed Bone Gythka on the dead body lying by the stone arch in the arena, where every game
   starts: Kreenfang, a gythka +1. The body is the game's object 1204, "Dead Body" (an item, its
-  picture BODY_PICTURE, whose contents are a list: SEGOBJEX's RDFF 1204 has the gythka in it).
+  picture BODY_PICTURE, whose contents are a list: SEGOBJEX's RDFF 1204 has the gythka in it),
+  lying where the arena puts it (BODY_AT): no other body, wherever it lies, ever counts.
   That gythka, while still in the body, is made Kreenfang, once a game (the key in the
   tools_given set, kept in settings): the Ledger looks from the game's start, before anyone can
   take it. Every other gythka stays plain: the one the arena also has lying loose (object 1011),
@@ -32,6 +33,10 @@ ARENA = ring.ARENA
 KEY = "arena gythka +1"
 GYTHKA_PICTURE = 0xFC0D  # the game's gythka
 BODY_PICTURE = 0x10000 - 1204  # the arena's dead body with the gythka (object 1204)
+# ... where the arena puts it (RGN2A's entity table): on the map, a thing's x and y are at +9 of
+# its entry in the game's table of things on the map (32 bytes each)
+BODY_AT = (688, 590)
+MAP_ENTRIES, MAP_ENTRY_SIZE, MAP_XY = 0x6694, 32, 0x09
 SWORD_NAME, GYTHKA_NAME = 0x147, 0x148  # name entries DSCLOG adds
 NAMES = {SWORD_NAME: b"Shadowseeker", GYTHKA_NAME: b"Kreenfang"}  # as DSCLOG's EXTRA_NAMES has them
 # near the Bloodwrath's 20800 (the plain ones: 6 and 500); metal is the dearer, on Athas
@@ -47,12 +52,15 @@ def key(gd: GameData) -> str:
     return f"{gd.creature_name(0)}|{KEY}"
 
 
-def _arena_gythka(it: ring.Items) -> Optional[int]:
-    """The plain gythka still in the arena's dead body (BODY_PICTURE), or None."""
+def _arena_gythka(gd: GameData, it: ring.Items) -> Optional[int]:
+    """The plain gythka still in the arena's dead body (BODY_PICTURE, lying at BODY_AT), or None."""
     for thing in range(ring.THING_COUNT):
-        for _, rec in it.chain(thing):
+        for _, rec in it.chain(thing, inside=False):
             if struct.unpack_from("<H", rec, 0)[0] != BODY_PICTURE:
                 continue
+            at = gd.ds * 16 + MAP_ENTRIES + thing * MAP_ENTRY_SIZE + MAP_XY
+            if struct.unpack("<HH", gd.guest.read(at, 4)) != BODY_AT:
+                continue  # (another body: never this one)
             contents, = struct.unpack_from("<H", rec, ring.ITEM_CONTENTS)
             for item, inside in it.chain(contents, inside=False):
                 if struct.unpack_from("<H", inside, game.ITEM_TYPE)[0] == game.GYTHKA_TYPE \
@@ -116,7 +124,7 @@ def upgrade(gd: GameData, given: Set[str]) -> List[str]:
                 if _rename(gd, it, item, rec, GYTHKA_VALUE, GYTHKA_NAME):
                     out.append("The arena's Gythka +1 is named Kreenfang.")
     if key(gd) not in given and it.word(ring.REGION) == ARENA:
-        body = _arena_gythka(it)
+        body = _arena_gythka(gd, it)
         if body is not None:
             _make_magic(gd, it, body, GYTHKA_VALUE, GYTHKA_NAME)
             given.add(key(gd))

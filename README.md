@@ -79,8 +79,9 @@ can be switched off on its Options tab.
   holds.
 - **Two named magic weapons:** the Bone Gythka on the dead body in the arena
   becomes **Kreenfang** (+1), and Kurzak's short sword **Shadowseeker** (+1),
-  whose wielder sees the invisible; lifting it from Kurzak is worth 200 XP, and Alagorn, the Painted
-  Badlands' wizard who identifies magic items, tells the story of each.
+  whose wielder sees the invisible; lifting it from Kurzak is worth 200 XP,
+  and Alagorn, the Painted Badlands' wizard who identifies magic items, tells
+  the story of each.
 - **A mini-quest:** the cooked vulture, at last good for something (Dinos
   cooks it for the party, to the game's own quest-done sound).
 - **A new person in the slave pens:** Kalzith, a defiler slave who, treated

@@ -96,7 +96,20 @@ class ArmsTests(unittest.TestCase):
         self.item(LOOSE, picture=arms.GYTHKA_PICTURE, type=game.GYTHKA_TYPE, name=0x3A)
         for thing, item in ((BODY_THING, BODY), (BODY_CONTENTS, GYTHKA), (LOOSE_THING, LOOSE)):
             struct.pack_into("<Bh", self.m, things + thing * 3, game.THING_ITEM, item)
+        self.place(BODY_THING, *arms.BODY_AT)
         self.in_arena()
+
+    def place(self, thing, x, y):
+        at = DS * 16 + arms.MAP_ENTRIES + thing * arms.MAP_ENTRY_SIZE + arms.MAP_XY
+        struct.pack_into("<HH", self.m, at, x, y)
+
+    def test_another_body(self):
+        """A body like it lying anywhere else (a kreen killed in the arena, say): its gythka stays
+        plain."""
+        self.arena_start()
+        self.place(BODY_THING, arms.BODY_AT[0] + 16, arms.BODY_AT[1])
+        arms.upgrade(self.gd, set())
+        self.assertEqual(record(self.m, GYTHKA)[0], 0)
 
     def test_the_bodys_gythka(self):
         """In the arena, the gythka in the dead body becomes Kreenfang, once a game; the loose one
