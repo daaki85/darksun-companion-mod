@@ -1857,8 +1857,9 @@ spell: an item names a spell (its byte at +0Fh, one past the spell's number),
 and when it is readied the game puts a spell it counts as helpful on the
 wearer, until it is put away (a weapon's harmful spells are cast on what it
 hits instead). Its item box shows the spell's icon; right-clicked, the spell's
-description. A sword already in hand when the Ledger made it so (from an
-earlier version) has it from the next time it is readied. The log says when
+description (its byte at +02h names that spell too). A sword already in hand
+when the Ledger made it so (from an earlier version) has it from the next time
+it is readied. The log says when
 each is made:
 
 ```

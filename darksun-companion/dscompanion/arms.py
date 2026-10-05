@@ -12,7 +12,7 @@
   item is readied and takes off when it's put away, for a spell it counts as helpful (Detect
   Invisibility is; a weapon's other spells are cast on what it hits instead). A sword already
   in hand when the Ledger made it so has it from the next time it is readied. Its item box shows
-  the spell's icon (right-clicked, the spell's description).
+  the spell's icon (its +02h: right-clicked, the spell's description).
 
 Each has a name of its own, as the Templar's Bloodwrath (an obsidian long sword +1, 20800) has, in
 entries DSCLOG adds (names.py); is priced near it; and has an icon of its own (icons.py:
@@ -36,6 +36,7 @@ NAMES = {SWORD_NAME: b"Shadowseeker", GYTHKA_NAME: b"Kreenfang"}  # as DSCLOG's 
 GYTHKA_VALUE, SWORD_VALUE = 18000, 22000
 ITEM_VALUE = 0x06  # an item's price (npcitems.ITEM_VALUE)
 ITEM_SPELL = 0x0F  # an item's spell, one past the spell's number (0: none)
+ITEM_SPELL_SHOWN = 0x02  # (a word) the spell whose icon its box shows, the same
 SWORD_SPELL = game.DETECT_INVISIBILITY + 1
 OLD_VALUES = (2000, 2500)  # what an earlier version priced them at
 
@@ -75,9 +76,14 @@ def _make_magic(gd: GameData, it: ring.Items, item: int, value: int, name: int, 
     at = it.items + item * game.ITEM_SIZE
     gd.guest.write(at + game.ITEM_PLUS, b"\x01")
     if spell:
-        gd.guest.write(at + ITEM_SPELL, bytes((spell,)))
+        _give_spell(gd, at, spell)
     gd.guest.write(at + ITEM_VALUE, struct.pack("<H", value))
     gd.guest.write(at + game.ITEM_NAME, struct.pack("<H", name))
+
+
+def _give_spell(gd: GameData, at: int, spell: int) -> None:
+    gd.guest.write(at + ITEM_SPELL, bytes((spell,)))
+    gd.guest.write(at + ITEM_SPELL_SHOWN, struct.pack("<H", spell))
 
 
 def _rename(gd: GameData, it: ring.Items, item: int, rec: bytes, value: int, name: int) -> bool:
@@ -114,8 +120,10 @@ def upgrade(gd: GameData, given: Set[str]) -> List[str]:
                 if _rename(gd, it, item, rec, SWORD_VALUE, SWORD_NAME):
                     out.append("Kurzak's Short Sword +1 is named Shadowseeker.")
                 if rec[ITEM_SPELL] != SWORD_SPELL:
-                    gd.guest.write(it.items + item * game.ITEM_SIZE + ITEM_SPELL, bytes((SWORD_SPELL,)))
+                    _give_spell(gd, it.items + item * game.ITEM_SIZE, SWORD_SPELL)
                     out.append("Shadowseeker lets its wielder see the invisible (from the next time it's readied).")
+                elif struct.unpack_from("<H", rec, ITEM_SPELL_SHOWN)[0] != SWORD_SPELL:
+                    _give_spell(gd, it.items + item * game.ITEM_SIZE, SWORD_SPELL)  # (its box's icon)
             elif kind == game.GYTHKA_TYPE and plus == 0:
                 gythkas.append(item)
             elif kind == game.GYTHKA_TYPE and plus == 1:  # (only the companion's has a plus)

@@ -18,6 +18,8 @@ GYTHKA, PARTY_THING = 90, 410
 
 def record(m, item):
     rec = bytes(m[ITEMS + item * game.ITEM_SIZE:ITEMS + (item + 1) * game.ITEM_SIZE])
+    shown, = struct.unpack_from("<H", rec, arms.ITEM_SPELL_SHOWN)
+    assert shown == rec[arms.ITEM_SPELL], (shown, rec[arms.ITEM_SPELL])  # (its box's icon: the same spell)
     return (rec[game.ITEM_PLUS], struct.unpack_from("<H", rec, game.ITEM_NAME)[0],
             struct.unpack_from("<H", rec, arms.ITEM_VALUE)[0], rec[arms.ITEM_SPELL])
 
@@ -103,6 +105,15 @@ class ArmsTests(unittest.TestCase):
         self.assertEqual(struct.unpack_from("<H", rec, 0)[0], icons.PICTURES["Shadowseeker"])
         self.assertEqual(struct.unpack_from("<H", rec, icons.PICTURE_CACHE)[0], 0)
         self.assertEqual(rec[arms.ITEM_SPELL], game.DETECT_INVISIBILITY + 1)
+
+    def test_icon_byte_from_the_last_version(self):
+        """Its spell given before its box's icon byte was: the byte set, quietly."""
+        sword = self.sword()
+        arms.upgrade(self.gd, set())
+        at = ITEMS + sword * game.ITEM_SIZE
+        struct.pack_into("<H", self.m, at + arms.ITEM_SPELL_SHOWN, 0)
+        self.assertEqual(arms.upgrade(self.gd, set()), [])
+        self.assertEqual(struct.unpack_from("<H", self.m, at + arms.ITEM_SPELL_SHOWN)[0], arms.SWORD_SPELL)
 
     def test_given_sword_seen_by_type(self):
         """Renamed and +1, Kurzak's sword still counts as given (not a second one)."""
