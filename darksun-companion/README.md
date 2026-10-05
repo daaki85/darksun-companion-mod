@@ -36,17 +36,17 @@ records; this ledger keeps the ones the game doesn't show you.
   - [In the game: each turn's rolls](#in-the-game-each-turns-rolls)
   - [In the game: what hurts a monster (the Look box)](#in-the-game-what-hurts-a-monster-the-look-box)
 - [Rule changes](#rule-changes)
-  - [Helms give AC 1](#helms-give-ac-1)
-  - [Boots give a move in a fight](#boots-give-a-move-in-a-fight)
-  - [Two weapons: AD&D's penalties](#two-weapons-adds-penalties)
-  - [Rings and cloaks of protection](#rings-and-cloaks-of-protection)
-  - [Half-giants' two-handed weapons](#half-giants-two-handed-weapons)
   - [Spells saved against with the spell save](#spells-saved-against-with-the-spell-save)
   - [Fire, cold and electricity: DEX instead of a doubled d20](#fire-cold-and-electricity-dex-instead-of-a-doubled-d20)
-  - [Cat's Grace](#cats-grace)
-  - [Levels up to 10](#levels-up-to-10)
+  - [Two weapons: AD&D's penalties](#two-weapons-adds-penalties)
   - [Thief skills from AD&D's table](#thief-skills-from-adds-table)
   - [Hiding in shadows to backstab](#hiding-in-shadows-to-backstab)
+  - [Levels up to 10](#levels-up-to-10)
+  - [Rings and cloaks of protection](#rings-and-cloaks-of-protection)
+  - [Half-giants' two-handed weapons](#half-giants-two-handed-weapons)
+  - [Cat's Grace](#cats-grace)
+  - [Helms give AC 1](#helms-give-ac-1)
+  - [Boots give movement in a fight](#boots-give-movement-in-a-fight)
 - [New content](#new-content)
   - [The Ring +1](#the-ring-1)
   - [Picking pockets](#picking-pockets)
@@ -1363,118 +1363,17 @@ at once.
 
 | Rule (its box on the Options tab) | What it changes |
 |---|---|
-| [Helms give AC 1](#helms-give-ac-1) | the game's helms give AC 1 rather than 0 |
-| [Boots give a move in a fight](#boots-give-a-move-in-a-fight) | whoever wears boots gets 1 more move each round of a fight |
-| [Two weapons: AD&D's penalties](#two-weapons-adds-penalties) | -2 main hand, -4 off hand, DEX's reaction adjustment added; rangers none |
-| [Rings and cloaks of protection](#rings-and-cloaks-of-protection) | two rings don't add up, a ring gives no AC with magical armour, a cloak does nothing with magical or metal armour or a shield |
-| [Half-giants' two-handed weapons](#half-giants-two-handed-weapons) | a half-giant wields a two-handed weapon in one hand |
 | [Spells saved against with the spell save](#spells-saved-against-with-the-spell-save) | the spell save rather than petrification/polymorph |
 | [Fire, cold and electricity: DEX instead of a doubled d20](#fire-cold-and-electricity-dex-instead-of-a-doubled-d20) | DEX's defensive adjustment on those saves rather than a doubled d20 |
-| [Cat's Grace](#cats-grace) | a new spell in Flaming Sphere's place: DEX + 1d6 |
-| [Levels up to 10](#levels-up-to-10) | every class goes to 10th level (the game stops at 9) |
+| [Two weapons: AD&D's penalties](#two-weapons-adds-penalties) | -2 main hand, -4 off hand, DEX's reaction adjustment added; rangers none |
 | [Thief skills from AD&D's table](#thief-skills-from-adds-table) | AD&D's table by level, with Dark Sun's race and DEX adjustments |
 | [Hiding in shadows to backstab](#hiding-in-shadows-to-backstab) | thieves hide and move silently to backstab, rangers to attack from behind; a worn cloak, boots and belt help |
-
-### Helms give AC 1
-
-The game's helms count as armour but give AC 0. With **Helms give AC 1**
-ticked they give 1: the plain leather Helm, Dapartea's Helm, the metal Helm of
-Contemplation and the Helm of Might (item types 5, 89 and 109, all at AC 0 in
-the game's tables). It shows on the View Character and inventory screens like
-any armour.
-
-(The items' names and how it works: under [boots](#boots-give-a-move-in-a-fight), next.)
-
-### Boots give a move in a fight
-
-With **Boots give 1 more move in a fight** ticked, whoever wears boots
-(Leather Boots, Serpent Boots: anything on the feet) gets 1 more move each
-round of a fight (13 rather than 12, say; Haste and Slow still double and
-halve it). The game sets each round's movement when it rolls initiative, so
-boots put on mid-fight count from the next round. The Characters tab shows it:
-`Move: 12 (13 in a fight: boots)`.
-
-The game has no descriptions of items, only their names, so while the helms'
-or boots' rule is on the Ledger names the items for it: **Helm (AC 1)** and
-**Boots (Speed+1)**, as the inventory screen and the Characters tab show them
-("Speed", as `Move +10` in a boots' item box is moving silently). (Dapartea's
-Helm, Helm/Contempltn, Helm of Might and Serpent Boots get the rule too, but
-keep their names: with the note they'd be too long for the game's Look box.)
-With the rule off they're the game's own names again. (Like the Ring of
-Protection's, the names are in the game's name table, which it reads afresh
-each time it starts and a game is loaded; without the Ledger they're the
-game's own.)
-
-How: the helper sets the helm types' AC as the game's AC routine reads it
-(`INT F8h`, the Ring +1's place), and adds the move where the game sets a
-round's movement, Move x 10 (`INT FBh`).
-
-### Two weapons: AD&D's penalties
-
-With two melee weapons ready, a character who isn't a ranger attacks at -2
-with the main (right) hand and -4 with the off (left) hand, and the DEX
-reaction adjustment is added: -6 at DEX 1, -4 at 2, -3 at 3, -2 at 4, -1 at 5,
-none for 6-15, +1 at 16, +2 at 17-18, +3 at 19-20, +4 at 21-23 and +5 at
-24-25. It can lessen the penalty to 0 but never make it a bonus, and low DEX
-makes it worse: DEX 17 is 0 and -2, DEX 21 0 and 0, DEX 3 -5 and -7. Rangers
-have no penalty (in any armour). It takes a melee weapon in each hand: one
-weapon, a two-handed weapon, a weapon and a shield, or a weapon and a bow or
-sling (the missile slot) have no penalty. The game's own rule, a small bonus
-at DEX 5 or less, is gone. The dice log names it (`-4 two weapons, off hand at
-DEX 15`), as do the THAC0 lines on the Characters tab and the inventory
-screen.
-
-How: the game reads the attacker's DEX adjustment when it works out the
-two-weapon adjustment; the helper takes over from there (`INT FEh`) and gives
-AD&D's for the hand the attack's weapon is in.
-
-(More in [Two weapons](#two-weapons).)
-
-### Rings and cloaks of protection
-
-The game has no rings or cloaks of protection; the Ledger adds three (the
-arena's [Ring +1](#the-ring-1), and Pehtucl's ring and cloak, see
-[the slave pens' gear](#the-slave-pens-gear)), each +1 to AC and +1 on every
-saving throw. With **Rings and cloaks of protection as in AD&D** ticked, they
-follow the AD&D rules for them:
-
-- **Two rings don't add up:** only the better one counts (the left hand's,
-  if they're equal). The arena's ring and Pehtucl's, both +1, give +1 together,
-  not +2.
-- **A ring gives no AC with magical armour** (any worn armour piece, helm
-  included, with a plus), but still adds to saving throws.
-- **A cloak does nothing,** neither AC nor saves, with magical armour, with
-  metal armour (Chain, Grey's Scale, Tanelyv's Armor, the Helm of
-  Contemplation) or with a shield in either hand. Natural armour is fine:
-  leather and bone (Ring, Brigandine and Scale are bone in Dark Sun), and
-  plain helms. The cloak still adds to a ring.
-
-Armour here is what is worn on the arms, legs, head or chest; something only
-carried in a backpack doesn't count. Untick it and every ring and cloak worn
-counts, whatever else is worn (the game's way with the patched game).
-
-The dice log's saving throws name each: `+1 Ring of Protection +1 Cloak of
-Protection`, and its attack lines show the AC that results (`target AC`).
-
-How: where the game's AC routine asks the helper about each worn item
-(`INT F8h`) and where it starts a saving throw's modifiers (`INT F9h`), the
-helper looks at what else the character wears.
-
-### Half-giants' two-handed weapons
-
-Half-giants stand up to twelve feet tall. With **Half-giants wield
-two-handed weapons in one hand** ticked, a half-giant can hold a two-handed
-weapon (a two-handed sword, a halberd, a bow) in one hand, with a shield or a
-light weapon in the other. The game's own rule that the two hands can't both
-hold heavy weapons (over 30 in weight each) still stands, so no half-giant
-holds two two-handed weapons. With two weapons ready, the two-weapon penalties
-apply as for anyone. The inventory screen still writes "2 handed" in the
-weapon's line: that is its kind, not a limit.
-
-How: the inventory screen checks a weapon type's two-handed bit (+0Fh, 40h)
-twice when something goes into a hand: the other hand's ("Two handed weapon in
-use") and the one going in ("Need two free hands"). The helper (`INT E3h`)
-answers both for the character on show, "not two-handed" for a half-giant.
+| [Levels up to 10](#levels-up-to-10) | every class goes to 10th level (the game stops at 9) |
+| [Rings and cloaks of protection](#rings-and-cloaks-of-protection) | two rings don't add up, a ring gives no AC with magical armour, a cloak does nothing with magical or metal armour or a shield |
+| [Half-giants' two-handed weapons](#half-giants-two-handed-weapons) | a half-giant wields a two-handed weapon in one hand |
+| [Cat's Grace](#cats-grace) | a new spell in Flaming Sphere's place: DEX + 1d6 |
+| [Helms give AC 1](#helms-give-ac-1) | the game's helms give AC 1 rather than 0 |
+| [Boots give movement in a fight](#boots-give-movement-in-a-fight) | whoever wears boots gets 1 more move each round of a fight |
 
 ### Spells saved against with the spell save
 
@@ -1511,113 +1410,26 @@ table.
 
 (More in [Spells and effects](#spells-and-effects).)
 
-### Cat's Grace
+### Two weapons: AD&D's penalties
 
-A new spell, in Flaming Sphere's place: a level 2 wizard spell from AD&D's
-*Spells & Magic*, made to work exactly as the game's Strength does, for DEX:
-the caster touches someone, whose DEX goes up by 1d6 (at most 24) for 60
-rounds per caster level. Everything that reads DEX follows it while it lasts:
-AC, initiative, REAC and DEF, thief skills, the two-weapon penalties and the
-saves against fire, cold and electricity. The log says what it rolled: `Cat's
-Grace: 1d6 = 4 -> Gerakis's DEX +4 while it lasts (at most 24)`.
+With two melee weapons ready, a character who isn't a ranger attacks at -2
+with the main (right) hand and -4 with the off (left) hand, and the DEX
+reaction adjustment is added: -6 at DEX 1, -4 at 2, -3 at 3, -2 at 4, -1 at 5,
+none for 6-15, +1 at 16, +2 at 17-18, +3 at 19-20, +4 at 21-23 and +5 at
+24-25. It can lessen the penalty to 0 but never make it a bonus, and low DEX
+makes it worse: DEX 17 is 0 and -2, DEX 21 0 and 0, DEX 3 -5 and -7. Rangers
+have no penalty (in any armour). It takes a melee weapon in each hand: one
+weapon, a two-handed weapon, a weapon and a shield, or a weapon and a bow or
+sling (the missile slot) have no penalty. The game's own rule, a small bonus
+at DEX 5 or less, is gone. The dice log names it (`-4 two weapons, off hand at
+DEX 15`), as do the THAC0 lines on the Characters tab and the inventory
+screen.
 
-The game has no room for a new spell (wizard spells are numbers 1-68, every
-one taken), so Cat's Grace takes the place of Flaming Sphere, the weakest
-level 2 spell: 2d4 fire damage once, whatever the caster's level. While the
-box is ticked (it is by default), every character and monster who would cast
-Flaming Sphere casts Cat's Grace instead, under that name on the USE screen,
-with an icon of its own (Strength's tile in a tawny cat's golds, a cat's paw
-print in the game's dark line) and its own description in the box a right-click
-on it opens; untick it and Flaming Sphere is back.
+How: the game reads the attacker's DEX adjustment when it works out the
+two-weapon adjustment; the helper takes over from there (`INT FEh`) and gives
+AD&D's for the hand the attack's weapon is in.
 
-![Cat's Grace on the USE screen: its icon, and its description](docs/catsgrace.png)
-
-How: the Ledger gives Flaming Sphere (spell 14) Strength's record (range,
-duration, whom it can be cast on) and the name, in the game's memory. The
-helper sends it to Strength's own code (`INT EDh`), which rolls the 1d6;
-gives it an effect of its own (`INT EEh`: number 54, which the game leaves
-unused) holding the roll; and, in the routine that works out a creature's
-abilities from its own scores and its effects, adds that to DEX the way
-Strength's adds to STR (`INT EFh`). When the spell runs out, the game works
-the abilities out again without it. A game saved while Cat's Grace lasts and
-loaded without the dice log simply ignores the effect it doesn't know.
-On the Effects screen, Cat's Grace shows as the game's own effects do: its icon
-(the cat's paw), and its name on the bar below when the pointer is over it.
-The game's table of effects (6 bytes each, from the load segment + 3F8Dh: a far
-pointer to the name, then the icon) has an empty name and no icon for 54, and
-the screen shows only effects with an icon; with the rule on, the Ledger gives
-54 Flaming Sphere's icon (21014, read as Cat's Grace's) and the spell's name.
-
-![The Effects screen: Cat's Grace's paw, and its name below](docs/cats-grace-effect.png)
-
-On that screen the game ends an effect whose icon is clicked. With the Ledger's
-copy of the game, a spell's effect is left on (two jumps in the screen's click
-handler, DSUN.EXE 7F226h and 7F236h, go to its way out instead of to the
-routine ending an effect); a psionic power's can still be stopped there, since
-maintaining it costs PSP.
-The description: the game reads a spell's text from RESOURCE.GFF (chunk SPIN,
-the spell's number + 1) into a buffer for the box; after the read
-(`INT E2h`) the helper puts Cat's Grace's in, in the game's words for
-Strength's. The icon: the launcher writes `dos\RESOURCE.GFF`, the game's file
-(only read) with the icon added (number 21900), which the helper has the game
-open in place of its own (as `SEGOBJEX.GFF`, see [Item icons](#item-icons));
-where the game's two routines that read a chunk begin (`INT E1h`), the helper
-has Flaming Sphere's icon (21014) read as that one.
-
-### Levels up to 10
-
-The game stops every class at level 9 (its manual's tables end there too).
-With **Class levels go up to 10** ticked, each class goes one level further,
-at the XP AD&D gives for 10th level:
-
-| Class | XP for 10th level |
-|---|---|
-| Cleric | 450,000 |
-| Druid | 125,000 |
-| Fighter, gladiator | 500,000 |
-| Preserver | 250,000 |
-| Psionicist | 400,000 |
-| Ranger | 600,000 |
-| Thief | 160,000 |
-
-Everything else at 10th level is the game's own: it had it all along, and
-only the cap kept it out of reach. Its XP tables (DSUN.EXE 3E5A4h, in
-hundreds of XP) go on to level 20 (druids
-with a table of their own, not the cleric's), and THAC0, saves, spell slots
-and thief skills are worked out from the level. So at 10th level:
-
-- **Hit points** follow AD&D past 9th: preservers and thieves still roll
-  (d4 and d6, CON's bonus counting too), while the others gain a fixed amount
-  (+3 for fighters, gladiators and rangers, +2 for clerics, druids and
-  psionicists). The game's own table has the fixed gain for thieves too, as
-  it keeps thieves and psionicists together and AD&D's psionicist stops
-  rolling at 9th; with the rule the helper gives thieves their 10th die
-  (`INT E6h`, and `INT E5h` where CON's bonus is counted).
-- **Gladiators** optimise their armour, as the game already has them do:
-  AC 1 better for every 5 gladiator levels, so -2 at 10th where it was -1.
-  (The Ledger counts it in **AC: spells, rings, other**. The game gives it
-  with or without armour.)
-- **THAC0 and saves** improve as the game's formulas give: 11 for a
-  gladiator, 14 for a druid, as for AD&D's warriors and priests.
-- **Spell slots** grow at the levels casters already have, up to 5th; no
-  class gets 6th-level slots (a cleric would at 11, a preserver at 12), so no
-  spells past 5th level are needed. A 10th-level preserver or druid has
-  5 4 3 2 2 before WIS.
-- **A preserver picks a new spell** on the game's own CHOOSE A SPELL screen,
-  as at every level, offered from spell level (class level + 1) / 2 down:
-  5th at 10th as at 9th. **A psionicist picks a new power** (the game gives
-  one at each level, two at odd levels and 4th).
-- Spell damage that grows with the caster's level already counts up to
-  level 10 in the game, so a 10th-level caster gets the last step.
-
-The level-up comes as the game's usual one ("Gerakis gains a level"), and
-View Character stops showing the XP for the next level at 10, as it does at
-9 without the rule. Untick it and nobody goes past the level they have: a
-10th-level character stays 10th.
-
-How: the game holds a class level against 9 in two places, where a character
-goes up a level and where View Character shows the XP for the next one; the
-helper (`INT E7h`) holds it against 10 instead while the rule is on.
+(More in [Two weapons](#two-weapons).)
 
 ### Thief skills from AD&D's table
 
@@ -1748,6 +1560,194 @@ helper, which, where the game has just worked out whether an attack is from
 behind and a backstab (`INT EAh`), makes the hidden thief's next one so, by
 the game's own conditions for a backstab (a thief, in melee, a weapon of
 weight 40 or less).
+
+### Levels up to 10
+
+The game stops every class at level 9 (its manual's tables end there too).
+With **Class levels go up to 10** ticked, each class goes one level further,
+at the XP AD&D gives for 10th level:
+
+| Class | XP for 10th level |
+|---|---|
+| Cleric | 450,000 |
+| Druid | 125,000 |
+| Fighter, gladiator | 500,000 |
+| Preserver | 250,000 |
+| Psionicist | 400,000 |
+| Ranger | 600,000 |
+| Thief | 160,000 |
+
+Everything else at 10th level is the game's own: it had it all along, and
+only the cap kept it out of reach. Its XP tables (DSUN.EXE 3E5A4h, in
+hundreds of XP) go on to level 20 (druids
+with a table of their own, not the cleric's), and THAC0, saves, spell slots
+and thief skills are worked out from the level. So at 10th level:
+
+- **Hit points** follow AD&D past 9th: preservers and thieves still roll
+  (d4 and d6, CON's bonus counting too), while the others gain a fixed amount
+  (+3 for fighters, gladiators and rangers, +2 for clerics, druids and
+  psionicists). The game's own table has the fixed gain for thieves too, as
+  it keeps thieves and psionicists together and AD&D's psionicist stops
+  rolling at 9th; with the rule the helper gives thieves their 10th die
+  (`INT E6h`, and `INT E5h` where CON's bonus is counted).
+- **Gladiators** optimise their armour, as the game already has them do:
+  AC 1 better for every 5 gladiator levels, so -2 at 10th where it was -1.
+  (The Ledger counts it in **AC: spells, rings, other**. The game gives it
+  with or without armour.)
+- **THAC0 and saves** improve as the game's formulas give: 11 for a
+  gladiator, 14 for a druid, as for AD&D's warriors and priests.
+- **Spell slots** grow at the levels casters already have, up to 5th; no
+  class gets 6th-level slots (a cleric would at 11, a preserver at 12), so no
+  spells past 5th level are needed. A 10th-level preserver or druid has
+  5 4 3 2 2 before WIS.
+- **A preserver picks a new spell** on the game's own CHOOSE A SPELL screen,
+  as at every level, offered from spell level (class level + 1) / 2 down:
+  5th at 10th as at 9th. **A psionicist picks a new power** (the game gives
+  one at each level, two at odd levels and 4th).
+- Spell damage that grows with the caster's level already counts up to
+  level 10 in the game, so a 10th-level caster gets the last step.
+
+The level-up comes as the game's usual one ("Gerakis gains a level"), and
+View Character stops showing the XP for the next level at 10, as it does at
+9 without the rule. Untick it and nobody goes past the level they have: a
+10th-level character stays 10th.
+
+How: the game holds a class level against 9 in two places, where a character
+goes up a level and where View Character shows the XP for the next one; the
+helper (`INT E7h`) holds it against 10 instead while the rule is on.
+
+### Rings and cloaks of protection
+
+The game has no rings or cloaks of protection; the Ledger adds three (the
+arena's [Ring +1](#the-ring-1), and Pehtucl's ring and cloak, see
+[the slave pens' gear](#the-slave-pens-gear)), each +1 to AC and +1 on every
+saving throw. With **Rings and cloaks of protection as in AD&D** ticked, they
+follow the AD&D rules for them:
+
+- **Two rings don't add up:** only the better one counts (the left hand's,
+  if they're equal). The arena's ring and Pehtucl's, both +1, give +1 together,
+  not +2.
+- **A ring gives no AC with magical armour** (any worn armour piece, helm
+  included, with a plus), but still adds to saving throws.
+- **A cloak does nothing,** neither AC nor saves, with magical armour, with
+  metal armour (Chain, Grey's Scale, Tanelyv's Armor, the Helm of
+  Contemplation) or with a shield in either hand. Natural armour is fine:
+  leather and bone (Ring, Brigandine and Scale are bone in Dark Sun), and
+  plain helms. The cloak still adds to a ring.
+
+Armour here is what is worn on the arms, legs, head or chest; something only
+carried in a backpack doesn't count. Untick it and every ring and cloak worn
+counts, whatever else is worn (the game's way with the patched game).
+
+The dice log's saving throws name each: `+1 Ring of Protection +1 Cloak of
+Protection`, and its attack lines show the AC that results (`target AC`).
+
+How: where the game's AC routine asks the helper about each worn item
+(`INT F8h`) and where it starts a saving throw's modifiers (`INT F9h`), the
+helper looks at what else the character wears.
+
+### Half-giants' two-handed weapons
+
+Half-giants stand up to twelve feet tall. With **Half-giants wield
+two-handed weapons in one hand** ticked, a half-giant can hold a two-handed
+weapon (a two-handed sword, a halberd, a bow) in one hand, with a shield or a
+light weapon in the other. The game's own rule that the two hands can't both
+hold heavy weapons (over 30 in weight each) still stands, so no half-giant
+holds two two-handed weapons. With two weapons ready, the two-weapon penalties
+apply as for anyone. The inventory screen still writes "2 handed" in the
+weapon's line: that is its kind, not a limit.
+
+How: the inventory screen checks a weapon type's two-handed bit (+0Fh, 40h)
+twice when something goes into a hand: the other hand's ("Two handed weapon in
+use") and the one going in ("Need two free hands"). The helper (`INT E3h`)
+answers both for the character on show, "not two-handed" for a half-giant.
+
+### Cat's Grace
+
+A new spell, in Flaming Sphere's place: a level 2 wizard spell from AD&D's
+*Spells & Magic*, made to work exactly as the game's Strength does, for DEX:
+the caster touches someone, whose DEX goes up by 1d6 (at most 24) for 60
+rounds per caster level. Everything that reads DEX follows it while it lasts:
+AC, initiative, REAC and DEF, thief skills, the two-weapon penalties and the
+saves against fire, cold and electricity. The log says what it rolled: `Cat's
+Grace: 1d6 = 4 -> Gerakis's DEX +4 while it lasts (at most 24)`.
+
+The game has no room for a new spell (wizard spells are numbers 1-68, every
+one taken), so Cat's Grace takes the place of Flaming Sphere, the weakest
+level 2 spell: 2d4 fire damage once, whatever the caster's level. While the
+box is ticked (it is by default), every character and monster who would cast
+Flaming Sphere casts Cat's Grace instead, under that name on the USE screen,
+with an icon of its own (Strength's tile in a tawny cat's golds, a cat's paw
+print in the game's dark line) and its own description in the box a right-click
+on it opens; untick it and Flaming Sphere is back.
+
+![Cat's Grace on the USE screen: its icon, and its description](docs/catsgrace.png)
+
+How: the Ledger gives Flaming Sphere (spell 14) Strength's record (range,
+duration, whom it can be cast on) and the name, in the game's memory. The
+helper sends it to Strength's own code (`INT EDh`), which rolls the 1d6;
+gives it an effect of its own (`INT EEh`: number 54, which the game leaves
+unused) holding the roll; and, in the routine that works out a creature's
+abilities from its own scores and its effects, adds that to DEX the way
+Strength's adds to STR (`INT EFh`). When the spell runs out, the game works
+the abilities out again without it. A game saved while Cat's Grace lasts and
+loaded without the dice log simply ignores the effect it doesn't know.
+On the Effects screen, Cat's Grace shows as the game's own effects do: its icon
+(the cat's paw), and its name on the bar below when the pointer is over it.
+The game's table of effects (6 bytes each, from the load segment + 3F8Dh: a far
+pointer to the name, then the icon) has an empty name and no icon for 54, and
+the screen shows only effects with an icon; with the rule on, the Ledger gives
+54 Flaming Sphere's icon (21014, read as Cat's Grace's) and the spell's name.
+
+![The Effects screen: Cat's Grace's paw, and its name below](docs/cats-grace-effect.png)
+
+On that screen the game ends an effect whose icon is clicked. With the Ledger's
+copy of the game, a spell's effect is left on (two jumps in the screen's click
+handler, DSUN.EXE 7F226h and 7F236h, go to its way out instead of to the
+routine ending an effect); a psionic power's can still be stopped there, since
+maintaining it costs PSP.
+The description: the game reads a spell's text from RESOURCE.GFF (chunk SPIN,
+the spell's number + 1) into a buffer for the box; after the read
+(`INT E2h`) the helper puts Cat's Grace's in, in the game's words for
+Strength's. The icon: the launcher writes `dos\RESOURCE.GFF`, the game's file
+(only read) with the icon added (number 21900), which the helper has the game
+open in place of its own (as `SEGOBJEX.GFF`, see [Item icons](#item-icons));
+where the game's two routines that read a chunk begin (`INT E1h`), the helper
+has Flaming Sphere's icon (21014) read as that one.
+
+### Helms give AC 1
+
+The game's helms count as armour but give AC 0. With **Helms give AC 1**
+ticked they give 1: the plain leather Helm, Dapartea's Helm, the metal Helm of
+Contemplation and the Helm of Might (item types 5, 89 and 109, all at AC 0 in
+the game's tables). It shows on the View Character and inventory screens like
+any armour.
+
+(The items' names and how it works: under [boots](#boots-give-movement-in-a-fight), next.)
+
+### Boots give movement in a fight
+
+With **Boots give 1 more move in a fight** ticked, whoever wears boots
+(Leather Boots, Serpent Boots: anything on the feet) gets 1 more move each
+round of a fight (13 rather than 12, say; Haste and Slow still double and
+halve it). The game sets each round's movement when it rolls initiative, so
+boots put on mid-fight count from the next round. The Characters tab shows it:
+`Move: 12 (13 in a fight: boots)`.
+
+The game has no descriptions of items, only their names, so while the helms'
+or boots' rule is on the Ledger names the items for it: **Helm (AC 1)** and
+**Boots (Speed+1)**, as the inventory screen and the Characters tab show them
+("Speed", as `Move +10` in a boots' item box is moving silently). (Dapartea's
+Helm, Helm/Contempltn, Helm of Might and Serpent Boots get the rule too, but
+keep their names: with the note they'd be too long for the game's Look box.)
+With the rule off they're the game's own names again. (Like the Ring of
+Protection's, the names are in the game's name table, which it reads afresh
+each time it starts and a game is loaded; without the Ledger they're the
+game's own.)
+
+How: the helper sets the helm types' AC as the game's AC routine reads it
+(`INT F8h`, the Ring +1's place), and adds the move where the game sets a
+round's movement, Move x 10 (`INT FBh`).
 
 ## New content
 
