@@ -20,6 +20,9 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
 - **Cloaks and boots say what they do:** with the cloak and boots bonuses on,
   their item box says `Hide +10` or `Move +10` under the name (the skills'
   short names, as the inventory screen's thief rows have them).
+- **Boots are named "Boots (Speed+1)"** for the boots rule (were "Boots (+1
+  Move)"), so their extra move in a fight isn't mistaken for the item box's
+  `Move +10` (moving silently).
 - **Plain cloaks, boots and belts cost 24** (the Leather Cloak was 20); magic
   ones keep their prices.
 

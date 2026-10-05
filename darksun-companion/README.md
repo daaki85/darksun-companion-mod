@@ -1331,7 +1331,7 @@ at once.
   Characters tab shows it: `Move: 12 (13 in a fight: boots)`.
 
 The game has no descriptions of items, only their names, so while a rule is on
-the Ledger names the items for it: **Helm (AC 1)** and **Boots (+1 Move)**, as
+the Ledger names the items for it: **Helm (AC 1)** and **Boots (Speed+1)**, as
 the inventory screen and the Characters tab show them. (Dapartea's Helm,
 Helm/Contempltn, Helm of Might and Serpent Boots get the rule too, but keep
 their names: with the note they'd be too long for the game's Look box.) With the rule off they're the game's own names again. (Like the

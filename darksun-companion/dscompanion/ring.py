@@ -51,7 +51,9 @@ NAME_FIT = 15
 # no description of an item, only its name): entry, the game's own name, rule, what it gives
 RULE_NAMES = ((6, "Helm", game.RULE_HELMS, " (AC 1)"), (145, "Dapartea's Helm", game.RULE_HELMS, " (AC 1)"),
               (107, "Helm/Contempltn", game.RULE_HELMS, " (AC 1)"), (236, "Helm of Might", game.RULE_HELMS, " (AC 1)"),
-              (43, "Boots", game.RULE_BOOTS, " (+1 Move)"), (286, "Serpent Boots", game.RULE_BOOTS, " (+1 Move)"))
+              (43, "Boots", game.RULE_BOOTS, " (Speed+1)"), (286, "Serpent Boots", game.RULE_BOOTS, " (Speed+1)"))
+# what earlier versions named them ("Move" now names moving silently in the boots' item box)
+OLD_EXTRAS = (" (+1 Move)",)
 # the game's own record for a Ring (from SEGOBJEX), not worn (slot 255), with a plus of 1
 VALUE = 5000  # its price (the game's Ring's 500, made a magic ring's)
 RING = bytes.fromhex("1cfa0000" "0f27") + struct.pack("<H", VALUE) + bytes.fromhex("0f27" "6600" "00000000" "06" "ff") + \
@@ -122,7 +124,7 @@ def name_items(gd: GameData, rules: int) -> None:
     for entry, own, rule, extra in RULE_NAMES:
         at = table + entry * game.ITEM_NAME_SIZE
         text = gd.guest.read(at, game.ITEM_NAME_SIZE).split(b"\0", 1)[0].decode("cp437", "replace")
-        if text not in (own, own + extra):
+        if text not in (own, own + extra) + tuple(own + old for old in OLD_EXTRAS):
             continue
         want = own + extra if rules & rule and len(own + extra) <= NAME_FIT else own
         if text != want:
