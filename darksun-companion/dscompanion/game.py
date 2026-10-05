@@ -49,7 +49,7 @@ CREATURE_NAME = 0x28
 # important active effect instead of "Okay")
 CREATURE_STATUS = 0x1C
 OUT_COLD = 3
-STATUS_NAMES = {1: "Okay", 2: "Stunned", 3: "Out Cold", 4: "Dying", 5: "Dead", 6: "Animated",
+STATUS_NAMES = {0: "New", 1: "Okay", 2: "Stunned", 3: "Out Cold", 4: "Dying", 5: "Dead", 6: "Animated",
                 7: "Petrified", 8: "Gone"}
 PARTY_SIZE = 4  # the party are the first creatures in the table
 
@@ -564,6 +564,8 @@ THIEF_BLOCKED = {8: (0, 1, 2, 3, 4, 6, 7), 17: tuple(range(8)), 11: tuple(range(
                  34: tuple(range(8)), 47: (1, 2, 3, 4, 5, 6, 7), 20: (0, 4), 25: (4,), 49: (0, 1, 6), 19: (7,)}
 THIEF_CERTAIN = {14: (2,), 23: (4,)}  # Detect Traps, Invisible
 STATUS_OKAY = 1
+STATUS_NEW = 0  # not yet played (the game makes it Okay when the game starts)
+STATUS_ABLE = (STATUS_NEW, STATUS_OKAY)  # counted as Okay (the patched game's NEW_AS_OKAY)
 
 
 # The spell's damage kinds (its flags word): the saving throw doubles the d20 against fire,
@@ -1169,7 +1171,7 @@ class GameData:
         ids = {e.id for e in self._mine(creature, self.effects())}
         if any(skill in THIEF_CERTAIN.get(e, ()) for e in ids):
             return 100
-        if self.creature(creature)[CREATURE_STATUS] != STATUS_OKAY or any(skill in THIEF_BLOCKED.get(e, ()) for e in ids):
+        if self.creature(creature)[CREATURE_STATUS] not in STATUS_ABLE or any(skill in THIEF_BLOCKED.get(e, ()) for e in ids):
             return 0
         return max(0, min(255, sum(n for _, n in parts)))
 
@@ -1181,7 +1183,7 @@ class GameData:
 
     def thief_skills_now(self, creature: int, skills: Tuple[int, ...] = ROLLED_SKILLS) -> List[Tuple[str, int]]:
         """[(skill, chance), ...] for the skills the game rolls, as they stand now: with the
-        equipment penalty, a worn belt's bonus (BELT_IN_FORCE), 0 for a skill an effect rules out (or when the thief isn't Okay), 100
+        equipment penalty, a worn belt's bonus (BELT_IN_FORCE), 0 for a skill an effect rules out (or when the thief isn't Okay or New), 100
         for one an effect makes certain. Not the situation's bonus (a hard lock...). [] for
         someone without thief levels. `skills`: which (numbers in THIEF_SKILLS)."""
         rec = self.creature(creature)
@@ -1191,7 +1193,7 @@ class GameData:
         slots = self.thief_penalty_slots()
         penalty = any(item[ITEM_SLOT] in slots for _, item, _ in self._worn(creature))
         ids = {e.id for e in self._mine(creature, self.effects())}
-        okay = rec[CREATURE_STATUS] == STATUS_OKAY
+        okay = rec[CREATURE_STATUS] in STATUS_ABLE
         belt = self.belt and any(item[ITEM_SLOT] == WAIST for _, item, _ in self._worn(creature))
         out = []
         for skill in skills:

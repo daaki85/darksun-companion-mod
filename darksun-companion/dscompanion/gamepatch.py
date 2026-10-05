@@ -64,6 +64,26 @@ def _interrupt(vector: int, length: int) -> bytes:
     return bytes((0xCD, vector)) + b"\x90" * (length - 2)
 
 
+# "New" counted as "Okay": a character not yet played has the status New (0, the creature's
+# +1Ch; the game makes it Okay, 1, when the game starts, and gives starting gear to a New one).
+# The game's tests for Okay ("cmp byte es:[bx+1Ch],1" then "jz" or "jnz", on the creature table's
+# record) left a New one out: the inventory screen's thief skills all 0, for one. Each test's
+# jump becomes "jbe" or "ja" (0 or 1, as Okay); the tests for New itself, and the code that
+# makes one Okay (DSUN.EXE 59DA4h, healing), are left as they are, and so is the one that
+# picks the status shown under the portrait (71DB6h): a New character still reads "New".
+NEW_AS_OKAY = ((0x1C97F, 0x75), (0x1DE08, 0x75), (0x1E0C5, 0x75), (0x1EBB3, 0x75), (0x200F7, 0x74),
+               (0x2075C, 0x74), (0x20B0F, 0x74), (0x556A9, 0x74), (0x5747B, 0x74), (0x583EA, 0x75),
+               (0x5843F, 0x74), (0x584A4, 0x75), (0x5850E, 0x74), (0x586C7, 0x74), (0x58809, 0x75),
+               (0x59E35, 0x75), (0x5A73F, 0x75), (0x5CA45, 0x75), (0x6B6D4, 0x75), (0x761F0, 0x74),
+               (0x802AC, 0x74), (0x806FA, 0x75), (0x80864, 0x74), (0x89B75, 0x75))
+_OKAY_TEST = bytes.fromhex("26807f1c01")  # cmp byte es:[bx+1Ch],1
+_OKAY_JUMPS = {0x74: 0x76, 0x75: 0x77}  # jz -> jbe, jnz -> ja
+
+
+def _new_as_okay(offset: int, jump: int) -> "Patch":
+    return Patch(f"new_okay_{offset:x}", offset, _OKAY_TEST + bytes((jump,)), _OKAY_TEST + bytes((_OKAY_JUMPS[jump],)))
+
+
 PATCHES = (
     # rand(): mov cx,[seed+2] / mov bx,... (the second instruction's first byte)
     Patch("rand", 0x5C22, bytes.fromhex("8b0e24418b"), _interrupt(VEC_RAND, 5)),
@@ -274,6 +294,7 @@ PATCHES = (
           bytes.fromhex("c706814b2e5c"  # mov word [4B81h], ".\"
                         "be834b"  # mov si, 4B83h
                         "eb14")),  # jmp to mov byte [si],0
+    *(_new_as_okay(offset, jump) for offset, jump in NEW_AS_OKAY),
 )
 
 

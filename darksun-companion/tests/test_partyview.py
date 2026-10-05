@@ -28,6 +28,7 @@ class CardTextTests(unittest.TestCase):
         self.assertEqual(partyview.classes_text(fields), "Fighter 2 / Druid 2")
 
     def test_status_names(self):
+        self.assertEqual(game.STATUS_NAMES[0], "New")
         self.assertEqual(game.STATUS_NAMES[1], "Okay")
         self.assertEqual(game.STATUS_NAMES[5], "Dead")
 

@@ -190,7 +190,8 @@ In [pull request #17](https://github.com/daaki85/darksun-companion-mod/pull/17)
   CHARACTERS and kept in the ADD window's roster.
 - **A bug of the game's own fixed:** DELETE in the character roster removed
   the wrong character when the list was scrolled down; now it removes the one
-  chosen.
+  chosen. And a New character (one not yet played) counts as Okay, so a new
+  thief's skills no longer show as 0 before the game starts.
 - **Options tab:** its sections open and close, and the rule changes come with
   the ones that change play most first.
 - **The Look box:** a monster's alignment, and its magic resistance beside its

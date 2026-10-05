@@ -1460,7 +1460,7 @@ class DiceLog:
             index = self.game.combatant_creature(combatant)
             rec = self.game.creature(index) if index is not None else b""
             if len(rec) > game.CREATURE_STATUS and struct.unpack_from("<h", rec, 0)[0] > 0 \
-                    and rec[game.CREATURE_STATUS] == game.STATUS_OKAY:
+                    and rec[game.CREATURE_STATUS] in game.STATUS_ABLE:
                 return combatant
         return None
 

@@ -770,7 +770,9 @@ two and the DEX part are AD&D's instead.
 Only characters with thief levels have the skills; everyone else's chance is 0.
 The character's condition must be Okay (the status the character screen shows
 under HP): a thief who is
-Stunned, Out Cold, Dying and so on can't use the skills.
+Stunned, Out Cold, Dying and so on can't use the skills. A character not yet
+played (New, before the game starts) counts as Okay, so a party's thief skills
+show while it is made (see [More characters](#more-characters)).
 
 Some effects rule out a skill:
 - Blind, Afraid, Confused, Berserk and Paralyzed stop them all, except that a
@@ -1237,7 +1239,7 @@ change.
   doubled d20 against fire...) is left out; the dice log shows it on each
   save. A 1 always fails and a 20 always saves, so they show between 2 and 20.
 - **Thief skills**: as they stand (with no equipment penalty in games started
-  with the dice log: see Thief skills), 0 for a skill an effect rules out or when the thief isn't Okay,
+  with the dice log: see Thief skills), 0 for a skill an effect rules out or when the thief isn't Okay (New counts as Okay),
   and 100 for one an effect makes certain (Detect Traps). Only the situation's
   bonus or penalty (a hard lock) is left out: the dice log shows it on each
   roll (see Thief skills).
@@ -2599,6 +2601,15 @@ The patched game also fixes a bug of the game's own: **DELETE** in the
 roster deleted the character in the row clicked counting from the top of the
 list, not from the top of what was shown. With the list scrolled down,
 another character was deleted. Now it deletes the one chosen.
+
+A character made with CREATE CHARACTERS is **New** until the game starts,
+when the game makes it Okay (and gives a New one the starting gear). The game's
+tests for Okay left New out, so a New thief's skills all showed 0 on the
+inventory screen, and the Ledger did the same. The patched game counts New as
+Okay wherever it tests for Okay, a jump each (`NEW_AS_OKAY` in
+`dscompanion/gamepatch.py`), and so does the Ledger. Left as they were: the
+status under the portrait still reads New, and the game still gives the
+starting gear and makes New characters Okay when the game starts.
 
 ## Game speed
 

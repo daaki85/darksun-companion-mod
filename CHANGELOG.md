@@ -96,6 +96,10 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
   row clicked counted from the top of the list, not of what was shown, so with
   the list scrolled down another character was deleted. The patched game adds
   how far the list is scrolled, as ADD does.
+- A character not yet played (New, before the game starts) counted as not Okay:
+  a New thief's skills all showed 0 on the inventory screen. The patched game
+  and the Ledger count New as Okay wherever they test for Okay; the status
+  still reads New, and the game still gives New characters their starting gear.
 - The Look box no longer shows an AC the Ledger worked out for another
   creature: the arena's first fight comes too soon after the opening one to
   tell them apart by the game's time, and a Slig showed the opening fight's

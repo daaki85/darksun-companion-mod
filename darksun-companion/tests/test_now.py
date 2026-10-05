@@ -133,6 +133,14 @@ class ThiefTests(unittest.TestCase):
         self.log.guest.mem[ITEMS + 6 * game.ITEM_SIZE + game.ITEM_SLOT] = 0xFF
         self.assertEqual(self.now(), [16, 39, 16, 16, 16, 16])
 
+    def test_new_counts_as_okay(self):
+        """A character not yet played (New) has its skills as when Okay; one Out Cold has 0."""
+        m = self.log.guest.mem
+        m[CREATURES + game.CREATURE_STATUS] = game.STATUS_NEW
+        self.assertEqual(self.now(), [11, 39, 16, 16, 16, 6])
+        m[CREATURES + game.CREATURE_STATUS] = game.OUT_COLD
+        self.assertEqual(self.now(), [0] * 6)
+
     def test_belt(self):
         """A worn belt (the waist slot) adds BELT_BONUS to picking pockets and opening locks, with
         its switch on (BELT_IN_FORCE); nothing else, and nothing carried in the pack."""
