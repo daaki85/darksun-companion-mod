@@ -46,6 +46,7 @@ VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL = 0xE0, 0xDF, 0xDE, 0x
 VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX = 0xDC, 0xDB, 0xDA
 VEC_BELT = 0xD9
 VEC_SAVE_PAGE, VEC_SAVE_CLICK = 0xD8, 0xD7
+VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR = 0xD6, 0xD5, 0xD4  # (item saves)
 
 
 SCRIPT_BUFFER = 0x2E00  # the scripts' buffer, made bigger (the game's: 10000 bytes)
@@ -240,6 +241,14 @@ PATCHES = (
     Patch("characters_joined", 0x6709F, bytes.fromhex("837efc14"), bytes((0x83, 0x7E, 0xFC, CHARACTERS + 1))),
     Patch("characters_count", 0x67CBF, bytes.fromhex("83fe14"), bytes((0x83, 0xFE, CHARACTERS + 1))),
     Patch("characters_full", 0x67CC9, bytes.fromhex("83ff13"), bytes((0x83, 0xFF, CHARACTERS))),
+    # Items saving against the acid and corroding touch (the game's special attacks 178, 186
+    # and 187): where the weapon's routine works out the number its d20 must reach, "mov dx,8 /
+    # sub dx,[bp-2]" (DSCLOG gives the easier of the game's and AD&D's, and records the check);
+    # where the armour's skips the roll for armour with no magical power, "cmp word [bp-2],0"
+    # (before its "jz"); and where it works out the number, "mov dx,0Ah / sub dx,[bp-2]"
+    Patch("item_weapon", 0x7AABC, bytes.fromhex("ba08002b56fe"), _interrupt(VEC_ITEM_WEAPON, 6)),
+    Patch("item_skip", 0x7AC45, bytes.fromhex("837efe00"), _interrupt(VEC_ITEM_SKIP, 4)),
+    Patch("item_armour", 0x7AC59, bytes.fromhex("ba0a002b56fe"), _interrupt(VEC_ITEM_ARMOUR, 6)),
     # A bug of the game's own: the roster's DELETE (DSUN.EXE 54AC1h) picked the character by the
     # row clicked alone, where ADD takes the row plus how far the list is scrolled; with the list
     # scrolled, another character was deleted (the row's from the top). The same code, the scroll

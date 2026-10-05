@@ -155,6 +155,8 @@ RANDOM_NAME_RETURNS = (bytes.fromhex("83c40448eb11"), bytes.fromhex("83c40405630
                        bytes.fromhex("83c40405c700eb"))
 
 KIND_ROLL, KIND_SAVE, KIND_AC = 0, 1, 2
+KIND_ITEM = 4  # DSCLOG's item save against acid (PROBE_ITEM_*): raw = d20 | needed << 8
+ITEM_ARMOUR = 0x8000  # (in the entry's extra, with the item)
 # How much each turn's pop-up in the game says (the Options' turn_popups_level)
 POPUP_DETAIL, POPUP_SHORT, POPUP_MINIMAL = "detail", "short", "minimal"
 POPUP_LEVELS = (POPUP_MINIMAL, POPUP_SHORT, POPUP_DETAIL)
@@ -1594,6 +1596,8 @@ class DiceLog:
             return self._save(e)
         if e.kind == KIND_AC:
             return self._ac(e, show_all)
+        if e.kind == KIND_ITEM:
+            return self._item_check(e)
         code = e.code
         if code.startswith(ATTACK_SITE):
             self._spell_until = 0.0
@@ -1939,6 +1943,38 @@ class DiceLog:
         return f"{text} ({base}{how}: {steps} at caster level {level}{cap})" if counted >= 0 else text
 
     # weapons breaking and levels ------------------------------------------------------
+
+    def _item_check(self, e: Entry) -> List[str]:
+        """An item the acid or corroding touch could destroy, after a failed save (DSCLOG's
+        PROBE_ITEM_*): the d20, the number it needed and whose number that was."""
+        roll, needed = e.raw & 0xFF, struct.unpack("b", bytes([e.raw >> 8 & 0xFF]))[0]
+        item, armour = e.extra & 0x7FFF, bool(e.extra & ITEM_ARMOUR)
+        g = self.game
+        save = g.item_save(item, armour)
+        target, attacker, attack = e.arg(6), e.parent_arg(8), e.parent_arg(0x0E)
+        who = self._name(target) if target is not None else "someone"
+        by = game.ITEM_ATTACKS.get(attack, "acid")
+        source = self._name(attacker) if attacker is not None else ""
+        by = f"{source}'s {by}" if source else by.capitalize()
+        name = save.name if save else ("armour" if armour else "weapon")
+        head = f"  {by} on {who}'s {name}"
+        if not roll:
+            return [f"{head}: no magical power, destroyed without a roll (the game's rule) -> CORRODED"]
+        corroded = roll < needed
+        why = ""
+        if save:
+            own = "destroyed without a roll" if save.own is None else (
+                f"{save.own}" if save.own > 1 else "safe whatever the roll")
+            adnd = f"{save.adnd} for {save.material}"
+            if g.rules & game.RULE_ITEM_SAVES:
+                if save.own is not None and needed == save.own and save.own <= save.adnd:
+                    why = f" (the game's; AD&D's: {adnd})"
+                else:
+                    why = f" (AD&D's, {adnd}; the game's: {own})"
+            else:
+                why = " (the game's)"
+        need = f"needs {needed}" if needed > 1 else "safe whatever the roll"
+        return [f"{head}: d20 = {roll}, {need}{why} -> {'CORRODED' if corroded else 'safe'}"]
 
     def _break_check(self, e: Entry, first: bool, show_all: bool) -> List[str]:
         """After an attack the game checks the weapon: non-magical wood, bone, stone and

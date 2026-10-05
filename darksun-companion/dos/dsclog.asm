@@ -68,6 +68,9 @@ VEC_ITEM_BOX equ 0xDA      ; PROBE_ITEM_BOX
 VEC_BELT equ 0xD9          ; PROBE_BELT
 VEC_SAVE_PAGE equ 0xD8     ; PROBE_SAVE_PAGE
 VEC_SAVE_CLICK equ 0xD7    ; PROBE_SAVE_CLICK
+VEC_ITEM_WEAPON equ 0xD6   ; PROBE_ITEM_WEAPON
+VEC_ITEM_SKIP equ 0xD5     ; PROBE_ITEM_SKIP
+VEC_ITEM_ARMOUR equ 0xD4   ; PROBE_ITEM_ARMOUR
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 128         ; entries in the ring
@@ -2447,6 +2450,163 @@ prot_scan:
         popad
         ret
 
+; ITEM SAVES. The game's acid and corroding touch (its special attacks 178, 186 and 187, the
+; Rampager's and the Babau's hits, after a failed save) can destroy an item (DSUN.EXE 7AA5Ah,
+; the first melee weapon held; 7ABC4h, the first worn arm, leg or chest piece that fails):
+; a weapon on a d20 under 8 less its plus; armour with no magical power (the item's +0Fh, as
+; the game's weapon breaking reads it) at once, without a roll, else on a d20 under 10 less
+; that byte. With RULE_ITEM_SAVES the item needs the lower (the easier) of the game's number
+; and AD&D's save against acid for its material (the DMG's table: wood 8, bone 11, metal 13,
+; leather 10, cloth 12; glass's 5 for stone and obsidian), less its plus, and 1 less again
+; for a magical power. Each check is recorded (kind KIND_ITEM: the d20 in the low byte, the
+; number needed in the high, 0 for none rolled; EXTRA the item, 8000h for armour).
+KIND_ITEM equ 4
+ITEM_ARMOUR equ 0x8000
+
+; PROBE_ITEM_WEAPON: INT VEC_ITEM_WEAPON replaces "mov dx,8 / sub dx,[bp-2]" (6 bytes: INT + 4
+; NOPs; DSUN.EXE 7AABCh), AX the d20, [BP-2] the weapon's plus, SI its entry in the list at
+; BP-324h (the item at BP-320h + SI*0Ah). DX: the number needed (a roll under it corrodes).
+probe_item_weapon:
+        push si
+        push ax
+        push bx
+        push cx
+        push di
+        mov dx, 8
+        sub dx, [bp-2]
+        mov di, si
+        imul di, di, 0x0A
+        mov bx, [bp+di-0x320]
+        test word [cs:rules], RULE_ITEM_SAVES
+        jz .log
+        call adnd_needed
+        cmp cx, dx
+        jge .log
+        mov dx, cx
+.log:   xor cx, cx                      ; (a weapon)
+        jmp item_record
+
+; PROBE_ITEM_SKIP: INT VEC_ITEM_SKIP replaces "cmp word [bp-2],0" (4 bytes: INT + 2 NOPs;
+; 7AC45h) before the game's "jz <destroyed>": [BP-2] the armour's magical power, SI its entry
+; in the list at BP-322h (the item at BP-31Eh + SI*0Ah). ZF as the game's (destroyed without a
+; roll, recorded so), or with RULE_ITEM_SAVES clear: it rolls.
+probe_item_skip:
+        push bp
+        mov bp, sp
+        and word [bp+6], ~0x40          ; (the flags IRET takes back)
+        pop bp
+        test word [cs:rules], RULE_ITEM_SAVES
+        jnz .roll
+        cmp word [bp-2], 0
+        jne .roll
+        push bp
+        mov bp, sp
+        or word [bp+6], 0x40
+        pop bp
+        push si
+        push ax
+        push bx
+        push cx
+        push di
+        mov di, si
+        imul di, di, 0x0A
+        mov bx, [bp+di-0x31E]
+        xor ax, ax                      ; no roll
+        mov dx, 21                      ; (any d20 is under it)
+        mov cx, ITEM_ARMOUR
+        jmp item_record
+.roll:  iret
+
+; PROBE_ITEM_ARMOUR: INT VEC_ITEM_ARMOUR replaces "mov dx,0Ah / sub dx,[bp-2]" (6 bytes: INT
+; + 4 NOPs; 7AC59h), AX the d20, [BP-2] the armour's magical power, SI as for PROBE_ITEM_SKIP.
+; DX: the number needed.
+probe_item_armour:
+        push si
+        push ax
+        push bx
+        push cx
+        push di
+        mov dx, 10
+        sub dx, [bp-2]
+        cmp word [bp-2], 0
+        jne .game
+        mov dx, 21                      ; (no power: the game's, destroyed whatever the roll)
+.game:  mov di, si
+        imul di, di, 0x0A
+        mov bx, [bp+di-0x31E]
+        test word [cs:rules], RULE_ITEM_SAVES
+        jz .log
+        call adnd_needed
+        cmp cx, dx
+        jge .log
+        mov dx, cx
+.log:   mov cx, ITEM_ARMOUR
+        ; (on into ITEM_RECORD)
+
+; ITEM_RECORD: (jumped to with SI, AX, BX, CX, DI pushed, in that order, on the INT's return
+; address) records the check: AL the d20 (0: none), DL the number needed, BX the item, CX
+; ITEM_ARMOUR or 0; then IRETs with those registers back and DX as given.
+item_record:
+        or cx, bx
+        mov [cs:extra], cx
+        mov ah, dl
+        mov si, sp
+        add si, 4                       ; (SS:SI+6: the INT's return address)
+        mov word [cs:kind], KIND_ITEM
+        call record
+        pop di
+        pop cx
+        pop bx
+        pop ax
+        pop si
+        iret
+
+; ADND_NEEDED: CX = AD&D's save against acid for item BX (DS the game's): its material's
+; number, less its plus, less 1 for a magical power. Keeps every other register.
+adnd_needed:
+        push ax
+        push bx
+        push di
+        push es
+        mov di, bx
+        les bx, [ITEMS]
+        imul ax, di, 0x15
+        add bx, ax
+        mov al, [es:bx+0x14]            ; its plus
+        cbw
+        mov cx, ax
+        cmp byte [es:bx+0x0F], 0
+        je .type
+        inc cx                          ; a magical power: one plus more
+.type:  mov ax, [es:bx+0x0A]
+        les bx, [ITEM_TYPES]
+        imul ax, ax, 0x14
+        add bx, ax
+        mov al, [es:bx+8]               ; its material (40h with 0: none, cloth)
+        mov ah, al
+        and al, 0x0F
+        test ah, 0x40
+        jz .known
+        or al, al
+        jnz .known
+        mov al, MATERIAL_CLOTH
+.known: cmp al, MATERIAL_CLOTH
+        jbe .look
+        mov al, MATERIAL_METAL          ; (no other is used)
+.look:  xor ah, ah
+        mov bx, ax
+        mov al, [cs:acid_saves+bx]
+        sub ax, cx
+        mov cx, ax
+        pop es
+        pop di
+        pop bx
+        pop ax
+        ret
+
+MATERIAL_CLOTH equ 6
+acid_saves db 8, 11, 5, 5, 13, 10, 12   ; wood, bone, stone, obsidian, metal, leather; cloth
+
 P_MAGIC_ARMOUR equ 1
 P_METAL_ARMOUR equ 2
 P_SHIELD       equ 4
@@ -2548,6 +2708,7 @@ RULE_LEVEL_10 equ 128          ; class levels go up to 10, not 9
 RULE_THIEF_TABLE equ 256        ; thief skills from AD&D's table and Dark Sun's DEX adjustments
 RULE_HALF_GIANT equ 512         ; half-giants wield two-handed weapons in one hand
 RULE_PROTECTION equ 1024        ; AD&D's rings and cloaks of protection (PROBE_RING_AC, RING_PLUS)
+RULE_ITEM_SAVES equ 2048        ; items save against acid as in AD&D where better (PROBE_ITEM_*)
 FOOT       equ 13               ; the item's slot byte while worn on the feet
 THINGS_SEG equ 0x3972 - 0x4356  ; the things table's segment, relative to DS
 
@@ -5551,6 +5712,15 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_SAVE_CLICK
         mov dx, probe_save_click
         int 21h
+        mov ax, 2500h + VEC_ITEM_WEAPON
+        mov dx, probe_item_weapon
+        int 21h
+        mov ax, 2500h + VEC_ITEM_SKIP
+        mov dx, probe_item_skip
+        int 21h
+        mov ax, 2500h + VEC_ITEM_ARMOUR
+        mov dx, probe_item_armour
+        int 21h
         mov ax, 3516h           ; the keyboard's (TARGETING)
         int 21h
         mov [old16], bx
@@ -5591,8 +5761,8 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or D7h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
-all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK
+busy    db 'DSCLOG: interrupts 60h-65h or D4h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR
 all_vectors_end:
 
         align 16, db 0

@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dscompanion.dicelog import FILTERS, HDR_SIG, Entry
 from dscompanion.textlog import TextBuffer
-from dscompanion.gamepatch import (VEC_AC, VEC_DOUBLE, VEC_MSG, VEC_NEXT, VEC_RAND, VEC_RING_AC, VEC_USE_ITEM,
+from dscompanion.gamepatch import (VEC_ITEM_ARMOUR, VEC_ITEM_SKIP, VEC_ITEM_WEAPON, VEC_AC, VEC_DOUBLE, VEC_MSG, VEC_NEXT, VEC_RAND, VEC_RING_AC, VEC_USE_ITEM,
                                   VEC_RING_SAVE, VEC_SAVE, VEC_TEXT, VEC_TWO, VEC_GRACE_CAST, VEC_GRACE_EFFECT,
                                   VEC_GRACE_ABILITY, VEC_NAMES_FILL, VEC_NAMES_SIZE, VEC_STEALTH, VEC_TYPES_FILL,
                                   VEC_TYPES_SIZE, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED,
@@ -662,6 +662,114 @@ class ProtectionRuleTests(RingTests):
             self.assertEqual(self.save(3), 1, (typ, slot, plus))
         self.wear(5, 57, 0xFF)  # only carried
         self.assertTrue(self.counts(7, self.CLOAK))
+
+
+@unittest.skipIf(Uc is None, "unicorn is not installed")
+class ItemSaveTests(unittest.TestCase):
+    """The acid's and corroding touch's item checks (PROBE_ITEM_*): the number a d20 needs, the
+    game's or (RULE_ITEM_SAVES) the easier of it and AD&D's, and each check recorded."""
+    ITEMS, TYPES = 0xA000, 0xB000
+    RULES = 170
+    # item: (type, material, plus, power)
+    GEAR = {4: (6, 5, 0, 0), 5: (57, 4, 0, 0), 6: (79, 5, 1, 89), 7: (81, 1, 0, 0), 8: (63, 4, 1, 0),
+            9: (17, 3, 0, 0), 10: (90, 0x40, 2, 0)}
+
+    def setUp(self):
+        image = load_image()
+        self.mu = mu = Uc(UC_ARCH_X86, UC_MODE_16)
+        mu.mem_map(0, 0x100000)
+        mu.mem_write(TSR * 16, image)
+        self.hdr_off = struct.unpack_from("<H", image, 20)[0]
+        self.ring = struct.unpack_from("<H", image, 16)[0]
+        for vec, head in ((VEC_ITEM_WEAPON, "5650535157ba08002b56fe"), (VEC_ITEM_ARMOUR, "5650535157ba0a002b56fe"),
+                          (VEC_ITEM_SKIP, "5589e5836606bf")):
+            at = image.find(bytes.fromhex(head))
+            self.assertGreater(at, 0, head)
+            mu.mem_write(vec * 4, struct.pack("<HH", at, TSR))
+        mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
+        mu.mem_write(GAME_DS * 16 + 0x165D, struct.pack("<HH", 0, self.ITEMS))
+        mu.mem_write(GAME_DS * 16 + 0x1669, struct.pack("<HH", 0, self.TYPES))
+        for item, (typ, material, plus, power) in self.GEAR.items():
+            rec = bytearray(21)
+            struct.pack_into("<H", rec, 0x0A, typ)
+            rec[0x0F], rec[0x14] = power & 0xFF, plus & 0xFF
+            mu.mem_write(self.ITEMS * 16 + item * 21, bytes(rec))
+            mu.mem_write(self.TYPES * 16 + typ * 0x14 + 8, bytes([material]))
+        # the routine's frame: the saved BP (its caller's, the special attack's: 187 on target 3
+        # from 44), its argument (the target); the list's entry 2 holds the item
+        mu.mem_write(SS * 16 + BP, struct.pack("<HHHH", PARENT_BP, 0, 0, 3))
+        mu.mem_write(SS * 16 + PARENT_BP, struct.pack("<HHHHHHHH", 0, 0, 0, 3, 44, 0, 0, 187))
+        self.at = 0x600
+
+    def rules(self, value):
+        self.mu.mem_write(TSR * 16 + load_image().find(HDR_SIG) + self.RULES, struct.pack("<H", value))
+
+    def run_int(self, vec, item, word, roll, armour):
+        """INT VEC with the list's entry 2 the item, [BP-2] WORD (the plus or the power), AX the
+        d20: DX, ZF and the entry recorded (None if none)."""
+        mu = self.mu
+        list_at = BP - (0x31E if armour else 0x320) + 2 * 0x0A
+        mu.mem_write(SS * 16 + list_at, struct.pack("<H", item))
+        mu.mem_write(SS * 16 + BP - 2, struct.pack("<h", word))
+        seq_at = TSR * 16 + self.hdr_off + 8
+        before = struct.unpack("<H", mu.mem_read(seq_at, 2))[0]
+        self.at += 0x20
+        mu.mem_write(CALLER * 16 + self.at, bytes((0xCD, vec)))
+        for name, value in dict(cs=CALLER, ds=GAME_DS, ss=SS, esp=0x800, ebp=BP, eflags=IF | 2, eax=roll,
+                                esi=2, ebx=0x2222, ecx=0x3333, edx=0x4444, edi=0x5555, es=0x6666).items():
+            mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+        mu.emu_start(CALLER * 16 + self.at, CALLER * 16 + self.at + 2)
+        self.assertEqual([mu.reg_read(x) for x in (r.UC_X86_REG_SP, r.UC_X86_REG_AX, r.UC_X86_REG_BX,
+                                                   r.UC_X86_REG_CX, r.UC_X86_REG_SI, r.UC_X86_REG_DI,
+                                                   r.UC_X86_REG_BP, r.UC_X86_REG_DS, r.UC_X86_REG_ES)],
+                         [0x800, roll, 0x2222, 0x3333, 2, 0x5555, BP, GAME_DS, 0x6666])
+        seq, widx, nent = struct.unpack("<HHH", mu.mem_read(seq_at, 6))
+        entry = None
+        if seq != before:
+            entry = Entry.parse(bytes(mu.mem_read(TSR * 16 + self.ring + ((seq - 1) % nent) * Entry.SIZE,
+                                                  Entry.SIZE)))
+        dx = struct.unpack("<h", struct.pack("<H", mu.reg_read(r.UC_X86_REG_DX)))[0]
+        return dx, bool(mu.reg_read(r.UC_X86_REG_EFLAGS) & 0x40), entry
+
+    def weapon(self, item, roll=10):
+        return self.run_int(VEC_ITEM_WEAPON, item, self.GEAR[item][2], roll, False)
+
+    def armour(self, item, roll=10):
+        return self.run_int(VEC_ITEM_ARMOUR, item, self.GEAR[item][3], roll, True)
+
+    def test_weapons_the_games(self):
+        self.rules(0)
+        for item, want in ((7, 8), (8, 7), (9, 8)):
+            dx, _, e = self.weapon(item, 12)
+            self.assertEqual(dx, want, item)
+            self.assertEqual((e.kind, e.raw, e.extra, e.arg(6), e.parent_arg(0x0E)), (4, 12 | want << 8, item, 3, 187))
+
+    def test_weapons_the_easier(self):
+        """Bone (11) and metal +1 (12) keep the game's 8 and 7; obsidian gets AD&D's 5."""
+        self.rules(2048)
+        self.assertEqual([self.weapon(item)[0] for item in (7, 8, 9)], [8, 7, 5])
+
+    def test_armour_the_games(self):
+        """No magical power: destroyed without a roll (ZF set, recorded with no d20); with one,
+        10 less it (Drake Armor's 89: never)."""
+        self.rules(0)
+        for item in (4, 5, 10):
+            dx, zf, e = self.run_int(VEC_ITEM_SKIP, item, 0, 0x1234, True)
+            self.assertTrue(zf, item)
+            self.assertEqual((e.kind, e.raw & 0xFF, e.extra), (4, 0, 0x8000 | item))
+        dx, zf, e = self.run_int(VEC_ITEM_SKIP, 6, 89, 0x1234, True)
+        self.assertEqual((zf, e), (False, None))
+        self.assertEqual(self.armour(6)[0], 10 - 89)
+
+    def test_armour_the_easier(self):
+        """Leather 10, metal 13, cloth +2 10; Drake Armor keeps the game's (never)."""
+        self.rules(2048)
+        for item in (4, 5, 6, 10):
+            dx, zf, e = self.run_int(VEC_ITEM_SKIP, item, self.GEAR[item][3], 0x1234, True)
+            self.assertEqual((zf, e), (False, None), item)
+        self.assertEqual([self.armour(item)[0] for item in (4, 5, 6, 10)], [10, 13, 10 - 89, 10])
+        dx, _, e = self.armour(5, 14)
+        self.assertEqual((e.raw, e.extra), (14 | 13 << 8, 0x8000 | 5))
 
 
 @unittest.skipIf(Uc is None, "unicorn not installed")

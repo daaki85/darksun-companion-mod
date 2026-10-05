@@ -62,6 +62,7 @@ COMBATANTS_SEG, COMBATANTS_OFF = 0x3972, 0xC36  # 3 bytes per combatant: kind (2
 THING_ITEM = 1
 CREATURE_ITEM_LISTS = (0x08, 0x0A, 0x0C)  # (+0Ch: where the game puts items handed to a character)
 ITEM_NEXT, ITEM_SLOT, ITEM_TYPE, ITEM_NAME, ITEM_PLUS = 0x04, 0x11, 0x0A, 0x12, 0x14
+ITEM_POWER = 0x0F  # an item's magical power (0: none; the game's weapon breaking and acid read it)
 NO_ITEM = 9999
 # (as the inventory screen shows them: a ring on each hand, 4 and 11; the cloak 12, the feet 13)
 EQUIP_SLOTS = ("arm", "ammo", "missile", "right hand", "finger", "waist", "legs", "head", "neck", "chest",
@@ -97,12 +98,23 @@ RULE_HALF_GIANT = 512  # half-giants wield two-handed weapons in one hand
 # AC only without magical armour; a cloak counts only without magical armour, metal armour or a
 # shield (DSCLOG's PROBE_RING_AC and RING_PLUS)
 RULE_PROTECTION = 1024
+# Items saving against acid (DSCLOG's PROBE_ITEM_*): a weapon or armour the game's acid or
+# corroding touch would destroy needs the easier of the game's number and AD&D's save for
+# its material (ACID_SAVES), less its plus and 1 more for a magical power
+RULE_ITEM_SAVES = 2048
+# AD&D's item saving throws against acid (the DMG's table), by the game's materials: wood
+# (thick), bone, stone and obsidian (glass's), metal, leather; and cloth for no material
+ACID_SAVES = {0: ("wood", 8), 1: ("bone", 11), 2: ("stone", 5), 3: ("obsidian", 5), 4: ("metal", 13),
+              5: ("leather", 10), 6: ("cloth", 12)}
+# the game's attacks that destroy items, as the dice log names them
+ACID, TOUCH_ARMOUR, TOUCH_WEAPON = 178, 186, 187
+ITEM_ATTACKS = {ACID: "acid", TOUCH_ARMOUR: "corroding touch", TOUCH_WEAPON: "corroding touch"}
 # the Options' setting for each, all on unless unticked
 RULE_SETTINGS = (("helm_ac", RULE_HELMS), ("boots_move", RULE_BOOTS), ("two_weapons", RULE_TWO_WEAPONS),
                  ("spell_save", RULE_SPELL_SAVE), ("no_doubled_save", RULE_NO_DOUBLE),
                  ("cats_grace", RULE_CATS_GRACE), ("stealth", RULE_STEALTH), ("level_10", RULE_LEVEL_10),
                  ("thief_table", RULE_THIEF_TABLE), ("half_giant_hands", RULE_HALF_GIANT),
-                 ("protection_rules", RULE_PROTECTION))
+                 ("protection_rules", RULE_PROTECTION), ("item_saves", RULE_ITEM_SAVES))
 # Cat's Grace (RULE_CATS_GRACE): Flaming Sphere (wizard level 2) gets Strength's record and the
 # name, and DSCLOG sends it to Strength's code, which rolls 1d6 into an effect of its own (54,
 # a number the game leaves unused) that adds to DEX, at most 24, as Strength's adds to STR.
@@ -414,6 +426,16 @@ class WeaponHit(NamedTuple):
     name: str
     thac0: int  # with this weapon, now
     parts: List[Tuple[str, int]]  # what is taken off the base THAC0 for it
+
+
+class ItemSave(NamedTuple):
+    """An item's numbers against the game's acid and corroding touch (game.item_save)."""
+    name: str  # "Leather Chest Armor +1"
+    material: str  # as ACID_SAVES names it
+    own: Optional[int]  # the game's number to reach (None: destroyed without a roll)
+    adnd: int  # AD&D's
+    plus: int
+    power: bool  # it has a magical power (the item's +0Fh)
 
 
 class SaveNow(NamedTuple):
@@ -773,6 +795,8 @@ class GameData:
             names = self.guest.read(self.ds * 16 + SPELL_NAMES, 0x400).split(b"\0")
             text = names[spell - PSIONIC_FIRST].decode("cp437", "replace") if spell - PSIONIC_FIRST < len(names) else ""
             return title(text) if text else f"psionic power {spell}"
+        if spell in ITEM_ATTACKS:  # (the ones that can destroy an item)
+            return ITEM_ATTACKS[spell].capitalize()
         if spell > SPELL_COUNT:  # monsters' powers, such as a paralysing touch
             return f"special attack {spell}"
         if 1 <= spell <= SPELL_COUNT:
@@ -1362,6 +1386,26 @@ class GameData:
             if plus > 0 and (kind == RING_TYPE and slot in FINGERS or kind == CLOAK_TYPE and slot == CLOAK_SLOT):
                 total += plus
         return total
+
+    def item_save(self, item: int, armour: bool) -> Optional["ItemSave"]:
+        """What item ITEM needs on a d20 against the acid or corroding touch: the game's number
+        (None: armour with no magical power, destroyed without a roll) and AD&D's (ACID_SAVES)."""
+        rec = self.guest.read(far_pointer(self.guest, self.ds, ITEMS_PTR) + item * ITEM_SIZE, ITEM_SIZE)
+        if len(rec) < ITEM_SIZE:
+            return None
+        kind = struct.unpack_from("<H", rec, ITEM_TYPE)[0]
+        typ = self.guest.read(far_pointer(self.guest, self.ds, ITEM_TYPES_PTR) + kind * ITEM_TYPE_SIZE, ITEM_TYPE_SIZE)
+        if len(typ) < ITEM_TYPE_SIZE:
+            return None
+        plus = struct.unpack("b", rec[ITEM_PLUS:ITEM_PLUS + 1])[0]
+        power = struct.unpack("b", rec[ITEM_POWER:ITEM_POWER + 1])[0]
+        material = typ[0x08] & 0x0F
+        if typ[0x08] & NO_MATERIAL and not material:
+            material = 6
+        name, adnd = ACID_SAVES.get(material, ACID_SAVES[4])
+        adnd -= plus + (1 if power else 0)
+        own = (10 - power if power else None) if armour else 8 - plus
+        return ItemSave(self.item_label(rec, typ), name, own, adnd, plus, bool(power))
 
     def protection(self, creature: int) -> List[Tuple[int, str]]:
         """What the creature's rings and cloak of protection add to its saving throws, as

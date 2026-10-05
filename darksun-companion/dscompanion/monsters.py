@@ -50,7 +50,8 @@ PROPERTY_TEXT = {
 # its hits cast one of the monsters' powers on the target as well
 SPECIAL_ATTACKS = {
     2: "2d6 cold", 3: "paralysis", 4: "2d6 acid", 13: "poison (10 damage)", 14: "poison (30 damage)",
-    15: "deadly poison", 16: "20 acid", 25: "disease (1 hit in 10)", 24: "a special touch",
+    15: "deadly poison", 16: "20 acid, which can eat a worn piece of armour", 25: "disease (1 hit in 10)",
+    24: "a corroding touch, which can eat a worn piece of armour and the weapon held",
 }
 # a creature's alignment (its sheet's byte 1Ah), in two letters for the Look box and in words
 ALIGNMENTS = {1: ("LG", "lawful good"), 2: ("LN", "lawful neutral"), 3: ("LE", "lawful evil"),

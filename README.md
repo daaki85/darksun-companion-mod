@@ -60,6 +60,8 @@ can be switched off on its Options tab.
     to attack from behind (a cloak and boots help, and say so in their item
     boxes), and a worn belt helping a thief pick pockets and open locks;
   - class levels up to 10 (the game stops at 9);
+  - items saving against acid by material as in AD&D (the game destroys
+    armour without a magical power outright);
   - rings and cloaks of protection as in AD&D: two rings don't add up, a
     ring gives no AC with magical armour, and a cloak does nothing with
     magical or metal armour or a shield;
@@ -176,6 +178,10 @@ In [pull request #17](https://github.com/daaki85/darksun-companion-mod/pull/17)
   a worn belt helps pick pockets and open locks, and plain ones cost 24.
 - **Faster walking:** shadows and dust drawn much more cheaply; at the fastest
   game speed, the whole party walks as fast as the leader alone.
+- **Items saving against acid** (a rule change): an item the Rampager's acid
+  or the Babau's touch could destroy saves by its material as in AD&D, a plus
+  helping, where that's better than the game's; and the dice log shows every
+  such check.
 - **Rings and cloaks of protection as in AD&D** (a rule change): two rings
   don't add up, a ring gives no AC with magical armour, and a cloak does
   nothing with magical or metal armour or a shield.

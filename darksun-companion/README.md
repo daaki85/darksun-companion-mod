@@ -42,6 +42,7 @@ records; this ledger keeps the ones the game doesn't show you.
   - [Thief skills from AD&D's table](#thief-skills-from-adds-table)
   - [Hiding in shadows to backstab](#hiding-in-shadows-to-backstab)
   - [Levels up to 10](#levels-up-to-10)
+  - [Items saving against acid](#items-saving-against-acid)
   - [Rings and cloaks of protection](#rings-and-cloaks-of-protection)
   - [Half-giants' two-handed weapons](#half-giants-two-handed-weapons)
   - [Cat's Grace](#cats-grace)
@@ -142,7 +143,8 @@ records; this ledger keeps the ones the game doesn't show you.
   table with Dark Sun's race and DEX adjustments, thieves and rangers hiding
   in shadows to attack from behind (a worn cloak and boots helping, and a worn
   belt helping a thief pick pockets and open locks), class levels up to 10,
-  AD&D's rules for rings and cloaks of protection, half-giants wielding
+  items saving against acid by material as in AD&D, AD&D's rules for rings and
+  cloaks of protection, half-giants wielding
   two-handed weapons in one hand, a new spell (Cat's Grace), helms giving AC 1
   and boots giving movement in a fight (see [Rule changes](#rule-changes)).
   Cloaks, boots and belts say what they give in their item boxes (`Hide +10`,
@@ -431,7 +433,8 @@ sections are open is remembered. The sections:
   descriptions.
 - **Rule changes**: the spell save, doubled saves, two weapons, the thief
   skill table, hiding in shadows (and under it, a worn cloak's, boots' and
-  belt's bonuses), levels up to 10, rings and cloaks of protection,
+  belt's bonuses), levels up to 10, items saving against acid, rings and
+  cloaks of protection,
   half-giants' two-handed weapons, Cat's Grace, helms and boots.
 - **New content**: Kalzith, Semyon, the cooked vulture, the slave pens' gear,
   Kreenfang and Shadowseeker, the Ring +1, picking pockets, and a button that
@@ -559,6 +562,7 @@ screenshots here are taken that way).
 | `X DEX check: d20 = 9, needs 16 or less (DEX 16) -> success` | An ability check. A natural 20 always fails. |
 | `Cilla tries to open locks: d100 = 35, needs 40 or less -> success` / `    open locks 40 = 18 + 16 thief level 4 + 10 elf...` | A thief skill roll (see Thief skills below), and what its chance is made of. |
 | `    X's Bone Long Sword nearly broke: 0 on 0-7, then 12 on 0-19 (needed 0)` / `... BREAKS` | The weapon check the game makes after an attack sequence whose last attack hit. Only non-magical wood, bone, stone and obsidian weapons can break (and not every kind: clubs and quarterstaffs can't): they break when a 0-7 roll and then a 0-19 roll both come up 0, 1 chance in 160. The line only appears when the first roll comes up 0. |
+| `  Rampager's acid on Gerakis's Leather Chest Armor: d20 = 12, needs 10 (AD&D's, 10 for leather; the game's: destroyed without a roll) -> safe` | An item the Rampager's acid or the Babau's corroding touch could destroy: the d20, the number it needed and whose number that was (see [Items saving against acid](#items-saving-against-acid)). |
 | `Message: Long Sword is broken !` | The game's own message boxes: broken or corroded weapons and armour, level-ups, "NO PATH FROM HERE" and so on. |
 | `  Slig now 8/18 HP (-10)` / `  Gerakis now 51/54 HP (+1)` | Any combatant's hit points going down or up, with what's left out of their most. The game never shows a monster's HP; this does. The line comes just after the damage that caused it (sometimes after the next roll, when the game is quick). |
 | `  Gerrard regenerates 1 HP (CON 22), now 16/35 HP` | A hit point back by itself: the game gives one now and then to anyone with CON 20 or more (in the game, CON 20 regenerates and 18 or 19 don't). |
@@ -1105,7 +1109,9 @@ Every roll in the game goes through one function, Borland C++'s `rand()`.
    thief skill's chance `INT D9h` (for a cloak's, boots' and belt's bonuses,
    see [rule changes](#rule-changes)), and in the save and load window's
    events, where a key and a button it has no use for go, `INT D8h` and
-   `INT D7h` (for [more saves](#more-saves)). The
+   `INT D7h` (for [more saves](#more-saves)), and in the routines that
+   destroy an item hit by acid or a corroding touch `INT D6h`, `INT D5h` and
+   `INT D4h` (for [items saving against acid](#items-saving-against-acid)). The
    copy keeps 29 characters rather than 19 and deletes the one chosen in the
    roster (see [more characters](#more-characters)), and also allocates a bigger buffer for the game's scripts (11,776 bytes
    rather than 10,000, for
@@ -1360,7 +1366,7 @@ routine that closes the box, shows the whole description.
 
 ## Rule changes
 
-Eleven changes to the game's rules, each with its own box under **Rule changes**
+Twelve changes to the game's rules, each with its own box under **Rule changes**
 on the Options tab (all on by default; they take effect in games started with
 the dice log, while the Ledger runs or with **Play Dark Sun (in-game rolls)**,
 which uses the Options as last set). Untick one and the game's own rule is back
@@ -1374,6 +1380,7 @@ at once.
 | [Thief skills from AD&D's table](#thief-skills-from-adds-table) | AD&D's table by level, with Dark Sun's race and DEX adjustments |
 | [Hiding in shadows to backstab](#hiding-in-shadows-to-backstab) | thieves hide and move silently to backstab, rangers to attack from behind; a worn cloak, boots and belt help |
 | [Levels up to 10](#levels-up-to-10) | every class goes to 10th level (the game stops at 9) |
+| [Items saving against acid](#items-saving-against-acid) | an item the acid or corroding touch could destroy needs the easier of the game's number and AD&D's save by material, a plus helping |
 | [Rings and cloaks of protection](#rings-and-cloaks-of-protection) | two rings don't add up, a ring gives no AC with magical armour, a cloak does nothing with magical or metal armour or a shield |
 | [Half-giants' two-handed weapons](#half-giants-two-handed-weapons) | a half-giant wields a two-handed weapon in one hand |
 | [Cat's Grace](#cats-grace) | a new spell in Flaming Sphere's place: DEX + 1d6 |
@@ -1620,6 +1627,69 @@ View Character stops showing the XP for the next level at 10, as it does at
 How: the game holds a class level against 9 in two places, where a character
 goes up a level and where View Character shows the XP for the next one; the
 helper (`INT E7h`) holds it against 10 instead while the rule is on.
+
+### Items saving against acid
+
+Two monsters' hits can destroy an item: the **Rampager's acid** a worn piece
+of armour, and the **Babau's corroding touch** a worn piece of armour and the
+melee weapon held (the first one in the character's list of held items; bows
+and slings never). The game makes the check on every such hit, whether or not
+the target's saving throw against the attack succeeds, and shows its own
+message when the item goes ("Armor is corroded", "Weapon is corroded"). Only
+pieces worn on the arms, legs or chest count, not helms or shields, and at
+most one piece of armour is lost to a hit: the first that fails, in the order
+of the character's list.
+
+The game's own checks:
+
+- **A weapon** is destroyed on a d20 under 8 less its plus: a plain one 7 in
+  20 (35%), a +1 30%, +7 or better never.
+- **Armour** with a magical power (Drake Armor, Shimmer Armor) is never
+  destroyed. Any other piece is destroyed at once, without a roll, plus or
+  no plus: Tanelyv's Armor +2 goes as surely as plain leather. (The game reads
+  the byte that holds the item's power, not its plus.)
+
+With **Items save against acid as in AD&D** ticked, each item needs the easier
+of the game's number and AD&D's saving throw against acid for its material
+(the DMG's table), so no item is worse off than in the game. AD&D's number is
+less the item's plus, and 1 less again for a magical power:
+
+| Material | AD&D's number (the DMG's row) |
+|---|---|
+| Wood | 8 (thick wood) |
+| Bone (the game's ring, brigandine and scale armour too) | 11 |
+| Stone, obsidian | 5 (glass, the nearest) |
+| Metal | 13 |
+| Leather | 10 |
+| None (Silk Armor) | 12 (cloth) |
+
+| Item | Saved in the game | Saved with the rule |
+|---|---|---|
+| Leather Chest Armor | 0% | 55% (needs 10) |
+| Leather Chest Armor +1 | 0% | 60% (needs 9) |
+| Bone scale chest | 0% | 50% (needs 11) |
+| Chain chest | 0% | 40% (needs 13) |
+| Tanelyv's Armor +2 (metal) | 0% | 50% (needs 11) |
+| Drake Armor +1 (a power) | 100% | 100% (the game's) |
+| Bone or metal Long Sword | 65% | 65% (the game's: needs 8) |
+| Shadowseeker (metal, +1) | 70% | 70% (the game's: needs 7) |
+| Obsidian Dagger | 65% | 80% (needs 5) |
+
+The dice log shows every check, whichever rule is on:
+
+```
+Defiler saves vs Acid from Rampager (paralysis/poison/death): d20 = 20 (natural 20) -> saved
+  Rampager's acid on Defiler's Metal Chain Leg Armor: d20 = 16, needs 13 (AD&D's, 13 for metal; the game's: destroyed without a roll) -> safe
+  Rampager's acid on Defiler's Leather Chest Armor: d20 = 12, needs 10 (AD&D's, 10 for leather; the game's: destroyed without a roll) -> safe
+```
+
+The Detonate psionic power, which can blow up an item a target carries, keeps
+the game's own rule (a d20 under 15 less the item's plus).
+
+How: where the game works out the number a weapon's d20 must reach
+(`INT D6h`), where it skips the roll for armour with no magical power
+(`INT D5h`) and where it works out armour's number (`INT D4h`), the helper
+gives the easier of the two and records the check for the dice log.
 
 ### Rings and cloaks of protection
 

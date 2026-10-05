@@ -338,6 +338,8 @@ class Viewer:
                 ("stealth", "Thieves hide in shadows and move silently to backstab, rangers to attack from behind "
                             "(no enemy beside them; thieves half the chance in daylight, rangers indoors)"),
                 ("level_10", "Class levels go up to 10 (the game stops at 9; no spells past 5th level are needed)"),
+                ("item_saves", "Items save against acid as in AD&D, by material, a plus helping, where that's "
+                               "better than the game's (which destroys armour without a magical power outright)"),
                 ("protection_rules", "Rings and cloaks of protection as in AD&D: only the better of two rings "
                                      "counts, a ring gives no AC with magical armour, and a cloak does nothing "
                                      "with magical or metal armour or a shield"),

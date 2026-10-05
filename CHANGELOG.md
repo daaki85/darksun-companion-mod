@@ -52,6 +52,16 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
   shows 1 to 19 and leaves the others alone. The patched game's loops over the
   characters, its roster list and its "Maximum characters" check are made 30
   and 29 (a byte each); the game's file routines already took any number.
+- **Rule change: items saving against acid** (Options, Rule changes; on
+  unless turned off): a worn piece of armour or a held melee weapon the
+  Rampager's acid or the Babau's corroding touch could destroy needs the
+  easier of the game's number and AD&D's save against acid for its material
+  (the DMG's table: wood 8, bone 11, stone and obsidian 5, metal 13, leather
+  10, cloth 12), less its plus and 1 more for a magical power. The game
+  destroys armour without a magical power outright, plus or no plus. Every
+  check is in the dice log; the save line names the attacks ("Acid",
+  "Corroding touch"), and the monster description says what they can eat.
+  DSCLOG: `INT D6h`, `D5h` and `D4h` in the two routines.
 - **Rule change: rings and cloaks of protection as in AD&D** (Options, Rule
   changes; on unless turned off): of two rings only the better counts; a ring
   gives no AC with magical armour (saves still count); a cloak of protection
