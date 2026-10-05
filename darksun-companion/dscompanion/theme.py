@@ -105,6 +105,11 @@ def apply(root: tk.Tk) -> None:
     root.option_add("*TCombobox*Listbox.selectForeground", YELLOW)
     style.configure("TLabelframe", background=STONE, bordercolor=SHADOW, lightcolor=EDGE_LIT, darkcolor=DARK)
     style.configure("TLabelframe.Label", background=STONE, foreground=YELLOW, font=heading)
+    # the Options tab's sections: a full-width stone button that opens and closes each one
+    style.configure("Section.TButton", anchor="w", padding=(8, 4), font=heading, **dict(bevel, foreground=YELLOW))
+    style.map("Section.TButton", background=[("pressed", DEEP), ("active", STONE)],
+              lightcolor=[("pressed", SHADOW)], darkcolor=[("pressed", EDGE_LIT)])
+    style.configure("SectionBody.TFrame", background=STONE, relief="groove", borderwidth=2)
     style.configure("TNotebook", background=STONE, bordercolor=SHADOW, tabmargins=(2, 4, 2, 0))
     style.configure("TNotebook.Tab", padding=(14, 4), font=heading, **bevel)
     # the open tab sinks into the dark panel below it, its name in the game's amber
@@ -215,6 +220,38 @@ class ScrollArea(ttk.Frame):
         if widget is None:
             return
         self.scroll(-1 if getattr(event, "num", 0) == 4 or getattr(event, "delta", 0) > 0 else 1)
+
+
+class Section(ttk.Frame):
+    """A part of a long panel that opens and closes (an accordion's): a heading button, ▸ when
+    closed and ▾ when open, and under it BODY, shown only when open. The heading takes the
+    keyboard focus like any button: Space or Enter opens or closes it. ON_TOGGLE(open) is
+    called after each change (to remember it)."""
+
+    CLOSED, OPEN = "\u25b8", "\u25be"
+
+    def __init__(self, parent, title: str, open_: bool = False, on_toggle=None, padding=6):
+        super().__init__(parent)
+        self.title, self.on_toggle = title, on_toggle
+        self.header = ttk.Button(self, style="Section.TButton", command=self.toggle)
+        self.header.pack(fill="x")
+        self.header.bind("<Return>", lambda _e: self.toggle())
+        self.body = ttk.Frame(self, style="SectionBody.TFrame", padding=padding)
+        self.is_open = False
+        self.set_open(open_)
+
+    def set_open(self, open_: bool) -> None:
+        self.is_open = bool(open_)
+        self.header.configure(text=f"{self.OPEN if self.is_open else self.CLOSED}  {self.title}")
+        if self.is_open:
+            self.body.pack(fill="x")
+        else:
+            self.body.pack_forget()
+
+    def toggle(self) -> None:
+        self.set_open(not self.is_open)
+        if self.on_toggle is not None:
+            self.on_toggle(self.is_open)
 
 
 class Banner(tk.Canvas):

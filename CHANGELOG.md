@@ -7,6 +7,9 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
 ## Pull request #17 (in review)
 
 **Changed**
+- **The Options tab's sections open and close:** each group of switches is
+  under a heading to click (or Tab to and press Space or Enter), so the tab
+  is short; which are open is remembered.
 - **The whole party walks as fast as the leader alone, at the fastest game
   speed:** the Ledger's shadows and dust are drawn much more cheaply, and look
   the same (a shadow is darkened a plane of the video memory at a time, a

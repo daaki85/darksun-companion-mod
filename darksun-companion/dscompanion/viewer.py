@@ -282,8 +282,19 @@ class Viewer:
         tabs.add(area, text="Options", underline=0)
         options = area.inner
         settings = launch.load_settings()
-        log = ttk.LabelFrame(options, text="Dice log", padding=6)
-        log.pack(fill="x")
+        self.sections: Dict[str, theme.Section] = {}
+        opened = settings.get("options_open", [])
+        opened = opened if isinstance(opened, list) else []
+
+        def section(key: str, title: str) -> ttk.Frame:
+            """A section that opens and closes (closed until opened; remembered)."""
+            part = theme.Section(options, title, open_=key in opened,
+                                 on_toggle=lambda _open: self._sections_changed())
+            part.pack(fill="x", pady=(8 if self.sections else 0, 0))
+            self.sections[key] = part
+            return part.body
+
+        log = section("dice_log", "Dice log")
         self.show_all = tk.BooleanVar(value=False)
         ttk.Checkbutton(log, text="Show unlabelled rolls", variable=self.show_all).pack(anchor="w")
         # the indented lines under a roll (what a THAC0 or save was made of); hiding them leaves
@@ -292,8 +303,7 @@ class Viewer:
         ttk.Checkbutton(log, text="Show details (the sums behind each roll)", variable=self.show_details,
                         command=lambda: self.dice_text.tag_configure("detail", elide=not self.show_details.get())
                         ).pack(anchor="w", pady=(4, 0))
-        in_game = ttk.LabelFrame(options, text="In the game (when started with the dice log)", padding=6)
-        in_game.pack(fill="x", pady=(8, 0))
+        in_game = section("in_game", "In the game (when started with the dice log)")
         # long lines wrap to the window (as with larger text) instead of running out of it
         options.bind("<Configure>", lambda e: [ttk.Style().configure(
             kind, wraplength=max(200, e.width - 60)) for kind in ("TCheckbutton", "TRadiobutton")], add="+")
@@ -311,8 +321,7 @@ class Viewer:
         self.monster_info = tk.BooleanVar(value=bool(settings.get("monster_info", True)))
         ttk.Checkbutton(in_game, text="Describe monsters when you Look at them in a fight (defences, then a window)",
                         variable=self.monster_info, command=self._popups_changed).pack(anchor="w", pady=(4, 0))
-        rules = ttk.LabelFrame(options, text="Rule changes (in games started with the dice log)", padding=6)
-        rules.pack(fill="x", pady=(8, 0))
+        rules = section("rules", "Rule changes (in games started with the dice log)")
         # one switch for each of game.RULE_SETTINGS
         self.rule_vars: Dict[str, tk.BooleanVar] = {}
         for n, (key, text) in enumerate((
@@ -342,8 +351,7 @@ class Viewer:
 
         # the companion's own content: people, a quest and items in the game, and thief play. Some
         # are written into the game's files when it is started; what a save already has stays
-        new = ttk.LabelFrame(options, text="New content", padding=6)
-        new.pack(fill="x", pady=(8, 0))
+        new = section("new_content", "New content")
         ttk.Label(new, text="Kalzith, Semyon and the vulture: from the next time you start the game. "
                   "What a saved game already has (people met, items given) stays in it.",
                   wraplength=460).pack(anchor="w")
@@ -375,8 +383,7 @@ class Viewer:
         ttk.Button(new, text="Give thieving tools now", command=self.give_tools).pack(anchor="w", pady=(8, 0))
 
         # how the game looks
-        looks = ttk.LabelFrame(options, text="On the screen (in the game)", padding=6)
-        looks.pack(fill="x", pady=(8, 0))
+        looks = section("on_screen", "On the screen (in the game)")
         self.show_gear = tk.BooleanVar(value=bool(settings.get("show_gear", True)))
         ttk.Checkbutton(looks, text="Show what the party wears on their figures (weapons, armour, helms, "
                         "cloaks, boots, belts)", variable=self.show_gear,
@@ -396,8 +403,7 @@ class Viewer:
                             command=self._popups_changed).pack(anchor="w", padx=(20, 0))
 
         # the mouse and keys in the game
-        controls = ttk.LabelFrame(options, text="Controls (in the game)", padding=6)
-        controls.pack(fill="x", pady=(8, 0))
+        controls = section("controls", "Controls (in the game)")
         self.use_targeting = tk.BooleanVar(value=bool(settings.get("targeting", True)))
         ttk.Checkbutton(controls, text="In a fight, Tab (Shift+Tab back) chooses an enemy, its ring brighter, and "
                         "Enter attacks it, even behind someone", variable=self.use_targeting,
@@ -416,8 +422,7 @@ class Viewer:
                         variable=self.effects_kept, command=self._popups_changed).pack(anchor="w", pady=(4, 0))
 
         # the game's speed (DOSBox's CPU)
-        pace = ttk.LabelFrame(options, text="Game speed (from the next time you start the game)", padding=6)
-        pace.pack(fill="x", pady=(8, 0))
+        pace = section("speed", "Game speed (from the next time you start the game)")
         speed = settings.get("cycles", launch.DEFAULT_SPEED)
         speed = launch.SPEEDS[-1] if speed == launch.FASTEST_BEFORE else speed
         self.game_speed = tk.StringVar(value=str(speed if speed in launch.SPEEDS or speed == launch.GOG_SPEED
@@ -428,6 +433,12 @@ class Viewer:
                                       "(needs a faster PC)")):
             ttk.Radiobutton(pace, text=text, value=value, variable=self.game_speed,
                             command=self._speed_chosen).pack(anchor="w")
+
+    def _sections_changed(self) -> None:
+        """Remember which of the Options tab's sections are open."""
+        settings = launch.load_settings()
+        settings["options_open"] = [key for key, part in self.sections.items() if part.is_open]
+        launch.save_settings(settings)
 
     def give_tools(self) -> None:
         """A set of thieving tools for each thief in the party without one, right away (they

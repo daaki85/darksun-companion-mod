@@ -395,7 +395,10 @@ party pane has two tabs:
   equipment.
 
 The other side has the **Dice log**, **Dialogue**, **Spells** and **Memory
-tools** tabs, and **Options** (Alt+O) with the Ledger's switches, in groups:
+tools** tabs, and **Options** (Alt+O) with the Ledger's switches, in
+sections that open and close: click a section's heading (or Tab to it and
+press Space or Enter) to open it, ▸ when closed and ▾ when open. Which
+sections are open is remembered. The sections:
 
 - **Dice log**: unlabelled rolls, and the details behind each roll.
 - **In the game**: each turn's rolls and how much they say, monster
@@ -417,11 +420,11 @@ tools** tabs, and **Options** (Alt+O) with the Ledger's switches, in groups:
 - **Game speed** (see [Game speed](#game-speed)).
 
 All are on by default except unlabelled rolls, each turn's rolls in the game,
-P in a conversation and the right button, and are remembered for next time. In a window too small
-to show them all, the tab scrolls (scrollbar, mouse wheel, or arrow and page
-keys once it has the focus).
+P in a conversation and the right button, and are remembered for next time.
+In a window too small to show the open sections, the tab scrolls (scrollbar,
+mouse wheel, or arrow and page keys once it has the focus).
 
-![The Options tab](docs/options.png)
+![The Options tab with Rule changes open and the other sections closed](docs/options.png)
 
 **Spell slots.** `Priest spells left: 1st 5/5, 2nd 3/3, 3rd 2/2`
 means five first-level priest spells can still be cast out of five, and so
