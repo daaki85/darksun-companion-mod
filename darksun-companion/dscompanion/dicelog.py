@@ -1965,7 +1965,14 @@ class DiceLog:
         if save:
             own = "destroyed without a roll" if save.own is None else (
                 f"{save.own}" if save.own > 1 else "safe whatever the roll")
-            adnd = f"{save.adnd} for {save.material}"
+            base = save.adnd + save.plus + (1 if save.power else 0)
+            adnd = f"{base} for {save.material}"
+            if save.plus:
+                adnd += f", {signed(-save.plus)} for its plus"
+            if save.power:
+                adnd += ", -1 for its power"
+            if save.adnd != base:
+                adnd = f"{save.adnd} ({adnd})"
             if g.rules & game.RULE_ITEM_SAVES:
                 if save.own is not None and needed == save.own and save.own <= save.adnd:
                     why = f" (the game's; AD&D's: {adnd})"
