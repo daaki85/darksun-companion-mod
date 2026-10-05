@@ -184,30 +184,32 @@ class StealthTests(unittest.TestCase):
 
 
 class GearPriceTests(unittest.TestCase):
-    def test_cloaks_and_boots(self):
-        """Worn as a cloak or on the feet, priced at least GEAR_VALUE; dearer ones (magic) and
-        other things keep their prices."""
+    def test_cloaks_boots_and_belts(self):
+        """Plain ones worn as a cloak, on the feet or as a belt cost GEAR_VALUE (an earlier
+        version's 100 too); magic ones (a plus, or dearer) and other things keep their prices."""
         from dscompanion import ring
         from test_dicelog import ITEM_TYPES, ITEMS
         from test_ring import arena
         log = arena()
         m, gd = log.guest.mem, log.game
-        kinds = ((50, stealth.WORN_CLOAK), (51, stealth.WORN_FEET), (52, 5))  # cloak, boots, sword
+        kinds = ((50, stealth.WORN_CLOAK), (51, stealth.WORN_FEET), (52, 5), (53, stealth.WORN_BELT))
         for typ, worn in kinds:
             m[ITEM_TYPES + typ * game.ITEM_TYPE_SIZE + stealth.TYPE_WORN] = worn
-        items = ((90, 50, 20), (91, 51, 1), (92, 50, 5000), (93, 52, 10))
-        for n, (item, typ, value) in enumerate(items):
+        # item, type, price, plus
+        items = ((90, 50, 20, 0), (91, 51, 1, 0), (92, 50, 5000, 1), (93, 52, 10, 0), (94, 53, 2, 0),
+                 (95, 51, 100, 0), (96, 50, 3000, 0), (97, 53, 20, 1))
+        for n, (item, typ, value, plus) in enumerate(items):
             rec = ITEMS + item * game.ITEM_SIZE
             nxt = items[n + 1][0] if n + 1 < len(items) else game.NO_ITEM
             struct.pack_into("<h", m, rec + game.ITEM_NEXT, nxt)
             struct.pack_into("<H", m, rec + game.ITEM_TYPE, typ)
             struct.pack_into("<H", m, rec + stealth.ITEM_VALUE, value)
+            m[rec + game.ITEM_PLUS] = plus
         struct.pack_into("<Bh", m, ring.Items(gd).things + 410 * 3, game.THING_ITEM, 90)
-        self.assertEqual(stealth.reprice(gd), 2)
+        self.assertEqual(stealth.reprice(gd), 4)
         price = lambda item: struct.unpack_from("<H", m, ITEMS + item * game.ITEM_SIZE + stealth.ITEM_VALUE)[0]
-        self.assertEqual([price(item) for item, _, _ in items], [stealth.GEAR_VALUE, stealth.GEAR_VALUE, 5000, 10])
+        self.assertEqual([price(item) for item, *_ in items], [24, 24, 5000, 10, 24, 24, 3000, 20])
         self.assertEqual(stealth.reprice(gd), 0)
-
 
 if __name__ == "__main__":
     unittest.main()

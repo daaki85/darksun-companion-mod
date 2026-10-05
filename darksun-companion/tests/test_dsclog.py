@@ -449,6 +449,65 @@ class PickKeyTests(unittest.TestCase):
 
 
 @unittest.skipIf(Uc is None, "unicorn is not installed")
+class BeltTests(unittest.TestCase):
+    """PROBE_BELT, at the end of the game's thief skill routine (where "mov ax,si" was): a thief
+    wearing a belt gets 5 more to pick pockets and open locks, with SKILLS_ON's belt bit."""
+    CREATURES, ITEMS = 0x9000, 0xA000
+
+    def setUp(self):
+        from dscompanion.gamepatch import VEC_BELT
+        image = load_image()
+        self.mu = mu = Uc(UC_ARCH_X86, UC_MODE_16)
+        mu.mem_map(0, 0x100000)
+        mu.mem_write(TSR * 16, image)
+        self.hdr = TSR * 16 + image.find(HDR_SIG)
+        skills_on = image.find(HDR_SIG) + 266
+        handler = image.find(bytes.fromhex("fb2ef606") + struct.pack("<H", skills_on) + b"\x02")
+        self.assertGreater(handler, 0)
+        mu.mem_write(VEC_BELT * 4, struct.pack("<HH", handler, TSR))
+        mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
+        mu.mem_write(GAME_DS * 16 + 0x1665, struct.pack("<HH", 0, self.CREATURES))
+        mu.mem_write(GAME_DS * 16 + 0x165D, struct.pack("<HH", 0, self.ITEMS))
+        things = (GAME_DS + 0x3972 - 0x4356) * 16 + 0xC36  # (the things table, from the game's DS)
+        # object 3: creature 1, whose first list is object 10: item 4
+        for thing, kind, index in ((3, 2, 1), (10, 1, 4)):
+            mu.mem_write(things + thing * 3, struct.pack("<BH", kind, index))
+        mu.mem_write(self.CREATURES * 16 + 0x3A + 8, struct.pack("<HHH", 10, 9999, 9999))
+        self.wear(5)
+
+    def wear(self, slot):
+        rec = bytearray(21)
+        struct.pack_into("<H", rec, 4, 9999)
+        rec[0x11] = slot
+        self.mu.mem_write(self.ITEMS * 16 + 4 * 21, bytes(rec))
+
+    def chance(self, skill, on=2, si=40):
+        mu = self.mu
+        mu.mem_write(self.hdr + 266, struct.pack("<H", on))
+        mu.mem_write(SS * 16 + BP + 8, struct.pack("<I", skill))
+        mu.mem_write(CALLER * 16 + 0x600, bytes((0xCD, 0xD9)))
+        for name, value in dict(cs=CALLER, ds=GAME_DS, ss=SS, esp=0x800, ebp=BP, eflags=IF | 2,
+                                esi=si, edi=3, ebx=0x1234, ecx=0x5678, edx=0x9ABC, es=0x4444).items():
+            mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+        mu.emu_start(CALLER * 16 + 0x600, CALLER * 16 + 0x602, count=10000)
+        self.assertEqual([mu.reg_read(x) for x in (r.UC_X86_REG_SP, r.UC_X86_REG_SI, r.UC_X86_REG_DI, r.UC_X86_REG_BX,
+                                                   r.UC_X86_REG_CX, r.UC_X86_REG_DX, r.UC_X86_REG_ES)],
+                         [0x800, si, 3, 0x1234, 0x5678, 0x9ABC, 0x4444])
+        return mu.reg_read(r.UC_X86_REG_AX)
+
+    def test_pockets_and_locks(self):
+        self.assertEqual([self.chance(skill) for skill in range(4)], [45, 45, 40, 40])
+
+    def test_off(self):
+        self.assertEqual(self.chance(0, on=1), 40)  # (the stealth bit alone)
+        self.assertEqual(self.chance(0, on=0), 40)
+
+    def test_no_belt(self):
+        self.wear(20)  # (in the pack)
+        self.assertEqual(self.chance(1), 40)
+
+
+@unittest.skipIf(Uc is None, "unicorn is not installed")
 class RingTests(unittest.TestCase):
     """The ring probes: a worn ring's plus counts for AC and (all worn rings) on saves."""
     THINGS_SEG, CREATURES, ITEMS, TYPES = 0x8000, 0x9000, 0xA000, 0xB000

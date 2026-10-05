@@ -18,11 +18,15 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
   on the Options tab (it was 30,000, and a setting of 30,000 is taken as
   35,000). The companion's README has the measurements.
 - **Cloaks and boots say what they do:** with the cloak and boots bonuses on,
-  their item box says `HIDE SHADOWS+10` or `MOVE SILENT+10` under the name,
-  and a plain cloak or pair of boots costs 100 (the Leather Cloak was 20;
-  magic ones keep their prices).
+  their item box says `HIDE SHADOWS+10` or `MOVE SILENT+10` under the name.
+- **Plain cloaks, boots and belts cost 24** (the Leather Cloak was 20); magic
+  ones keep their prices.
 
 **Added**
+- **A worn belt helps a thief:** +5 to picking pockets and opening locks (the
+  same switch as the cloak's and boots' bonuses, hiding on or not), counted by
+  the game's own lock picking and by the Ledger; its item box says
+  `POCKETS,LOCKS+5`.
 - **Kreenfang and Shadowseeker** (Options, New content; on unless turned off):
   the arena's 2 handed Bone Gythka is Kreenfang, a gythka +1 (18000), and
   Kurzak's short sword is Shadowseeker, a short sword +1 (22000) whose wielder

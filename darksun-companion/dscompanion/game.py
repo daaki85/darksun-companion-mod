@@ -144,6 +144,10 @@ def kind_to_save(kind: int, rules: int) -> int:
 
 # The rules in force (DiceLog.set_rules): GameData objects made without rules of their own use these
 RULES_IN_FORCE = 0
+# ... and whether a worn belt adds BELT_BONUS to picking pockets and opening locks (the Options tab's
+# cloak, boots and belt switch; DSCLOG adds it where the game works the chance out: PROBE_BELT)
+BELT_IN_FORCE = False
+BELT_BONUS, BELT_SKILLS, WAIST = 5, (0, 1), 5  # (the skills' numbers in THIEF_SKILLS; the slot)
 EFFECTS_SEG, EFFECTS_OFF = 0x3BF6, 0x106  # 10 bytes per active effect
 # The game's clock and event queue: a far pointer to the time (a dword, divided by the byte at
 # GAME_TIME_SCALE); the first queue's entries (17 bytes: due time, kind, then the event's data),
@@ -565,6 +569,7 @@ class GameData:
         if hasattr(guest, "guarded"):  # (the C runtime's check, at exit: "Null pointer assignment")
             guest.guarded["the game's data segment's start"] = (ds * 16, ds * 16 + NULL_AREA)
         self.rules = RULES_IN_FORCE if rules is None else rules
+        self.belt = BELT_IN_FORCE
 
     def _word(self, offset: int) -> int:
         return struct.unpack("<h", self.guest.read(self.ds * 16 + offset, 2))[0]
@@ -1144,7 +1149,7 @@ class GameData:
 
     def thief_skills_now(self, creature: int, skills: Tuple[int, ...] = ROLLED_SKILLS) -> List[Tuple[str, int]]:
         """[(skill, chance), ...] for the skills the game rolls, as they stand now: with the
-        equipment penalty, 0 for a skill an effect rules out (or when the thief isn't Okay), 100
+        equipment penalty, a worn belt's bonus (BELT_IN_FORCE), 0 for a skill an effect rules out (or when the thief isn't Okay), 100
         for one an effect makes certain. Not the situation's bonus (a hard lock...). [] for
         someone without thief levels. `skills`: which (numbers in THIEF_SKILLS)."""
         rec = self.creature(creature)
@@ -1155,12 +1160,15 @@ class GameData:
         penalty = any(item[ITEM_SLOT] in slots for _, item, _ in self._worn(creature))
         ids = {e.id for e in self._mine(creature, self.effects())}
         okay = rec[CREATURE_STATUS] == STATUS_OKAY
+        belt = self.belt and any(item[ITEM_SLOT] == WAIST for _, item, _ in self._worn(creature))
         out = []
         for skill in skills:
             parts = self.thief_skill_parts(creature, skill)
             if parts is None:
                 return []
             chance = sum(n for _, n in parts) - (table[skill] if penalty and len(table) == 8 else 0)
+            if belt and skill in BELT_SKILLS:
+                chance += BELT_BONUS
             if any(skill in THIEF_CERTAIN.get(e, ()) for e in ids):
                 chance = 100
             elif not okay or any(skill in THIEF_BLOCKED.get(e, ()) for e in ids):

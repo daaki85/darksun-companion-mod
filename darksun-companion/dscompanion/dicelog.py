@@ -52,7 +52,8 @@ BIOS_TIMER = 0x46C
 TSR_RULES = 170
 TSR_MAIN_TICKS = 260  # the map's main loop run (counted)
 TSR_XP_WHO, TSR_XP_AMOUNT = 262, 264  # a party member to be given XP with the pick's text (FFFFh: none)
-TSR_SKILLS_ON = 266  # item boxes name a cloak's and boots' bonus to hiding and moving silently
+TSR_SKILLS_ON = 266  # bits: item boxes name a cloak's and boots' bonus to hiding and moving silently;
+SKILLS_STEALTH, SKILLS_BELT = 1, 2  # a worn belt adds to picking pockets and opening locks (and its box says)
 TSR_PICK_SEQ, TSR_PICK_REPLY, TSR_PICK_OFF, TSR_PICK_ON, PICK_SIZE = 172, 174, 176, 178, 240
 PICK_TOOLS, PICK_KEY = 1, 2  # (TSR_PICK_ON: the thieving tools on someone; P in a conversation too)
 TSR_USE_SEQ, TSR_USE_REPLY, TSR_USE_WHO, TSR_USE_TAKEN, TSR_USE_ITEM = 180, 182, 184, 186, 188
@@ -652,12 +653,15 @@ class DiceLog:
         save is the game's own table, written here."""
         self.rules = rules
         game.RULES_IN_FORCE = rules
+        game.BELT_IN_FORCE = self.stealth_gear
         if self.game is not None:
             self.game.rules = rules
+            self.game.belt = self.stealth_gear
         if self.tsr_hdr is not None:
             self.guest.write(self.tsr_hdr + TSR_RULES, struct.pack("<H", rules))
-            skills = bool(rules & game.RULE_STEALTH) and self.stealth_gear  # (the rule's, with a worn cloak's, boots')
-            self.guest.write(self.tsr_hdr + TSR_SKILLS_ON, struct.pack("<H", int(skills)))
+            skills = (SKILLS_STEALTH if rules & game.RULE_STEALTH and self.stealth_gear else 0) \
+                | (SKILLS_BELT if self.stealth_gear else 0)  # (the hiding rule's cloak and boots; the belt's own)
+            self.guest.write(self.tsr_hdr + TSR_SKILLS_ON, struct.pack("<H", skills))
             table = self.game.ds * 16 + game.SAVE_KINDS if self.game is not None else None
             # (only over the game's own table: kind 5 is petrification/polymorph or, so far, the spell save)
             if table is not None and struct.unpack("<5H", self.guest.read(table, 10)) == game.KIND_TO_SAVE[:5] \

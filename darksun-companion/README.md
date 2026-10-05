@@ -189,7 +189,7 @@ records; this ledger keeps the ones the game doesn't show you.
 Nothing in the game folder or your save files is changed, except that a game
 you save keeps what the Ledger has handed out or changed in play: the Ring +1,
 a thief's Thieves' Tools, whatever a thief has lifted, the slave pens' gear,
-Kreenfang and Shadowseeker, cloaks' and boots' prices, Kalzith and his scrolls, Semyon in his pen, and the XP and rest from Dinos's meal (untick the ring's and the pockets'
+Kreenfang and Shadowseeker, cloaks', boots' and belts' prices, Kalzith and his scrolls, Semyon in his pen, and the XP and rest from Dinos's meal (untick the ring's and the pockets'
 boxes to go without those). The Short Sword and the Cloak of Protection are
 item types the original game doesn't have, so a save with them should be
 loaded with the dice log.
@@ -395,8 +395,8 @@ tools** tabs, and **Options** (Alt+O) with the Ledger's switches, in groups:
   descriptions.
 - **Rule changes**: helms, boots, two weapons, half-giants' two-handed
   weapons, the spell save, doubled saves, Cat's Grace, levels up to 10, the
-  thief skill table, hiding in shadows (and under it, a worn cloak's and
-  boots' bonuses).
+  thief skill table, hiding in shadows (and under it, a worn cloak's, boots'
+  and belt's bonuses).
 - **New content**: Kalzith, Semyon, the cooked vulture, the slave pens' gear,
   Kreenfang and Shadowseeker,
   the Ring +1, picking pockets, and a button that gives each thief a set of
@@ -1061,7 +1061,10 @@ Every roll in the game goes through one function, Borland C++'s `rand()`.
    [shadows](#shadows)), and where the main loop asks where the pointer is
    `INT DCh` (for [scrolling the map](#scrolling-the-map) and the
    [dust](#dust)), and the start of the routine finding what is under the
-   pointer `INT DBh` (for [choosing an enemy](#choosing-an-enemy-tab-enter-and-the-rings)). The
+   pointer `INT DBh` (for [choosing an enemy](#choosing-an-enemy-tab-enter-and-the-rings)), and
+   the end of the routines filling an item's box `INT DAh` and working out a
+   thief skill's chance `INT D9h` (for a cloak's, boots' and belt's bonuses,
+   see [rule changes](#rule-changes)). The
    copy also allocates a bigger buffer for the game's scripts (11,776 bytes
    rather than 10,000, for
    [Dinos and the Trustee](#dinos-and-the-trustee-on-kalzith-and-semyon)), and
@@ -1450,12 +1453,23 @@ first. A worn cloak adds 10 to hiding in shadows (before daylight halves it)
 and worn boots add 10 to moving silently, for rangers too, up to 95:
 `needs 18 or less (26 +10 cloak = 36, halved in daylight)`. With that switched
 on, a cloak's or boots' item box (right-click it on the inventory screen) says
-so under its name, `HIDE SHADOWS+10` or `MOVE SILENT+10`, and a cloak or pair
-of boots costs at least 100 (the game's Leather Cloak is 20; dearer ones, the
-magic, keep their prices), anywhere in the region, shops included. How: the
-patched game's item box (`INT DAh`, where it has drawn the name) asks the
-helper, which draws the line with the game's own text routine when the item's
-type is worn as a cloak or on the feet.
+so under its name, `HIDE SHADOWS+10` or `MOVE SILENT+10`.
+
+The same switch has a worn **belt** add 5 to a thief's **picking pockets and
+opening locks**, whether hiding is on or not: the game's own lock picking
+counts it, and so do the Ledger's pockets and its thief rows (`PICK 80`,
+`LOCK 64`). A belt's box says `POCKETS,LOCKS+5`.
+
+Plain cloaks, boots and belts cost 24 (the game's Leather Cloak is 20), anywhere
+in the region, shops included; magic ones (with a plus, or dearer than 100)
+keep their prices.
+
+How: the patched game's item box (`INT DAh`, where it has drawn the name) asks
+the helper, which draws the line with the game's own text routine when the
+item's type is worn as a cloak, on the feet or as a belt; and at the end of the
+game's thief skill routine (`INT D9h`, where it returns the chance, armour and
+effects counted) the helper adds the belt's 5 to picking pockets and opening
+locks for a thief wearing one.
 
 ```
 Cilla's turn

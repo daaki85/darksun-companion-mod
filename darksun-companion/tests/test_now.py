@@ -133,6 +133,20 @@ class ThiefTests(unittest.TestCase):
         self.log.guest.mem[ITEMS + 6 * game.ITEM_SIZE + game.ITEM_SLOT] = 0xFF
         self.assertEqual(self.now(), [16, 39, 16, 16, 16, 16])
 
+    def test_belt(self):
+        """A worn belt (the waist slot) adds BELT_BONUS to picking pockets and opening locks, with
+        its switch on (BELT_IN_FORCE); nothing else, and nothing carried in the pack."""
+        m, gd = self.log.guest.mem, self.log.game
+        m[ITEMS + 5 * game.ITEM_SIZE + game.ITEM_SLOT] = 0xFF  # (no equipment penalty)
+        m[ITEMS + 6 * game.ITEM_SIZE + game.ITEM_SLOT] = game.WAIST
+        plain = [16, 39, 16, 16, 16, 16]
+        gd.belt = False
+        self.assertEqual(self.now(), plain)
+        gd.belt = True
+        self.assertEqual(self.now(), [21, 44, 16, 16, 16, 16])
+        m[ITEMS + 6 * game.ITEM_SIZE + game.ITEM_SLOT] = 20  # (in the pack)
+        self.assertEqual(self.now(), plain)
+
     def test_panel_shows_a_rangers(self):
         """A ranger (10th, no thief levels) with the stealth rule: move silently and hide in
         shadows in a thief's places (AD&D's 78 and 63), the rest 0; nothing without the rule."""

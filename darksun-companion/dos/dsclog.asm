@@ -65,6 +65,7 @@ VEC_REDRAW_ALL equ 0xDD    ; PROBE_REDRAW_ALL
 VEC_SCROLL equ 0xDC        ; PROBE_SCROLL
 VEC_HIT    equ 0xDB        ; PROBE_HIT
 VEC_ITEM_BOX equ 0xDA      ; PROBE_ITEM_BOX
+VEC_BELT equ 0xD9          ; PROBE_BELT
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 128         ; entries in the ring
@@ -219,8 +220,10 @@ xp_who     dw 0xFFFF            ; +262 the companion sets the party member to be
                                 ;      with PICK_TEXT (GIVE_XP: the game's own routine, and the
                                 ;      quest's sound; FFFFh: none), DSCLOG sets it back once given
 xp_amount  dw 0                 ; +264
-skills_on  dw 0                 ; +266 the companion sets 1 to have an item's box name a cloak's and
-                                ;      boots' bonus to hiding and moving silently (PROBE_ITEM_BOX)
+skills_on  dw 0                 ; +266 the companion sets SKILLS_STEALTH to have an item's box name a
+                                ;      cloak's and boots' bonus to hiding and moving silently
+                                ;      (PROBE_ITEM_BOX), SKILLS_BELT for a worn belt's to picking
+                                ;      pockets and opening locks (PROBE_BELT, and its box's line)
 
 ; TEXT BUFFER: what the game sends to its dialogue window, as records of
 ;   byte 0FEh, byte kind (the dialogue window's: 0 = a reply to choose, the
@@ -4722,13 +4725,16 @@ probe_hit:
 ; PROBE_ITEM_BOX: INT VEC_ITEM_BOX replaces "push 0" (2 bytes) at the end of the routine that fills
 ; an item's box (right-click an item: its picture, price, name, damage, HEAVY, AC BONUS; DSUN.EXE
 ; 8C1A1h), its lines drawn (SI: the item's type, DI: the row after them, but for AC BONUS's).
-; With SKILLS_ON, a cloak's or boots' bonus to hiding in shadows or moving silently (the Ledger's
-; rule: stealth.py) in the next row, with the routine's own text routine, as it draws AC BONUS;
-; then the push, as the code would have.
+; With SKILLS_ON's bits, a cloak's or boots' bonus to hiding in shadows or moving silently (the
+; Ledger's rule: stealth.py), or a belt's to picking pockets and opening locks (PROBE_BELT), in the
+; next row, with the routine's own text routine, as it draws AC BONUS; then the push, as the code
+; would have.
 IB_DRAW   equ 0x8C19A - 0x8C1A3 ; (DSUN.EXE) the text routine's far address in the call before,
                                 ;   less the way back
 TYPES_PTR equ 0x1669            ; DS: far pointer to the item types, 20 bytes each
-TYPE_WORN equ 9                 ; in one: where it is worn (8: as a cloak, 4: on the feet)
+TYPE_WORN equ 9                 ; in one: where it is worn (8: as a cloak, 4: on the feet, 2: as a belt)
+SKILLS_STEALTH equ 1            ; (SKILLS_ON's bits)
+SKILLS_BELT equ 2
 TYPE_ARMOUR equ 0x0F            ; ... 80h: armour (AC BONUS drawn)
 probe_item_box:
         pushad
@@ -4740,13 +4746,21 @@ probe_item_box:
         les bx, [TYPES_PTR]             ; (DS: the game's)
         imul ax, si, 20
         add bx, ax
+        mov al, [es:bx + TYPE_WORN]
+        mov cl, SKILLS_STEALTH
         mov dx, ib_hide
-        cmp byte [es:bx + TYPE_WORN], 8
-        je .draw
+        cmp al, 8
+        je .want
         mov dx, ib_quiet
-        cmp byte [es:bx + TYPE_WORN], 4
+        cmp al, 4
+        je .want
+        mov cl, SKILLS_BELT
+        mov dx, ib_belt
+        cmp al, 2
         jne .push
-.draw:  mov ax, di                      ; the row: after AC BONUS's, if the box drew it
+.want:  test [cs:skills_on], cl
+        jz .push
+        mov ax, di                      ; the row: after AC BONUS's, if the box drew it
         test byte [es:bx + TYPE_ARMOUR], 0x80
         jz .row
         add ax, 7
@@ -4783,6 +4797,49 @@ probe_item_box:
 ib_draw    dd 0
 ib_hide    db 'HIDE SHADOWS+10', 0  ; (the box holds 16 letters: as the game's "Protectn+1")
 ib_quiet   db 'MOVE SILENT+10', 0
+ib_belt    db 'POCKETS,LOCKS+5', 0
+
+; PROBE_BELT: INT VEC_BELT replaces "mov ax,si" (2 bytes) at the end of the game's thief skill
+; routine (DSUN.EXE 803B2h: SI the chance, armour and effects counted; DI the thief's object; the
+; game's [BP+8] the skill, a dword). With SKILLS_BELT, a thief wearing a belt (the waist slot)
+; gets BELT_BONUS more to pick pockets (0) and open locks (1), as the Ledger counts it
+; (game.py's thief_skills_now); then AX = the chance, as the code would have.
+WAIST      equ 5                ; the item's slot byte while worn as a belt
+BELT_BONUS equ 5
+COMBATANT_CREATURE equ 0xC37    ; in the things table: an object's creature (3 bytes an object)
+probe_belt:
+        sti
+        test byte [cs:skills_on], SKILLS_BELT
+        jz .chance
+        cmp word [bp + 0x0A], 0
+        jne .chance
+        cmp word [bp + 8], 1
+        ja .chance
+        push bx
+        push cx
+        push dx
+        push es
+        mov ax, ds
+        add ax, THINGS_SEG
+        mov [cs:r_things], ax
+        mov es, ax
+        imul bx, di, 3
+        mov ax, [es:bx + COMBATANT_CREATURE]
+        mov word [cs:ws_slot], WAIST
+        mov word [cs:ws_type], 0xFFFF
+        call worn_scan
+        pop es
+        pop dx
+        pop cx
+        pop bx
+        mov ax, si
+        cmp word [cs:ws_count], 0
+        je .out
+        add ax, BELT_BONUS
+        iret
+.chance:
+        mov ax, si
+.out:   iret
 
 old16      dd 0
 t_click    db 0
@@ -5007,6 +5064,9 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_ITEM_BOX
         mov dx, probe_item_box
         int 21h
+        mov ax, 2500h + VEC_BELT
+        mov dx, probe_belt
+        int 21h
         mov ax, 3516h           ; the keyboard's (TARGETING)
         int 21h
         mov [old16], bx
@@ -5047,8 +5107,8 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or DAh-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
-all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX
+busy    db 'DSCLOG: interrupts 60h-65h or D9h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT
 all_vectors_end:
 
         align 16, db 0

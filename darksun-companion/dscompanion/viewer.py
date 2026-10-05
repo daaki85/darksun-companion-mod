@@ -336,7 +336,8 @@ class Viewer:
             ttk.Checkbutton(rules, text=text, variable=self.rule_vars[key],
                             command=self._popups_changed).pack(anchor="w", pady=(4 if n else 0, 0))
         self.stealth_gear = tk.BooleanVar(value=settings.get("stealth_gear", True) is not False)
-        ttk.Checkbutton(rules, text="... a worn cloak adds 10 to hiding, worn boots 10 to moving silently",
+        ttk.Checkbutton(rules, text="... a worn cloak adds 10 to hiding, worn boots 10 to moving silently; "
+                                    "a worn belt adds 5 to picking pockets and opening locks (hiding or not)",
                         variable=self.stealth_gear, command=self._popups_changed).pack(anchor="w", padx=(20, 0))
 
         # the companion's own content: people, a quest and items in the game, and thief play. Some

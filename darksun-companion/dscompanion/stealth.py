@@ -103,15 +103,17 @@ def ranger_chance(gd: GameData, creature: int, skill: int) -> Optional[int]:
 
 CLOAK_HIDE, BOOTS_QUIET = 10, 10  # worn, a cloak helps hide in shadows and boots move silently
 MOST = 95  # (AD&D's most for a thief skill)
-# what's worn as a cloak and on the feet (an item type's +09h), and the least either costs while
-# they help (the game's Leather Cloak is 20; dearer ones, the magic, keep their prices)
-WORN_CLOAK, WORN_FEET, TYPE_WORN = 8, 4, 0x09
-GEAR_VALUE, ITEM_VALUE = 100, 0x06
+# what's worn as a cloak, on the feet and as a belt (an item type's +09h); the plain ones cost
+# GEAR_VALUE while they help (the game's Leather Cloak is 20). Magic ones (a plus, or a price above
+# PLAIN_MOST: the game's own magic gear) keep theirs; PLAIN_MOST takes in what an earlier version
+# priced plain ones at (100)
+WORN_CLOAK, WORN_FEET, WORN_BELT, TYPE_WORN = 8, 4, 2, 0x09
+GEAR_VALUE, PLAIN_MOST, ITEM_VALUE = 24, 100, 0x06
 
 
 def reprice(gd: GameData) -> int:
-    """Cloaks and boots anywhere in the region (carried, in a container, on the ground, in a
-    shop) priced GEAR_VALUE if they were less. How many were."""
+    """Plain cloaks, boots and belts anywhere in the region (carried, in a container, on the
+    ground, in a shop) priced GEAR_VALUE. How many were changed."""
     from . import ring
     it = ring.Items(gd)
     done = set()
@@ -120,8 +122,9 @@ def reprice(gd: GameData) -> int:
             if index in done or len(rec) < game.ITEM_SIZE \
                     or struct.unpack_from("<H", rec, game.ITEM_TYPE)[0] >= game.GAME_TYPES + 8:
                 continue  # (past the game's types and the companion's: no type record)
-            if gd.item_type_record(rec)[TYPE_WORN] in (WORN_CLOAK, WORN_FEET) \
-                    and struct.unpack_from("<H", rec, ITEM_VALUE)[0] < GEAR_VALUE:
+            value, = struct.unpack_from("<H", rec, ITEM_VALUE)
+            if gd.item_type_record(rec)[TYPE_WORN] in (WORN_CLOAK, WORN_FEET, WORN_BELT) \
+                    and rec[game.ITEM_PLUS] == 0 and value <= PLAIN_MOST and value != GEAR_VALUE:
                 gd.guest.write(it.items + index * game.ITEM_SIZE + ITEM_VALUE, struct.pack("<H", GEAR_VALUE))
                 done.add(index)
     return len(done)
