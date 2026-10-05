@@ -354,7 +354,9 @@ class Viewer:
                 ("semyon", "Semyon in the slave pens after he leaves the arena, and breaking out with Scar"),
                 ("vulture", "The cooked vulture: Dinos cooks it for the party (XP and a full rest)"),
                 ("pens_gear", "Gear for Kurzak, Legcrusher and Pehtucl, and the rest of the bone scale "
-                              "armour with a Bone Helm")):
+                              "armour with a Bone Helm"),
+                ("magic_arms", "The arena's 2 handed Bone Gythka and Kurzak's Short Sword are +1 magic "
+                               "weapons")):
             self.content_vars[key] = tk.BooleanVar(value=settings.get(key, True) is not False)
             ttk.Checkbutton(new, text=text, variable=self.content_vars[key],
                             command=self._popups_changed).pack(anchor="w", pady=(4, 0))
@@ -754,6 +756,7 @@ class Viewer:
                 self.dice.scroll_map = self.scroll_map.get()
                 self.dice.scroll_right = self.scroll_right.get()
                 self.dice.pens_gear = self.content_vars["pens_gear"].get()
+                self.dice.magic_arms = self.content_vars["magic_arms"].get()
                 self.dice.vulture_on = self.content_vars["vulture"].get()
                 self.dice.stealth_gear = self.stealth_gear.get()
                 self.dice.load_picked(launch.pickpocketed())
@@ -874,6 +877,7 @@ class Viewer:
             self.dice.scroll_map = self.scroll_map.get()
             self.dice.scroll_right = self.scroll_right.get()
             self.dice.pens_gear = self.content_vars["pens_gear"].get()
+            self.dice.magic_arms = self.content_vars["magic_arms"].get()
             self.dice.vulture_on = self.content_vars["vulture"].get()
             self.dice.stealth_gear = self.stealth_gear.get()
             self.dice.set_rules(self._rules())

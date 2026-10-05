@@ -24,14 +24,14 @@ from collections import Counter, deque
 from dataclasses import dataclass
 from typing import Callable, Deque, Dict, List, NamedTuple, Optional, Tuple
 
-from . import bonescale, dust, game, rings, targeting, icons, kalzith, monsters, names, npcitems, pickpocket, ring, scrolling, semyon, shadows, sprites, stealth, tools, vulture
+from . import arms, bonescale, dust, game, rings, targeting, icons, kalzith, monsters, names, npcitems, pickpocket, ring, scrolling, semyon, shadows, sprites, stealth, tools, vulture
 from .game import (CONVENTIONAL_AND_UPPER, CREATURE_ABILITIES, CREATURE_SIDE, CREATURE_THAC0, EFFECT_NAMES,
                    EFFECT_RULES, MATERIAL_TO_HIT, MATERIALS, SAVE_NAMES, STR_DAMAGE, GameData)
 from .guestmem import GuestMemory
 from .textlog import KIND_MESSAGE, KIND_PORTRAIT, KIND_TEXT, Dialogue, DialogueEntry, TextBuffer
 from .tracker import PartyTracker
 
-HDR_SIG = b"DSCLOGvV"
+HDR_SIG = b"DSCLOGvW"
 # DSCLOG's header: the in-game turn summaries (see PROBE_TURN in dos/dsclog.asm)
 TSR_TURN_SEQ, TSR_REPLY_SEQ, TSR_POPUPS, TSR_MSG_OFF, TSR_ENDED, TSR_HDR_OFF = 138, 140, 142, 144, 146, 20
 MSG_SIZE = 900
@@ -51,6 +51,8 @@ BIOS_TIMER = 0x46C
 # ... and the rule changes it makes to the game (the Options tab)
 TSR_RULES = 170
 TSR_MAIN_TICKS = 260  # the map's main loop run (counted)
+TSR_XP_WHO, TSR_XP_AMOUNT = 262, 264  # a party member to be given XP with the pick's text (FFFFh: none)
+TSR_SKILLS_ON = 266  # item boxes name a cloak's and boots' bonus to hiding and moving silently
 TSR_PICK_SEQ, TSR_PICK_REPLY, TSR_PICK_OFF, TSR_PICK_ON, PICK_SIZE = 172, 174, 176, 178, 240
 PICK_TOOLS, PICK_KEY = 1, 2  # (TSR_PICK_ON: the thieving tools on someone; P in a conversation too)
 TSR_USE_SEQ, TSR_USE_REPLY, TSR_USE_WHO, TSR_USE_TAKEN, TSR_USE_ITEM = 180, 182, 184, 186, 188
@@ -335,6 +337,7 @@ class DiceLog:
         self._shadows = shadows.Shadows()
         self.show_dust = True  # dust raised by walkers on sand and dirt (dust.py)
         self.pens_gear = True  # the slave pens' gear for Kurzak, Legcrusher, Pehtucl, the bone scale set
+        self.magic_arms = True  # the arena's gythka and Kurzak's short sword +1 (arms.py)
         self.vulture_on = True  # the cooked vulture quest (vulture.py)
         self.stealth_gear = True  # a worn cloak's and boots' bonuses to hiding (stealth.py)
         self._dust = dust.Dust()
@@ -544,6 +547,13 @@ class DiceLog:
         base = self.tsr_hdr - struct.unpack("<H", self.guest.read(self.tsr_hdr + TSR_HDR_OFF, 2))[0]
         self.guest.write(base + offset, text.encode("cp437", "replace")[:PICK_SIZE - 1] + b"\0")
 
+    def _write_xp(self, result: Optional["pickpocket.Attempt"]) -> None:
+        """The XP that came with what was lifted (Kurzak's Short Sword), for DSCLOG to give with
+        the game's own routine as it shows the text; none otherwise."""
+        who, xp = (result.xp_to, result.xp) if result is not None and result.xp_to is not None else (0xFFFF, 0)
+        self.guest.write(self.tsr_hdr + TSR_XP_AMOUNT, struct.pack("<H", xp))
+        self.guest.write(self.tsr_hdr + TSR_XP_WHO, struct.pack("<H", who))
+
     def _answer_use(self) -> List[str]:
         """An item was used on something on the map: if it was the thieving tools on someone,
         try their pockets; if the cooked vulture, see what comes of it (vulture.py); and have
@@ -576,6 +586,7 @@ class DiceLog:
         except (struct.error, IndexError, ValueError):
             result, taken = None, False
         self._write_pick_text(result.text if result else "")
+        self._write_xp(result)
         self.guest.write(self.tsr_hdr + TSR_USE_TAKEN, struct.pack("<H", int(taken)))
         self.guest.write(self.tsr_hdr + TSR_USE_REPLY, seq)
         if not result:
@@ -599,6 +610,7 @@ class DiceLog:
         offset = struct.unpack("<H", self.guest.read(self.tsr_hdr + TSR_PICK_OFF, 2))[0]
         base = self.tsr_hdr - struct.unpack("<H", self.guest.read(self.tsr_hdr + TSR_HDR_OFF, 2))[0]
         self.guest.write(base + offset, text.encode("cp437", "replace")[:PICK_SIZE - 1] + b"\0")
+        self._write_xp(result)
         self.guest.write(self.tsr_hdr + TSR_PICK_REPLY, seq)
         if not result:
             return []
@@ -625,6 +637,7 @@ class DiceLog:
         self.scroll_map = bool(settings.get("scroll_map", True))
         self.show_dust = bool(settings.get("dust", True))
         self.pens_gear = bool(settings.get("pens_gear", True))
+        self.magic_arms = bool(settings.get("magic_arms", True))
         self.vulture_on = bool(settings.get("vulture", True))
         self.stealth_gear = bool(settings.get("stealth_gear", True))
         self.ring_mode = rings.mode(settings)
@@ -643,6 +656,8 @@ class DiceLog:
             self.game.rules = rules
         if self.tsr_hdr is not None:
             self.guest.write(self.tsr_hdr + TSR_RULES, struct.pack("<H", rules))
+            skills = bool(rules & game.RULE_STEALTH) and self.stealth_gear  # (the rule's, with a worn cloak's, boots')
+            self.guest.write(self.tsr_hdr + TSR_SKILLS_ON, struct.pack("<H", int(skills)))
             table = self.game.ds * 16 + game.SAVE_KINDS if self.game is not None else None
             # (only over the game's own table: kind 5 is petrification/polymorph or, so far, the spell save)
             if table is not None and struct.unpack("<5H", self.guest.read(table, 10)) == game.KIND_TO_SAVE[:5] \
@@ -1013,6 +1028,12 @@ class DiceLog:
                 out += self._bone_watch.check(self.game, self.tools_given, self._recent)  # (one vanished)
                 npcitems.reprice(self.game)  # (those given before they had a magic item's price)
                 self._tools_new += sorted(self.tools_given - before)
+            if self.magic_arms and npcitems.types_ready(self.game, self.tsr_hdr):
+                before = set(self.tools_given)
+                out += arms.upgrade(self.game, self.tools_given)  # the gythka and the short sword +1
+                self._tools_new += sorted(self.tools_given - before)
+            if self.stealth_gear:
+                stealth.reprice(self.game)  # (cloaks and boots: they help a thief hide and move silently)
             kalzith.stock(self.game, bool(self.rules & game.RULE_CATS_GRACE))  # (once a game, by its flag)
             semyon.watch(self.game)  # (killed: never put in the pens)
             if self.vulture_on:

@@ -58,7 +58,7 @@ def repaint(gd: GameData) -> None:
                     gd.guest.write(at + game.ITEM_NAME, struct.pack("<H", NAME_ENTRY))
                 if struct.unpack_from("<H", data, 0)[0] != PICTURE:
                     gd.guest.write(at, struct.pack("<H", PICTURE))
-                    gd.guest.write(at + PICTURE_CACHE, bytes(4))
+                    gd.guest.write(at + PICTURE_CACHE, bytes(2))
 
 
 def new_game(gd: GameData) -> bool:

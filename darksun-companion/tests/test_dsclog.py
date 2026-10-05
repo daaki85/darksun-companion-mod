@@ -21,7 +21,7 @@ from dscompanion.gamepatch import (VEC_AC, VEC_DOUBLE, VEC_MSG, VEC_NEXT, VEC_RA
                                   VEC_SPELL_TEXT, VEC_CHUNK_ID)
 
 try:
-    from unicorn import Uc, UC_ARCH_X86, UC_HOOK_INTR, UC_HOOK_MEM_WRITE, UC_MODE_16
+    from unicorn import Uc, UC_ARCH_X86, UC_HOOK_CODE, UC_HOOK_INTR, UC_HOOK_MEM_WRITE, UC_MODE_16
     from unicorn import x86_const as r
 except ImportError:  # optional dependency
     Uc = None
@@ -368,6 +368,40 @@ class UseItemTests(unittest.TestCase):
     def test_the_tools(self):
         self.taken = 1
         self.run_use(300, self.DONE)
+
+    def test_xp(self):
+        """What was lifted is worth XP (Kurzak's sword): before its text, DSCLOG's GIVE_XP calls
+        the game's routine for a quest's XP (who, amount) and plays the quest's sound, once."""
+        mu, calls = self.mu, []
+        image = load_image()
+        xp_who = image.find(HDR_SIG) + 262
+        give_xp = image.find(bytes.fromhex("2e833e") + struct.pack("<H", xp_who) + bytes.fromhex("ff74"))
+        self.assertGreater(give_xp, 0)
+        to_game = GAME_DS - 0x4356  # (the game's segments, from its DS)
+        xp, sound = (to_game + 0x4251) * 16 + 0x005C, (to_game + 0x1A0A) * 16 + 0x0663
+        for at in (xp, sound):
+            mu.mem_write(at, b"\xcb")  # retf
+
+        def called(uc, address, size, _):
+            sp = uc.reg_read(r.UC_X86_REG_SS) * 16 + uc.reg_read(r.UC_X86_REG_SP)
+            args = struct.unpack("<HH", uc.mem_read(sp + 4, 4))
+            calls.append(("xp", args) if address == xp else ("sound", args[:1]))
+        mu.hook_add(UC_HOOK_CODE, called, begin=xp, end=xp)
+        mu.hook_add(UC_HOOK_CODE, called, begin=sound, end=sound)
+        back = 0xE000  # (past the image: where its RET comes back to)
+
+        def run():
+            for name, value in dict(cs=TSR, ds=GAME_DS, ss=SS, esp=0x7FE, ebp=BP).items():
+                mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+            mu.mem_write(SS * 16 + 0x7FE, struct.pack("<H", back))
+            mu.emu_start(TSR * 16 + give_xp, TSR * 16 + back, count=10000)
+            self.assertEqual((mu.reg_read(r.UC_X86_REG_IP), mu.reg_read(r.UC_X86_REG_SP)), (back, 0x800))
+        mu.mem_write(self.hdr + 262, struct.pack("<HH", 3, 200))  # Cilla (3), 200
+        run()
+        self.assertEqual(calls, [("xp", (3, 200)), ("sound", (53,))])
+        self.assertEqual(struct.unpack("<H", mu.mem_read(self.hdr + 262, 2))[0], 0xFFFF)
+        run()
+        self.assertEqual(len(calls), 2)  # (asked for once)
 
 
 @unittest.skipIf(Uc is None, "unicorn is not installed")

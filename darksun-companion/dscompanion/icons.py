@@ -10,13 +10,17 @@ cycles: 240-248, fire): from the plain item's icon.
 
 - the Bone Helm (bonescale.py): the leather Helm's, each shade of leather made the bone scale
   armour's of the same brightness (BONE).
+- Kreenfang (arms.py, the arena's Gythka +1): the bone gythka's, its two blades in the fire colours;
+- Shadowseeker (arms.py, Kurzak's Short Sword +1): the Short Sword's, its blade night steel (dark
+  blue-greys).
 
 Violet is 35-37 of the palette, which no region changes (232-239, violet in RESOURCE.GFF's
 palette, are each region's own: red in the slave pens).
 
 The game reads object pictures from SEGOBJEX.GFF. The game folder is never changed: the launcher
-writes a copy of that file next to the patched game (the dos folder, D: in DOSBox) with six
-objects added, and DSCLOG has the game open the copy instead (its INT 21h hook, PROBE_DOS_OPEN).
+writes a copy of that file next to the patched game (the dos folder, D: in DOSBox) with an
+object added for each of these icons, and DSCLOG has the game open the copy instead (its INT
+21h hook, PROBE_DOS_OPEN).
 An object (OJFF) is an item's picture number negated; its word +0Ch names its icon (a BMP chunk),
 and a BMP chunk of its own number is its picture on the map, here the plain item's.
 """
@@ -31,6 +35,7 @@ OBJECTS_FILE = "SEGOBJEX.GFF"
 OJFF_ICON = 0x0C  # an object's word naming its icon (BMP chunk)
 FIRE = tuple(range(240, 249))  # the colours the game cycles: the Bloodwrath's glow
 VIOLET = (37, 36, 35, 36)  # a violet no region changes
+NIGHT_STEEL = (18, 20, 22, 24, 22, 20)  # dark blue-greys no region changes (17-31)
 
 Rows = List[List[Optional[int]]]
 
@@ -100,6 +105,8 @@ def recolour(rows: Rows, colours: Dict[int, int]) -> Rows:
     return [[colours.get(p, p) if p is not None else None for p in r] for r in rows]
 
 
+BLADE = range(0xD1, 0xDA)  # a blade's greys, in the bone gythka's and the metal sword's icons
+
 # (name, the plain item's picture, the new object's number, its icon's number, the icon made from
 # the plain one's)
 ICONS: Tuple[Tuple[str, int, int, int, Callable[[Rows], Rows]], ...] = (
@@ -111,6 +118,8 @@ ICONS: Tuple[Tuple[str, int, int, int, Callable[[Rows], Rows]], ...] = (
     ("Pehtucl's Ring of Protection +1", 0xFA1C, 2430, 2435, lambda r: glow(r, lambda p, x, y: p == 0x3A, VIOLET)),
     ("Ring of Protection +1", 0xFA1C, 2431, 2436, lambda r: glow(r, lambda p, x, y: p == 0x3A, FIRE)),
     ("Bone Helm", 0xFC03, 2437, 2438, lambda r: recolour(r, BONE)),
+    ("Kreenfang", 0xFC0D, 2446, 2447, lambda r: glow(r, lambda p, x, y: p in BLADE, FIRE)),
+    ("Shadowseeker", 0xFC0A, 2448, 2449, lambda r: glow(shorter_blade(r), lambda p, x, y: p in BLADE, NIGHT_STEEL)),
 )
 PICTURES: Dict[str, int] = {name: 0x10000 - number for name, _, number, _, _ in ICONS}  # an item's +0
 
@@ -316,8 +325,9 @@ def ready(gd, tsr_hdr) -> bool:
 
 
 def which(rec: bytes) -> Optional[str]:
-    """Which of the companion's items an item record is, if one: the Short Sword and the Cloak by
-    their types, the rings by their names and plus, Leather Chest Armor +1 by its type and plus."""
+    """Which of the companion's items an item record is, if one: the Short Sword (Shadowseeker once +1) and the
+    Cloak by their types, the rings by their names and plus, Leather Chest Armor +1 and Kreenfang (the Gythka
+    +1) by their types and plus (the game has no gythka with a plus)."""
     from . import game, npcitems, ring
     if len(rec) < game.ITEM_SIZE:
         return None
@@ -326,7 +336,9 @@ def which(rec: bytes) -> Optional[str]:
         return "Bone Helm"
     plus = struct.unpack("b", rec[game.ITEM_PLUS:game.ITEM_PLUS + 1])[0]
     if kind == game.SHORT_SWORD_TYPE:
-        return "Short Sword"
+        return "Shadowseeker" if plus == 1 else "Short Sword"
+    if kind == game.GYTHKA_TYPE and plus == 1:
+        return "Kreenfang"
     if kind == game.CLOAK_TYPE:
         return "Cloak of Protection +1"
     if ring.is_ring(rec) and plus == 1:
@@ -360,6 +372,6 @@ def repaint(gd, on: bool) -> int:
             if struct.unpack_from("<H", rec, 0)[0] != want:
                 at = it.items + item * game.ITEM_SIZE
                 gd.guest.write(at, struct.pack("<H", want))
-                gd.guest.write(at + PICTURE_CACHE, bytes(4))
+                gd.guest.write(at + PICTURE_CACHE, bytes(2))  # (a word: +0Eh and +0Fh are its spell)
                 done.add(item)
     return len(done)

@@ -183,5 +183,31 @@ class StealthTests(unittest.TestCase):
         self.assertEqual(log.turn_lines(), ["Dag's turn"])
 
 
+class GearPriceTests(unittest.TestCase):
+    def test_cloaks_and_boots(self):
+        """Worn as a cloak or on the feet, priced at least GEAR_VALUE; dearer ones (magic) and
+        other things keep their prices."""
+        from dscompanion import ring
+        from test_dicelog import ITEM_TYPES, ITEMS
+        from test_ring import arena
+        log = arena()
+        m, gd = log.guest.mem, log.game
+        kinds = ((50, stealth.WORN_CLOAK), (51, stealth.WORN_FEET), (52, 5))  # cloak, boots, sword
+        for typ, worn in kinds:
+            m[ITEM_TYPES + typ * game.ITEM_TYPE_SIZE + stealth.TYPE_WORN] = worn
+        items = ((90, 50, 20), (91, 51, 1), (92, 50, 5000), (93, 52, 10))
+        for n, (item, typ, value) in enumerate(items):
+            rec = ITEMS + item * game.ITEM_SIZE
+            nxt = items[n + 1][0] if n + 1 < len(items) else game.NO_ITEM
+            struct.pack_into("<h", m, rec + game.ITEM_NEXT, nxt)
+            struct.pack_into("<H", m, rec + game.ITEM_TYPE, typ)
+            struct.pack_into("<H", m, rec + stealth.ITEM_VALUE, value)
+        struct.pack_into("<Bh", m, ring.Items(gd).things + 410 * 3, game.THING_ITEM, 90)
+        self.assertEqual(stealth.reprice(gd), 2)
+        price = lambda item: struct.unpack_from("<H", m, ITEMS + item * game.ITEM_SIZE + stealth.ITEM_VALUE)[0]
+        self.assertEqual([price(item) for item, _, _ in items], [stealth.GEAR_VALUE, stealth.GEAR_VALUE, 5000, 10])
+        self.assertEqual(stealth.reprice(gd), 0)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -43,6 +43,7 @@ records; this ledger keeps the ones the game doesn't show you.
   - [Picking pockets](#picking-pockets)
   - [The cooked vulture](#the-cooked-vulture)
   - [The slave pens' gear](#the-slave-pens-gear)
+  - [Kreenfang and Shadowseeker](#kreenfang-and-shadowseeker)
   - [The bone scale set](#the-bone-scale-set)
   - [Kalzith](#kalzith)
   - [Semyon](#semyon)
@@ -146,6 +147,10 @@ records; this ledger keeps the ones the game doesn't show you.
   cooks it properly for the party (see [The cooked vulture](#the-cooked-vulture)).
 - **Gear for the slave pens' bosses:** Kurzak, Legcrusher and Pehtucl carry
   things worth taking from them (see [The slave pens' gear](#the-slave-pens-gear)).
+- **Two named magic weapons:** the arena's 2 handed Bone Gythka becomes
+  Kreenfang, and Kurzak's short sword Shadowseeker, which lets its wielder see
+  the invisible; lifting Shadowseeker from Kurzak is worth 200 XP (see
+  [Kreenfang and Shadowseeker](#kreenfang-and-shadowseeker)).
 - **Kalzith, a defiler in the slave pens,** who sells spell scrolls to a party
   that treats him well (see [Kalzith](#kalzith)).
 - **Semyon back in the slave pens,** as he promises when he leaves the arena,
@@ -184,7 +189,7 @@ records; this ledger keeps the ones the game doesn't show you.
 Nothing in the game folder or your save files is changed, except that a game
 you save keeps what the Ledger has handed out or changed in play: the Ring +1,
 a thief's Thieves' Tools, whatever a thief has lifted, the slave pens' gear,
-Kalzith and his scrolls, Semyon in his pen, and the XP and rest from Dinos's meal (untick the ring's and the pockets'
+Kreenfang and Shadowseeker, cloaks' and boots' prices, Kalzith and his scrolls, Semyon in his pen, and the XP and rest from Dinos's meal (untick the ring's and the pockets'
 boxes to go without those). The Short Sword and the Cloak of Protection are
 item types the original game doesn't have, so a save with them should be
 loaded with the dice log.
@@ -393,6 +398,7 @@ tools** tabs, and **Options** (Alt+O) with the Ledger's switches, in groups:
   thief skill table, hiding in shadows (and under it, a worn cloak's and
   boots' bonuses).
 - **New content**: Kalzith, Semyon, the cooked vulture, the slave pens' gear,
+  Kreenfang and Shadowseeker,
   the Ring +1, picking pockets, and a button that gives each thief a set of
   Thieves' Tools now. Kalzith, Semyon and the vulture are put in the game's
   copies the next time it is started; what a saved game already has (people
@@ -1442,7 +1448,14 @@ attack gives the thief away, and so does the turn ending without one. An enemy
 next to the thief when the turn comes means no hiding at all: get clear
 first. A worn cloak adds 10 to hiding in shadows (before daylight halves it)
 and worn boots add 10 to moving silently, for rangers too, up to 95:
-`needs 18 or less (26 +10 cloak = 36, halved in daylight)`.
+`needs 18 or less (26 +10 cloak = 36, halved in daylight)`. With that switched
+on, a cloak's or boots' item box (right-click it on the inventory screen) says
+so under its name, `HIDE SHADOWS+10` or `MOVE SILENT+10`, and a cloak or pair
+of boots costs at least 100 (the game's Leather Cloak is 20; dearer ones, the
+magic, keep their prices), anywhere in the region, shops included. How: the
+patched game's item box (`INT DAh`, where it has drawn the name) asks the
+helper, which draws the line with the game's own text routine when the item's
+type is worn as a cloak or on the feet.
 
 ```
 Cilla's turn
@@ -1696,7 +1709,11 @@ it stands now (effects counted, as in the thief rows):
   cell): something weighing 10 or less (a bag or arrows are 10, a helm 15, a
   long sword 30) that isn't worn on the body (armour, a belt, boots, a helm, a
   cloak). A dagger, a ring, an amulet, a gem or food can be lifted, and so can
-  Kurzak's short sword (see [The slave pens' gear](#the-slave-pens-gear)). Keys stay,
+  Kurzak's short sword, Shadowseeker, whatever its weight: lifting it is worth
+  200 XP to the thief, given by the game's own routine for a quest's XP
+  ("Cilla receives 200 experience points!", the quest's sound; split among a
+  multi-class thief's classes, as the game's quests are) (see
+  [Kreenfang and Shadowseeker](#kreenfang-and-shadowseeker)). Keys stay,
   as scripts may look for them. People outside the party keep all they own in
   their pack, so this goes by what each thing is.
 - **Failure:** a move silently roll. Made, the thief slips away unnoticed;
@@ -1799,6 +1816,46 @@ its owner's things (from the game's free list, worn where the slot is free,
 else in a backpack cell), and the game keeps and saves them like its own. In
 the original game, the sword and cloak are items of types it doesn't have:
 don't load a save that has them without the dice log.
+
+### Kreenfang and Shadowseeker
+
+With **Kreenfang and Shadowseeker** ticked (Options, New content; on unless
+turned off), two plain weapons of the early game are magic, named as the
+Templar's Obsidian Bloodwrath (a long sword +1, 20800) is:
+
+| Weapon | Was | Now | Price |
+|---|---|---|---|
+| **Kreenfang** | the arena's 2 handed Bone Gythka, the Tohr-kreen's | a gythka +1 (2d4+1) | 18000 |
+| **Shadowseeker** | Kurzak's metal Short Sword ([the slave pens' gear](#the-slave-pens-gear)) | a short sword +1 (1d6+1); whoever wields it, in either hand, sees the invisible | 22000 |
+
+The game has gythkas only in the hands of kreen; the first the Ledger sees
+with someone in the party, or in the arena with no living monster holding it
+(on the ground, on a body), becomes Kreenfang, once a game: the Tohr-kreen
+fights with its plain one, and a game already past the arena has its gythka
+made Kreenfang too. Shadowseeker is made so wherever it is, on Kurzak or taken.
+Their plus counts for hitting and damage as any magic weapon's, the game shows
+it with the name (`+1 Kreenfang`), and each has its own icon (see
+[Item icons](#item-icons)). A thief who lifts Shadowseeker from Kurzak gets
+200 XP (see [Picking pockets](#picking-pockets)).
+
+Shadowseeker's Detect Invisibility is the game's own way with a magic item's
+spell: an item names a spell (its byte at +0Fh, one past the spell's number),
+and when it is readied the game puts a spell it counts as helpful on the
+wearer, until it is put away (a weapon's harmful spells are cast on what it
+hits instead). Its item box shows the spell's icon; right-clicked, the spell's
+description. A sword already in hand when the Ledger made it so (from an
+earlier version) has it from the next time it is readied. The log says when
+each is made:
+
+```
+Kurzak's Short Sword is Shadowseeker, a short sword +1: its wielder sees the invisible.
+The arena's 2 handed Bone Gythka (the Tohr-kreen's) is Kreenfang, a gythka +1.
+```
+
+How: the names are two more of the helper's entries after the game's (see
+[New item names](#new-item-names)); the Ledger sets each item's plus, price,
+name and (Shadowseeker's) spell, and the game keeps and saves them like its
+own. Weapons an earlier version made +1 get the name, the price and the spell.
 
 ### The bone scale set
 
@@ -2052,18 +2109,21 @@ game cycles, so they flicker like fire):
 | **Ring of Protection +1**, Pehtucl's | its gold band violet |
 | **Ring of Protection +1**, the arena's | its gold band in the cycling fire colours |
 | **Bone Helm** ([the bone scale set](#the-bone-scale-set)) | the leather Helm's, each shade of leather made the bone scale armour's of the same brightness |
+| **Kreenfang** ([Kreenfang and Shadowseeker](#kreenfang-and-shadowseeker)) | the bone gythka's, its two blades in the cycling fire colours |
+| **Shadowseeker** | the Short Sword's, its blade night steel (dark blue-greys) |
 
 ![Dream's backpack: under a long sword, the Short Sword, Leather Chest Armor +1, the Cloak of Protection +1, and Pehtucl's and the arena's Rings of Protection +1](docs/icons.png)
 
-On the map, dropped, each looks like the plain item. The violet is one no
-region's palette changes: the colours after it, violet in the game's own
-palette file, are each region's to set (red in the slave pens).
+On the map, dropped, each looks like the plain item. The violet and the night
+steel are colours no region's palette changes: the colours after the violet,
+violet in the game's own palette file, are each region's to set (red in the
+slave pens).
 
 How: the game reads its objects' pictures from `SEGOBJEX.GFF`. When it starts
 the game, the launcher writes `dos\SEGOBJEX.GFF`: the game's file (only read)
-with six objects and their pictures added at its end, its index grown to
-list them (in order of number, as the game looks them up) and a new table of
-contents after them (`dscompanion/icons.py`). The helper has the game open
+with an object for each of these icons and their pictures added at its end,
+its index grown to list them (in order of number, as the game looks them up)
+and a new table of contents after them (`dscompanion/icons.py`). The helper has the game open
 that copy instead of its own (its `INT 21h` hook: it opens the copy when the
 game opens `SEGOBJEX.GFF`, and notes that it has), and the Ledger gives the
 Ledger's items those objects' pictures. In a game without the copy, the Ledger
@@ -2078,8 +2138,9 @@ is loaded, and none of it is free to take, so in games started with the dice
 log the helper makes room for 32 more each time and copies its own names into
 them, from number 322 on: the Ring of Protection's (322), the Thieves'
 Tools' (323), the Short Sword's (324), the Cloak of Protection's (325,
-"Cloak/Protectn") and Pehtucl's ring's (326, "Ring/Protection" as the arena's:
-an entry of its own tells the two rings apart, for their icons), the rest for
+"Cloak/Protectn"), Pehtucl's ring's (326, "Ring/Protection" as the arena's:
+an entry of its own tells the two rings apart, for their icons), Shadowseeker's
+(327) and Kreenfang's (328), the rest for
 items to come. Nothing in the game checks the
 numbers against its own 322 (its inventory, list, Look and View Character
 screens all read the name the same way), and the names are there before

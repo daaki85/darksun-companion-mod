@@ -64,6 +64,7 @@ VEC_REDRAW equ 0xDE        ; PROBE_REDRAW
 VEC_REDRAW_ALL equ 0xDD    ; PROBE_REDRAW_ALL
 VEC_SCROLL equ 0xDC        ; PROBE_SCROLL
 VEC_HIT    equ 0xDB        ; PROBE_HIT
+VEC_ITEM_BOX equ 0xDA      ; PROBE_ITEM_BOX
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 128         ; entries in the ring
@@ -92,7 +93,7 @@ section image follows=mz vstart=0
 
 ; ---- header, found by the companion via SIG (16-byte aligned) ----
 hdr:
-sig      db 'DSCLOGvV'          ; +0
+sig      db 'DSCLOGvW'          ; +0
 seq      dw 0                   ; +8   entries written so far (wraps at 65536)
 widx     dw 0                   ; +10  ring slot the next entry goes to
 nent     dw NENT                ; +12
@@ -214,6 +215,12 @@ hit_target dw 0xFFFF            ; +256 the enemy chosen (the companion sets it; 
 attack_seq dw 0                 ; +258 Enter pressed on it (counted)
 main_ticks dw 0                 ; +260 the map's main loop run (counted: not while a talk, menu or
                                 ;      shop is open)
+xp_who     dw 0xFFFF            ; +262 the companion sets the party member to be given XP_AMOUNT
+                                ;      with PICK_TEXT (GIVE_XP: the game's own routine, and the
+                                ;      quest's sound; FFFFh: none), DSCLOG sets it back once given
+xp_amount  dw 0                 ; +264
+skills_on  dw 0                 ; +266 the companion sets 1 to have an item's box name a cloak's and
+                                ;      boots' bonus to hiding and moving silently (PROBE_ITEM_BOX)
 
 ; TEXT BUFFER: what the game sends to its dialogue window, as records of
 ;   byte 0FEh, byte kind (the dialogue window's: 0 = a reply to choose, the
@@ -1160,6 +1167,7 @@ probe_pick:
         push word [ss:bx + 34]
         push bp
         mov bp, sp
+        call give_xp
         call pick_show
         pop bp
         pop ax
@@ -1193,6 +1201,33 @@ pick_show:
 
 PICK_SIZE equ 240
 pick_text times PICK_SIZE db 0
+
+; GIVE_XP: the XP the companion asked for with PICK_TEXT (XP_WHO, XP_AMOUNT), given by the routine
+; the game's scripts give one person XP with (GPL 21h; it sees to a level gained), and the sound
+; of a quest done that they play with it ("... receives N experience points!" is in PICK_TEXT);
+; DS = the game's. Called in the frame PROBE_PICK and PROBE_USE_ITEM make for the overlay manager.
+XP_SEG    equ 0x4251            ; (DSUN.EXE segments, less the load segment) an overlay's entry:
+XP_OFF    equ 0x005C            ;   (who, how many)
+give_xp:
+        cmp word [cs:xp_who], 0xFFFF
+        je .ret
+        mov ax, ds
+        sub ax, DGROUP_SEG - XP_SEG
+        mov [cs:xp_call + 2], ax
+        push word [cs:xp_amount]
+        push word [cs:xp_who]
+        call far [cs:xp_call]
+        add sp, 4
+        mov ax, ds
+        sub ax, DGROUP_SEG - DROP_SEG
+        mov [cs:sound_call + 2], ax
+        push word QUEST_SOUND
+        call far [cs:sound_call]
+        add sp, 2
+        mov word [cs:xp_who], 0xFFFF
+.ret:   ret
+
+xp_call dw XP_OFF, 0
 drop_call dw DROP_OFF, 0
 sound_call dw SOUND_OFF, 0
 
@@ -1288,6 +1323,7 @@ probe_use_item:
         push word [ss:bx + 34]
         push bp
         mov bp, sp
+        call give_xp
         mov word [cs:show_text], pick_text
         call show_window
         pop bp
@@ -2735,7 +2771,11 @@ extra_names:
         times NAME_SIZE - 14 db 0
         db "Ring/Protection"            ; (Pehtucl's ring: the arena's is the first; their icons differ)
         times NAME_SIZE - 15 db 0
-        times (NAMES_EXTRA - 5) * NAME_SIZE db 0
+        db "Shadowseeker"               ; (Kurzak's Short Sword made +1: MAGIC_ARMS)
+        times NAME_SIZE - 12 db 0
+        db "Kreenfang"                  ; (the arena's Bone Gythka made +1)
+        times NAME_SIZE - 9 db 0
+        times (NAMES_EXTRA - 7) * NAME_SIZE db 0
 
 ; STEALTH (RULE_STEALTH): a thief who starts a turn with no enemy next to them may hide in
 ; shadows and move silently up to someone; the companion rolls both and, when both succeed,
@@ -4679,6 +4719,71 @@ probe_hit:
         sub sp, 0x10
         jmp far [cs:h_resume]
 
+; PROBE_ITEM_BOX: INT VEC_ITEM_BOX replaces "push 0" (2 bytes) at the end of the routine that fills
+; an item's box (right-click an item: its picture, price, name, damage, HEAVY, AC BONUS; DSUN.EXE
+; 8C1A1h), its lines drawn (SI: the item's type, DI: the row after them, but for AC BONUS's).
+; With SKILLS_ON, a cloak's or boots' bonus to hiding in shadows or moving silently (the Ledger's
+; rule: stealth.py) in the next row, with the routine's own text routine, as it draws AC BONUS;
+; then the push, as the code would have.
+IB_DRAW   equ 0x8C19A - 0x8C1A3 ; (DSUN.EXE) the text routine's far address in the call before,
+                                ;   less the way back
+TYPES_PTR equ 0x1669            ; DS: far pointer to the item types, 20 bytes each
+TYPE_WORN equ 9                 ; in one: where it is worn (8: as a cloak, 4: on the feet)
+TYPE_ARMOUR equ 0x0F            ; ... 80h: armour (AC BONUS drawn)
+probe_item_box:
+        pushad
+        push es
+        cmp word [cs:skills_on], 0
+        je .push
+        cmp si, 0x270F
+        jae .push
+        les bx, [TYPES_PTR]             ; (DS: the game's)
+        imul ax, si, 20
+        add bx, ax
+        mov dx, ib_hide
+        cmp byte [es:bx + TYPE_WORN], 8
+        je .draw
+        mov dx, ib_quiet
+        cmp byte [es:bx + TYPE_WORN], 4
+        jne .push
+.draw:  mov ax, di                      ; the row: after AC BONUS's, if the box drew it
+        test byte [es:bx + TYPE_ARMOUR], 0x80
+        jz .row
+        add ax, 7
+.row:   mov si, sp
+        mov bx, [ss:si + 34]            ; the way back (after ES and the PUSHAD)
+        mov es, [ss:si + 36]
+        mov ecx, [es:bx + IB_DRAW]
+        mov [cs:ib_draw], ecx
+        push dword 0x00960081           ; (as the box draws its lines)
+        push ax                         ; y
+        push word [bp - 0x0C]           ; x
+        push cs
+        push dx
+        push dword [bp + 8]             ; the box's window
+        call far [cs:ib_draw]
+        add sp, 16
+.push:  pop es
+        popad
+        sub sp, 2                       ; the PUSH 0: the interrupt's frame moved down a word
+        push bp
+        mov bp, sp
+        push ax
+        mov ax, [bp + 4]
+        mov [bp + 2], ax                ; IP
+        mov ax, [bp + 6]
+        mov [bp + 4], ax                ; CS
+        mov ax, [bp + 8]
+        mov [bp + 6], ax                ; flags
+        mov word [bp + 8], 0            ; the word pushed
+        pop ax
+        pop bp
+        iret
+
+ib_draw    dd 0
+ib_hide    db 'HIDE SHADOWS+10', 0  ; (the box holds 16 letters: as the game's "Protectn+1")
+ib_quiet   db 'MOVE SILENT+10', 0
+
 old16      dd 0
 t_click    db 0
 hit_forced db 0
@@ -4899,6 +5004,9 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_HIT
         mov dx, probe_hit
         int 21h
+        mov ax, 2500h + VEC_ITEM_BOX
+        mov dx, probe_item_box
+        int 21h
         mov ax, 3516h           ; the keyboard's (TARGETING)
         int 21h
         mov [old16], bx
@@ -4939,8 +5047,8 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or DBh-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
-all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT
+busy    db 'DSCLOG: interrupts 60h-65h or DAh-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX
 all_vectors_end:
 
         align 16, db 0

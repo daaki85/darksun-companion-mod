@@ -17,6 +17,25 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
   on, a frame now fits at 35,000 cycles, which is the **Fastest** game speed
   on the Options tab (it was 30,000, and a setting of 30,000 is taken as
   35,000). The companion's README has the measurements.
+- **Cloaks and boots say what they do:** with the cloak and boots bonuses on,
+  their item box says `HIDE SHADOWS+10` or `MOVE SILENT+10` under the name,
+  and a plain cloak or pair of boots costs 100 (the Leather Cloak was 20;
+  magic ones keep their prices).
+
+**Added**
+- **Kreenfang and Shadowseeker** (Options, New content; on unless turned off):
+  the arena's 2 handed Bone Gythka is Kreenfang, a gythka +1 (18000), and
+  Kurzak's short sword is Shadowseeker, a short sword +1 (22000) whose wielder
+  sees the invisible (the game's own Detect Invisibility from a readied item).
+  Each has a name, as the Bloodwrath has, and an icon of its own.
+- **200 XP for lifting Kurzak's sword:** the conversation says the thief lifts
+  "a metal short sword" and receives 200 experience points, with the quest's
+  sound, given by the game's own routine for a quest's XP (split among a
+  multi-class thief's classes, as the game's quests are).
+
+**Fixed**
+- The Ledger's new item pictures no longer wipe an item's spell: changing an
+  icon cleared four bytes of the item where the game's picture cache is two.
 
 ### Pull request #16
 
