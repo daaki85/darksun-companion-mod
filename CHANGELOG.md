@@ -96,6 +96,11 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
   row clicked counted from the top of the list, not of what was shown, so with
   the list scrolled down another character was deleted. The patched game adds
   how far the list is scrolled, as ADD does.
+- **Gear on the figures:** walking side-on, a shield showed nowhere (it was
+  edge on behind the body, on the far arm); now it is held forward of the
+  chest, its near half showing. Kreenfang's blades are in the fire colours and
+  Shadowseeker's in night steel, as their icons, and bone weapons are ivory
+  rather than grey.
 - A character not yet played (New, before the game starts) counted as not Okay:
   a New thief's skills all showed 0 on the inventory screen. The patched game
   and the Ledger count New as Okay wherever they test for Okay; the status

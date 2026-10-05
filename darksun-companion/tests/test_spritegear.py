@@ -65,6 +65,31 @@ class WeaponTests(unittest.TestCase):
         self.assertTrue(all(abs(x - (hx + PAD)) <= 4 for x, _ in new))  # (about 7 wide, on the forearm)
         self.assertGreaterEqual(len(new), 40)
 
+    def test_named_blades(self):
+        """Kreenfang's blades in the fire colours, its shaft bone; a plain gythka all bone."""
+        before = rows()
+        plain = drawn(before, sg.armed(before, 2095, 0, True, {"right": (44, BONE)}, PAD))
+        named = drawn(before, sg.armed(before, 2095, 0, True, {"right": (44, BONE, "Kreenfang")}, PAD))
+        self.assertTrue(set(plain.values()) <= set(sg.MATERIAL_COLOURS[BONE]))
+        self.assertTrue(set(named.values()) & set(sg.FLAME))
+        self.assertTrue(set(named.values()) & set(sg.MATERIAL_COLOURS[BONE]))
+        self.assertEqual(set(plain), set(named))  # (the same shape)
+
+    def test_side_shield_past_the_chest(self):
+        """Walking from the side, the shield on the far arm shows past the front of the chest."""
+        body = [[None] * 12 for _ in range(20)]
+        for y in range(2, 18):
+            for x in range(3, 8):
+                body[y][x] = 146
+        parts = sp.Parts(sp.SIDE, None, set(), (4, 3, 7), {}, 12, [], 19)
+        x, y = sg.side_shield(body, parts)
+        self.assertGreater(x, 7)  # (forward of the chest, which ends at 7)
+        out = [list(r) for r in body]
+        sg.draw_shield(out, body, (x, y), sg.SIDE_FAR, sg.MATERIAL_COLOURS[WOOD], True)
+        shown = {(cx, cy) for cy, r in enumerate(out) for cx, q in enumerate(r) if q != body[cy][cx]}
+        self.assertTrue(shown)
+        self.assertTrue(all(cx > 7 for cx, _ in shown))  # (behind the body: only past it)
+
     def test_fight_shield_by_hand(self):
         """In a fight, a shield where it is set by hand for the frame; and one even where the frame
         shows no second hand (behind the body, at the chest, on the side away from the swing)."""

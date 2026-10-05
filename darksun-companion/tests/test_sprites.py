@@ -9,7 +9,7 @@ import unittest
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from dscompanion import art, gff, icons, sprites, spritegear as sg
+from dscompanion import art, game, gff, icons, sprites, spritegear as sg
 from test_spriteparts import rows
 
 SWORD, METAL = 63, 4
@@ -29,6 +29,31 @@ def game_chunks():
     return {("OJFF", 300): ojff, ("BMP ", 2095): walk, ("BMP ", 2096): fight,
             ("BMP ", sg.CLOAK_MODEL): walk, ("BMP ", sg.CLOAK_MODEL + 1): fight}
 
+
+
+class WornTests(unittest.TestCase):
+    def test_named_weapons(self):
+        """Kreenfang (the gythka +1) goes to spritegear with its name; a plain gythka without."""
+        def item(kind, plus, slot):
+            rec = bytearray(game.ITEM_SIZE)
+            struct.pack_into("<H", rec, game.ITEM_TYPE, kind)
+            rec[game.ITEM_PLUS], rec[game.ITEM_SLOT] = plus & 0xFF, slot
+            return bytes(rec)
+        typ = bytearray(game.ITEM_TYPE_SIZE)
+        typ[0x08] = 1  # (bone)
+
+        class Worn:
+            def __init__(self, items):
+                self.items = items
+
+            def _worn(self, member):
+                return [(0, it, bytes(typ)) for it in self.items]
+
+        right = game.EQUIP_SLOTS.index("right hand")
+        gear, _ = sprites.worn(Worn([item(game.GYTHKA_TYPE, 1, right)]), 0)
+        self.assertEqual(gear["right"], (game.GYTHKA_TYPE, 1, "Kreenfang"))
+        gear, _ = sprites.worn(Worn([item(game.GYTHKA_TYPE, 0, right)]), 0)
+        self.assertEqual(gear["right"], (game.GYTHKA_TYPE, 1))
 
 class SpriteTests(unittest.TestCase):
     def test_encode_round_trip(self):
