@@ -190,8 +190,12 @@ records; this ledger keeps the ones the game doesn't show you.
 - **More saves:** 40 instead of the game's 10, on four pages of the save and
   load window: PAGE 1 to PAGE 4 buttons, or PgUp and PgDn (see
   [More saves](#more-saves)).
-- **More characters:** 29 saved characters instead of the game's 19 (see
+- **More characters:** 29 saved characters instead of the game's 19, made
+  with CREATE CHARACTERS and kept in the ADD window's roster (see
   [More characters](#more-characters)).
+- **The roster's DELETE fixed:** the game's own DELETE removed the wrong
+  character when the roster was scrolled down (the one in the same row
+  counted from the top of the list); now it removes the one chosen.
 - **Game speed:** DOSBox is given more of the computer, for smoother walking
   with the whole party in view (see [Game speed](#game-speed)).
 - **Crash reports:** if DOSBox crashes or the game stops with an error, what

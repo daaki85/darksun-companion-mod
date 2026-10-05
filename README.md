@@ -120,7 +120,8 @@ can be switched off on its Options tab.
 - **More saves:** 40 instead of the game's 10, on four pages of the save and
   load window (PAGE 1 to PAGE 4 buttons, or PgUp and PgDn).
 - **More characters:** 29 saved characters instead of the game's 19, and
-  DELETE in the roster deletes the one chosen even with the list scrolled.
+  the game's DELETE in the roster fixed: it removed the wrong character when
+  the list was scrolled down.
 - **Game speed:** DOSBox is given more of the computer (20,000 cycles by
   default, on its faster dynamic core), for smoother walking with the whole
   party in view; GOG's own speed and a faster one can be chosen. At the
@@ -171,7 +172,11 @@ In [pull request #17](https://github.com/daaki85/darksun-companion-mod/pull/17)
 - **Faster walking:** shadows and dust drawn much more cheaply; at the fastest
   game speed, the whole party walks as fast as the leader alone.
 - **More saves:** 40, on four pages of the save and load window.
-- **More characters:** 29 saved characters instead of 19.
+- **More characters:** 29 saved characters instead of 19, made with CREATE
+  CHARACTERS and kept in the ADD window's roster.
+- **A bug of the game's own fixed:** DELETE in the character roster removed
+  the wrong character when the list was scrolled down; now it removes the one
+  chosen.
 - **Options tab:** its sections open and close.
 - **The Look box:** a monster's alignment, and its magic resistance beside its
   level.
