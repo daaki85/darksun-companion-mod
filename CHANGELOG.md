@@ -4,7 +4,21 @@ What changed in Templar's Ledger, pull request by pull request, newest first.
 Release **1.0.0** is pull requests #1 to #13; its notes are in
 [`release-notes/v1.0.0.md`](release-notes/v1.0.0.md).
 
-### Pull request #16 (in review)
+### After pull request #16
+
+**Changed**
+- **The whole party walks as fast as the leader alone, at the fastest game
+  speed:** the Ledger's shadows and dust are drawn much more cheaply, and look
+  the same (a shadow is darkened a plane of the video memory at a time, a
+  puff's pixels worked out a row at a time, only within its outline and the
+  part of the view being drawn again). The game shows each frame at the
+  screen's next refresh, so a frame that takes a moment too long shows twice
+  as late and walking goes at half speed; with all four in view and everything
+  on, a frame now fits at 35,000 cycles, which is the **Fastest** game speed
+  on the Options tab (it was 30,000, and a setting of 30,000 is taken as
+  35,000). The companion's README has the measurements.
+
+### Pull request #16
 
 **Added**
 - **Semyon breaks out with Scar:** recruit Semyon before the fight with Scar,

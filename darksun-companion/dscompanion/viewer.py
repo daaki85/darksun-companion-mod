@@ -416,11 +416,13 @@ class Viewer:
         pace = ttk.LabelFrame(options, text="Game speed (from the next time you start the game)", padding=6)
         pace.pack(fill="x", pady=(8, 0))
         speed = settings.get("cycles", launch.DEFAULT_SPEED)
+        speed = launch.SPEEDS[-1] if speed == launch.FASTEST_BEFORE else speed
         self.game_speed = tk.StringVar(value=str(speed if speed in launch.SPEEDS or speed == launch.GOG_SPEED
                                                  else launch.DEFAULT_SPEED))
         for value, text in ((launch.GOG_SPEED, "GOG's own (walking can be choppy with shadows and dust)"),
                             ("20000", "Faster: smooth walking with shadows and dust (the default)"),
-                            ("30000", "Fastest: smoother still, quicker animations (needs a faster PC)")):
+                            ("35000", "Fastest: the whole party in view walks as fast as the leader alone "
+                                      "(needs a faster PC)")):
             ttk.Radiobutton(pace, text=text, value=value, variable=self.game_speed,
                             command=self._speed_chosen).pack(anchor="w")
 

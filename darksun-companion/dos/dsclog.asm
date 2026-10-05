@@ -3190,7 +3190,7 @@ shadow_of:
 .row:   mov al, [es:si]
         inc si
         cmp al, 0xFF
-        je .no
+        je .drawn
         xor ah, ah
         mov [cs:f_y], ax
 .run:   mov ax, [es:si]                 ; a run: x (8000h: the row's last), its pixels, its data
@@ -3216,6 +3216,9 @@ shadow_of:
 .next:  test byte [cs:r_x + 1], 0x80
         jz .run
         jmp .row
+.drawn: push es                         ; (its runs: drawn)
+        call spans_flush
+        pop es
 .no:    ret
 
 ; the shadow of the current run, AX rows up from the feet
@@ -3252,7 +3255,10 @@ cast_run:
         call darken
         ret
 
-; darken DX..DI on row BX (screen), within the clip
+; darken DX..DI on row BX (screen), within the clip: noted (SPANS), and drawn with the figure's
+; others a plane at a time (SPANS_FLUSH: the VGA's registers set once a plane, not once a run; a
+; figure's runs never overlap, so the order makes no difference)
+SPANS_MOST equ 256
 darken: cmp bx, [cs:clip_y0]
         jl .out
         cmp bx, [cs:clip_y1]
@@ -3265,24 +3271,35 @@ darken: cmp bx, [cs:clip_y0]
         mov di, [cs:clip_x1]
 .span:  cmp dx, di
         jg .out
-        mov [cs:s_first], dx            ; (before MUL, which takes DX)
-        mov [cs:s_last], di
-        ; darken DX..DI on row BX, a plane at a time
-        mov ax, bx
+        cmp word [cs:n_spans], SPANS_MOST
+        jb .room
+        push dx
+        push di
+        push bx
+        call spans_flush                ; (full: those so far drawn first)
+        pop bx
+        pop di
+        pop dx
+.room:  push dx
+        mov ax, bx                      ; the row's place in the page
         sub ax, [cs:v_y0]
         mul word [cs:v_row]
         sub ax, [cs:v_x0]
-        mov [cs:row_at], ax
+        pop dx
+        mov bx, [cs:n_spans]
+        imul bx, bx, 6
+        mov [cs:spans + bx], ax
+        mov [cs:spans + bx + 2], dx
+        mov [cs:spans + bx + 4], di
+        inc word [cs:n_spans]
+.out:   ret
+
+spans_flush:                            ; the noted runs darkened, a plane at a time
+        cmp word [cs:n_spans], 0
+        je .ret
         mov es, [cs:v_seg]
         xor cx, cx                      ; the plane
-.plane: mov ax, cx
-        sub ax, [cs:s_first]
-        and ax, 3
-        add ax, [cs:s_first]            ; the first x on this plane
-        cmp ax, [cs:s_last]
-        jg .nextp
-        push ax
-        mov dx, 0x3C4                   ; write to this plane, read from it
+.plane: mov dx, 0x3C4                   ; write to this plane, read from it
         mov al, 2
         mov ah, 1
         shl ah, cl
@@ -3291,25 +3308,39 @@ darken: cmp bx, [cs:clip_y0]
         mov al, 4
         mov ah, cl
         out dx, ax
-        pop ax
-        mov si, [cs:s_last]
-        sub si, ax
-        shr si, 2
-        inc si                          ; SI: how many
+        xor si, si
+.span:  mov ax, cx
+        sub ax, [cs:spans + si + 2]
+        and ax, 3
+        add ax, [cs:spans + si + 2]     ; the first x on this plane
+        mov dx, [cs:spans + si + 4]
+        sub dx, ax
+        jl .nspan
+        shr dx, 2
+        inc dx                          ; DX: how many
         shr ax, 2
-        add ax, [cs:row_at]
+        add ax, [cs:spans + si]
         mov di, ax
         xor bh, bh
 .pix:   mov bl, [es:di]
         mov bl, [cs:dark + bx]
         mov [es:di], bl
         inc di
-        dec si
+        dec dx
         jnz .pix
-.nextp: inc cx
+.nspan: add si, 6
+        mov ax, [cs:n_spans]
+        imul ax, ax, 6
+        cmp si, ax
+        jb .span
+        inc cx
         cmp cx, 4
         jb .plane
-.out:   ret
+        mov word [cs:n_spans], 0
+.ret:   ret
+
+n_spans dw 0
+spans   times SPANS_MOST * 6 db 0       ; (row's place in the page, first x, last x)
 
 ; the VGA's registers the shadows change, kept and put back
 vga_save:
@@ -4105,12 +4136,66 @@ puff_draw:                              ; the puff at CS:SI
         mov [cs:d_wx], ax
         mov ax, [cs:si + 8]
         mov [cs:d_seed], ax
+        ; (none of it where the floor was drawn: nothing to do)
+        mov ax, [cs:d_wx]
+        sub ax, [cs:cam_x]
+        mov [cs:d_sx], ax               ; its middle on screen
+        mov dx, ax
+        sub dx, [cs:d_rx]
+        cmp dx, [cs:clip_x1]
+        jle .inx
+        ret
+.inx:   add ax, [cs:d_rx]
+        cmp ax, [cs:clip_x0]
+        jge .iny
+        ret
+.iny:   mov ax, [cs:d_wy]
+        sub ax, [cs:cam_y]
+        mov dx, ax
+        sub dx, [cs:d_ry]
+        cmp dx, [cs:clip_y1]
+        jle .iny1
+        ret
+.iny1:  add ax, [cs:d_ry]
+        cmp ax, [cs:clip_y0]
+        jge .cols
+        ret
+.cols:  mov ax, [cs:clip_x0]            ; the columns within the clip
+        sub ax, [cs:d_sx]
+        mov dx, [cs:d_rx]
+        neg dx
+        cmp ax, dx
+        jge .from
+        mov ax, dx
+.from:  mov [cs:d_xfrom], ax
+        mov ax, [cs:clip_x1]
+        sub ax, [cs:d_sx]
+        cmp ax, [cs:d_rx]
+        jle .to
+        mov ax, [cs:d_rx]
+.to:    mov [cs:d_xto], ax
+        mov cx, [cs:d_rx]               ; how far out it is across, (x / rx)^2 of 256, by |x|
+        imul cx, cx
+        xor si, si
+.tab:   mov ax, si
+        imul ax, ax
+        shl ax, 8
+        xor dx, dx
+        div cx
+        mov bx, si
+        shl bx, 1
+        mov [cs:d_extab + bx], ax
+        inc si
+        cmp si, [cs:d_rx]
+        jbe .tab
         mov ax, [cs:d_ry]
         neg ax
         mov [cs:d_yy], ax
+        push bp
 .row:   mov ax, [cs:d_yy]
         cmp ax, [cs:d_ry]
         jle .inrow
+        pop bp
         ret
 .inrow: mov bx, [cs:d_wy]
         add bx, ax
@@ -4133,62 +4218,61 @@ puff_draw:                              ; the puff at CS:SI
         xor dx, dx
         div cx
         mov [cs:d_ey], ax
-        mov ax, [cs:d_rx]
-        neg ax
-        mov [cs:d_xx], ax
-.col:   mov ax, [cs:d_xx]
-        cmp ax, [cs:d_rx]
-        jg .nrow
-        imul ax, ax                     ; and across
-        shl ax, 8
-        mov cx, [cs:d_rx]
-        imul cx, cx
-        xor dx, dx
-        div cx
+        mov word [cs:d_xmax], -1        ; (the widest |x| inside, on this row)
+        xor si, si                      ; for each |x| on this row: how thick (0: outside), and
+.thr:   mov bx, si                      ;   whether in the core
+        shl bx, 1
+        mov ax, [cs:d_extab + bx]       ; and across
         add ax, [cs:d_ey]
+        mov bx, si
+        shl bx, 1
+        mov word [cs:d_thrcore + bx], 0
         cmp ax, 256
-        ja .ncol
-        mov [cs:d_e], ax
-        mov bx, [cs:d_wx]
-        add bx, [cs:d_xx]
-        mov [cs:d_wcol], bx
-        sub bx, [cs:cam_x]
-        cmp bx, [cs:clip_x0]
-        jl .ncol
-        cmp bx, [cs:clip_x1]
-        jg .ncol
-        mov ax, [cs:d_e]                ; how thick it is here: thinner toward the edge
-        imul ax, ax, 154
+        ja .nthr
+        mov [cs:d_xmax], si
+        cmp ax, [cs:d_core]
+        setb byte [cs:d_thrcore + bx + 1]
+        imul ax, ax, 154                ; thinner toward the edge
         shr ax, 8
         neg ax
         add ax, 256
         mul word [cs:d_dens]
         shr ax, 8
-        mov [cs:d_thr], ax
-        mov ax, [cs:d_wcol]             ; the pattern, fixed to the map
-        imul ax, ax, 0x9E5
-        mov dx, [cs:d_wrow]
-        imul dx, dx, 0x3B1
-        xor ax, dx
-        add ax, [cs:d_seed]
+        mov [cs:d_thrcore + bx], al
+.nthr:  inc si
+        cmp si, [cs:d_rx]
+        jbe .thr
+        mov ax, [cs:d_xmax]             ; the row's columns: within the clip and the ellipse
+        or ax, ax
+        js .nrow
+        mov dx, [cs:d_xto]
+        cmp dx, ax
+        jle .rto
         mov dx, ax
-        shr dx, 7
-        xor ax, dx
-        imul ax, ax, 0x2C5
-        shr ax, 4
-        and ax, 0xFF
-        cmp ax, [cs:d_thr]
-        jae .ncol
-        call dust_px
-.ncol:  inc word [cs:d_xx]
-        jmp .col
-.nrow:  inc word [cs:d_yy]
-        jmp .row
-
-dust_px:                                ; lighten screen x BX on the row at ROW_AT (twice in the core)
-        mov cx, bx
-        and cx, 3
-        mov dx, 0x3C4
+.rto:   mov [cs:d_rto], dx
+        neg ax
+        mov dx, [cs:d_xfrom]
+        cmp dx, ax
+        jge .rfrom
+        mov dx, ax
+.rfrom: mov [cs:d_rfrom], dx
+        cmp dx, [cs:d_rto]
+        jg .nrow
+        mov ax, [cs:d_wrow]             ; the pattern, fixed to the map: the row's part
+        imul ax, ax, 0x3B1
+        mov [cs:d_rowhash], ax
+        mov es, [cs:v_seg]
+        mov word [cs:d_plane], 0        ; a plane at a time (the VGA's registers set once for each)
+.plane: mov ax, [cs:d_sx]
+        add ax, [cs:d_rfrom]
+        mov si, [cs:d_plane]
+        sub si, ax
+        and si, 3
+        add si, [cs:d_rfrom]            ; SI: the first column on this plane
+        cmp si, [cs:d_rto]
+        jg .nplane
+        mov cx, [cs:d_plane]
+        mov dx, 0x3C4                   ; write to this plane, read from it
         mov al, 2
         mov ah, 1
         shl ah, cl
@@ -4197,25 +4281,53 @@ dust_px:                                ; lighten screen x BX on the row at ROW_
         mov al, 4
         mov ah, cl
         out dx, ax
-        shr bx, 2
-        add bx, [cs:row_at]
-        mov es, [cs:v_seg]
-        xor ax, ax
-        mov al, [es:bx]
-        mov di, ax
-        mov al, [cs:light + di]
+        mov di, [cs:d_wx]               ; DI: the column's part of the pattern
+        add di, si
+        imul di, di, 0x9E5
+        mov bp, [cs:d_sx]               ; BP: where it is in the page
+        add bp, si
+        shr bp, 2
+        add bp, [cs:row_at]
+.px:    mov bx, si
+        or bx, bx
+        jns .abs
+        neg bx
+.abs:   shl bx, 1
+        mov cx, [cs:d_thrcore + bx]     ; CL: how thick, CH: whether in the core
+        mov ax, di
+        xor ax, [cs:d_rowhash]
+        add ax, [cs:d_seed]
+        mov dx, ax
+        shr dx, 7
+        xor ax, dx
+        imul ax, ax, 0x2C5
+        shr ax, 4
+        cmp al, cl
+        jae .npx
+        xor bh, bh                      ; lightened (twice in the core)
+        mov bl, [es:bp]
+        mov al, [cs:light + bx]
         or al, al
-        jz .ret
-        mov cx, [cs:d_e]
-        cmp cx, [cs:d_core]
-        jae .put
-        mov di, ax
-        mov ah, [cs:light + di]
+        jz .npx
+        or ch, ch
+        jz .put
+        mov bl, al
+        mov ah, [cs:light + bx]
         or ah, ah
         jz .put
         mov al, ah
-.put:   mov [es:bx], al
-.ret:   ret
+.put:   mov [es:bp], al
+.npx:   add si, 4
+        add di, 4 * 0x9E5
+        inc bp
+        cmp si, [cs:d_rto]
+        jle .px
+.nplane:
+        inc word [cs:d_plane]
+        cmp word [cs:d_plane], 4
+        jb .plane
+.nrow:  inc word [cs:d_yy]
+        jmp .row
 
 dust_dens  db 255, 255, 255, 255, 247, 238, 229, 219, 209, 198, 187, 174, 161, 147, 132, 114, 93, 66   ; how thick, by age (of 256)
 dust_core  db 140, 132, 125, 117, 109, 101, 93, 86, 78, 70, 62, 54, 46, 39, 31, 23, 15, 7   ; the core (twice as light), by age
@@ -4243,10 +4355,18 @@ d_seed     dw 0
 d_yy       dw 0
 d_xx       dw 0
 d_wrow     dw 0
-d_wcol     dw 0
 d_ey       dw 0
-d_e        dw 0
-d_thr      dw 0
+d_sx       dw 0
+d_xfrom    dw 0
+d_xto      dw 0
+d_plane    dw 0
+d_extab    times 12 dw 0         ; (x / rx)^2 of 256, by |x| (rx at most 11)
+d_thrcore  times 12 dw 0         ; on the row being drawn, by |x|: how thick (0: outside), and
+                                ;   (high byte) whether in the core
+d_xmax     dw 0
+d_rfrom    dw 0
+d_rto      dw 0
+d_rowhash  dw 0
 t_thing    dw 0
 t_x        dw 0
 t_y        dw 0
@@ -4617,8 +4737,6 @@ f_bottom   dw 0
 f_y        dw 0
 r_x        dw 0
 row_at     dw 0
-s_first    dw 0
-s_last     dw 0
 best_d     dd 0
 diffs      times 3 db 0
 lit_sum    dw 0
@@ -4639,7 +4757,7 @@ install:                        ; DS = ES = PSP, CS = the image
         push cs
         pop ds
         mov si, all_vectors     ; the vectors must be free
-        mov cx, 42
+        mov cx, all_vectors_end - all_vectors
 .check:
         lodsb
         mov ah, 35h
@@ -4823,6 +4941,7 @@ msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
 busy    db 'DSCLOG: interrupts 60h-65h or DBh-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
 all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT
+all_vectors_end:
 
         align 16, db 0
 image_len equ $ - $$

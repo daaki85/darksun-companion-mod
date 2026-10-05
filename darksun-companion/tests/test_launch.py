@@ -103,10 +103,11 @@ class LaunchTests(unittest.TestCase):
 
     def test_game_speed(self):
         """20000 cycles on the dynamic core unless asked otherwise (smooth walking with the party in
-        view, shadows and dust); GOG's own
-        when asked; nothing else taken."""
+        view, shadows and dust); 35000 the fastest (30000, the fastest of before, taken as it); GOG's
+        own when asked; nothing else taken."""
         self.assertEqual(launch.cpu_lines({}), ["[cpu]", "core=dynamic", "cycles=fixed 20000", ""])
-        self.assertEqual(launch.cpu_lines({"cycles": 30000}), ["[cpu]", "core=dynamic", "cycles=fixed 30000", ""])
+        self.assertEqual(launch.cpu_lines({"cycles": 35000}), ["[cpu]", "core=dynamic", "cycles=fixed 35000", ""])
+        self.assertEqual(launch.cpu_lines({"cycles": 30000}), ["[cpu]", "core=dynamic", "cycles=fixed 35000", ""])
         self.assertEqual(launch.cpu_lines({"cycles": "gog"}), [])
         self.assertEqual(launch.cpu_lines({"cycles": 99999}), ["[cpu]", "core=dynamic", "cycles=fixed 20000", ""])
 

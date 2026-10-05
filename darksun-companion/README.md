@@ -2254,34 +2254,42 @@ with the view's size built into its drawing code and its video memory pages.
 
 ## Game speed
 
-About 96 times a second the game's timer lets it move each walking figure a
-step, once the view is drawn; a frame that takes longer loses the rest of that
-time, and walking slows and jerks. So everything drawn adds up: four figures
-rather than the leader alone (the game's manual says collapsing the party
-"speeds up the game"), the gear on them, the shadows, the dust.
+The game draws the view a frame at a time and shows each at the screen's next
+refresh (70 a second), and a walking figure takes a step a frame. A frame that
+takes a moment longer than a refresh waits for the next one, so it shows
+twice as late, and walking goes at half speed. Everything drawn adds up: four
+figures rather than the leader alone (the game's manual says collapsing the
+party "speeds up the game"), the gear on them, the shadows, the dust.
 
 The launcher gives DOSBox more of the computer's time: 20,000 cycles a
 millisecond by default, where GOG's settings give 7,000. On the Options tab
-**Game speed** is GOG's own, that, or 30,000 (smoother still; animations run
-quicker, and it needs a faster computer). It applies the next time the game is
-started. Both of the Ledger's run on DOSBox's dynamic core (GOG's settings run
-this game on the slower normal core): the same cycles do more, and cost the
-computer about a third less.
+**Game speed** is GOG's own, that, or 35,000: there, with everything on, the
+whole party in view walks as fast as the leader alone, but it needs a faster
+computer. It applies the next time the game is started. Both of the Ledger's
+run on DOSBox's dynamic core (GOG's settings run this game on the slower
+normal core): the same cycles do more, and cost the computer about a third
+less.
 
-Measured in the arena with all four of the party in view, walking (the
-leader's speed in pixels a second; higher is smoother):
+Measured in the slave pens, walking (the leader's speed in pixels a second of
+the game's time; higher is smoother):
 
-| | Speed |
-|---|---|
-| The game without the Ledger, GOG's settings | 97 to 124 |
-| The game without the Ledger, 20,000 cycles | 232 to 253 |
-| The Ledger at 20,000, everything on the screen off | 223 |
-| ... what the party wears on | 170 |
-| ... shadows on | 138 |
-| ... everything on | 129 |
+| | All four in view | The leader alone |
+|---|---|---|
+| 20,000 cycles, the Ledger's shadows, dust, rings and gear off | 248 | 254 |
+| 20,000, everything on | 139 | 263 |
+| 30,000, everything on | 214 | 264 |
+| 35,000, everything on | 258 | 254 |
+| 40,000, everything on | 267 | 269 |
 
-So with everything on, the Ledger's default walks at least as smoothly as the
-game on GOG's own settings; with the shadows or the gear off, much more so.
+So at 20,000 the Ledger's own drawing is what slows the whole party: without
+it the four walk as fast as one. Of it, the dust costs the most (each puff is
+worked out pixel by pixel, and four walkers raise four times as many), then
+the shadows. Both are drawn as cheaply as they can be without looking any
+different: a shadow is darkened a plane of the video memory at a time (the
+graphics card's registers set four times for a figure, not four times for
+each of its rows), and a puff's pixels are worked out a row at a time, only
+within its outline and the part of the view being drawn again.
+
 The pictures the Ledger draws the party's gear on are each exactly as long as
 their outfit, with only the room gear needs round the figure while walking (6
 pixels at the sides, 2 above; 10 in a fight): the game draws a walking figure's
@@ -2297,7 +2305,7 @@ limits:
 |---|---|---|
 | GOG's own | anything that runs GOG's release | 2 GB |
 | Faster (20,000 cycles, the default) | a dual-core from about 2010 on, 2 GHz or more (Intel Core i3 or AMD Phenom II) | 4 GB |
-| Fastest (30,000 cycles) | a processor from about 2015 on, 3 GHz or more (Intel Core i5 or AMD Ryzen) | 4 GB |
+| Fastest (35,000 cycles) | a processor from about 2015 on, 3 GHz or more (Intel Core i5 or AMD Ryzen) | 4 GB |
 
 The Ledger itself (Python and its window) needs about 100 MB of memory and
 little processor time. A screen of 1920×1080 or more shows the game's window

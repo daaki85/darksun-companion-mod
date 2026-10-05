@@ -154,23 +154,26 @@ def display_lines(settings: dict) -> List[str]:
             "scaler=" + ("none" if scale == 1 else SCALERS[scale]), ""]
 
 
-# The game's speed: DOSBox's emulated CPU (fixed cycles: instructions a millisecond). About 96
-# times a second the game's timer lets it move each walking figure a step, once the view is drawn:
-# a frame that takes longer than that loses the rest of the time, and walking slows and jerks (four
-# figures in view at GOG's 7000: a step every 30 to 120 ms). 20000 walks smoothly with the party in
-# view and the Ledger's shadows and dust; 30000 smoother still (and quicker animations). Both with
-# the dynamic core (GOG's "auto" runs this game, a real-mode one, on the normal core): the same
-# cycles do more and cost the computer about a third less.
-GOG_SPEED, SPEEDS, DEFAULT_SPEED = "gog", (20000, 30000), 20000
+# The game's speed: DOSBox's emulated CPU (fixed cycles: instructions a millisecond). The game
+# draws a frame, shows it at the screen's next refresh (70 a second), and a walking figure takes a
+# step a frame (a walk of one square: four frames): a frame that takes a moment longer than a
+# refresh waits for the next, and the party walks at half speed. With the whole party in view and
+# the Ledger's shadows and dust a frame needs about 35000 to fit: there the four walk as fast as the
+# leader alone; at 20000 about half as fast, at GOG's 7000 slower still. Both with the dynamic core
+# (GOG's "auto" runs this game, a real-mode one, on the normal core): the same cycles do more and
+# cost the computer about a third less. (30000, the fastest of before, is taken as the fastest now.)
+GOG_SPEED, SPEEDS, DEFAULT_SPEED = "gog", (20000, 35000), 20000
+FASTEST_BEFORE = 30000
 CORE = "dynamic"
 
 
 def cpu_lines(settings: dict) -> List[str]:
-    """DOSBox's CPU speed, over GOG's settings: `cycles` 20000 (the default) or 30000, on the
+    """DOSBox's CPU speed, over GOG's settings: `cycles` 20000 (the default) or 35000, on the
     dynamic core; "gog" keeps GOG's own."""
     speed = settings.get("cycles", DEFAULT_SPEED)
     if speed == GOG_SPEED:
         return []
+    speed = SPEEDS[-1] if speed == FASTEST_BEFORE else speed
     speed = speed if speed in SPEEDS else DEFAULT_SPEED
     return ["[cpu]", f"core={CORE}", f"cycles=fixed {speed}", ""]
 
