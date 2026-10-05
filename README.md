@@ -52,22 +52,21 @@ can be switched off on its Options tab.
 ### Rule changes
 
 - **Optional AD&D rule changes**, all on by default and each one switchable:
-  - helms give AC;
-  - boots give an extra move in a fight ("Boots (Speed+1)");
-  - two-weapon penalties;
   - spells saved against with the spell save;
   - DEX on saves against fire, cold and electricity instead of a doubled d20;
-  - a new spell, Cat's Grace;
+  - two-weapon penalties;
+  - thief skills from AD&D's table, with Dark Sun's race and DEX adjustments;
   - thieves hiding in shadows and moving silently to backstab, and rangers
     to attack from behind (a cloak and boots help, and say so in their item
-    boxes);
-  - a worn belt helping a thief pick pockets and open locks;
-  - thief skills from AD&D's table, with Dark Sun's race and DEX adjustments;
-  - half-giants wielding two-handed weapons in one hand;
+    boxes), and a worn belt helping a thief pick pockets and open locks;
+  - class levels up to 10 (the game stops at 9);
   - rings and cloaks of protection as in AD&D: two rings don't add up, a
     ring gives no AC with magical armour, and a cloak does nothing with
     magical or metal armour or a shield;
-  - class levels up to 10 (the game stops at 9).
+  - half-giants wielding two-handed weapons in one hand;
+  - a new spell, Cat's Grace;
+  - helms give AC;
+  - boots give movement in a fight ("Boots (Speed+1)").
 
 (More in [Rule changes](darksun-companion/README.md#rule-changes).)
 
@@ -186,7 +185,8 @@ In [pull request #17](https://github.com/daaki85/darksun-companion-mod/pull/17)
 - **A bug of the game's own fixed:** DELETE in the character roster removed
   the wrong character when the list was scrolled down; now it removes the one
   chosen.
-- **Options tab:** its sections open and close.
+- **Options tab:** its sections open and close, and the rule changes come with
+  the ones that change play most first.
 - **The Look box:** a monster's alignment, and its magic resistance beside its
   level.
 

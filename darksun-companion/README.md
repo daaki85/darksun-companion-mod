@@ -130,22 +130,23 @@ records; this ledger keeps the ones the game doesn't show you.
   that turn, or its attack rolls, spell damage and saving throws too, and who
   is still to act (see
   [each turn's rolls](#in-the-game-each-turns-rolls)); and Looking at a monster
-  in a fight tells you what hurts it (see
+  in a fight tells you what hurts it, its alignment and its magic resistance (see
   [the Look box](#in-the-game-what-hurts-a-monster-the-look-box)). The game,
   these additions and the Ledger's window start together.
 
 **Rule changes**
 
-- **Rule changes**, each switchable on the Options tab: helms give AC 1,
-  boots a move more in a fight, AD&D's two-weapon penalties, spells saved
-  against with the spell save, DEX rather than a doubled d20 on saves against
-  fire, cold and electricity, a new spell (Cat's Grace), thieves and rangers
-  hiding in shadows to attack from behind (a worn cloak and boots helping, and
-  a worn belt helping a thief pick pockets and open locks), class levels up to
-  10, and thief skills from AD&D's table with Dark Sun's race and DEX
-  adjustments, half-giants wielding two-handed weapons in one hand, and AD&D's
-  rules for rings and cloaks of protection (see [Rule changes](#rule-changes)). Cloaks, boots and belts say what they give in
-  their item boxes (`Hide +10`, `Move +10`, `Pick +5, Lock +5`). And thieves no longer lose skill for what
+- **Rule changes**, each switchable on the Options tab: spells saved against
+  with the spell save, DEX rather than a doubled d20 on saves against fire,
+  cold and electricity, AD&D's two-weapon penalties, thief skills from AD&D's
+  table with Dark Sun's race and DEX adjustments, thieves and rangers hiding
+  in shadows to attack from behind (a worn cloak and boots helping, and a worn
+  belt helping a thief pick pockets and open locks), class levels up to 10,
+  AD&D's rules for rings and cloaks of protection, half-giants wielding
+  two-handed weapons in one hand, a new spell (Cat's Grace), helms giving AC 1
+  and boots giving movement in a fight (see [Rule changes](#rule-changes)).
+  Cloaks, boots and belts say what they give in their item boxes (`Hide +10`,
+  `Move +10`, `Pick +5, Lock +5`). And thieves no longer lose skill for what
   they hold (see [Thief skills](#thief-skills)).
 
 **New content** (each can be switched off on the Options tab)
@@ -211,7 +212,11 @@ records; this ledger keeps the ones the game doesn't show you.
 - **Crash reports:** if DOSBox crashes or the game stops with an error, what
   happened is saved in a file to send (see [Crash reports](#crash-reports)).
 
-Nothing in the game folder or your save files is changed, except that a game
+Nothing in the game folder or your save files is changed, except what play
+writes there: save pages 2 to 4 are files of their own beside the game's
+(`SAVB`, `SAVC`, `SAVD`, see [More saves](#more-saves)), characters 20 to 29
+go into the game's `CHARSAVE.GFF` with the others (see
+[More characters](#more-characters)), and a game
 you save keeps what the Ledger has handed out or changed in play: the Ring +1,
 a thief's Thieves' Tools, whatever a thief has lifted, the slave pens' gear,
 Kreenfang and Shadowseeker, cloaks', boots' and belts' prices, Kalzith and his
@@ -1954,8 +1959,9 @@ don't load a save that has them without the dice log.
 
 ### Kreenfang and Shadowseeker
 
-With **Kreenfang and Shadowseeker** ticked (Options, New content; on unless
-turned off), two plain weapons of the early game are magic, named as the
+With **The 2 handed Bone Gythka on the arena's dead body and Kurzak's Short
+Sword are +1 magic weapons** ticked (Options, New content; on unless turned
+off), two plain weapons of the early game are magic, named as the
 Templar's Obsidian Bloodwrath (a long sword +1, 20800) is:
 
 | Weapon | Was | Now | Price |
