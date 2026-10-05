@@ -222,6 +222,11 @@ PATCHES = (
     # the save/load window's events, where a key it has no use for goes to its end: jmp (DSCLOG
     # shows the next page of ten saves for PgDn, the one before for PgUp, then goes there)
     Patch("save_page", 0x74901, bytes.fromhex("e9e804"), _interrupt(VEC_SAVE_PAGE, 3)),
+    # ... and Enter taken out of the window's key table (the overlay's CS:B28h, its first key Esc
+    # at B26h), so it comes there too: DSCLOG goes on to LOAD (as the table did) unless the row
+    # chosen in the load window has no save, as on an empty page (where the game would start a
+    # new game)
+    Patch("save_enter", 0x74E28, bytes.fromhex("0d1c"), bytes.fromhex("ffff")),
     # ... and where a click on a button it doesn't know goes to its end: jmp (DSCLOG: PAGE 1 to
     # PAGE 4, savepages.py)
     Patch("save_click", 0x74B9F, bytes.fromhex("e94302"), _interrupt(VEC_SAVE_CLICK, 3)),

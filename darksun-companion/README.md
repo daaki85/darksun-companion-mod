@@ -2556,7 +2556,10 @@ on four pages of ten: the **PAGE 1** to **PAGE 4** buttons under EXIT show a
 page, the page shown has its button greyed, and **PgDn** and **PgUp** go to
 the next page and the one before. Save and load as always; the window opens
 on the page last shown. In the load window, PgDn and PgUp pass by pages with
-no saves, and a page with none isn't shown.
+no saves; a page's button shows it even with none, with **LOAD** greyed (and
+Enter doing nothing) until you go to a page with a save. (The game itself
+never lets you choose an empty row to load; loading one would start a new
+game.)
 
 ![The load window on page 1: the game's ten saves, and the PAGE 1 (greyed) to PAGE 4 buttons under LOAD and EXIT](docs/save-pages.png)
 
@@ -2572,7 +2575,9 @@ How: the save names the game searches the folder for and writes a save to
 their fourth letter for the page. The window's event routine leaves keys and
 buttons it has no use for to a jump to its end; the patched game has DSCLOG
 take them there (`INT D8h`, `INT D7h`), and for a new page run the window's
-own routines that search the folder, draw the rows and draw the window. The
+own routines that search the folder, draw the rows and draw the window. Enter
+is taken out of the window's key table, so it comes to DSCLOG too, which goes
+on to LOAD (or SAVE) as the table did, but not on a row with no save. The
 buttons are the game's kind, in the Ledger's copy of `RESOURCE.GFF`: placed
 in the window under EXIT, with pictures made from EXIT's, its letters taken
 away and the page's put in with the game's text font

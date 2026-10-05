@@ -1532,8 +1532,10 @@ use_win dd 0                    ; the USE screen's window, as PROBE_USE last saw
 ; SAVE11.SAV would run past it.) For the new page, the window's own routines (in its overlay, at
 ; CS: nothing they call is an overlay, so it stays put) search the folder again and draw the
 ; rows, the selected row stays (in the load window, the first save: PgUp and PgDn pass by pages
-; with none, and a button's page with none isn't shown), and the window is drawn again
-; (SAVE_LABEL greys the page's button); then on as the routine goes on after Up or Down.
+; with none; a button's page with none is shown, its first row chosen, and SAVE_LABEL greys
+; LOAD while the row chosen has no save; Enter, which the game's key table no longer has, comes
+; here too and goes on to LOAD only on a row with a save), and the window is drawn again (SAVE_LABEL greys the
+; page's button); then on as the routine goes on after Up or Down.
 SP_IGNORE  equ 0x74DEC - 0x74903 ; (DSUN.EXE, from the way back: the NOP after the INT) the routine's end
 SP_DONE    equ 0x74A21 - 0x74903 ; ... after Up or Down: the screen updated, then the end
 SP_KEY     equ 0x12             ; the key, at the routine's BP+12h
@@ -1551,9 +1553,12 @@ WIN_SEG    equ 0x25EC - 0x4356  ; (resident) bring a window to the front and dra
 WIN_OFF    equ 0x618
 NAME_FIND  equ 0x1DCF + 3       ; DS: "SAVE??.SAV": the letter that is the page
 NAME_SAVE  equ 0x1DDA + 3       ; DS: "SAVE%.2d.SAV"
+KEY_ENTER  equ 0x1C0D           ; (taken out of the window's key table: gamepatch.py's save_enter)
+SP_ENTER   equ 0x74C68 - 0x74903 ; ... where the window's routine takes it: LOAD (or SAVE)
 KEY_PGUP   equ 0x4900
 KEY_PGDN   equ 0x5100
 ROW_ID     equ 0x80B            ; the rows' buttons: 80Bh on
+LOAD_ID    equ 0x809            ; LOAD (in the save window, SAVE)
 probe_save_page:
         push bp
         mov bp, sp              ; BP+2 the way back, BP+4 its segment
@@ -1568,7 +1573,20 @@ probe_save_page:
         cmp al, 0xE0
         jne .scan
         xor al, al              ; (the grey keys': as the number pad's)
-.scan:  mov dl, -1              ; (the page before)
+.scan:  cmp ax, KEY_ENTER
+        jne .pages
+        call sp_es              ; Enter: LOAD, as the game's own, but not on a row with no save
+        cmp word [es:SAVE_LOADING], 0
+        je .enter
+        imul bx, [es:SAVE_CHOSEN], SAVE_SIZE
+        cmp byte [es:bx + 2], 0
+        je sp_skip
+.enter: add word [bp + 2], SP_ENTER
+        pop es
+        popad
+        pop bp
+        iret
+.pages: mov dl, -1              ; (the page before)
         cmp ax, KEY_PGUP
         je .step
         mov dl, 1               ; (the next)
@@ -1633,8 +1651,9 @@ sp_want:                        ; BL the page wanted (0 to 3), SP_STEP: where to
         jb .first
         mov al, [cs:sp_step]    ; none: the next page that way, if there is one
         add [cs:sp_target], al
+        xor di, di              ; (a button's page: shown empty, its first row chosen)
         or al, al
-        jz .none
+        jz .rows
         cmp byte [cs:sp_target], PAGES
         jb .try
 .none:  mov bl, [cs:sp_was]     ; none at all: back to the page there was
@@ -1742,7 +1761,8 @@ sp_ignore dw 0                  ;   or not (from the way back)
 sp_zero   db 0                  ; 1: a click (the routine to return 0)
 
 ; SAVE_LABEL: (PROBE_WIN; EAX the window drawn, DS the game's) on the save/load window, the
-; button of the page shown (PAGE 1 to PAGE 4, savepages.py) out of use: so it shows which.
+; button of the page shown (PAGE 1 to PAGE 4, savepages.py) out of use: so it shows which; and in
+; the load window, LOAD out of use while the row chosen has no save (an empty page's).
 save_label:
         pushad
         push es
@@ -1769,7 +1789,17 @@ save_label:
         inc si
         cmp si, PAGES
         jb .button
-        mov byte [cs:sl_busy], 0
+        cmp word [es:SAVE_LOADING], 0
+        je .done
+        imul bx, [es:SAVE_CHOSEN], SAVE_SIZE
+        xor cx, cx
+        cmp byte [es:bx + 2], 0
+        jne .load
+        inc cx                  ; (no save there)
+.load:  push cx
+        mov ax, LOAD_ID
+        call sp_button_id
+.done:  mov byte [cs:sl_busy], 0
 .out:   pop es
         popad
         ret

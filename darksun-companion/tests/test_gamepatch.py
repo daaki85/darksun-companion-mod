@@ -38,6 +38,13 @@ class GamePatchTests(unittest.TestCase):
             got = patched[p.offset:p.offset + len(p.original)]
             self.assertEqual(got, p.original if p.name in gamepatch.EFFECTS_KEPT else p.replacement, p.name)
 
+    def test_enter_out_of_the_save_windows_keys(self):
+        """The save/load window's key table (Esc, Enter, Up, Down) without Enter, which PROBE_SAVE_PAGE
+        then takes."""
+        p = next(p for p in gamepatch.PATCHES if p.name == "save_enter")
+        self.assertEqual(p.offset, 0x74300 + 0xB26 + 2)
+        self.assertEqual(p.replacement, b"\xff\xff")
+
     def test_new_counts_as_okay(self):
         """Each of the game's "is it Okay" tests keeps its compare and turns its jz/jnz into
         jbe/ja, so that New (0) passes as Okay (1)."""

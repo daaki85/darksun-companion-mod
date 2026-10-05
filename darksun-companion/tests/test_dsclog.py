@@ -1276,7 +1276,7 @@ class SavePageTests(unittest.TestCase):
     DS, OV = 0x9000, 0xA000  # the game's DS; the window's overlay segment (DSUN.EXE 74300h)
     SAVE = DS + 0x3BA7 - 0x4356
     KEY_AT, CLICK_AT = 0x601, 0x89F  # (where the patches are, in the overlay: 74901h, 74B9Fh)
-    DONE, KEY_END, CLICK_END = 0x721, 0xAEC, 0xAE5  # 74A21h, 74DECh, 74DE5h
+    DONE, KEY_END, CLICK_END, ENTER = 0x721, 0xAEC, 0xAE5, 0x968  # 74A21h, 74DECh, 74DE5h, 74C68h
     STUBS = {"scan": (OV, 0xE2), "row": (OV, 0xB36), "pick": (OV, 0xBCD),
              "button": (DS + 0x2A1D - 0x4356, 0x71A), "window": (DS + 0x25EC - 0x4356, 0x618)}
 
@@ -1314,7 +1314,7 @@ class SavePageTests(unittest.TestCase):
         for name, v in dict(cs=self.OV, ds=self.DS, ss=SS, esp=0x800, ebp=BP, eflags=IF | 2, esi=0x4321,
                             edi=1, es=0x4444).items():
             mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), v)
-        ends = (self.DONE, self.KEY_END, self.CLICK_END)
+        ends = (self.DONE, self.KEY_END, self.CLICK_END, self.ENTER)
         mu.hook_add(UC_HOOK_CODE, lambda m, *_: m.emu_stop() if m.reg_read(r.UC_X86_REG_CS) == self.OV
                     and m.reg_read(r.UC_X86_REG_IP) in ends else None)
         mu.emu_start(self.OV * 16 + at, 0, count=20000)
@@ -1353,8 +1353,22 @@ class SavePageTests(unittest.TestCase):
         self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x5100), (self.KEY_END, 0x4321))
         self.assertEqual(self.page(), b"EE")  # (back)
         self.assertEqual(self.calls, {"scan": 4})  # (pages 2, 3 and 4 looked at)
-        self.assertEqual(self.run_at(self.CLICK_AT, 8, 0x817), (self.CLICK_END, 0x4321))
-        self.assertEqual((self.page(), self.calls), (b"EE", {"scan": 2}))  # (page 3 only)
+        # a button's page is shown even with none, its first row chosen (SAVE_LABEL greys LOAD)
+        self.assertEqual(self.run_at(self.CLICK_AT, 8, 0x817), (self.DONE, 0))
+        self.assertEqual(self.page(), b"CC")
+        self.assertEqual(self.calls, {"scan": 1, "row": 10, "button": 2, "pick": 1, "window": 1})
+        self.assertEqual(struct.unpack("<H", self.mu.mem_read(self.SAVE * 16 + 0x4E4, 2))[0], 0)
+
+    def test_enter(self):
+        """Enter (out of the window's key table) goes on to LOAD or SAVE, as the table took it, but
+        not in the load window on a row with no save (the game would start a new game)."""
+        mu = self.mu
+        self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x1C0D), (self.ENTER, 0x4321))  # (saving)
+        mu.mem_write(self.SAVE * 16 + 0x4EA, struct.pack("<H", 1))  # loading, row 3
+        self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x1C0D), (self.KEY_END, 0x4321))  # (no save there)
+        mu.mem_write(self.SAVE * 16 + 2 + 3 * 0x7D, b"SAVE04.SAV\0")
+        self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x1C0D), (self.ENTER, 0x4321))
+        self.assertEqual(self.calls, {})
 
     def test_loading_passes_a_page_with_no_saves(self):
         """PgDn in the load window: page 2 has none, page 3 a save in its third row."""

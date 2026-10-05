@@ -96,6 +96,11 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
   row clicked counted from the top of the list, not of what was shown, so with
   the list scrolled down another character was deleted. The patched game adds
   how far the list is scrolled, as ADD does.
+- **The load window shows an empty page:** PAGE 2 to PAGE 4 did nothing in the
+  load window when that page had no saves. Now the page is shown, with LOAD
+  greyed and Enter doing nothing until a page with saves is chosen (the game
+  would otherwise start a new game: loading an empty row is something the
+  game itself never allows).
 - **Gear on the figures:** walking side-on, a shield showed nowhere (it was
   edge on behind the body, on the far arm); now it is held forward of the
   chest, its near half showing. Kreenfang's blades are in the fire colours and
