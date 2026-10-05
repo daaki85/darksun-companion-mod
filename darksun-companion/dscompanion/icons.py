@@ -270,11 +270,18 @@ def cat_icon(strength: Rows) -> Rows:
 
 
 def write_resources(source: str, dest: str) -> None:
-    """The game's RESOURCE.GFF (SOURCE, only read) with Cat's Grace's icon, to DEST."""
+    """The game's RESOURCE.GFF (SOURCE, only read) with Cat's Grace's icon and the save/load
+    window's PAGE 1 and PAGE 2 buttons (savepages.py), to DEST."""
     with open(source, "rb") as f:
         data = f.read()
-    icon = encode(cat_icon(decode(gff.read_gff(data)[("ICON", STRENGTH_ICON)])))
-    out = with_chunks(data, {("ICON", GRACE_ICON): icon})
+    chunks = gff.read_gff(data)
+    added = {("ICON", GRACE_ICON): encode(cat_icon(decode(chunks[("ICON", STRENGTH_ICON)])))}
+    from . import savepages
+    try:
+        added.update(savepages.chunks(chunks))
+    except (KeyError, ValueError, IndexError, struct.error):
+        pass  # (no buttons: PgUp and PgDn still change the page)
+    out = with_chunks(data, added)
     tmp = dest + ".tmp"
     with open(tmp, "wb") as f:
         f.write(out)

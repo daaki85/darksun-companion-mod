@@ -1085,3 +1085,84 @@ class TypesTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+@unittest.skipIf(Uc is None, "unicorn is not installed")
+class SavePageTests(unittest.TestCase):
+    """PROBE_SAVE_PAGE (PgUp, PgDn) and PROBE_SAVE_CLICK (PAGE 1, PAGE 2) in the save/load window's
+    event routine: the page's letter in the game's two save names, the window's own routines run
+    (here each a RETF, counted), and the routine going on where it should."""
+    DS, OV = 0x9000, 0xA000  # the game's DS; the window's overlay segment (DSUN.EXE 74300h)
+    SAVE = DS + 0x3BA7 - 0x4356
+    KEY_AT, CLICK_AT = 0x601, 0x89F  # (where the patches are, in the overlay: 74901h, 74B9Fh)
+    DONE, KEY_END, CLICK_END = 0x721, 0xAEC, 0xAE5  # 74A21h, 74DECh, 74DE5h
+    STUBS = {"scan": (OV, 0xE2), "row": (OV, 0xB36), "pick": (OV, 0xBCD),
+             "button": (DS + 0x2A1D - 0x4356, 0x71A), "window": (DS + 0x25EC - 0x4356, 0x618)}
+
+    def setUp(self):
+        import re
+        from dscompanion.gamepatch import VEC_SAVE_CLICK, VEC_SAVE_PAGE
+        image = load_image()
+        self.mu = mu = Uc(UC_ARCH_X86, UC_MODE_16)
+        mu.mem_map(0, 0x100000)
+        mu.mem_write(TSR * 16, image)
+        mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
+        # the two handlers: "push bp / mov bp,sp / sti / pushad / push es", then sp_done's value
+        starts = {struct.unpack_from("<H", image, m.end() + 2)[0]: m.start()
+                  for m in re.finditer(re.escape(bytes.fromhex("5589e5fb6660062ec706")), image)}
+        mu.mem_write(VEC_SAVE_PAGE * 4, struct.pack("<HH", starts[0x74A21 - 0x74903], TSR))
+        mu.mem_write(VEC_SAVE_CLICK * 4, struct.pack("<HH", starts[(0x74A21 - 0x74BA1) & 0xFFFF], TSR))
+        mu.mem_write(self.OV * 16 + self.KEY_AT, bytes((0xCD, VEC_SAVE_PAGE, 0x90)))
+        mu.mem_write(self.OV * 16 + self.CLICK_AT, bytes((0xCD, VEC_SAVE_CLICK, 0x90)))
+        self.calls = {}
+        for name, (seg, off) in self.STUBS.items():
+            mu.mem_write(seg * 16 + off, b"\xcb")  # RETF
+            mu.hook_add(UC_HOOK_CODE, lambda *_, n=name: self.calls.__setitem__(n, self.calls.get(n, 0) + 1),
+                        begin=seg * 16 + off, end=seg * 16 + off)
+        mu.mem_write(self.DS * 16 + 0x1DCF, b"SAVE??.SAV\0SAVE%.2d.SAV\0")
+        mu.mem_write(self.SAVE * 16 + 0x4E4, struct.pack("<HIH", 3, 0x12345678, 0))  # row 3, saving
+
+    def page(self):
+        return bytes(self.mu.mem_read(self.DS * 16 + 0x1DCF + 3, 1)) + bytes(self.mu.mem_read(self.DS * 16 + 0x1DDA + 3, 1))
+
+    def run_at(self, at, word, value):
+        """The event routine (its BP+WORD holding VALUE) at the patch AT: where it goes on, and SI."""
+        mu = self.mu
+        self.calls.clear()
+        mu.mem_write(SS * 16 + BP + word, struct.pack("<H", value))
+        for name, v in dict(cs=self.OV, ds=self.DS, ss=SS, esp=0x800, ebp=BP, eflags=IF | 2, esi=0x4321,
+                            edi=1, es=0x4444).items():
+            mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), v)
+        ends = (self.DONE, self.KEY_END, self.CLICK_END)
+        mu.hook_add(UC_HOOK_CODE, lambda m, *_: m.emu_stop() if m.reg_read(r.UC_X86_REG_CS) == self.OV
+                    and m.reg_read(r.UC_X86_REG_IP) in ends else None)
+        mu.emu_start(self.OV * 16 + at, 0, count=20000)
+        self.assertEqual([mu.reg_read(x) for x in (r.UC_X86_REG_SP, r.UC_X86_REG_DI, r.UC_X86_REG_ES)],
+                         [0x800, 1, 0x4444])
+        return mu.reg_read(r.UC_X86_REG_IP), mu.reg_read(r.UC_X86_REG_SI)
+
+    def test_keys(self):
+        self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x5100), (self.DONE, 0x4321))  # PgDn
+        self.assertEqual(self.page(), b"BB")
+        self.assertEqual(self.calls, {"scan": 1, "row": 10, "button": 2, "pick": 1, "window": 1})
+        self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x5100), (self.KEY_END, 0x4321))  # (there already)
+        self.assertEqual(self.calls, {})
+        self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x49E0), (self.DONE, 0x4321))  # PgUp, the grey key
+        self.assertEqual(self.page(), b"EE")
+        self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x1E61), (self.KEY_END, 0x4321))  # another key
+        self.assertEqual((self.page(), self.calls), (b"EE", {}))
+
+    def test_buttons(self):
+        self.assertEqual(self.run_at(self.CLICK_AT, 8, 0x816), (self.DONE, 0))  # PAGE 2 (the routine returns 0)
+        self.assertEqual(self.page(), b"BB")
+        self.assertEqual(self.calls["scan"], 1)
+        self.assertEqual(self.run_at(self.CLICK_AT, 8, 0x815), (self.DONE, 0))  # PAGE 1
+        self.assertEqual(self.page(), b"EE")
+        self.assertEqual(self.run_at(self.CLICK_AT, 8, 0x900), (self.CLICK_END, 0x4321))  # another button
+        self.assertEqual((self.page(), self.calls), (b"EE", {}))
+
+    def test_loading_a_page_with_no_saves(self):
+        self.mu.mem_write(self.SAVE * 16 + 0x4EA, struct.pack("<H", 1))  # the load window; no saves found
+        self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x5100), (self.KEY_END, 0x4321))
+        self.assertEqual(self.page(), b"EE")  # (back)
+        self.assertEqual(self.calls, {"scan": 2})
