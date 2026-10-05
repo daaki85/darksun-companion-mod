@@ -36,9 +36,17 @@ records; this ledger keeps the ones the game doesn't show you.
   - [In the game: each turn's rolls](#in-the-game-each-turns-rolls)
   - [In the game: what hurts a monster (the Look box)](#in-the-game-what-hurts-a-monster-the-look-box)
 - [Rule changes](#rule-changes)
-  - [Thief skills from AD&D's table](#thief-skills-from-adds-table)
-  - [Half-giants' two-handed weapons](#half-giants-two-handed-weapons)
+  - [Helms give AC 1](#helms-give-ac-1)
+  - [Boots give a move in a fight](#boots-give-a-move-in-a-fight)
+  - [Two weapons: AD&D's penalties](#two-weapons-adds-penalties)
   - [Rings and cloaks of protection](#rings-and-cloaks-of-protection)
+  - [Half-giants' two-handed weapons](#half-giants-two-handed-weapons)
+  - [Spells saved against with the spell save](#spells-saved-against-with-the-spell-save)
+  - [Fire, cold and electricity: DEX instead of a doubled d20](#fire-cold-and-electricity-dex-instead-of-a-doubled-d20)
+  - [Cat's Grace](#cats-grace)
+  - [Levels up to 10](#levels-up-to-10)
+  - [Thief skills from AD&D's table](#thief-skills-from-adds-table)
+  - [Hiding in shadows to backstab](#hiding-in-shadows-to-backstab)
 - [New content](#new-content)
   - [The Ring +1](#the-ring-1)
   - [Picking pockets](#picking-pockets)
@@ -58,8 +66,9 @@ records; this ledger keeps the ones the game doesn't show you.
 - [Controls](#controls)
   - [Choosing an enemy: Tab, Enter and the rings](#choosing-an-enemy-tab-enter-and-the-rings)
   - [Scrolling the map](#scrolling-the-map)
-- [More saves](#more-saves)
-- [More characters](#more-characters)
+- [More saves and characters](#more-saves-and-characters)
+  - [More saves](#more-saves)
+  - [More characters](#more-characters)
 - [Game speed](#game-speed)
   - [Suggested system requirements](#suggested-system-requirements)
 - [Accessibility](#accessibility)
@@ -1352,85 +1361,165 @@ the dice log, while the Ledger runs or with **Play Dark Sun (in-game rolls)**,
 which uses the Options as last set). Untick one and the game's own rule is back
 at once.
 
-- **Helms give AC 1.** The game's helms count as armour but give AC 0. With
-  **Helms give AC 1** ticked they give 1: the plain leather Helm, Dapartea's
-  Helm, the metal Helm of Contemplation and the Helm of Might (item types 5,
-  89 and 109, all at AC 0 in the game's tables). It shows on the View
-  Character and inventory screens like any armour.
-- **Boots give a move.** With **Boots give 1 more move in a fight** ticked,
-  whoever wears boots (Leather Boots, Serpent Boots: anything on the feet)
-  gets 1 more move each round of a fight (13 rather than 12, say; Haste and
-  Slow still double and halve it). The game sets each round's movement when it
-  rolls initiative, so boots put on mid-fight count from the next round. The
-  Characters tab shows it: `Move: 12 (13 in a fight: boots)`.
+| Rule (its box on the Options tab) | What it changes |
+|---|---|
+| [Helms give AC 1](#helms-give-ac-1) | the game's helms give AC 1 rather than 0 |
+| [Boots give a move in a fight](#boots-give-a-move-in-a-fight) | whoever wears boots gets 1 more move each round of a fight |
+| [Two weapons: AD&D's penalties](#two-weapons-adds-penalties) | -2 main hand, -4 off hand, DEX's reaction adjustment added; rangers none |
+| [Rings and cloaks of protection](#rings-and-cloaks-of-protection) | two rings don't add up, a ring gives no AC with magical armour, a cloak does nothing with magical or metal armour or a shield |
+| [Half-giants' two-handed weapons](#half-giants-two-handed-weapons) | a half-giant wields a two-handed weapon in one hand |
+| [Spells saved against with the spell save](#spells-saved-against-with-the-spell-save) | the spell save rather than petrification/polymorph |
+| [Fire, cold and electricity: DEX instead of a doubled d20](#fire-cold-and-electricity-dex-instead-of-a-doubled-d20) | DEX's defensive adjustment on those saves rather than a doubled d20 |
+| [Cat's Grace](#cats-grace) | a new spell in Flaming Sphere's place: DEX + 1d6 |
+| [Levels up to 10](#levels-up-to-10) | every class goes to 10th level (the game stops at 9) |
+| [Thief skills from AD&D's table](#thief-skills-from-adds-table) | AD&D's table by level, with Dark Sun's race and DEX adjustments |
+| [Hiding in shadows to backstab](#hiding-in-shadows-to-backstab) | thieves hide and move silently to backstab, rangers to attack from behind; a worn cloak, boots and belt help |
 
-The game has no descriptions of items, only their names, so while a rule is on
-the Ledger names the items for it: **Helm (AC 1)** and **Boots (Speed+1)**, as
-the inventory screen and the Characters tab show them ("Speed", as `Move +10`
-in a boots' item box is moving silently). (Dapartea's Helm, Helm/Contempltn,
-Helm of Might and Serpent Boots get the rule too, but keep their names: with
-the note they'd be too long for the game's Look box.) With the rule off
-they're the game's own names again. (Like the
-Ring of Protection's, the names are in the game's name table, which it reads
-afresh each time it starts and a game is loaded; without the Ledger they're
-the game's own.)
+### Helms give AC 1
+
+The game's helms count as armour but give AC 0. With **Helms give AC 1**
+ticked they give 1: the plain leather Helm, Dapartea's Helm, the metal Helm of
+Contemplation and the Helm of Might (item types 5, 89 and 109, all at AC 0 in
+the game's tables). It shows on the View Character and inventory screens like
+any armour.
+
+(The items' names and how it works: under [boots](#boots-give-a-move-in-a-fight), next.)
+
+### Boots give a move in a fight
+
+With **Boots give 1 more move in a fight** ticked, whoever wears boots
+(Leather Boots, Serpent Boots: anything on the feet) gets 1 more move each
+round of a fight (13 rather than 12, say; Haste and Slow still double and
+halve it). The game sets each round's movement when it rolls initiative, so
+boots put on mid-fight count from the next round. The Characters tab shows it:
+`Move: 12 (13 in a fight: boots)`.
+
+The game has no descriptions of items, only their names, so while the helms'
+or boots' rule is on the Ledger names the items for it: **Helm (AC 1)** and
+**Boots (Speed+1)**, as the inventory screen and the Characters tab show them
+("Speed", as `Move +10` in a boots' item box is moving silently). (Dapartea's
+Helm, Helm/Contempltn, Helm of Might and Serpent Boots get the rule too, but
+keep their names: with the note they'd be too long for the game's Look box.)
+With the rule off they're the game's own names again. (Like the Ring of
+Protection's, the names are in the game's name table, which it reads afresh
+each time it starts and a game is loaded; without the Ledger they're the
+game's own.)
 
 How: the helper sets the helm types' AC as the game's AC routine reads it
 (`INT F8h`, the Ring +1's place), and adds the move where the game sets a
 round's movement, Move x 10 (`INT FBh`).
 
-Three more put back AD&D's rules where the game parts from them (see
-[Two weapons](#two-weapons) and [Spells and effects](#spells-and-effects)):
+### Two weapons: AD&D's penalties
 
-- **Two weapons: AD&D's penalties.** With two melee weapons ready, a
-  character who isn't a ranger attacks at -2 with the main (right) hand and
-  -4 with the off (left) hand, and the DEX reaction adjustment is added:
-  -6 at DEX 1, -4 at 2, -3 at 3, -2 at 4, -1 at 5, none for 6-15, +1 at 16,
-  +2 at 17-18, +3 at 19-20, +4 at 21-23 and +5 at 24-25. It can lessen the
-  penalty to 0 but never make it a bonus, and low DEX makes it worse: DEX 17
-  is 0 and -2, DEX 21 0 and 0, DEX 3 -5 and -7. Rangers have no penalty
-  (in any armour). It takes a melee weapon in each hand: one weapon, a
-  two-handed weapon, a weapon and a shield, or a weapon and a bow or sling
-  (the missile slot) have no penalty. The game's own rule, a small bonus at
-  DEX 5 or less, is gone. The dice log names it (`-4 two weapons, off hand at DEX 15`), as do
-  the THAC0 lines on the Characters tab and the inventory screen.
-- **Spells are saved against with the spell save.** Almost every spell is
-  marked for the game's "kind 5" save, which it treats as
-  petrification/polymorph; with this rule it is the spell save. The spells
-  marked for paralysis/poison/death (the poison clouds, Poison, Slay Living,
-  the psionic attacks) keep it, as AD&D has them, and so do three monsters'
-  powers marked for petrification/polymorph. The dice log and the Spells tab
-  name the save used.
-- **Fire, cold and electricity: DEX instead of a doubled d20.** The game
-  doubles the save's d20 against those spells (Fireball, Lightning Bolt, Cone
-  of Cold, Burning Hands... and nine monsters' attacks of those kinds), which
-  looks meant as a dodge. With this rule the d20 isn't doubled and AD&D's
-  DEX defensive adjustment is added instead, as AD&D does for attacks that
-  can be dodged: -5 at DEX 1, -4 at 3, -3 at 4, ... none for 7-14, +1 at 15,
-  +2 at 16, +3 at 17, +4 at 18-20, +5 at 21-23 and +6 at 24-25. Fireball
-  stays dangerous for slow targets (needing 14 at DEX 12: 35% to save, where
-  the doubled d20 gave 70%) and much less so for quick ones (DEX 21: 60%).
-  The log names it: `+5 DEX 21 dodging`.
+With two melee weapons ready, a character who isn't a ranger attacks at -2
+with the main (right) hand and -4 with the off (left) hand, and the DEX
+reaction adjustment is added: -6 at DEX 1, -4 at 2, -3 at 3, -2 at 4, -1 at 5,
+none for 6-15, +1 at 16, +2 at 17-18, +3 at 19-20, +4 at 21-23 and +5 at
+24-25. It can lessen the penalty to 0 but never make it a bonus, and low DEX
+makes it worse: DEX 17 is 0 and -2, DEX 21 0 and 0, DEX 3 -5 and -7. Rangers
+have no penalty (in any armour). It takes a melee weapon in each hand: one
+weapon, a two-handed weapon, a weapon and a shield, or a weapon and a bow or
+sling (the missile slot) have no penalty. The game's own rule, a small bonus
+at DEX 5 or less, is gone. The dice log names it (`-4 two weapons, off hand at
+DEX 15`), as do the THAC0 lines on the Characters tab and the inventory
+screen.
 
 How: the game reads the attacker's DEX adjustment when it works out the
 two-weapon adjustment; the helper takes over from there (`INT FEh`) and gives
-AD&D's for the hand the attack's weapon is in. For the spell save, the Ledger
-writes the game's own table that turns a spell's kind of save into one of the
-five (a table of words at DS:1E75h, read afresh for every save), and puts it
-back when the rule is unticked. The helper does the save's doubling (`INT F0h`)
-only while that rule is off, and the Ledger marks the fire, cold and
-electricity spells with the game's own "can be dodged" flag (bit 40h of the
-spell's category word), which no spell has, so the game's save routine adds
-the DEX defensive adjustment from its own table.
+AD&D's for the hand the attack's weapon is in.
 
-**Cat's Grace** (a new spell, in Flaming Sphere's place). A level 2 wizard
-spell from AD&D's *Spells & Magic*, made to work exactly as the game's
-Strength does, for DEX: the caster touches someone, whose DEX goes up by 1d6
-(at most 24) for 60 rounds per caster level. Everything that reads DEX
-follows it while it lasts: AC, initiative, REAC and DEF, thief skills, the
-two-weapon penalties and the saves against fire, cold and electricity. The
-log says what it rolled: `Cat's Grace: 1d6 = 4 -> Gerakis's DEX +4 while it
-lasts (at most 24)`.
+(More in [Two weapons](#two-weapons).)
+
+### Rings and cloaks of protection
+
+The game has no rings or cloaks of protection; the Ledger adds three (the
+arena's [Ring +1](#the-ring-1), and Pehtucl's ring and cloak, see
+[the slave pens' gear](#the-slave-pens-gear)), each +1 to AC and +1 on every
+saving throw. With **Rings and cloaks of protection as in AD&D** ticked, they
+follow the AD&D rules for them:
+
+- **Two rings don't add up:** only the better one counts (the left hand's,
+  if they're equal). The arena's ring and Pehtucl's, both +1, give +1 together,
+  not +2.
+- **A ring gives no AC with magical armour** (any worn armour piece, helm
+  included, with a plus), but still adds to saving throws.
+- **A cloak does nothing,** neither AC nor saves, with magical armour, with
+  metal armour (Chain, Grey's Scale, Tanelyv's Armor, the Helm of
+  Contemplation) or with a shield in either hand. Natural armour is fine:
+  leather and bone (Ring, Brigandine and Scale are bone in Dark Sun), and
+  plain helms. The cloak still adds to a ring.
+
+Armour here is what is worn on the arms, legs, head or chest; something only
+carried in a backpack doesn't count. Untick it and every ring and cloak worn
+counts, whatever else is worn (the game's way with the patched game).
+
+The dice log's saving throws name each: `+1 Ring of Protection +1 Cloak of
+Protection`, and its attack lines show the AC that results (`target AC`).
+
+How: where the game's AC routine asks the helper about each worn item
+(`INT F8h`) and where it starts a saving throw's modifiers (`INT F9h`), the
+helper looks at what else the character wears.
+
+### Half-giants' two-handed weapons
+
+Half-giants stand up to twelve feet tall. With **Half-giants wield
+two-handed weapons in one hand** ticked, a half-giant can hold a two-handed
+weapon (a two-handed sword, a halberd, a bow) in one hand, with a shield or a
+light weapon in the other. The game's own rule that the two hands can't both
+hold heavy weapons (over 30 in weight each) still stands, so no half-giant
+holds two two-handed weapons. With two weapons ready, the two-weapon penalties
+apply as for anyone. The inventory screen still writes "2 handed" in the
+weapon's line: that is its kind, not a limit.
+
+How: the inventory screen checks a weapon type's two-handed bit (+0Fh, 40h)
+twice when something goes into a hand: the other hand's ("Two handed weapon in
+use") and the one going in ("Need two free hands"). The helper (`INT E3h`)
+answers both for the character on show, "not two-handed" for a half-giant.
+
+### Spells saved against with the spell save
+
+Almost every spell is marked for the game's "kind 5" save, which it treats as
+petrification/polymorph; with this rule it is the spell save. The spells
+marked for paralysis/poison/death (the poison clouds, Poison, Slay Living, the
+psionic attacks) keep it, as AD&D has them, and so do three monsters' powers
+marked for petrification/polymorph. The dice log and the Spells tab name the
+save used.
+
+How: the Ledger writes the game's own table that turns a spell's kind of save
+into one of the five (a table of words at DS:1E75h, read afresh for every
+save), and puts it back when the rule is unticked.
+
+(More in [Spells and effects](#spells-and-effects).)
+
+### Fire, cold and electricity: DEX instead of a doubled d20
+
+The game doubles the save's d20 against those spells (Fireball, Lightning
+Bolt, Cone of Cold, Burning Hands... and nine monsters' attacks of those
+kinds), which looks meant as a dodge. With this rule the d20 isn't doubled and
+AD&D's DEX defensive adjustment is added instead, as AD&D does for attacks
+that can be dodged: -5 at DEX 1, -4 at 3, -3 at 4, ... none for 7-14, +1 at
+15, +2 at 16, +3 at 17, +4 at 18-20, +5 at 21-23 and +6 at 24-25. Fireball
+stays dangerous for slow targets (needing 14 at DEX 12: 35% to save, where the
+doubled d20 gave 70%) and much less so for quick ones (DEX 21: 60%). The log
+names it: `+5 DEX 21 dodging`.
+
+How: the helper does the save's doubling (`INT F0h`) only while this rule is
+off, and the Ledger marks the fire, cold and electricity spells with the game's
+own "can be dodged" flag (bit 40h of the spell's category word), which no spell
+has, so the game's save routine adds the DEX defensive adjustment from its own
+table.
+
+(More in [Spells and effects](#spells-and-effects).)
+
+### Cat's Grace
+
+A new spell, in Flaming Sphere's place: a level 2 wizard spell from AD&D's
+*Spells & Magic*, made to work exactly as the game's Strength does, for DEX:
+the caster touches someone, whose DEX goes up by 1d6 (at most 24) for 60
+rounds per caster level. Everything that reads DEX follows it while it lasts:
+AC, initiative, REAC and DEF, thief skills, the two-weapon penalties and the
+saves against fire, cold and electricity. The log says what it rolled: `Cat's
+Grace: 1d6 = 4 -> Gerakis's DEX +4 while it lasts (at most 24)`.
 
 The game has no room for a new spell (wizard spells are numbers 1-68, every
 one taken), so Cat's Grace takes the place of Flaming Sphere, the weakest
@@ -1475,22 +1564,124 @@ open in place of its own (as `SEGOBJEX.GFF`, see [Item icons](#item-icons));
 where the game's two routines that read a chunk begin (`INT E1h`), the helper
 has Flaming Sphere's icon (21014) read as that one.
 
-**Hiding in shadows to backstab.** The game never rolls hide in shadows, and a
-thief only backstabs a target that has turned to face someone else. With
-**Thieves hide in shadows and move silently to backstab, rangers to attack from behind** ticked, a thief
-whose turn comes in a fight with no enemy in any of the eight squares around
-them tries to hide in shadows; if they do, they try to move silently up to
-someone; and if both succeed, their next attack that turn counts as one from
-behind: +2 to hit, the target's DEX and shield don't count, and with a weapon
-that can backstab it is a backstab, the damage multiplied as usual. The
-attack gives the thief away, and so does the turn ending without one. An enemy
-next to the thief when the turn comes means no hiding at all: get clear
-first. A worn cloak adds 10 to hiding in shadows (before daylight halves it)
-and worn boots add 10 to moving silently, for rangers too, up to 95:
-`needs 18 or less (26 +10 cloak = 36, halved in daylight)`. With that switched
-on, a cloak's or boots' item box (right-click it on the inventory screen) says
-so under its name, `Hide +10` or `Move +10` (the skills' short names, as the
-inventory screen's thief rows have them).
+### Levels up to 10
+
+The game stops every class at level 9 (its manual's tables end there too).
+With **Class levels go up to 10** ticked, each class goes one level further,
+at the XP AD&D gives for 10th level:
+
+| Class | XP for 10th level |
+|---|---|
+| Cleric | 450,000 |
+| Druid | 125,000 |
+| Fighter, gladiator | 500,000 |
+| Preserver | 250,000 |
+| Psionicist | 400,000 |
+| Ranger | 600,000 |
+| Thief | 160,000 |
+
+Everything else at 10th level is the game's own: it had it all along, and
+only the cap kept it out of reach. Its XP tables (DSUN.EXE 3E5A4h, in
+hundreds of XP) go on to level 20 (druids
+with a table of their own, not the cleric's), and THAC0, saves, spell slots
+and thief skills are worked out from the level. So at 10th level:
+
+- **Hit points** follow AD&D past 9th: preservers and thieves still roll
+  (d4 and d6, CON's bonus counting too), while the others gain a fixed amount
+  (+3 for fighters, gladiators and rangers, +2 for clerics, druids and
+  psionicists). The game's own table has the fixed gain for thieves too, as
+  it keeps thieves and psionicists together and AD&D's psionicist stops
+  rolling at 9th; with the rule the helper gives thieves their 10th die
+  (`INT E6h`, and `INT E5h` where CON's bonus is counted).
+- **Gladiators** optimise their armour, as the game already has them do:
+  AC 1 better for every 5 gladiator levels, so -2 at 10th where it was -1.
+  (The Ledger counts it in **AC: spells, rings, other**. The game gives it
+  with or without armour.)
+- **THAC0 and saves** improve as the game's formulas give: 11 for a
+  gladiator, 14 for a druid, as for AD&D's warriors and priests.
+- **Spell slots** grow at the levels casters already have, up to 5th; no
+  class gets 6th-level slots (a cleric would at 11, a preserver at 12), so no
+  spells past 5th level are needed. A 10th-level preserver or druid has
+  5 4 3 2 2 before WIS.
+- **A preserver picks a new spell** on the game's own CHOOSE A SPELL screen,
+  as at every level, offered from spell level (class level + 1) / 2 down:
+  5th at 10th as at 9th. **A psionicist picks a new power** (the game gives
+  one at each level, two at odd levels and 4th).
+- Spell damage that grows with the caster's level already counts up to
+  level 10 in the game, so a 10th-level caster gets the last step.
+
+The level-up comes as the game's usual one ("Gerakis gains a level"), and
+View Character stops showing the XP for the next level at 10, as it does at
+9 without the rule. Untick it and nobody goes past the level they have: a
+10th-level character stays 10th.
+
+How: the game holds a class level against 9 in two places, where a character
+goes up a level and where View Character shows the XP for the next one; the
+helper (`INT E7h`) holds it against 10 instead while the rule is on.
+
+### Thief skills from AD&D's table
+
+The game's thief skills come out high: a 3rd-level elf thief with DEX 22 has
+move silently 66 and hide in shadows 61. AD&D gives 27 and 20 at 3rd level
+before race and DEX. The game adds 4 a level to a base of its own, and its DEX
+formula gives move silently and hide in shadows less than Dark Sun's table at
+high DEX, and some other skills more. With **Thief skills from AD&D's table**
+ticked, a skill is:
+
+- AD&D's average for the thief level (the Player's Handbook's table, up to
+  10th level),
+- plus the race's adjustment, the game's own (already the Dark Sun rules'
+  numbers: an elf +5 pick pockets, −5 open locks, +5 move silently, +10 hide
+  in shadows, +5 hear noise),
+- plus DEX's: AD&D's table up to 19, the Dark Sun rules' exceptional DEX
+  past it, for the first five skills (hear noise, climb walls and read
+  languages have none):
+
+| DEX | Pick pockets | Open locks | Find/remove traps | Move silently | Hide in shadows |
+|---|---|---|---|---|---|
+| 9 | −15 | −10 | −10 | −20 | −10 |
+| 10 | −10 | −5 | −10 | −15 | −5 |
+| 11 | −5 | 0 | −5 | −10 | 0 |
+| 12 | 0 | 0 | 0 | −5 | 0 |
+| 13-15 | 0 | 0 | 0 | 0 | 0 |
+| 16 | 0 | +5 | 0 | 0 | 0 |
+| 17 | +5 | +10 | 0 | +5 | +5 |
+| 18 | +10 | +15 | +5 | +10 | +10 |
+| 19 | +15 | +20 | +10 | +15 | +15 |
+| 20 | +20 | +25 | +12 | +20 | +17 |
+| 21 | +25 | +27 | +15 | +25 | +20 |
+| 22 | +27 | +30 | +17 | +30 | +22 |
+
+then the situation and effects as before. So Azil, a 3rd-level elf thief with
+DEX 22: pick pockets 40 + 5 + 27 = 72, open locks 58, find traps 47, move
+silently 62, hide in shadows 52, hear noise 20, climb walls 87. A ranger's
+move silently and hide in shadows take the same race and DEX adjustments.
+Untick it for the game's numbers.
+
+How: where the game's thief skill routine adds 4 a level, the helper
+(`INT E4h`) puts AD&D's number for the level in place of the game's base and
+level, adds the DEX table's, and jumps past the game's DEX formula to its
+armour and effects. The Ledger's screens and the inventory screen's panel
+work the chances out the same way.
+
+### Hiding in shadows to backstab
+
+The game never rolls hide in shadows, and a thief only backstabs a target that
+has turned to face someone else. With **Thieves hide in shadows and move
+silently to backstab, rangers to attack from behind** ticked, a thief whose
+turn comes in a fight with no enemy in any of the eight squares around them
+tries to hide in shadows; if they do, they try to move silently up to someone;
+and if both succeed, their next attack that turn counts as one from behind: +2
+to hit, the target's DEX and shield don't count, and with a weapon that can
+backstab it is a backstab, the damage multiplied as usual. The attack gives
+the thief away, and so does the turn ending without one. An enemy next to the
+thief when the turn comes means no hiding at all: get clear first. A worn
+cloak adds 10 to hiding in shadows (before daylight halves it) and worn boots
+add 10 to moving silently, for rangers too, up to 95: `needs 18 or less (26
++10 cloak = 36, halved in daylight)`. With that switched on, a cloak's or
+boots' item box (right-click it on the inventory screen) says so under its
+name, `Hide +10` or `Move +10` (the skills' short names, as the inventory
+screen's thief rows have them).
 
 ![Item boxes in the game: a Leather Belt's "Pick +5, Lock +5", Leather Boots (Speed+1)'s "Move +10" and a Leather Cloak's "Hide +10", each at 24](docs/gear-boxes.png)
 
@@ -1557,150 +1748,6 @@ helper, which, where the game has just worked out whether an attack is from
 behind and a backstab (`INT EAh`), makes the hidden thief's next one so, by
 the game's own conditions for a backstab (a thief, in melee, a weapon of
 weight 40 or less).
-
-### Thief skills from AD&D's table
-
-The game's thief skills come out high: a 3rd-level elf thief with DEX 22 has
-move silently 66 and hide in shadows 61. AD&D gives 27 and 20 at 3rd level
-before race and DEX. The game adds 4 a level to a base of its own, and its DEX
-formula gives move silently and hide in shadows less than Dark Sun's table at
-high DEX, and some other skills more. With **Thief skills from AD&D's table**
-ticked, a skill is:
-
-- AD&D's average for the thief level (the Player's Handbook's table, up to
-  10th level),
-- plus the race's adjustment, the game's own (already the Dark Sun rules'
-  numbers: an elf +5 pick pockets, −5 open locks, +5 move silently, +10 hide
-  in shadows, +5 hear noise),
-- plus DEX's: AD&D's table up to 19, the Dark Sun rules' exceptional DEX
-  past it, for the first five skills (hear noise, climb walls and read
-  languages have none):
-
-| DEX | Pick pockets | Open locks | Find/remove traps | Move silently | Hide in shadows |
-|---|---|---|---|---|---|
-| 9 | −15 | −10 | −10 | −20 | −10 |
-| 10 | −10 | −5 | −10 | −15 | −5 |
-| 11 | −5 | 0 | −5 | −10 | 0 |
-| 12 | 0 | 0 | 0 | −5 | 0 |
-| 13-15 | 0 | 0 | 0 | 0 | 0 |
-| 16 | 0 | +5 | 0 | 0 | 0 |
-| 17 | +5 | +10 | 0 | +5 | +5 |
-| 18 | +10 | +15 | +5 | +10 | +10 |
-| 19 | +15 | +20 | +10 | +15 | +15 |
-| 20 | +20 | +25 | +12 | +20 | +17 |
-| 21 | +25 | +27 | +15 | +25 | +20 |
-| 22 | +27 | +30 | +17 | +30 | +22 |
-
-then the situation and effects as before. So Azil, a 3rd-level elf thief with
-DEX 22: pick pockets 40 + 5 + 27 = 72, open locks 58, find traps 47, move
-silently 62, hide in shadows 52, hear noise 20, climb walls 87. A ranger's
-move silently and hide in shadows take the same race and DEX adjustments.
-Untick it for the game's numbers.
-
-How: where the game's thief skill routine adds 4 a level, the helper
-(`INT E4h`) puts AD&D's number for the level in place of the game's base and
-level, adds the DEX table's, and jumps past the game's DEX formula to its
-armour and effects. The Ledger's screens and the inventory screen's panel
-work the chances out the same way.
-
-### Half-giants' two-handed weapons
-
-Half-giants stand up to twelve feet tall. With **Half-giants wield
-two-handed weapons in one hand** ticked, a half-giant can hold a two-handed
-weapon (a two-handed sword, a halberd, a bow) in one hand, with a shield or a
-light weapon in the other. The game's own rule that the two hands can't both
-hold heavy weapons (over 30 in weight each) still stands, so no half-giant
-holds two two-handed weapons. With two weapons ready, the two-weapon penalties
-apply as for anyone. The inventory screen still writes "2 handed" in the
-weapon's line: that is its kind, not a limit.
-
-How: the inventory screen checks a weapon type's two-handed bit (+0Fh, 40h)
-twice when something goes into a hand: the other hand's ("Two handed weapon in
-use") and the one going in ("Need two free hands"). The helper (`INT E3h`)
-answers both for the character on show, "not two-handed" for a half-giant.
-
-**Levels up to 10.** The game stops every class at level 9 (its manual's
-tables end there too). With **Class levels go up to 10** ticked, each class
-goes one level further, at the XP AD&D gives for 10th level:
-
-| Class | XP for 10th level |
-|---|---|
-| Cleric | 450,000 |
-| Druid | 125,000 |
-| Fighter, gladiator | 500,000 |
-| Preserver | 250,000 |
-| Psionicist | 400,000 |
-| Ranger | 600,000 |
-| Thief | 160,000 |
-
-Everything else at 10th level is the game's own: it had it all along, and
-only the cap kept it out of reach. Its XP tables (DSUN.EXE 3E5A4h, in
-hundreds of XP) go on to level 20 (druids
-with a table of their own, not the cleric's), and THAC0, saves, spell slots
-and thief skills are worked out from the level. So at 10th level:
-
-- **Hit points** follow AD&D past 9th: preservers and thieves still roll
-  (d4 and d6, CON's bonus counting too), while the others gain a fixed amount
-  (+3 for fighters, gladiators and rangers, +2 for clerics, druids and
-  psionicists). The game's own table has the fixed gain for thieves too, as
-  it keeps thieves and psionicists together and AD&D's psionicist stops
-  rolling at 9th; with the rule the helper gives thieves their 10th die
-  (`INT E6h`, and `INT E5h` where CON's bonus is counted).
-- **Gladiators** optimise their armour, as the game already has them do:
-  AC 1 better for every 5 gladiator levels, so -2 at 10th where it was -1.
-  (The Ledger counts it in **AC: spells, rings, other**. The game gives it
-  with or without armour.)
-- **THAC0 and saves** improve as the game's formulas give: 11 for a
-  gladiator, 14 for a druid, as for AD&D's warriors and priests.
-- **Spell slots** grow at the levels casters already have, up to 5th; no
-  class gets 6th-level slots (a cleric would at 11, a preserver at 12), so no
-  spells past 5th level are needed. A 10th-level preserver or druid has
-  5 4 3 2 2 before WIS.
-- **A preserver picks a new spell** on the game's own CHOOSE A SPELL screen,
-  as at every level, offered from spell level (class level + 1) / 2 down:
-  5th at 10th as at 9th. **A psionicist picks a new power** (the game gives
-  one at each level, two at odd levels and 4th).
-- Spell damage that grows with the caster's level already counts up to
-  level 10 in the game, so a 10th-level caster gets the last step.
-
-The level-up comes as the game's usual one ("Gerakis gains a level"), and
-View Character stops showing the XP for the next level at 10, as it does at
-9 without the rule. Untick it and nobody goes past the level they have: a
-10th-level character stays 10th.
-
-How: the game holds a class level against 9 in two places, where a character
-goes up a level and where View Character shows the XP for the next one; the
-helper (`INT E7h`) holds it against 10 instead while the rule is on.
-
-### Rings and cloaks of protection
-
-The game has no rings or cloaks of protection; the Ledger adds three (the
-arena's [Ring +1](#the-ring-1), and Pehtucl's ring and cloak, see
-[the slave pens' gear](#the-slave-pens-gear)), each +1 to AC and +1 on every
-saving throw. With **Rings and cloaks of protection as in AD&D** ticked, they
-follow the AD&D rules for them:
-
-- **Two rings don't add up:** only the better one counts (the left hand's,
-  if they're equal). The arena's ring and Pehtucl's, both +1, give +1 together,
-  not +2.
-- **A ring gives no AC with magical armour** (any worn armour piece, helm
-  included, with a plus), but still adds to saving throws.
-- **A cloak does nothing,** neither AC nor saves, with magical armour, with
-  metal armour (Chain, Grey's Scale, Tanelyv's Armor, the Helm of
-  Contemplation) or with a shield in either hand. Natural armour is fine:
-  leather and bone (Ring, Brigandine and Scale are bone in Dark Sun), and
-  plain helms. The cloak still adds to a ring.
-
-Armour here is what is worn on the arms, legs, head or chest; something only
-carried in a backpack doesn't count. Untick it and every ring and cloak worn
-counts, whatever else is worn (the game's way with the patched game).
-
-The dice log's saving throws name each: `+1 Ring of Protection +1 Cloak of
-Protection`, and its attack lines show the AC that results (`target AC`).
-
-How: where the game's AC routine asks the helper about each worn item
-(`INT F8h`) and where it starts a saving throw's modifiers (`INT F9h`), the
-helper looks at what else the character wears.
 
 ## New content
 
@@ -2422,7 +2469,9 @@ while DOSBox's window is in front) and tells DSCLOG how far to scroll
 The view can't be zoomed: the game draws a 320 by 200 screen at one scale,
 with the view's size built into its drawing code and its video memory pages.
 
-## More saves
+## More saves and characters
+
+### More saves
 
 The game's save and load window holds 10 saves. With the Ledger it holds 40,
 on four pages of ten: the **PAGE 1** to **PAGE 4** buttons under EXIT show a
@@ -2452,7 +2501,7 @@ away and the page's put in with the game's text font
 (`dscompanion/savepages.py`; the buttons' own carved letters have no P, G or
 digits).
 
-## More characters
+### More characters
 
 The game keeps up to 19 characters made with CREATE CHARACTERS (and the party
 members dropped back to the roster); a 20th is refused with "Maximum
