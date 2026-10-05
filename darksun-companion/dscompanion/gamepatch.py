@@ -49,6 +49,7 @@ VEC_SAVE_PAGE, VEC_SAVE_CLICK = 0xD8, 0xD7
 
 
 SCRIPT_BUFFER = 0x2E00  # the scripts' buffer, made bigger (the game's: 10000 bytes)
+CHARACTERS = 29  # the saved characters (CHARSAVE.GFF's numbers 1 to this; the game's: 19)
 
 
 class Patch(NamedTuple):
@@ -224,6 +225,37 @@ PATCHES = (
     # on: its two "not a psionic power" jumps (to the ending) go to the handler's way out instead.
     Patch("effects_click_low", 0x7F226, bytes.fromhex("7c51"), bytes.fromhex("7c73")),
     Patch("effects_click_high", 0x7F236, bytes.fromhex("7d41"), bytes.fromhex("7d63")),
+    # The saved characters: CHARSAVE.GFF holds each under a number, 1 to 19, and the game's
+    # loops over them stop at 20 (each "cmp ...,14h" or "push 14h" a byte); its roster list is
+    # made 20 long and its "too many characters" check is for 19 found. The file's own writing
+    # takes any number, the roster window scrolls by the number read and party members are
+    # found by their own tags, so these are all that hold it at 19.
+    Patch("characters_list", 0x53CD1, bytes.fromhex("666a14"), bytes((0x66, 0x6A, CHARACTERS + 1))),
+    Patch("characters_read", 0x53D02, bytes.fromhex("6a14"), bytes((0x6A, CHARACTERS + 1))),
+    Patch("characters_reread", 0x543B0, bytes.fromhex("6a14"), bytes((0x6A, CHARACTERS + 1))),
+    Patch("characters_roster", 0x53F43, bytes.fromhex("83fe14"), bytes((0x83, 0xFE, CHARACTERS + 1))),
+    Patch("characters_delete", 0x54B59, bytes.fromhex("83fe14"), bytes((0x83, 0xFE, CHARACTERS + 1))),
+    Patch("characters_save", 0x6692E, bytes.fromhex("83ff14"), bytes((0x83, 0xFF, CHARACTERS + 1))),
+    Patch("characters_join", 0x67094, bytes.fromhex("837efc14"), bytes((0x83, 0x7E, 0xFC, CHARACTERS + 1))),
+    Patch("characters_joined", 0x6709F, bytes.fromhex("837efc14"), bytes((0x83, 0x7E, 0xFC, CHARACTERS + 1))),
+    Patch("characters_count", 0x67CBF, bytes.fromhex("83fe14"), bytes((0x83, 0xFE, CHARACTERS + 1))),
+    Patch("characters_full", 0x67CC9, bytes.fromhex("83ff13"), bytes((0x83, 0xFF, CHARACTERS))),
+    # A bug of the game's own: the roster's DELETE (DSUN.EXE 54AC1h) picked the character by the
+    # row clicked alone, where ADD takes the row plus how far the list is scrolled; with the list
+    # scrolled, another character was deleted (the row's from the top). The same code, the scroll
+    # added; both "mov ax,<segment>" left where they were (their segment is fixed up on loading).
+    Patch("roster_delete", 0x54ADF,
+          bytes.fromhex("833e8903007417b8d0028ec026a100006bc033c41e324903d8268b07eb26b8d0028ec026a1"
+                        "00006bc033c41e324903d8268b47028946fe6bc03ac41e651603d8268b4706"),
+          bytes.fromhex("90909090909090"  # (7 nops)
+                        "b8d0028ec0"  # mov ax,<segment>; mov es,ax
+                        "26a100002603060200"  # mov ax,es:[0] (the row); add ax,es:[2] (the scroll)
+                        "6bc033c41e324901c3"  # imul ax,ax,33h; les bx,[4932h] (the list); add bx,ax
+                        "b8d002"  # mov ax,<segment> (not used)
+                        "833e8903007405"  # cmp word [389h],0; je .party
+                        "268b07eb17"  # mov ax,es:[bx]; jmp .done
+                        "268b47028946fe6bc03ac41e651601c3268b4706"  # .party: as the game's
+                        "909090")),  # .done (54B23h)
     # (not changed: DSCLOG reads the segment this "mov dx,<segment>" loads, the pointer's items')
     Patch("use_item_seg", 0x73A14, bytes.fromhex("ba8003"), bytes.fromhex("ba8003")),
     # The data path is argv[0] cut after its last \ or :, kept at DS:4B81h. The

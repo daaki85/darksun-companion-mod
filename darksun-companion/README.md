@@ -58,6 +58,7 @@ records; this ledger keeps the ones the game doesn't show you.
   - [Choosing an enemy: Tab, Enter and the rings](#choosing-an-enemy-tab-enter-and-the-rings)
   - [Scrolling the map](#scrolling-the-map)
 - [More saves](#more-saves)
+- [More characters](#more-characters)
 - [Game speed](#game-speed)
   - [Suggested system requirements](#suggested-system-requirements)
 - [Accessibility](#accessibility)
@@ -189,6 +190,8 @@ records; this ledger keeps the ones the game doesn't show you.
 - **More saves:** 40 instead of the game's 10, on four pages of the save and
   load window: PAGE 1 to PAGE 4 buttons, or PgUp and PgDn (see
   [More saves](#more-saves)).
+- **More characters:** 29 saved characters instead of the game's 19 (see
+  [More characters](#more-characters)).
 - **Game speed:** DOSBox is given more of the computer, for smoother walking
   with the whole party in view (see [Game speed](#game-speed)).
 - **Crash reports:** if DOSBox crashes or the game stops with an error, what
@@ -1081,7 +1084,8 @@ Every roll in the game goes through one function, Borland C++'s `rand()`.
    see [rule changes](#rule-changes)), and in the save and load window's
    events, where a key and a button it has no use for go, `INT D8h` and
    `INT D7h` (for [more saves](#more-saves)). The
-   copy also allocates a bigger buffer for the game's scripts (11,776 bytes
+   copy keeps 29 characters rather than 19 and deletes the one chosen in the
+   roster (see [more characters](#more-characters)), and also allocates a bigger buffer for the game's scripts (11,776 bytes
    rather than 10,000, for
    [Dinos and the Trustee](#dinos-and-the-trustee-on-kalzith-and-semyon)), and
    looks for its data files in the current folder rather than next to itself. The helper also hooks DOS's `INT 21h`, to
@@ -2404,6 +2408,29 @@ in the window under EXIT, with pictures made from EXIT's, its letters taken
 away and the page's put in with the game's text font
 (`dscompanion/savepages.py`; the buttons' own carved letters have no P, G or
 digits).
+
+## More characters
+
+The game keeps up to 19 characters made with CREATE CHARACTERS (and the party
+members dropped back to the roster); a 20th is refused with "Maximum
+characters". With the Ledger it keeps 29. The roster in the ADD window
+scrolls through them all, as it did through 19.
+
+They are in the game's own `CHARSAVE.GFF`, each under a number, 1 to 29. The
+game started without the Ledger reads numbers 1 to 19 only: characters saved
+under 20 to 29 aren't shown, and aren't lost; they come back with the Ledger.
+(The game saves a new character under the highest free number, so the first
+ten made after the 19th go to 20 to 29.)
+
+How: the game's file routines take any number; only its loops over the
+characters stop at 20, its roster list has room for 20 and its "Maximum
+characters" check counts to 19. The patched game has 30 and 29 there
+(`dscompanion/gamepatch.py`, a byte each).
+
+The patched game also fixes a bug of the game's own: **DELETE** in the
+roster deleted the character in the row clicked counting from the top of the
+list, not from the top of what was shown. With the list scrolled down,
+another character was deleted. Now it deletes the one chosen.
 
 ## Game speed
 

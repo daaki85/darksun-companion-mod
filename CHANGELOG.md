@@ -46,6 +46,12 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
   letter in the game's two save names and has the window's own routines search
   the folder and draw it again; the buttons are in the Ledger's copy of
   `RESOURCE.GFF`, made from EXIT's. Signature `DSCLOGvY`.
+- **More characters:** 29 saved characters instead of the game's 19 (CREATE
+  CHARACTERS says "Maximum characters" at 29). They are kept in the game's
+  `CHARSAVE.GFF` under numbers 1 to 29; the game started without the Ledger
+  shows 1 to 19 and leaves the others alone. The patched game's loops over the
+  characters, its roster list and its "Maximum characters" check are made 30
+  and 29 (a byte each); the game's file routines already took any number.
 - **A worn belt helps a thief:** +5 to picking pockets and opening locks (the
   same switch as the cloak's and boots' bonuses, hiding on or not), counted by
   the game's own lock picking and by the Ledger; its item box says
@@ -67,6 +73,10 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
   multi-class thief's classes, as the game's quests are).
 
 **Fixed**
+- A bug of the game's own: DELETE in the roster deleted the character in the
+  row clicked counted from the top of the list, not of what was shown, so with
+  the list scrolled down another character was deleted. The patched game adds
+  how far the list is scrolled, as ADD does.
 - The Look box no longer shows an AC the Ledger worked out for another
   creature: the arena's first fight comes too soon after the opening one to
   tell them apart by the game's time, and a Slig showed the opening fight's
