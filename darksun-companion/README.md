@@ -1846,11 +1846,12 @@ Templar's Obsidian Bloodwrath (a long sword +1, 20800) is:
 | **Kreenfang** | the arena's 2 handed Bone Gythka, the Tohr-kreen's | a gythka +1 (2d4+1) | 18000 |
 | **Shadowseeker** | Kurzak's metal Short Sword ([the slave pens' gear](#the-slave-pens-gear)) | a short sword +1 (1d6+1); whoever wields it, in either hand, sees the invisible | 22000 |
 
-The game has gythkas only in the hands of kreen; the first the Ledger sees
-with someone in the party, or in the arena with no living monster holding it
-(on the ground, on a body), becomes Kreenfang, once a game: the Tohr-kreen
-fights with its plain one, and a game already past the arena has its gythka
-made Kreenfang too. Shadowseeker is made so wherever it is, on Kurzak or taken.
+The game has gythkas only in the hands of kreen. Only the arena's becomes
+Kreenfang: in the arena, once no living monster holds it (on the Tohr-kreen's
+body, on the ground, or taken by the party there), once a game. The Tohr-kreen
+fights with its plain one, and every gythka anywhere else stays plain (a game
+already past the arena gets no Kreenfang). Shadowseeker is made so wherever it
+is, on Kurzak or taken.
 Their plus counts for hitting and damage as any magic weapon's, the game shows
 it with the name (`+1 Kreenfang`), and each has its own icon (see
 [Item icons](#item-icons)). A thief who lifts Shadowseeker from Kurzak gets

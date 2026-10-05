@@ -1,11 +1,10 @@
 """Two plain weapons made magic (the MAGIC_ARMS switch, on unless turned off).
 
-- The arena's 2 handed Bone Gythka, the Tohr-kreen's: Kreenfang, a gythka +1. The game has gythkas only in
-  the hands of kreen, none with a plus, and the arena's is the first the party can have; the first
-  the Ledger sees with someone in the party, or in the arena with no living monster holding it (on
-  the ground, on a body), becomes +1, once a game (the key in the tools_given set, kept in
-  settings): the Tohr-kreen fights with its plain one, and a game already past the arena has its
-  gythka made +1 too.
+- The arena's 2 handed Bone Gythka, the Tohr-kreen's: Kreenfang, a gythka +1. The game has gythkas
+  only in the hands of kreen, none with a plus. Only the arena's becomes Kreenfang: in the arena
+  (where every game starts), once no living monster holds it (on the Tohr-kreen's body, on the
+  ground, or taken by the party there), once a game (the key in the tools_given set, kept in
+  settings). The Tohr-kreen fights with its plain one, and gythkas anywhere else stay plain.
 - Kurzak's Short Sword (npcitems.py): Shadowseeker, a short sword +1, wherever it is (on him or
   taken). Whoever wields it (in either hand) can see the invisible: the game's own way with a
   magic item's spell (its +0Fh, one past the spell's number), which it puts on the wearer when the
@@ -60,18 +59,6 @@ def _held_by_monsters(gd: GameData, it: ring.Items) -> Set[int]:
     return out
 
 
-def _held_by_party(gd: GameData, it: ring.Items) -> Set[int]:
-    out: Set[int] = set()
-    for member in range(game.PARTY_SIZE):
-        rec = gd.creature(member)
-        if len(rec) < game.CREATURE_SIZE or not rec[game.CREATURE_NAME]:
-            continue
-        for offset in game.CREATURE_ITEM_LISTS:
-            thing, = struct.unpack_from("<h", rec, offset)
-            out.update(item for item, _ in it.chain(thing))
-    return out
-
-
 def _make_magic(gd: GameData, it: ring.Items, item: int, value: int, name: int, spell: int = 0) -> None:
     at = it.items + item * game.ITEM_SIZE
     gd.guest.write(at + game.ITEM_PLUS, b"\x01")
@@ -98,9 +85,8 @@ def _rename(gd: GameData, it: ring.Items, item: int, rec: bytes, value: int, nam
 
 
 def upgrade(gd: GameData, given: Set[str]) -> List[str]:
-    """Kurzak's Short Sword made +1 wherever it is; a gythka someone in the party has, or else in the
-    arena one no living monster holds, made +1, once a game (GIVEN: the key, added). Lines for
-    the log."""
+    """Kurzak's Short Sword made +1 wherever it is; in the arena, its gythka once no living monster
+    holds it, made +1, once a game (GIVEN: the key, added). Lines for the log."""
     out: List[str] = []
     it = ring.Items(gd)
     gythkas: List[int] = []
@@ -130,12 +116,9 @@ def upgrade(gd: GameData, given: Set[str]) -> List[str]:
                 done.add(item)
                 if _rename(gd, it, item, rec, GYTHKA_VALUE, GYTHKA_NAME):
                     out.append("The arena's Gythka +1 is named Kreenfang.")
-    if gythkas and key(gd) not in given:
-        party = _held_by_party(gd, it)
-        held = _held_by_monsters(gd, it) if it.word(ring.REGION) == ARENA else set(gythkas)
-        free = next((item for item in gythkas if item in party), None)
-        if free is None:
-            free = next((item for item in gythkas if item not in held), None)
+    if gythkas and key(gd) not in given and it.word(ring.REGION) == ARENA:
+        held = _held_by_monsters(gd, it)  # (the Tohr-kreen's while it lives)
+        free = next((item for item in gythkas if item not in held), None)
         if free is not None:
             _make_magic(gd, it, free, GYTHKA_VALUE, GYTHKA_NAME)
             given.add(key(gd))

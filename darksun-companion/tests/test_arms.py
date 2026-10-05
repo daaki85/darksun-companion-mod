@@ -9,9 +9,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dscompanion import arms, game, names, npcitems, ring
-from test_dicelog import CREATURES, ITEMS
+from test_dicelog import CREATURES, DS, ITEMS
 import test_npcitems
-from test_npcitems import KURZAK
+from test_npcitems import KURZAK, PEHTUCL
 
 GYTHKA, PARTY_THING = 90, 410
 
@@ -46,6 +46,9 @@ class ArmsTests(unittest.TestCase):
         struct.pack_into("<Bh", self.m, ring.Items(self.gd).things + PARTY_THING * 3, game.THING_ITEM, GYTHKA)
         struct.pack_into("<h", self.m, CREATURES + 8, PARTY_THING)
 
+    def in_arena(self):
+        struct.pack_into("<H", self.m, DS * 16 + ring.REGION, ring.ARENA)
+
     def test_names_in_dsclog(self):
         """The names are the ones DSCLOG copies into the game's table, after the others'."""
         self.assertEqual(names.NAMES[arms.SWORD_NAME], b"Shadowseeker")
@@ -74,17 +77,32 @@ class ArmsTests(unittest.TestCase):
         self.assertEqual(record(self.m, sword), (1, arms.SWORD_NAME, arms.SWORD_VALUE, game.DETECT_INVISIBILITY + 1))
         self.assertEqual(arms.upgrade(self.gd, set()), [])
 
-    def test_gythka_carried(self):
-        """A gythka in the party's hands, out of the arena: Kreenfang, once a game."""
+    def test_gythka_only_in_the_arena(self):
+        """A gythka out of the arena (here the party's, in the pens) stays plain; in the arena, off
+        any living monster, it becomes Kreenfang, once a game."""
         self.give_party_gythka()
         given = set()
+        self.assertEqual(arms.upgrade(self.gd, given), [line for line in arms.upgrade(self.gd, set())
+                                                         if "Gythka" not in line])
+        self.assertEqual(record(self.m, GYTHKA)[0], 0)
+        self.in_arena()
         lines = arms.upgrade(self.gd, given)
         self.assertIn("The arena's 2 handed Bone Gythka (the Tohr-kreen's) is Kreenfang, a gythka +1.", lines)
         self.assertEqual(record(self.m, GYTHKA), (1, arms.GYTHKA_NAME, arms.GYTHKA_VALUE, 0))
         self.assertIn(arms.key(self.gd), given)
 
+    def test_gythka_a_living_monster_holds(self):
+        """The Tohr-kreen's while it lives (here Pehtucl's list stands for its): left plain."""
+        self.give_party_gythka()
+        struct.pack_into("<h", self.m, CREATURES + 8, game.NO_ITEM)  # (not the party's)
+        struct.pack_into("<h", self.m, CREATURES + PEHTUCL * game.CREATURE_SIZE + 8, PARTY_THING)
+        self.in_arena()
+        arms.upgrade(self.gd, set())
+        self.assertEqual(record(self.m, GYTHKA)[0], 0)
+
     def test_gythka_once_a_game(self):
         self.give_party_gythka()
+        self.in_arena()
         arms.upgrade(self.gd, {arms.key(self.gd)})
         self.assertEqual(record(self.m, GYTHKA)[0], 0)
 
