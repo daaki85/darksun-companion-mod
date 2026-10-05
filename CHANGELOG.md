@@ -96,6 +96,10 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
   row clicked counted from the top of the list, not of what was shown, so with
   the list scrolled down another character was deleted. The patched game adds
   how far the list is scrolled, as ADD does.
+- **Searching junk, hay and wardrobes in the dice log:** each search's roll
+  (0-14 for junk, 0-10 for hay and wardrobes), what it found, and how far the
+  count of finds (or of wardrobe searches) has got; a rat's bite or a falling
+  pot shows its damage roll. DSCLOG records the scripts' random command.
 - **The load window shows an empty page:** PAGE 2 to PAGE 4 did nothing in the
   load window when that page had no saves. Now the page is shown, with LOAD
   greyed and Enter doing nothing until a page with saves is chosen (the game

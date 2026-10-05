@@ -71,6 +71,7 @@ VEC_SAVE_CLICK equ 0xD7    ; PROBE_SAVE_CLICK
 VEC_ITEM_WEAPON equ 0xD6   ; PROBE_ITEM_WEAPON
 VEC_ITEM_SKIP equ 0xD5     ; PROBE_ITEM_SKIP
 VEC_ITEM_ARMOUR equ 0xD4   ; PROBE_ITEM_ARMOUR
+VEC_SCRIPT_RAND equ 0xD3   ; PROBE_SCRIPT_RAND
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 128         ; entries in the ring
@@ -2479,6 +2480,58 @@ prot_scan:
 .out:   pop es
         popad
         ret
+
+; PROBE_SCRIPT_RAND: INT VEC_SCRIPT_RAND replaces "inc eax / mov edx,eax" (5 bytes: INT + 3 NOPs;
+; DSUN.EXE B300h) in the scripts' random command (0 to N, each as likely: rand() * (N + 1) /
+; 32768), EAX its N, the rand() on the stack under the INT's return. Does the two instructions
+; and records the command (kind KIND_SCRIPT): AL the result, AH N (its low byte), EXTRA where
+; the script is (the running script's position, past the command's number: what dscompanion's
+; searches.py knows the junk, haystack and wardrobe searches by), and the frame's BP+2, +4 and
+; +6 the searches' counts (the scripts' variables 135,21 to 23: junk and hay finds, wardrobe
+; searches; words in the table DS:1356h points to).
+KIND_SCRIPT equ 5
+SCRIPT_DATA equ 0x3781 - 0x4356 ; (DS-relative) the interpreter's: +192h the running script's slot,
+SCRIPT_SLOT equ 0x192           ;   +295h each slot's position (words)
+SCRIPT_POS equ 0x295
+SCRIPT_COUNTS equ 0x1356        ; DS: far pointer to the scripts' variables 135 (words)
+SEARCH_FIRST equ 21             ; (junk, hay, wardrobe: 21 to 23)
+probe_script_rand:
+        sti
+        inc eax
+        mov edx, eax
+        push bp
+        mov bp, sp              ; BP+2 the INT's return, BP+8 the rand() pushed
+        pushad
+        push es
+        movsx ebx, word [bp + 8]
+        imul ebx, eax
+        sar ebx, 15             ; (the game's: / 32768, the product never negative)
+        mov ax, dx
+        dec ax
+        mov ah, al              ; N
+        mov al, bl              ; the result
+        mov bx, ds
+        add bx, SCRIPT_DATA
+        mov es, bx
+        movsx bx, byte [es:SCRIPT_SLOT]
+        add bx, bx
+        mov cx, [es:bx + SCRIPT_POS]
+        mov [cs:extra], cx
+        les bx, [SCRIPT_COUNTS]
+        push word [es:bx + (SEARCH_FIRST + 2) * 2]
+        push word [es:bx + (SEARCH_FIRST + 1) * 2]
+        push word [es:bx + SEARCH_FIRST * 2]
+        push bp
+        mov bp, sp              ; BP+2, +4, +6: the counts
+        mov word [cs:kind], KIND_SCRIPT
+        lea si, [bp + 38]       ; (SS:SI+6: the INT's return address, past ES, PUSHAD's and BP)
+        call record
+        pop bp
+        add sp, 6
+        pop es
+        popad
+        pop bp
+        iret
 
 ; ITEM SAVES. The game's acid and corroding touch (its special attacks 178, 186 and 187, the
 ; Rampager's and the Babau's hits, after a failed save) can destroy an item (DSUN.EXE 7AA5Ah,
@@ -5751,6 +5804,9 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_ITEM_ARMOUR
         mov dx, probe_item_armour
         int 21h
+        mov ax, 2500h + VEC_SCRIPT_RAND
+        mov dx, probe_script_rand
+        int 21h
         mov ax, 3516h           ; the keyboard's (TARGETING)
         int 21h
         mov [old16], bx
@@ -5791,8 +5847,8 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or D4h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
-all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR
+busy    db 'DSCLOG: interrupts 60h-65h or D3h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND
 all_vectors_end:
 
         align 16, db 0

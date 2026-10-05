@@ -47,6 +47,7 @@ VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX = 0xDC, 0xDB, 0xDA
 VEC_BELT = 0xD9
 VEC_SAVE_PAGE, VEC_SAVE_CLICK = 0xD8, 0xD7
 VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR = 0xD6, 0xD5, 0xD4  # (item saves)
+VEC_SCRIPT_RAND = 0xD3
 
 
 SCRIPT_BUFFER = 0x2E00  # the scripts' buffer, made bigger (the game's: 10000 bytes)
@@ -274,6 +275,9 @@ PATCHES = (
     Patch("item_weapon", 0x7AABC, bytes.fromhex("ba08002b56fe"), _interrupt(VEC_ITEM_WEAPON, 6)),
     Patch("item_skip", 0x7AC45, bytes.fromhex("837efe00"), _interrupt(VEC_ITEM_SKIP, 4)),
     Patch("item_armour", 0x7AC59, bytes.fromhex("ba0a002b56fe"), _interrupt(VEC_ITEM_ARMOUR, 6)),
+    # the scripts' random command (0 to N): "inc eax / mov edx,eax", N in EAX (DSCLOG records the
+    # result, N and the script's position: the junk, haystack and wardrobe searches, search.py)
+    Patch("script_rand", 0xB300, bytes.fromhex("6640668bd0"), _interrupt(VEC_SCRIPT_RAND, 5)),
     # A bug of the game's own: the roster's DELETE (DSUN.EXE 54AC1h) picked the character by the
     # row clicked alone, where ADD takes the row plus how far the list is scrolled; with the list
     # scrolled, another character was deleted (the row's from the top). The same code, the scroll

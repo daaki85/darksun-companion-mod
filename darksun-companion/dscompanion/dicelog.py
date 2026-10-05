@@ -24,7 +24,7 @@ from collections import Counter, deque
 from dataclasses import dataclass
 from typing import Callable, Deque, Dict, List, NamedTuple, Optional, Tuple
 
-from . import arms, bonescale, dust, game, rings, targeting, icons, kalzith, monsters, names, npcitems, pickpocket, ring, scrolling, semyon, shadows, sprites, stealth, tools, vulture
+from . import arms, bonescale, dust, game, rings, targeting, icons, kalzith, monsters, names, npcitems, pickpocket, ring, scrolling, searches, semyon, shadows, sprites, stealth, tools, vulture
 from .game import (CONVENTIONAL_AND_UPPER, CREATURE_ABILITIES, CREATURE_SIDE, CREATURE_THAC0, EFFECT_NAMES,
                    EFFECT_RULES, MATERIAL_TO_HIT, MATERIALS, SAVE_NAMES, STR_DAMAGE, GameData)
 from .guestmem import GuestMemory
@@ -157,6 +157,7 @@ RANDOM_NAME_RETURNS = (bytes.fromhex("83c40448eb11"), bytes.fromhex("83c40405630
 KIND_ROLL, KIND_SAVE, KIND_AC = 0, 1, 2
 KIND_ITEM = 4  # DSCLOG's item save against acid (PROBE_ITEM_*): raw = d20 | needed << 8
 ITEM_ARMOUR = 0x8000  # (in the entry's extra, with the item)
+KIND_SCRIPT = 5  # DSCLOG's scripts' random command (PROBE_SCRIPT_RAND): raw = result | N << 8
 # How much each turn's pop-up in the game says (the Options' turn_popups_level)
 POPUP_DETAIL, POPUP_SHORT, POPUP_MINIMAL = "detail", "short", "minimal"
 POPUP_LEVELS = (POPUP_MINIMAL, POPUP_SHORT, POPUP_DETAIL)
@@ -1598,6 +1599,8 @@ class DiceLog:
             return self._ac(e, show_all)
         if e.kind == KIND_ITEM:
             return self._item_check(e)
+        if e.kind == KIND_SCRIPT:
+            return self._script_roll(e, show_all)
         code = e.code
         if code.startswith(ATTACK_SITE):
             self._spell_until = 0.0
@@ -1943,6 +1946,16 @@ class DiceLog:
         return f"{text} ({base}{how}: {steps} at caster level {level}{cap})" if counted >= 0 else text
 
     # weapons breaking and levels ------------------------------------------------------
+
+    def _script_roll(self, e: Entry, show_all: bool) -> List[str]:
+        """A script's random command: a junk, haystack or wardrobe search or its damage
+        (searches.py); any other only with "Show unlabelled rolls"."""
+        result, most = e.raw & 0xFF, e.raw >> 8 & 0xFF
+        counts = tuple(e.arg(at) for at in searches.COUNTS_AT)
+        lines = searches.describe(result, most, e.extra, counts)
+        if not lines and show_all:
+            lines = [f"Script roll: 0-{most} = {result} (script position {e.extra})"]
+        return lines
 
     def _item_check(self, e: Entry) -> List[str]:
         """An item the acid or corroding touch could destroy, after a failed save (DSCLOG's

@@ -28,6 +28,7 @@ records; this ledger keeps the ones the game doesn't show you.
   - [Attacks from behind and backstabs](#attacks-from-behind-and-backstabs)
   - [Saving throws](#saving-throws)
   - [Monsters' defences](#monsters-defences)
+  - [Searching junk, hay and wardrobes](#searching-junk-hay-and-wardrobes)
   - [No critical hits](#no-critical-hits)
   - [How the dice log works](#how-the-dice-log-works)
 - [In the game](#in-the-game)
@@ -563,6 +564,7 @@ screenshots here are taken that way).
 | `Cilla tries to open locks: d100 = 35, needs 40 or less -> success` / `    open locks 40 = 18 + 16 thief level 4 + 10 elf...` | A thief skill roll (see Thief skills below), and what its chance is made of. |
 | `    X's Bone Long Sword nearly broke: 0 on 0-7, then 12 on 0-19 (needed 0)` / `... BREAKS` | The weapon check the game makes after an attack sequence whose last attack hit. Only non-magical wood, bone, stone and obsidian weapons can break (and not every kind: clubs and quarterstaffs can't): they break when a 0-7 roll and then a 0-19 roll both come up 0, 1 chance in 160. The line only appears when the first roll comes up 0. |
 | `  Rampager's acid on Gerakis's Leather Chest Armor: d20 = 12, needs 10 (AD&D's, 10 for leather; the game's: destroyed without a roll) -> safe` | An item the Rampager's acid or the Babau's corroding touch could destroy: the d20, the number it needed and whose number that was (see [Items saving against acid](#items-saving-against-acid)). |
+| `Haystack searched: 0-10 = 7, an old, soiled loincloth (the party's 2nd find of 6 in hay)` / `  The rat's bite: 0-4 = 3 damage` | Searching a junk pile, a haystack or a wardrobe: the game's roll, what it found, and how far its count has got (see [Searching junk, hay and wardrobes](#searching-junk-hay-and-wardrobes)); a rat's bite or a falling pot rolls its damage the same way. |
 | `Message: Long Sword is broken !` | The game's own message boxes: broken or corroded weapons and armour, level-ups, "NO PATH FROM HERE" and so on. |
 | `  Slig now 8/18 HP (-10)` / `  Gerakis now 51/54 HP (+1)` | Any combatant's hit points going down or up, with what's left out of their most. The game never shows a monster's HP; this does. The line comes just after the damage that caused it (sometimes after the next roll, when the game is quick). |
 | `  Gerrard regenerates 1 HP (CON 22), now 16/35 HP` | A hit point back by itself: the game gives one now and then to anyone with CON 20 or more (in the game, CON 20 regenerates and 18 or 19 don't). |
@@ -1064,6 +1066,31 @@ all, with what the monster's defences say about it (`Mastyrial takes none of
 the 6 damage: crushing weapons can't hurt it`: the game's mastyrials take
 nothing from clubs and maces, only from edged and pointed weapons).
 
+### Searching junk, hay and wardrobes
+
+Junk piles, haystacks and wardrobes are searched by one of the game's scripts,
+each with a roll of its own: 0 to N, each number as likely. A low roll finds
+nothing, and junk and hay stop giving anything once the party has found 6
+things in them (each kind counts its own finds); wardrobes count every search,
+and after 6 every wardrobe is empty.
+
+| Search | Roll | Finds nothing on | What the rolls find |
+|---|---|---|---|
+| Junk pile | 0-14 | 0-1, or after 6 finds in junk | 2 a scorpion bite, dodged; 3 a scrap of paper ("Watch out for the..."); 4 a dead rat; 5 stale bread; 6 a piece of a grainpot; 7 a rat's bite (0-4 damage); 8 magic fruit; 9 wood for a club; 10 a drawing of a four-armed statue; 11 trinkets with a gem; 12 dung; 13 arrows; 14 magic fruit |
+| Haystack | 0-10 | 0-2, or after 6 finds in hay | 3 a bone needle; 4 a piece of a pot; 5 a rat's bite (0-4 damage); 6 a table leg for a club; 7 a soiled loincloth; 8 15 ceramic coins; 9 a bug; 10 a small gem |
+| Wardrobe | 0-10 | 0-2 (after 6 searches, empty) | 3 a rat's bite (0-4 damage); 4 a piece of a pot; 5 "Gareth the scribe was here."; 6 magic fruit; 7 a falling pot (0-5 damage); 8 a small gem; 9 a falling pot that misses; 10 "Don't trust Pehtucl." |
+
+The script also has outcomes for the rolls that find nothing (a scorpion's bite
+in junk, a skull in hay, coins in a wardrobe...), but its "nothing" check comes
+first, so they never happen.
+
+How: the scripts' random command has a routine of its own in the game; the
+patched game has DSCLOG look in there (`INT D3h`), which records the roll, its
+range, where the running script is (which tells the three searches and their
+damage rolls apart) and the three counts (`dscompanion/searches.py`). Tested
+in play: a haystack search in the slave pens logged `0-10 = 7, an old, soiled
+loincloth (the party's 2nd find of 6 in hay)`, as the game's own message said.
+
 ### No critical hits
 
 A natural 20 on an attack always hits, and a natural 1 always misses, but
@@ -1113,7 +1140,8 @@ Every roll in the game goes through one function, Borland C++'s `rand()`.
    events, where a key and a button it has no use for go, `INT D8h` and
    `INT D7h` (for [more saves](#more-saves)), and in the routines that
    destroy an item hit by acid or a corroding touch `INT D6h`, `INT D5h` and
-   `INT D4h` (for [items saving against acid](#items-saving-against-acid)). The
+   `INT D4h` (for [items saving against acid](#items-saving-against-acid)), and in the scripts'
+   random command `INT D3h` (for [searching junk, hay and wardrobes](#searching-junk-hay-and-wardrobes)). The
    copy keeps 29 characters rather than 19 and deletes the one chosen in the
    roster (see [more characters](#more-characters)), and also allocates a bigger buffer for the game's scripts (11,776 bytes
    rather than 10,000, for

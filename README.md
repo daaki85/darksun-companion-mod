@@ -185,13 +185,18 @@ In [pull request #17](https://github.com/daaki85/darksun-companion-mod/pull/17)
 - **Rings and cloaks of protection as in AD&D** (a rule change): two rings
   don't add up, a ring gives no AC with magical armour, and a cloak does
   nothing with magical or metal armour or a shield.
-- **More saves:** 40, on four pages of the save and load window.
+- **Searching junk, hay and wardrobes** in the dice log: each search's roll,
+  what it found and how close the party is to finding everything there is.
+- **More saves:** 40, on four pages of the save and load window; in the load
+  window an empty page can be shown too, with LOAD greyed.
 - **More characters:** 29 saved characters instead of 19, made with CREATE
   CHARACTERS and kept in the ADD window's roster.
 - **A bug of the game's own fixed:** DELETE in the character roster removed
   the wrong character when the list was scrolled down; now it removes the one
   chosen. And a New character (one not yet played) counts as Okay, so a new
   thief's skills no longer show as 0 before the game starts.
+- **Gear on the figures:** a shield shows from the side; Kreenfang's and
+  Shadowseeker's blades in their icons' colours; bone weapons ivory.
 - **Options tab:** its sections open and close, and the rule changes come with
   the ones that change play most first.
 - **The Look box:** a monster's alignment, and its magic resistance beside its
