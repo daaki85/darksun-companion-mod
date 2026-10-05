@@ -102,15 +102,11 @@ class LookWidthTests(unittest.TestCase):
 
     def test_widths(self):
         self.assertEqual(M.look_pixels("NEEDS +2 WEAPON"), 84)
-        self.assertEqual(M.look_pixels("THAC0: 17 AL: LE"), 86)
+        self.assertEqual(M.look_pixels("THAC0 17 AL LE"), 78)
 
     def test_a_long_line_is_squeezed(self):
-        self.assertEqual(M.look_fit("HP: 18/18 AC: 3", "HP:18/18 AC:3"), "HP: 18/18 AC: 3")
-        self.assertEqual(M.look_fit("HP: 120/120 AC: 5", "HP:120/120 AC:5", "HP120/120 AC5"),
-                         "HP:120/120 AC:5")
-        self.assertEqual(M.look_fit("HP: 120/120 AC: -2", "HP:120/120 AC:-2", "HP120/120 AC-2"),
-                         "HP120/120 AC-2")
-
+        self.assertEqual(M.look_fit("HP 18/18 AC 3", "HP18/18 AC3"), "HP 18/18 AC 3")
+        self.assertEqual(M.look_fit("HP 120/120 AC -2", "HP120/120 AC-2"), "HP120/120 AC-2")
 
 if __name__ == "__main__":
     unittest.main()

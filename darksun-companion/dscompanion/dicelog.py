@@ -31,7 +31,7 @@ from .guestmem import GuestMemory
 from .textlog import KIND_MESSAGE, KIND_PORTRAIT, KIND_TEXT, Dialogue, DialogueEntry, TextBuffer
 from .tracker import PartyTracker
 
-HDR_SIG = b"DSCLOGvW"
+HDR_SIG = b"DSCLOGvX"
 # DSCLOG's header: the in-game turn summaries (see PROBE_TURN in dos/dsclog.asm)
 TSR_TURN_SEQ, TSR_REPLY_SEQ, TSR_POPUPS, TSR_MSG_OFF, TSR_ENDED, TSR_HDR_OFF = 138, 140, 142, 144, 146, 20
 MSG_SIZE = 900
@@ -312,6 +312,7 @@ class DiceLog:
         self.missed = 0
         self.game: Optional[GameData] = None
         self.last_ac: Dict[int, int] = {}  # creature index -> the AC the game last computed for it
+        self._ac_whose: Dict[int, str] = {}  # ... and the name of the creature it was then
         self.ac_detail: Dict[int, AcDetail] = {}  # creature index -> how that AC was made up
         self._dice: Dict[Tuple[int, int, int, int], List[int]] = {}
         self._pending: List[PendingDice] = []
@@ -672,6 +673,14 @@ class DiceLog:
                 self.game.set_cats_grace(bool(rules & game.RULE_CATS_GRACE))
                 self.game.set_dodge(bool(rules & game.RULE_NO_DOUBLE))
 
+    def monster_ac(self, index: int) -> Optional[int]:
+        """The AC the game last computed for creature INDEX, if it was this creature's: a fight
+        soon after another (no gap in the game's time to tell them apart) hands the earlier
+        one's creature records to new monsters."""
+        if index not in self.last_ac or self._ac_whose.get(index) != self.game.creature_name(index):
+            return None
+        return self.last_ac[index]
+
     def _answer_look(self) -> List[str]:
         """DSCLOG asks about a creature the player looks at in a fight: give the Look box its
         short lines and the whole description, and log it."""
@@ -688,7 +697,7 @@ class DiceLog:
         if index is not None and index >= game.PARTY_SIZE:
             try:
                 tables = monsters.MonsterTables(self.guest.read, self.game.load_seg)
-                short, full = monsters.monster_lines(self.game, tables, index, self.last_ac.get(index))
+                short, full = monsters.monster_lines(self.game, tables, index, self.monster_ac(index))
             except (struct.error, IndexError, ValueError):
                 short, full = [], []
         base = self.tsr_hdr - struct.unpack("<H", self.guest.read(self.tsr_hdr + TSR_HDR_OFF, 2))[0]
@@ -1647,6 +1656,7 @@ class DiceLog:
         target_index = g.combatant_creature(target_combatant)
         if target_index is not None:
             self.last_ac[target_index] = ac
+            self._ac_whose[target_index] = g.creature_name(target_index)
         weapon = g.weapon(item, item_type)
         with_what = f" with {g.weapon_name(weapon)} ({weapon.dice()})" if weapon else ""
         target = g.combatant_name(target_combatant)
@@ -2250,6 +2260,7 @@ class DiceLog:
         ac = e.raw if e.raw < 0x8000 else e.raw - 0x10000
         if index is not None:
             self.last_ac[index] = ac
+            self._ac_whose[index] = self.game.creature_name(index)
             sheet, rec = self.game.sheet(index), self.game.creature(index)
             armour = e.local(-6)
             if len(sheet) >= game.SHEET_SIZE and len(rec) >= game.CREATURE_SIZE and armour is not None:

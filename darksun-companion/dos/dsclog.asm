@@ -94,7 +94,7 @@ section image follows=mz vstart=0
 
 ; ---- header, found by the companion via SIG (16-byte aligned) ----
 hdr:
-sig      db 'DSCLOGvW'          ; +0
+sig      db 'DSCLOGvX'          ; +0
 seq      dw 0                   ; +8   entries written so far (wraps at 65536)
 widx     dw 0                   ; +10  ring slot the next entry goes to
 nent     dw NENT                ; +12
@@ -1572,6 +1572,8 @@ use_draw:                       ; the selected character's slots in the USE scre
 LOOK_PATCH equ 0x5FCDA          ; DSUN.EXE offsets
 LOOK_DRAW  equ 0x5FCB8          ; "lcall 0090h:0A40h" operand: the text routine
 LOOK_ROWS  equ 4                ; the box's status rows: y = (row + 2) * 7 + 10h
+LOOK_SIDE  equ 1                ; a line starting with this goes on LEVEL's row (row -1), to its right
+LOOK_SIDE_X equ 60              ;   at this x (past LEVEL: 10)
 probe_look:
         sti
         pushad
@@ -1609,11 +1611,17 @@ probe_look:
         mov eax, [bp + 6]       ; the box's window
         mov [cs:l_win], eax
         mov di, look_text
-.line:  cmp word [cs:l_row], LOOK_ROWS
+.line:  mov byte [cs:l_side], 0
+        cmp byte [cs:di], LOOK_SIDE
+        jne .rows
+        inc di
+        mov byte [cs:l_side], 1
+        jmp .take
+.rows:  cmp word [cs:l_row], LOOK_ROWS
         jae .full
         cmp byte [cs:di], 0
         je .full
-        mov bx, l_line          ; the next line, up to "|", into L_LINE
+.take:  mov bx, l_line          ; the next line, up to "|", into L_LINE
 .copy:  mov al, [cs:di]
         cmp al, '|'
         je .cut
@@ -1631,19 +1639,26 @@ probe_look:
         inc di
 .draw:  push di
         mov ax, [cs:l_row]
-        add ax, 2
+        mov cx, 6
+        cmp byte [cs:l_side], 0
+        je .at
+        mov ax, -1              ; (LEVEL's row, above the status rows, to its right)
+        mov cx, LOOK_SIDE_X
+.at:    add ax, 2
         imul ax, ax, 7
         add ax, 0x10
         push word 0x11          ; as the box prints LEVEL
         push word 0x1F
         push ax                 ; y
-        push word 6             ; x
+        push cx                 ; x
         push cs
         push word l_line
         push dword [cs:l_win]
         call far [cs:l_draw]
         add sp, 16
         pop di
+        cmp byte [cs:l_side], 0
+        jne .line               ; (beside LEVEL: no row of its own)
         inc word [cs:l_row]
         jmp .line
 .full:  cmp byte [cs:look_full], 0
@@ -2851,6 +2866,7 @@ l_row   dw 0
 l_draw  dd 0
 l_win   dd 0
 l_line  times L_LINE_SIZE db 0
+l_side  db 0                    ; the line being drawn goes beside LEVEL (LOOK_SIDE)
 look_pending db 0
 look_text times LOOK_SIZE db 0
 look_full times LOOK_FULL_SIZE db 0

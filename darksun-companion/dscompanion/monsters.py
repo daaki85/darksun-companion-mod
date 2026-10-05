@@ -60,6 +60,8 @@ SHEET_ALIGNMENT = 0x1A
 LOOK_WIDTH = 15  # the characters a Look box line has room for (NEEDS +2 WEAPON)
 # ... and in pixels: the game's font (RESOURCE.GFF's FONT 100) is 6 wide but for these
 LOOK_PIXELS = 86
+LOOK_SIDE = "\x01"  # (DSCLOG: the line goes on LEVEL's row, to its right, LOOK_SIDE_X = 60 on)
+SIDE_PIXELS = 33  # ... where up to the box's edge
 FONT_WIDTHS = {**{c: 4 for c in " !*+,.:;Ij"}, **{c: 5 for c in "?fhknrstu"}, **{c: 2 for c in "il"},
                **{c: 7 for c in "$^|"}}
 
@@ -236,15 +238,16 @@ def monster_lines(gd, tables: MonsterTables, creature: int, ac: Optional[int]) -
     d = tables.defences(kind, undead)
     ac_text = str(ac) if ac is not None else str(struct.unpack_from("b", sheet, 0x27)[0])
     alignment = ALIGNMENTS.get(sheet[SHEET_ALIGNMENT])
-    # labelled as the box's LEVEL: 9 is, squeezed when a line would run past the box's edge;
-    # the alignment only where it fits (the description always has it)
-    second = f"THAC0: {thac0}" + (f" MR: {mr}" if mr else "")
-    if alignment and look_pixels(f"{second} AL: {alignment[0]}") <= LOOK_PIXELS:
-        second += f" AL: {alignment[0]}"
-    second = look_fit(second, second.replace(": ", ":"))
-    first = look_fit(f"HP: {hp}/{max_hp} AC: {ac_text}", f"HP:{hp}/{max_hp} AC:{ac_text}",
-                     f"HP{hp}/{max_hp} AC{ac_text}")
+    # magic resistance beside the game's LEVEL; the alignment after THAC0 where it fits (the
+    # description always has it); a line squeezed when it would run past the box's edge
+    second = f"THAC0 {thac0}"
+    if alignment and look_pixels(f"{second} AL {alignment[0]}") <= LOOK_PIXELS:
+        second += f" AL {alignment[0]}"
+    first = look_fit(f"HP {hp}/{max_hp} AC {ac_text}", f"HP{hp}/{max_hp} AC{ac_text}")
     short = [first, second]
+    if mr:
+        side = f"MR {mr}" if look_pixels(f"MR {mr}") <= SIDE_PIXELS else f"MR{mr}"
+        short.insert(0, LOOK_SIDE + side)
     line = short_line(d)
     if line:
         short.append(line)

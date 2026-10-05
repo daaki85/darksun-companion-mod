@@ -1301,27 +1301,25 @@ game calls those itself, looking for sound drivers.)
 
 In a fight, Look at a monster (right-click until the cursor is the Look icon,
 then click the monster) and the game's small box, under its name and level,
-now also shows its hit points and AC (`HP: 18/18 AC: 3`), its THAC0, magic
-resistance and alignment (`THAC0: 17 MR: 30`, `THAC0: 17 AL: LE`), labelled as
-the box's own `LEVEL: 3` is, and its most important defence: `NEEDS +1 WEAPON`,
+now also shows its hit points and AC (`HP 15/15 AC 2`), its THAC0 and
+alignment (`THAC0 17 AL TN`), its magic resistance beside its level
+(`LEVEL: 3   MR 30`), and its most important defence: `NEEDS +1 WEAPON`,
 `IMM FIRE COLD`, `NO CRUSH`, `HALF FROM WPNS` or `UNDEAD`. The alignment is in
-two letters (`LG`, `LN`, `LE`, `NG`, `TN`, `NE`, `CG`, `CN`, `CE`) where the
-line has room for it; with magic resistance it hasn't, and the description
-below and the dice log name it. (A line that would run past the box's edge,
-such as a monster's with over 100 HP, loses the spaces after its colons, then
-its colons.) Its own status lines (casting,
-charmed, held...) follow in any row left. When there's more to say, closing
+two letters: `LG`, `LN`, `LE`, `NG`, `TN`, `NE`, `CG`, `CN` or `CE`. (A line
+that would run past the box's edge, such as a monster's with over 100 HP, loses
+its spaces.) Its own status lines (casting, charmed, held...) follow in any
+row left. When there's more to say, closing
 the box shows everything in the game's dialogue window: the weapons it needs,
 the damage it's immune to or takes half of, spells that don't work on it, and
 what its hits do besides damage. The dice log gets the same lines (`Look:
 ...`). Untick **Describe monsters when you Look at them in a fight** on the
 Options tab to turn this off.
 
-![The Look box on a Slig in the arena: LEVEL: 3, then HP: 18/18 AC: 3 and THAC0: 17 AL: LE added](docs/look-box.png)
+![The Look box on a Screamer Beetle in the arena: LEVEL: 3, then HP 15/15 AC 2 and THAC0 17 AL TN added](docs/look-box.png)
 
-(The Sligs in the arena's first fight, like the people in the early fights,
-have no special defences, so the box shows just the numbers and the
-alignment.)
+(The arena's first monsters, like the people in the early fights, have no
+magic resistance or special defences, so the box shows just the numbers and
+the alignment.)
 
 How: the patched game calls the helper (`INT F5h`) where the box has drawn its
 first status rows; the helper asks the Ledger (as for each turn's rolls), and
@@ -2578,7 +2576,7 @@ After changing `dos/dsclog.asm`, rebuild the helper with
 nasm -f bin -o dos/DSCLOG.EXE dos/dsclog.asm
 ```
 
-The header's signature (`DSCLOGvW` now) goes up whenever the helper and the
+The header's signature (`DSCLOGvX` now) goes up whenever the helper and the
 Ledger must change together (`HDR_SIG` in `dscompanion/dicelog.py`), so a
 Ledger never talks to an older helper.
 

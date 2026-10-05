@@ -7,12 +7,12 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
 ## Pull request #17 (in review)
 
 **Changed**
-- **A monster's alignment in the Look box:** `THAC0: 17 AL: LE`, the
-  alignment in two letters where the line has room (with magic resistance it
-  hasn't); the description in the dialogue window and the dice log's `Look:`
-  line name it in words. The box's lines are labelled with colons as the
-  game's `LEVEL:` is (`HP: 18/18 AC: 3`, `MR: 30`), and measured in the game
-  font's own widths so none runs past the box's edge.
+- **A monster's alignment in the Look box:** `THAC0 17 AL TN`, the alignment
+  in two letters; the description in the dialogue window and the dice log's
+  `Look:` line name it in words. Magic resistance moves beside the game's
+  level (`LEVEL: 3   MR 30`), drawn by DSCLOG on the game's own row. Lines are
+  measured in the game font's widths, and one that would run past the box's
+  edge (over 100 HP) loses its spaces.
 - **The Options tab's sections open and close:** each group of switches is
   under a heading to click (or Tab to and press Space or Enter), so the tab
   is short; which are open is remembered.
@@ -57,6 +57,10 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
   multi-class thief's classes, as the game's quests are).
 
 **Fixed**
+- The Look box no longer shows an AC the Ledger worked out for another
+  creature: the arena's first fight comes too soon after the opening one to
+  tell them apart by the game's time, and a Slig showed the opening fight's
+  Defiler's AC -9.
 - The Ledger's new item pictures no longer wipe an item's spell: changing an
   icon cleared four bytes of the item where the game's picture cache is two.
 
