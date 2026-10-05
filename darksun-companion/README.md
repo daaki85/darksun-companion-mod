@@ -38,6 +38,7 @@ records; this ledger keeps the ones the game doesn't show you.
 - [Rule changes](#rule-changes)
   - [Thief skills from AD&D's table](#thief-skills-from-adds-table)
   - [Half-giants' two-handed weapons](#half-giants-two-handed-weapons)
+  - [Rings and cloaks of protection](#rings-and-cloaks-of-protection)
 - [New content](#new-content)
   - [The Ring +1](#the-ring-1)
   - [Picking pockets](#picking-pockets)
@@ -414,8 +415,8 @@ sections are open is remembered. The sections:
 - **Dice log**: unlabelled rolls, and the details behind each roll.
 - **In the game**: each turn's rolls and how much they say, monster
   descriptions.
-- **Rule changes**: helms, boots, two weapons, half-giants' two-handed
-  weapons, the spell save, doubled saves, Cat's Grace, levels up to 10, the
+- **Rule changes**: helms, boots, two weapons, rings and cloaks of
+  protection, half-giants' two-handed weapons, the spell save, doubled saves, Cat's Grace, levels up to 10, the
   thief skill table, hiding in shadows (and under it, a worn cloak's, boots'
   and belt's bonuses).
 - **New content**: Kalzith, Semyon, the cooked vulture, the slave pens' gear,
@@ -1004,7 +1005,9 @@ and so does AD&D's DEX defensive adjustment for attacks that can be dodged
 [rule change](#rule-changes) puts it on the fire, cold and electricity spells. And nothing in the game gives saves from items: there
 are no rings or cloaks of protection, which is why the Ledger adds
 [a ring](#the-ring-1) and [a cloak](#the-slave-pens-gear). Their +1 is in the
-log's saving throws as `+1 Ring of Protection`.
+log's saving throws as `+1 Ring of Protection` and `+1 Cloak of Protection`
+(with [AD&D's rules for them](#rings-and-cloaks-of-protection) off, all of it
+as `Ring of Protection`).
 
 ### Monsters' defences
 
@@ -1066,7 +1069,8 @@ Every roll in the game goes through one function, Borland C++'s `rand()`.
    the dialogue window's, so the helper puts its way back in a stack frame the
    game's overlay manager fixes up, rather than returning to a stale address:
    that used to restart a fight, or stop the game with "Stack overflow!"), and the places where AC and a saving throw's modifiers are added up
-   `INT F8h` and `INT F9h` (for [the Ring +1](#the-ring-1) and helms), each
+   `INT F8h` and `INT F9h` (for [the Ring +1](#the-ring-1), helms and
+   [rings and cloaks of protection](#rings-and-cloaks-of-protection)), each
    weapon's line on the inventory screen `INT FAh`, and the start of a round's
    movement `INT FBh` (for boots), a key the conversation window doesn't know
    `INT FCh` and an item used on the map `INT FDh` (for
@@ -1725,7 +1729,10 @@ backpack with room); the log says whose. Finding it is worth **50 XP to
 whoever searched**: after the line, the game's own window says so ("Gerakis
 receives 50 experience points!") with the sound of a quest done, as the
 cooked vulture's meal has, once only. Wear it on either hand's finger from the
-inventory screen. The game's names are at most 15 letters long, and
+inventory screen. With [AD&D's rules for rings and cloaks of
+protection](#rings-and-cloaks-of-protection) on, it gives no AC over magical
+armour, and with Pehtucl's ring on the other hand the two give +1, not +2.
+The game's names are at most 15 letters long, and
 longer ones run out of the Look box, so in the game it is **RING/PROTECTION**
 on the inventory screen and **Ring/Protection+1** in the box Look opens on it
 (shortened the way the game shortens its own "Helm/Contempltn"; the game puts
@@ -1881,7 +1888,9 @@ game already (a game saved after it was given, loaded again), and a short
 sword lifted from Kurzak isn't replaced.
 
 The Cloak of Protection works as the [Ring +1](#the-ring-1) does, from the
-cloak slot: +1 AC and +1 on every saving throw. Kill them, or pick their
+cloak slot: +1 AC and +1 on every saving throw (with
+[AD&D's rules](#rings-and-cloaks-of-protection), none with magical or metal
+armour or a shield). Kill them, or pick their
 pockets, to have it. Each item is given once a game, and not to anyone already
 dead.
 

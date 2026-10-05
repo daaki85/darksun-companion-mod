@@ -43,7 +43,8 @@ can be switched off on its Options tab.
   - spell slots on the USE screen;
   - each turn's rolls in a pop-up during fights, if you tick it (three levels
     of detail);
-  - what hurts a monster in the Look box;
+  - what hurts a monster in the Look box, with its alignment and magic
+    resistance;
   - a party member's spell no longer ended by a click on the Effects screen.
 
 (More in [In the game](darksun-companion/README.md#in-the-game).)
@@ -134,10 +135,12 @@ can be switched off on its Options tab.
 
 (More in [More saves](darksun-companion/README.md#more-saves), [More characters](darksun-companion/README.md#more-characters), [Game speed](darksun-companion/README.md#game-speed) and [Crash reports](darksun-companion/README.md#crash-reports).)
 
-The game folder is never modified, and your save files only keep what you'd
-expect from play: the items the Ledger hands out, the XP it gives. For the dice
-log, the launcher runs a patched copy of the game that it keeps in its own
-folder.
+The game's own files are never modified. What play writes to the game folder
+is what you'd expect: your saves, which keep the items the Ledger hands out and
+the XP it gives (save pages 2 to 4 are files of their own beside the game's,
+`SAVB`, `SAVC` and `SAVD`), and your characters, in the game's own
+`CHARSAVE.GFF` (numbers 20 to 29 for the extra ten). For the dice log, the
+launcher runs a patched copy of the game that it keeps in its own folder.
 
 **Everything else is in [`darksun-companion/README.md`](darksun-companion/README.md):**
 requirements, how to start it on Windows, every log line explained, each
@@ -174,6 +177,9 @@ In [pull request #17](https://github.com/daaki85/darksun-companion-mod/pull/17)
   a worn belt helps pick pockets and open locks, and plain ones cost 24.
 - **Faster walking:** shadows and dust drawn much more cheaply; at the fastest
   game speed, the whole party walks as fast as the leader alone.
+- **Rings and cloaks of protection as in AD&D** (a rule change): two rings
+  don't add up, a ring gives no AC with magical armour, and a cloak does
+  nothing with magical or metal armour or a shield.
 - **More saves:** 40, on four pages of the save and load window.
 - **More characters:** 29 saved characters instead of 19, made with CREATE
   CHARACTERS and kept in the ADD window's roster.
