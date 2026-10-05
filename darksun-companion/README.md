@@ -1453,12 +1453,12 @@ first. A worn cloak adds 10 to hiding in shadows (before daylight halves it)
 and worn boots add 10 to moving silently, for rangers too, up to 95:
 `needs 18 or less (26 +10 cloak = 36, halved in daylight)`. With that switched
 on, a cloak's or boots' item box (right-click it on the inventory screen) says
-so under its name, `HIDE SHADOWS+10` or `MOVE SILENT+10`.
+so under its name, `Hide in Shadows+10` or `Move Silently+10`.
 
 The same switch has a worn **belt** add 5 to a thief's **picking pockets and
 opening locks**, whether hiding is on or not: the game's own lock picking
 counts it, and so do the Ledger's pockets and its thief rows (`PICK 80`,
-`LOCK 64`). A belt's box says `POCKETS,LOCKS+5`.
+`LOCK 64`). A belt's box says `Pockets, Locks+5`.
 
 Plain cloaks, boots and belts cost 24 (the game's Leather Cloak is 20), anywhere
 in the region, shops included; magic ones (with a plus, or dearer than 100)

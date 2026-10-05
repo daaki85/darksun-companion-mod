@@ -4795,9 +4795,9 @@ probe_item_box:
         iret
 
 ib_draw    dd 0
-ib_hide    db 'HIDE SHADOWS+10', 0  ; (the box holds 16 letters: as the game's "Protectn+1")
-ib_quiet   db 'MOVE SILENT+10', 0
-ib_belt    db 'POCKETS,LOCKS+5', 0
+ib_hide    db 'Hide in Shadows+10', 0  ; (mixed case, as the game's item names: narrower)
+ib_quiet   db 'Move Silently+10', 0
+ib_belt    db 'Pockets, Locks+5', 0
 
 ; PROBE_BELT: INT VEC_BELT replaces "mov ax,si" (2 bytes) at the end of the game's thief skill
 ; routine (DSUN.EXE 803B2h: SI the chance, armour and effects counted; DI the thief's object; the
