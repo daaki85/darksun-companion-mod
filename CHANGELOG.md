@@ -18,7 +18,8 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
   on the Options tab (it was 30,000, and a setting of 30,000 is taken as
   35,000). The companion's README has the measurements.
 - **Cloaks and boots say what they do:** with the cloak and boots bonuses on,
-  their item box says `Hide in Shadows+10` or `Move Silently+10` under the name.
+  their item box says `Hide +10` or `Move +10` under the name (the skills'
+  short names, as the inventory screen's thief rows have them).
 - **Plain cloaks, boots and belts cost 24** (the Leather Cloak was 20); magic
   ones keep their prices.
 
@@ -26,12 +27,16 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
 - **A worn belt helps a thief:** +5 to picking pockets and opening locks (the
   same switch as the cloak's and boots' bonuses, hiding on or not), counted by
   the game's own lock picking and by the Ledger; its item box says
-  `Pockets, Locks+5`.
+  `Pick +5, Lock +5`.
 - **Kreenfang and Shadowseeker** (Options, New content; on unless turned off):
   the arena's 2 handed Bone Gythka is Kreenfang, a gythka +1 (18000), and
   Kurzak's short sword is Shadowseeker, a short sword +1 (22000) whose wielder
   sees the invisible (the game's own Detect Invisibility from a readied item).
   Each has a name, as the Bloodwrath has, and an icon of its own.
+- **Alagorn knows Kreenfang and Shadowseeker:** the Painted Badlands wizard
+  who identifies magic items has each in his menus (Shadowseeker with the
+  swords, Kreenfang with the weapons) when the party carries it, with a story
+  of its own.
 - **200 XP for lifting Kurzak's sword:** the conversation says the thief lifts
   "a metal short sword" and receives 200 experience points, with the quest's
   sound, given by the game's own routine for a quest's XP (split among a

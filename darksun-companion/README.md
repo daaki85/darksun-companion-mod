@@ -1453,12 +1453,13 @@ first. A worn cloak adds 10 to hiding in shadows (before daylight halves it)
 and worn boots add 10 to moving silently, for rangers too, up to 95:
 `needs 18 or less (26 +10 cloak = 36, halved in daylight)`. With that switched
 on, a cloak's or boots' item box (right-click it on the inventory screen) says
-so under its name, `Hide in Shadows+10` or `Move Silently+10`.
+so under its name, `Hide +10` or `Move +10` (the skills' short names, as the
+inventory screen's thief rows have them).
 
 The same switch has a worn **belt** add 5 to a thief's **picking pockets and
 opening locks**, whether hiding is on or not: the game's own lock picking
 counts it, and so do the Ledger's pockets and its thief rows (`PICK 80`,
-`LOCK 64`). A belt's box says `Pockets, Locks+5`.
+`LOCK 64`). A belt's box says `Pick +5, Lock +5`.
 
 Plain cloaks, boots and belts cost 24 (the game's Leather Cloak is 20), anywhere
 in the region, shops included; magic ones (with a plus, or dearer than 100)
@@ -1866,6 +1867,20 @@ each is made:
 Kurzak's Short Sword is Shadowseeker, a short sword +1: its wielder sees the invisible.
 The arena's 2 handed Bone Gythka (the Tohr-kreen's) is Kreenfang, a gythka +1.
 ```
+
+**Alagorn**, the wizard of the Painted Badlands who identifies magic items,
+knows them too: shown his menus of magic swords and magic weapons, he has
+Shadowseeker among the swords and Kreenfang among the weapons when the party
+carries them, each with a story of its own, and counts them as the game's own
+items when saying the party has none, or when the last one has been shown.
+How: his conversation (script 213) finds what the party carries by each
+item's picture, so the Ledger's copy of the game's scripts has a few of its
+commands made jumps to code after its end (as for
+[Dinos and the Trustee](#dinos-and-the-trustee-on-kalzith-and-semyon)): the
+new items' pictures looked for, a copy of each menu with the new reply, and
+each story's test for "none left" counting the new item
+(`dscompanion/alagorn.py`). He knows them by the pictures of their own, so
+not with the item icons switched off.
 
 How: the names are two more of the helper's entries after the game's (see
 [New item names](#new-item-names)); the Ledger sets each item's plus, price,
