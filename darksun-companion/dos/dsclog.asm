@@ -66,6 +66,7 @@ VEC_SCROLL equ 0xDC        ; PROBE_SCROLL
 VEC_HIT    equ 0xDB        ; PROBE_HIT
 VEC_ITEM_BOX equ 0xDA      ; PROBE_ITEM_BOX
 VEC_BELT equ 0xD9          ; PROBE_BELT
+VEC_SAVE_PAGE equ 0xD8     ; PROBE_SAVE_PAGE
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 128         ; entries in the ring
@@ -94,7 +95,7 @@ section image follows=mz vstart=0
 
 ; ---- header, found by the companion via SIG (16-byte aligned) ----
 hdr:
-sig      db 'DSCLOGvX'          ; +0
+sig      db 'DSCLOGvY'          ; +0
 seq      dw 0                   ; +8   entries written so far (wraps at 65536)
 widx     dw 0                   ; +10  ring slot the next entry goes to
 nent     dw NENT                ; +12
@@ -1485,6 +1486,7 @@ probe_win:
         mov eax, [ss:di + 6]    ; its window
         or eax, eax
         jz .done
+        call save_label         ; (the save/load window: which saves it shows)
         cmp eax, [cs:use_win]
         jne .done               ; not a USE screen PROBE_USE has drawn on
         cmp eax, [0x11A4]
@@ -1514,6 +1516,204 @@ probe_win:
         iret
 
 use_win dd 0                    ; the USE screen's window, as PROBE_USE last saw it
+
+; PROBE_SAVE_PAGE: INT VEC_SAVE_PAGE replaces "jmp <the end>" (3 bytes: INT + NOP; DSUN.EXE 74901h),
+; where the save/load window's event routine (74 8CAh; BP its frame) leaves a key it has no use
+; for. The window shows ten saves; PgDn shows ten more (page 2: SAVB01.SAV to SAVB10.SAV), PgUp
+; the game's own (SAVE01.SAV to SAVE10.SAV). The page is one letter of the game's two save names,
+; the folder search's ("SAVE??.SAV") and the name a save is written to ("SAVE%.2d.SAV"): loading
+; takes the name the search found. (Page 2's names don't match the game's search, so the game
+; without the Ledger never sees them: its list has room for ten, and a SAVE11.SAV would run past
+; it.) For the new page, the window's own routines (in its overlay, at CS: nothing they call is
+; an overlay, so it stays put) search the folder again and draw the rows, the selected row
+; stays (in the load window, the first save, and the page doesn't change if it has none), and
+; the window is drawn again (SAVE_LABEL says which saves it shows); then on as the routine goes
+; on after Up or Down.
+SP_IGNORE  equ 0x74DEC - 0x74904 ; (DSUN.EXE, from the way back) the routine's end
+SP_DONE    equ 0x74A21 - 0x74904 ; ... after Up or Down: the screen updated, then the end
+SP_KEY     equ 0x12             ; the key, at the routine's BP+12h
+SP_SCAN    equ 0x743E2 - 0x74300 ; the overlay's routines (offsets in its segment): search the folder,
+SP_ROW     equ 0x74E36 - 0x74300 ;   draw a row,
+SP_PICK    equ 0x74ECD - 0x74300 ;   show a row as chosen (and its description below)
+SAVE_SEG   equ 0x3BA7 - 0x4356  ; the window's data (DS-relative): the saves, 7Dh bytes each from +2
+SAVE_SIZE  equ 0x7D             ;   (+2 the file's name, +52h the description), +4E4h the chosen
+SAVE_CHOSEN equ 0x4E4           ;   row, +4E6h the window, +4EAh 1: the load window
+SAVE_WIN   equ 0x4E6
+SAVE_LOADING equ 0x4EA
+BTN_SEG    equ 0x2A1D - 0x4356  ; (resident) a button's state: (window, id, state)
+BTN_OFF    equ 0x71A
+WIN_SEG    equ 0x25EC - 0x4356  ; (resident) bring a window to the front and draw it (PROBE_WIN's)
+WIN_OFF    equ 0x618
+NAME_FIND  equ 0x1DCF + 3       ; DS: "SAVE??.SAV": the letter that is the page
+NAME_SAVE  equ 0x1DDA + 3       ; DS: "SAVE%.2d.SAV"
+KEY_PGUP   equ 0x4900
+KEY_PGDN   equ 0x5100
+ROW_ID     equ 0x80B            ; the rows' buttons: 80Bh on
+probe_save_page:
+        push bp
+        mov bp, sp              ; BP+2 the way back, BP+4 its segment
+        sti
+        pushad
+        push es
+        mov si, [bp]            ; the routine's BP
+        mov ax, [ss:si + SP_KEY]
+        cmp al, 0xE0
+        jne .scan
+        xor al, al              ; (the grey keys': as the number pad's)
+.scan:  mov bl, 'E'
+        cmp ax, KEY_PGUP
+        je .want
+        mov bl, 'B'
+        cmp ax, KEY_PGDN
+        jne .ignore
+.want:  cmp bl, [NAME_FIND]
+        je .ignore              ; (on that page already)
+        mov al, [NAME_FIND]
+        mov [cs:sp_was], al     ; the page now, if the new one has nothing to load
+        mov ax, [bp + 4]
+        mov [cs:sp_call + 2], ax
+        call sp_es
+        mov di, [es:SAVE_CHOSEN]
+        call sp_page
+        cmp word [es:SAVE_LOADING], 0
+        je .rows
+        xor di, di              ; loading: the first save on the page
+.first: imul bx, di, SAVE_SIZE
+        cmp byte [es:bx + 2], 0
+        jne .rows
+        inc di
+        cmp di, 10
+        jb .first
+        mov bl, [cs:sp_was]     ; none: back to the page there was
+        call sp_page
+        jmp .ignore
+.rows:  xor cx, cx
+.row:   push cx
+        push cx
+        mov word [cs:sp_call], SP_ROW
+        call far [cs:sp_call]
+        add sp, 2
+        pop cx
+        inc cx
+        cmp cx, 10
+        jb .row
+        call sp_es
+        push word 5             ; the row chosen before: as the others
+        mov ax, [es:SAVE_CHOSEN]
+        call sp_button
+        mov [es:SAVE_CHOSEN], di
+        push word 4             ; ... and the one chosen now
+        mov ax, di
+        call sp_button
+        push di
+        mov word [cs:sp_call], SP_PICK
+        call far [cs:sp_call]
+        add sp, 2
+        call sp_es
+        push dword [es:SAVE_WIN]
+        mov ax, ds
+        add ax, WIN_SEG
+        mov [cs:sp_call + 2], ax
+        mov word [cs:sp_call], WIN_OFF
+        call far [cs:sp_call]
+        add sp, 4
+        add word [bp + 2], SP_DONE
+        jmp .out
+.ignore:
+        add word [bp + 2], SP_IGNORE
+.out:   pop es
+        popad
+        pop bp
+        iret
+
+sp_page:                        ; BL the page's letter: the names, then the folder searched again
+        mov [NAME_FIND], bl     ;   (ES the window's data again after)
+        mov [NAME_SAVE], bl
+        push word 10
+        mov word [cs:sp_call], SP_SCAN
+        call far [cs:sp_call]
+        add sp, 2
+sp_es:  mov ax, ds              ; ES: the window's data (the game's routines keep neither BX nor ES)
+        add ax, SAVE_SEG
+        mov es, ax
+        ret
+
+sp_button:                      ; AX a row, the state pushed (taken off): its button's state
+        push bp
+        mov bp, sp
+        push word [bp + 4]      ; the state
+        add ax, ROW_ID
+        movsx eax, ax
+        push eax
+        push dword [es:SAVE_WIN]
+        mov ax, ds
+        add ax, BTN_SEG
+        push ax
+        push word BTN_OFF
+        mov bx, sp
+        call far [ss:bx]
+        add sp, 4 + 10
+        call sp_es
+        pop bp
+        ret 2
+
+sp_call dd 0
+sp_was  db 0
+
+; SAVE_LABEL: (PROBE_WIN; EAX the window drawn, DS the game's) on the save/load window, under its
+; buttons, which saves it shows and the keys for the others.
+SL_X       equ 220
+SL_Y       equ 84
+SL_DRAW_SEG equ 0x191F - 0x4356 ; (resident) the text routine (as the Look box's)
+SL_DRAW_OFF equ 0xA40
+save_label:
+        pushad
+        push es
+        cmp byte [cs:sl_busy], 0
+        jne .out                ; (drawing the label: the text routine draws the window again)
+        mov bx, ds
+        add bx, SAVE_SEG
+        mov es, bx
+        cmp eax, [es:SAVE_WIN]
+        jne .out
+        mov byte [cs:sl_busy], 1
+        mov [cs:sl_win], eax
+        mov ax, ds
+        add ax, SL_DRAW_SEG
+        mov [cs:sl_draw + 2], ax
+        mov word [cs:sl_draw], SL_DRAW_OFF
+        mov dx, sl_first
+        cmp byte [NAME_FIND], 'E'
+        je .one
+        mov dx, sl_second
+.one:   mov ax, SL_Y
+        call sl_line
+        mov dx, sl_keys
+        mov ax, SL_Y + 9
+        call sl_line
+        mov byte [cs:sl_busy], 0
+.out:   pop es
+        popad
+        ret
+
+sl_line:                        ; CS:DX the text, AX y
+        push word 0x11          ; (as the Look box's lines)
+        push word 0x1F
+        push ax
+        push word SL_X
+        push cs
+        push dx
+        push dword [cs:sl_win]
+        call far [cs:sl_draw]
+        add sp, 16
+        ret
+
+sl_draw    dd 0
+sl_win     dd 0
+sl_busy    db 0
+sl_first   db 'SAVES 1-10', 0
+sl_second  db 'SAVES 11-20', 0
+sl_keys    db 'PGUP/PGDN', 0
 
 use_draw:                       ; the selected character's slots in the USE screen's panel
         mov ax, ds
@@ -5083,6 +5283,9 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_BELT
         mov dx, probe_belt
         int 21h
+        mov ax, 2500h + VEC_SAVE_PAGE
+        mov dx, probe_save_page
+        int 21h
         mov ax, 3516h           ; the keyboard's (TARGETING)
         int 21h
         mov [old16], bx
@@ -5123,8 +5326,8 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or D9h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
-all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT
+busy    db 'DSCLOG: interrupts 60h-65h or D8h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE
 all_vectors_end:
 
         align 16, db 0

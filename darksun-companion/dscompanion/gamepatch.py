@@ -45,6 +45,7 @@ VEC_SPELL_TEXT, VEC_CHUNK_ID = 0xE2, 0xE1
 VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL = 0xE0, 0xDF, 0xDE, 0xDD
 VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX = 0xDC, 0xDB, 0xDA
 VEC_BELT = 0xD9
+VEC_SAVE_PAGE = 0xD8
 
 
 SCRIPT_BUFFER = 0x2E00  # the scripts' buffer, made bigger (the game's: 10000 bytes)
@@ -196,6 +197,9 @@ PATCHES = (
     # the end of the game's thief skill routine: mov ax,si (DSCLOG adds a worn belt's bonus to
     # picking pockets and opening locks)
     Patch("belt", 0x803B2, bytes.fromhex("8bc6"), _interrupt(VEC_BELT, 2)),
+    # the save/load window's events, where a key it has no use for goes to its end: jmp (DSCLOG
+    # shows ten more saves for PgDn, the game's ten for PgUp, then goes there)
+    Patch("save_page", 0x74901, bytes.fromhex("e9e804"), _interrupt(VEC_SAVE_PAGE, 3)),
     Patch("thief_skill", 0x80307, bytes.fromhex("8bc6c1e00203d08bf2"),
           bytes((0xCD, VEC_THIEF_SKILL, 0x72, 0x80386 - 0x8030B)) + b"\x90" * 5),
     # a bug of the game's own (DSUN.EXE 1DF3:142F, which makes two child pages of the view, frees
