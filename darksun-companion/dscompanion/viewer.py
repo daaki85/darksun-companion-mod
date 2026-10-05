@@ -324,33 +324,35 @@ class Viewer:
         rules = section("rules", "Rule changes (in games started with the dice log)")
         # one switch for each of game.RULE_SETTINGS
         self.rule_vars: Dict[str, tk.BooleanVar] = {}
+        self.stealth_gear = tk.BooleanVar(value=settings.get("stealth_gear", True) is not False)
+        # (in the order the README's Rule changes has them: the ones that change most first)
         for n, (key, text) in enumerate((
-                ("helm_ac", "Helms give AC 1 (the game's helms give none)"),
-                ("boots_move", "Boots give 1 more move in a fight"),
+                ("spell_save", "Spells are saved against with the spell save (the game uses "
+                               "petrification/polymorph)"),
+                ("no_doubled_save", "Saves against fire, cold and electricity: DEX defensive adjustment "
+                                    "instead of a doubled d20"),
                 ("two_weapons", "Two weapons: -2 main hand, -4 off hand, DEX reaction adjustment added "
                                 "(no better than 0; rangers none)"),
+                ("thief_table", "Thief skills from AD&D's table by level, with Dark Sun's race and DEX adjustments "
+                                "(the game adds 4 a level to a base of its own, and DEX by a formula)"),
+                ("stealth", "Thieves hide in shadows and move silently to backstab, rangers to attack from behind "
+                            "(no enemy beside them; thieves half the chance in daylight, rangers indoors)"),
+                ("level_10", "Class levels go up to 10 (the game stops at 9; no spells past 5th level are needed)"),
                 ("protection_rules", "Rings and cloaks of protection as in AD&D: only the better of two rings "
                                      "counts, a ring gives no AC with magical armour, and a cloak does nothing "
                                      "with magical or metal armour or a shield"),
                 ("half_giant_hands", "Half-giants wield two-handed weapons in one hand (a shield or a light "
                                      "weapon in the other; two heavy weapons still can't be held)"),
-                ("spell_save", "Spells are saved against with the spell save (the game uses "
-                               "petrification/polymorph)"),
-                ("no_doubled_save", "Saves against fire, cold and electricity: DEX defensive adjustment "
-                                    "instead of a doubled d20"),
                 ("cats_grace", "Cat's Grace in Flaming Sphere's place (DEX + 1d6, at most 24, like Strength)"),
-                ("level_10", "Class levels go up to 10 (the game stops at 9; no spells past 5th level are needed)"),
-                ("thief_table", "Thief skills from AD&D's table by level, with Dark Sun's race and DEX adjustments "
-                                "(the game adds 4 a level to a base of its own, and DEX by a formula)"),
-                ("stealth", "Thieves hide in shadows and move silently to backstab, rangers to attack from behind "
-                            "(no enemy beside them; thieves half the chance in daylight, rangers indoors)"))):
+                ("helm_ac", "Helms give AC 1 (the game's helms give none)"),
+                ("boots_move", "Boots give movement in a fight (1 more move each round)"))):
             self.rule_vars[key] = tk.BooleanVar(value=bool(settings.get(key, True)))
             ttk.Checkbutton(rules, text=text, variable=self.rule_vars[key],
                             command=self._popups_changed).pack(anchor="w", pady=(4 if n else 0, 0))
-        self.stealth_gear = tk.BooleanVar(value=settings.get("stealth_gear", True) is not False)
-        ttk.Checkbutton(rules, text="... a worn cloak adds 10 to hiding, worn boots 10 to moving silently; "
-                                    "a worn belt adds 5 to picking pockets and opening locks (hiding or not)",
-                        variable=self.stealth_gear, command=self._popups_changed).pack(anchor="w", padx=(20, 0))
+            if key == "stealth":  # (under it: what worn gear adds)
+                ttk.Checkbutton(rules, text="... a worn cloak adds 10 to hiding, worn boots 10 to moving silently; "
+                                            "a worn belt adds 5 to picking pockets and opening locks (hiding or not)",
+                                variable=self.stealth_gear, command=self._popups_changed).pack(anchor="w", padx=(20, 0))
 
         # the companion's own content: people, a quest and items in the game, and thief play. Some
         # are written into the game's files when it is started; what a save already has stays

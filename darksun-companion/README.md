@@ -424,10 +424,10 @@ sections are open is remembered. The sections:
 - **Dice log**: unlabelled rolls, and the details behind each roll.
 - **In the game**: each turn's rolls and how much they say, monster
   descriptions.
-- **Rule changes**: helms, boots, two weapons, rings and cloaks of
-  protection, half-giants' two-handed weapons, the spell save, doubled saves, Cat's Grace, levels up to 10, the
-  thief skill table, hiding in shadows (and under it, a worn cloak's, boots'
-  and belt's bonuses).
+- **Rule changes**: the spell save, doubled saves, two weapons, the thief
+  skill table, hiding in shadows (and under it, a worn cloak's, boots' and
+  belt's bonuses), levels up to 10, rings and cloaks of protection,
+  half-giants' two-handed weapons, Cat's Grace, helms and boots.
 - **New content**: Kalzith, Semyon, the cooked vulture, the slave pens' gear,
   Kreenfang and Shadowseeker, the Ring +1, picking pockets, and a button that
   gives each thief a set of Thieves' Tools now. Kalzith, Semyon, the vulture
@@ -1727,7 +1727,7 @@ any armour.
 
 ### Boots give movement in a fight
 
-With **Boots give 1 more move in a fight** ticked, whoever wears boots
+With **Boots give movement in a fight** ticked, whoever wears boots
 (Leather Boots, Serpent Boots: anything on the feet) gets 1 more move each
 round of a fight (13 rather than 12, say; Haste and Slow still double and
 halve it). The game sets each round's movement when it rolls initiative, so
