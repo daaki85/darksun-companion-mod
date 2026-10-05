@@ -63,6 +63,9 @@ can be switched off on its Options tab.
   - a worn belt helping a thief pick pockets and open locks;
   - thief skills from AD&D's table, with Dark Sun's race and DEX adjustments;
   - half-giants wielding two-handed weapons in one hand;
+  - rings and cloaks of protection as in AD&D: two rings don't add up, a
+    ring gives no AC with magical armour, and a cloak does nothing with
+    magical or metal armour or a shield;
   - class levels up to 10 (the game stops at 9).
 
 (More in [Rule changes](darksun-companion/README.md#rule-changes).)

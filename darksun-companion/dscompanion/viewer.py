@@ -329,6 +329,9 @@ class Viewer:
                 ("boots_move", "Boots give 1 more move in a fight"),
                 ("two_weapons", "Two weapons: -2 main hand, -4 off hand, DEX reaction adjustment added "
                                 "(no better than 0; rangers none)"),
+                ("protection_rules", "Rings and cloaks of protection as in AD&D: only the better of two rings "
+                                     "counts, a ring gives no AC with magical armour, and a cloak does nothing "
+                                     "with magical or metal armour or a shield"),
                 ("half_giant_hands", "Half-giants wield two-handed weapons in one hand (a shield or a light "
                                      "weapon in the other; two heavy weapons still can't be held)"),
                 ("spell_save", "Spells are saved against with the spell save (the game uses "

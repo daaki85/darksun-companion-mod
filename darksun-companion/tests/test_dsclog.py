@@ -591,6 +591,79 @@ class RingTests(unittest.TestCase):
 
 
 
+@unittest.skipIf(Uc is None, "unicorn is not installed")
+class ProtectionRuleTests(RingTests):
+    """RULE_PROTECTION: the better ring only, a ring's AC lost to magical armour, a cloak of
+    protection lost to magical or metal armour (helms too) or a shield."""
+    RULES, TYPES_FIRST = 170, 212  # the header's words
+    CLOAK = 116  # (the second of DSCLOG's types, the first being 115)
+    # (RingTests' own are the game's way, without the rule)
+    test_saves_count_worn_rings = test_saves_count_a_cloak_of_protection = test_ac_counts_rings = None
+
+    def setUp(self):
+        super().setUp()
+        mu = self.mu
+        hdr = TSR * 16 + load_image().find(HDR_SIG)
+        mu.mem_write(hdr + self.RULES, struct.pack("<H", 1024))
+        mu.mem_write(hdr + self.TYPES_FIRST, struct.pack("<H", 115))
+        mu.mem_write(GAME_DS * 16 + 0x1669, struct.pack("<HH", 0, self.TYPES))
+        # types: flags word, material (+08h), AC flag (+0Fh)
+        for typ, flags, material, ac in ((4, 4, 5, 0x80), (6, 0, 5, 0x80), (57, 0, 4, 0x80), (89, 0, 0x84, 0x84),
+                                         (15, 0, 1, 0x80), (self.CLOAK, 0, 5, 0x80), (102, 0, 0x40, 0)):
+            rec = bytearray(0x14)
+            struct.pack_into("<H", rec, 0, flags)
+            rec[0x08], rec[0x0F] = material, ac
+            mu.mem_write(self.TYPES * 16 + typ * 0x14, bytes(rec))
+        self.wear(7, 102, 11, 2)  # creature 1: ring 4 (+1) on the left hand's finger, ring 7 (+2) the right's
+
+    def wear(self, item, typ, slot, plus=0):
+        rec = self.ITEMS * 16 + item * 21
+        self.mu.mem_write(rec + 0x0A, struct.pack("<H", typ))
+        self.mu.mem_write(rec + 0x11, bytes([slot]))
+        self.mu.mem_write(rec + 0x14, bytes([plus & 0xFF]))
+
+    def counts(self, item, typ):
+        """INT VEC_RING_AC for creature 1's item ITEM of type TYPE: whether bit 80h is left set
+        (the things table's segment where the game's code has it, A8h bytes past the INT)."""
+        self.mu.mem_write(CALLER * 16 + self.at + 0x20 + 2 + 0xA8, struct.pack("<H", self.THINGS_SEG))
+        self.run_at(bytes((0xCD, VEC_RING_AC)), es=self.TYPES, ebx=typ * 0x14, ecx=typ, edx=item, edi=3,
+                    eax=0x1234)
+        mu = self.mu
+        self.assertEqual([mu.reg_read(x) for x in (r.UC_X86_REG_BX, r.UC_X86_REG_CX, r.UC_X86_REG_DX,
+                                                   r.UC_X86_REG_DI, r.UC_X86_REG_ES)],
+                         [typ * 0x14, typ, item, 3, self.TYPES])
+        return bool(mu.reg_read(r.UC_X86_REG_AX) & 0x80)
+
+    def test_the_better_ring(self):
+        self.assertEqual((self.counts(4, 102), self.counts(7, 102)), (False, True))
+        self.assertEqual(self.save(3), 2)
+        self.wear(7, 102, 11, 1)  # equal: the left hand's
+        self.assertEqual((self.counts(4, 102), self.counts(7, 102)), (True, False))
+        self.assertEqual(self.save(3), 1)
+
+    def test_rule_off(self):
+        self.mu.mem_write(TSR * 16 + load_image().find(HDR_SIG) + self.RULES, struct.pack("<H", 0))
+        self.assertEqual((self.counts(4, 102), self.counts(7, 102)), (True, True))
+        self.assertEqual(self.save(3), 3)
+
+    def test_ring_ac_lost_to_magical_armour(self):
+        self.wear(5, 6, 9, 1)  # leather chest armour +1 worn
+        self.assertEqual((self.counts(4, 102), self.counts(7, 102)), (False, False))
+        self.assertEqual(self.save(3), 2)  # (the saves stay)
+
+    def test_cloak(self):
+        self.wear(7, self.CLOAK, 12, 1)
+        self.wear(5, 15, 9)  # bone scale: natural
+        self.assertTrue(self.counts(7, self.CLOAK))
+        self.assertEqual(self.save(3), 2)  # ring 4 and the cloak
+        for typ, slot, plus in ((57, 9, 0), (6, 9, 1), (4, 10, 0), (4, 3, 0), (89, 7, 0), (6, 7, 1)):
+            self.wear(5, typ, slot, plus)  # metal, magical leather, a shield in either hand, metal or magic helm
+            self.assertFalse(self.counts(7, self.CLOAK), (typ, slot, plus))
+            self.assertEqual(self.save(3), 1, (typ, slot, plus))
+        self.wear(5, 57, 0xFF)  # only carried
+        self.assertTrue(self.counts(7, self.CLOAK))
+
+
 @unittest.skipIf(Uc is None, "unicorn not installed")
 class RuleTests(RingTests):
     """The companion's rule changes: two weapons' to-hit, and the doubled save d20."""

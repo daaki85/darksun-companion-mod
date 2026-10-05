@@ -52,6 +52,15 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
   shows 1 to 19 and leaves the others alone. The patched game's loops over the
   characters, its roster list and its "Maximum characters" check are made 30
   and 29 (a byte each); the game's file routines already took any number.
+- **Rule change: rings and cloaks of protection as in AD&D** (Options, Rule
+  changes; on unless turned off): of two rings only the better counts; a ring
+  gives no AC with magical armour (saves still count); a cloak of protection
+  does nothing with magical armour, metal armour or a shield in either hand,
+  natural armour (leather, bone) being fine. Armour is what is worn on the
+  arms, legs, head or chest. DSCLOG weighs what the character wears where the
+  game's AC routine asks about each item (`INT F8h`) and where a saving throw's
+  modifiers start (`INT F9h`); the dice log names the ring and the cloak apart
+  in saving throws.
 - **A worn belt helps a thief:** +5 to picking pockets and opening locks (the
   same switch as the cloak's and boots' bonuses, hiding on or not), counted by
   the game's own lock picking and by the Ledger; its item box says

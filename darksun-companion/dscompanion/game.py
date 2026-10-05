@@ -70,6 +70,11 @@ FINGERS = tuple(n for n, s in enumerate(EQUIP_SLOTS) if s == "finger")
 FINGER = FINGERS[0]
 FOOT = EQUIP_SLOTS.index("foot")
 CLOAK_SLOT = EQUIP_SLOTS.index("cloak")
+# armour, as RULE_PROTECTION weighs it: a piece worn on the arms, legs, head or chest that counts
+# for AC (its type's +0Fh bit 80h); a shield, a type whose flags word (+00h) has bit 4 (the
+# flag the game's AC routine reads for one), held in a hand
+ARMOUR_SLOTS = tuple(EQUIP_SLOTS.index(s) for s in ("arm", "legs", "head", "chest"))
+TYPE_SHIELD = 4
 # The plain "Ring" item type. With the dice log's patched game, a worn one's plus betters AC
 # and saving throws (DSCLOG's PROBE_RING_AC and PROBE_RING_SAVE); the game has no such ring of
 # its own, and the companion can put a Ring +1 in the arena (ring.py).
@@ -88,11 +93,16 @@ RULE_STEALTH = 64  # a thief hiding in shadows and moving silently backstabs (st
 RULE_LEVEL_10 = 128  # class levels go up to 10 (the game stops at 9)
 RULE_THIEF_TABLE = 256  # thief skills from AD&D's table and Dark Sun's DEX adjustments
 RULE_HALF_GIANT = 512  # half-giants wield two-handed weapons in one hand
+# AD&D's rings and cloaks of protection: of two rings only the better counts, and a ring betters
+# AC only without magical armour; a cloak counts only without magical armour, metal armour or a
+# shield (DSCLOG's PROBE_RING_AC and RING_PLUS)
+RULE_PROTECTION = 1024
 # the Options' setting for each, all on unless unticked
 RULE_SETTINGS = (("helm_ac", RULE_HELMS), ("boots_move", RULE_BOOTS), ("two_weapons", RULE_TWO_WEAPONS),
                  ("spell_save", RULE_SPELL_SAVE), ("no_doubled_save", RULE_NO_DOUBLE),
                  ("cats_grace", RULE_CATS_GRACE), ("stealth", RULE_STEALTH), ("level_10", RULE_LEVEL_10),
-                 ("thief_table", RULE_THIEF_TABLE), ("half_giant_hands", RULE_HALF_GIANT))
+                 ("thief_table", RULE_THIEF_TABLE), ("half_giant_hands", RULE_HALF_GIANT),
+                 ("protection_rules", RULE_PROTECTION))
 # Cat's Grace (RULE_CATS_GRACE): Flaming Sphere (wizard level 2) gets Strength's record and the
 # name, and DSCLOG sends it to Strength's code, which rolls 1d6 into an effect of its own (54,
 # a number the game leaves unused) that adds to DEX, at most 24, as Strength's adds to STR.
@@ -906,9 +916,7 @@ class GameData:
         theirs = {x.id for x in effects if x.owner == caster} if caster != target else set()
         caster_sheet = self.sheet(ci) if ci is not None else b""
         out: List[Tuple[int, str]] = []
-        ring = self.ring_plus(ti)
-        if ring:
-            out.append((ring, "Ring of Protection"))
+        out += self.protection(ti)
         if EFFECT_SAVE_PENALTY in mine:
             out.append((-1, EFFECT_NAMES[EFFECT_SAVE_PENALTY]))
         if EFFECT_SPIRIT_ARMOR in mine and save != PPD_SAVE:
@@ -1245,13 +1253,12 @@ class GameData:
         mine = self._mine(creature, self.effects())
         ids = {e.id for e in mine}
         prayer = self._prayer(creature, mine)
-        ring = self.ring_plus(creature)
+        protection = self.protection(creature)
         con = rec[CREATURE_ABILITIES + 2]
         out = []
         for save in range(1, 6):
             parts: List[Tuple[int, str]] = []
-            if ring:
-                parts.append((ring, "Ring of Protection"))
+            parts += protection
             if EFFECT_SAVE_PENALTY in ids:
                 parts.append((-1, EFFECT_NAMES[EFFECT_SAVE_PENALTY]))
             if EFFECT_SPIRIT_ARMOR in ids and save != PPD_SAVE:
@@ -1355,6 +1362,34 @@ class GameData:
             if plus > 0 and (kind == RING_TYPE and slot in FINGERS or kind == CLOAK_TYPE and slot == CLOAK_SLOT):
                 total += plus
         return total
+
+    def protection(self, creature: int) -> List[Tuple[int, str]]:
+        """What the creature's rings and cloak of protection add to its saving throws, as
+        [(amount, why), ...]. The game's (with the patched game): every worn one's plus, as
+        "Ring of Protection". With RULE_PROTECTION, AD&D's: the better ring only, and the cloak
+        only without magical or metal armour (helms too) and without a shield."""
+        if not self.rules & RULE_PROTECTION:
+            ring = self.ring_plus(creature)
+            return [(ring, "Ring of Protection")] if ring else []
+        rings, cloak, blocked = [], 0, False
+        for _, item, typ in self._worn(creature):
+            plus = struct.unpack("b", item[ITEM_PLUS:ITEM_PLUS + 1])[0]
+            kind, slot = struct.unpack_from("<H", item, ITEM_TYPE)[0], item[ITEM_SLOT]
+            if kind == RING_TYPE:
+                if slot in FINGERS and plus > 0:
+                    rings.append(plus)
+            elif kind == CLOAK_TYPE:
+                if slot == CLOAK_SLOT and plus > 0:
+                    cloak = plus
+            elif len(typ) == ITEM_TYPE_SIZE:
+                if typ[0] & TYPE_SHIELD:
+                    blocked |= slot in WEAPON_HANDS
+                elif slot in ARMOUR_SLOTS and typ[0x0F] & 0x80:
+                    blocked |= plus > 0 or typ[0x08] & 0x4F == MATERIALS.index("Metal")
+        out = [(max(rings), "Ring of Protection")] if rings else []
+        if cloak and not blocked:
+            out.append((cloak, "Cloak of Protection"))
+        return out
 
     def dex_ac(self, dex: int) -> int:
         """The game's AC adjustment for a DEX score."""

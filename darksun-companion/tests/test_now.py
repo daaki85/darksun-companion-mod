@@ -209,7 +209,7 @@ class SettingsTests(unittest.TestCase):
         self.assertEqual((log.rules, log.arena_ring, log.monster_info),
                          (game.RULE_BOOTS | game.RULE_TWO_WEAPONS | game.RULE_SPELL_SAVE | game.RULE_CATS_GRACE
                           | game.RULE_STEALTH | game.RULE_LEVEL_10 | game.RULE_THIEF_TABLE
-                          | game.RULE_HALF_GIANT,
+                          | game.RULE_HALF_GIANT | game.RULE_PROTECTION,
                           False, True))
 
 

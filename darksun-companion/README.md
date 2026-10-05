@@ -133,8 +133,8 @@ records; this ledger keeps the ones the game doesn't show you.
   hiding in shadows to attack from behind (a worn cloak and boots helping, and
   a worn belt helping a thief pick pockets and open locks), class levels up to
   10, and thief skills from AD&D's table with Dark Sun's race and DEX
-  adjustments, and half-giants wielding two-handed weapons in one hand (see
-  [Rule changes](#rule-changes)). Cloaks, boots and belts say what they give in
+  adjustments, half-giants wielding two-handed weapons in one hand, and AD&D's
+  rules for rings and cloaks of protection (see [Rule changes](#rule-changes)). Cloaks, boots and belts say what they give in
   their item boxes (`Hide +10`, `Move +10`, `Pick +5, Lock +5`). And thieves no longer lose skill for what
   they hold (see [Thief skills](#thief-skills)).
 
@@ -1342,7 +1342,7 @@ routine that closes the box, shows the whole description.
 
 ## Rule changes
 
-Ten changes to the game's rules, each with its own box under **Rule changes**
+Eleven changes to the game's rules, each with its own box under **Rule changes**
 on the Options tab (all on by default; they take effect in games started with
 the dice log, while the Ledger runs or with **Play Dark Sun (in-game rolls)**,
 which uses the Options as last set). Untick one and the game's own rule is back
@@ -1667,6 +1667,35 @@ View Character stops showing the XP for the next level at 10, as it does at
 How: the game holds a class level against 9 in two places, where a character
 goes up a level and where View Character shows the XP for the next one; the
 helper (`INT E7h`) holds it against 10 instead while the rule is on.
+
+### Rings and cloaks of protection
+
+The game has no rings or cloaks of protection; the Ledger adds three (the
+arena's [Ring +1](#the-ring-1), and Pehtucl's ring and cloak, see
+[the slave pens' gear](#the-slave-pens-gear)), each +1 to AC and +1 on every
+saving throw. With **Rings and cloaks of protection as in AD&D** ticked, they
+follow the AD&D rules for them:
+
+- **Two rings don't add up:** only the better one counts (the left hand's,
+  if they're equal). A ring +1 and a ring +2 give +2, not +3.
+- **A ring gives no AC with magical armour** (any worn armour piece, helm
+  included, with a plus), but still adds to saving throws.
+- **A cloak does nothing,** neither AC nor saves, with magical armour, with
+  metal armour (Chain, Grey's Scale, Tanelyv's Armor, the Helm of
+  Contemplation) or with a shield in either hand. Natural armour is fine:
+  leather and bone (Ring, Brigandine and Scale are bone in Dark Sun), and
+  plain helms. The cloak still adds to a ring.
+
+Armour here is what is worn on the arms, legs, head or chest; something only
+carried in a backpack doesn't count. Untick it and every ring and cloak worn
+counts, whatever else is worn (the game's way with the patched game).
+
+The dice log's saving throws name each: `+2 Ring of Protection +1 Cloak of
+Protection`, and its attack lines show the AC that results (`target AC`).
+
+How: where the game's AC routine asks the helper about each worn item
+(`INT F8h`) and where it starts a saving throw's modifiers (`INT F9h`), the
+helper looks at what else the character wears.
 
 ## New content
 

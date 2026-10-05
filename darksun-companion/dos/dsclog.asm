@@ -2181,15 +2181,74 @@ ITEM_TYPES equ 0x1669           ; DS: far pointer to the item types (14h bytes e
 WS_MELEE   equ 0xFFFE           ; WS_TYPE: any melee weapon
 
 ; PROBE_RING_AC: INT VEC_RING_AC replaces "mov al,es:[bx+0Fh] / cbw" (5 bytes: INT + 3 NOPs)
-; in the AC function, where ES:BX is a worn item's type and CX its number; bit 80h of AX
-; says the type counts for AC (the plus less the type's AC). Does that, counting rings too.
+; in the AC function, where ES:BX is a worn item's type, CX its number, DX the item and DI the
+; creature's thing; bit 80h of AX says the type counts for AC (the plus less the type's AC).
+; Does that, counting rings too. With RULE_PROTECTION, AD&D's: a ring of protection betters
+; AC only without magical armour, and of two rings only the better (the left hand's if they're
+; equal); a cloak of protection (the second of TYPES) counts only without magical or metal
+; armour and without a shield (PROT_SCAN).
 probe_ring_ac:
         mov al, [es:bx+0x0F]
         cbw
         cmp cx, RING_TYPE
-        jne .helm
+        jne .cloak
         or al, 0x80
+        test word [cs:rules], RULE_PROTECTION
+        jz .done
+        call prot_here
+        jc .done
+        test byte [cs:p_flags], P_MAGIC_ARMOUR
+        jnz .off
+        push ax
+        push bx
+        push es
+        les bx, [ITEMS]
+        mov ax, dx
+        imul ax, ax, 0x15
+        add bx, ax
+        mov al, [es:bx+0x11]    ; the slot this ring is worn in
+        mov ah, [cs:p_ring]
+        cmp al, FINGER
+        je .first
+        cmp [cs:p_ring2], ah    ; (the other hand's) counts if better than the left's
+        jmp .which
+.first: cmp ah, [cs:p_ring2]    ; the left hand's counts unless the other is better
+.which: pop es
+        pop bx
+        pop ax
+        jg .done                ; (the better: counts)
+        je .tie
+        jmp .off
+.tie:   push ax                 ; equal: the left hand's
+        push bx
+        push es
+        les bx, [ITEMS]
+        mov ax, dx
+        imul ax, ax, 0x15
+        add bx, ax
+        cmp byte [es:bx+0x11], FINGER
+        pop es
+        pop bx
+        pop ax
+        je .done
+.off:   and al, 0x7F
+.done:  iret
+.cloak: push ax
+        mov ax, [cs:types_first]
+        or ax, ax
+        jz .other
+        inc ax
+        cmp cx, ax
+        jne .other
+        pop ax
+        test word [cs:rules], RULE_PROTECTION
+        jz .done
+        call prot_here
+        jc .done
+        test byte [cs:p_flags], P_MAGIC_ARMOUR | P_METAL_ARMOUR | P_SHIELD
+        jnz .off
         iret
+.other: pop ax
 .helm:  cmp cx, HELM_LEATHER    ; a helm: AC 1 with RULE_HELMS (the game's are all 0), 0 without
         je .is
         cmp cx, HELM_METAL
@@ -2233,6 +2292,8 @@ probe_ring_save:
 
 ring_plus:                      ; DS = the game's, AX = the things table's segment, DI = a
         mov [cs:r_things], ax   ; creature's thing: SI += the pluses of the rings it wears
+        test word [cs:rules], RULE_PROTECTION
+        jnz .rules
         mov es, ax
         mov bx, di
         imul bx, bx, 3
@@ -2248,7 +2309,7 @@ ring_plus:                      ; DS = the game's, AX = the things table's segme
         mov word [cs:ws_slot], FINGER2
         call worn_scan
         add si, [cs:ws_plus]
-        mov ax, [cs:types_first]  ; and a cloak of protection's (the second of TYPES), worn
+.cloak: mov ax, [cs:types_first]  ; and a cloak of protection's (the second of TYPES), worn
         or ax, ax
         jz .done
         inc ax
@@ -2258,6 +2319,147 @@ ring_plus:                      ; DS = the game's, AX = the things table's segme
         call worn_scan
         add si, [cs:ws_plus]
 .done:  ret
+.rules: call prot_scan          ; RULE_PROTECTION: the better ring only, whatever the armour;
+        jc .done                ; the cloak only without magical or metal armour or a shield
+        mov al, [cs:p_ring]
+        cmp al, [cs:p_ring2]
+        jge .ring
+        mov al, [cs:p_ring2]
+.ring:  cbw
+        add si, ax
+        test byte [cs:p_flags], P_MAGIC_ARMOUR | P_METAL_ARMOUR | P_SHIELD
+        jnz .done
+        mov es, [cs:r_things]
+        mov bx, di
+        imul bx, bx, 3
+        mov ax, [es:bx+THINGS+1]
+        mov [cs:r_who], ax
+        jmp .cloak
+
+; PROT_HERE: (called from PROBE_RING_AC, its INT's return address at SP+2) PROT_SCAN for the
+; AC routine's creature DI, the things table's segment being in its "mov ax,<segment>" A8h
+; bytes on (DSUN.EXE 58F66h).
+prot_here:
+        push bp
+        mov bp, sp
+        push es
+        push bx
+        les bx, [bp+4]
+        mov bx, [es:bx+0xA8]
+        mov [cs:r_things], bx
+        pop bx
+        pop es
+        pop bp
+        ; (on into PROT_SCAN)
+
+; PROT_SCAN: what creature thing DI wears (DS = the game's, R_THINGS the things table's
+; segment) that the protection rules weigh: P_FLAGS (P_MAGIC_ARMOUR: a worn armour piece,
+; chest, arm, leg or helm, with a plus; P_METAL_ARMOUR: one of metal; P_SHIELD: a shield in a hand),
+; P_RING and P_RING2 (the plus of the ring on each hand's finger, 0 for none or less). CF set
+; if DI isn't a creature. Keeps every register.
+prot_scan:
+        pushad
+        push es
+        mov es, [cs:r_things]
+        mov bx, di
+        imul bx, bx, 3
+        cmp byte [es:bx+THINGS], 2
+        jne .not
+        mov ax, [es:bx+THINGS+1]
+        imul ax, ax, 0x3A
+        mov [cs:r_creature], ax
+        mov byte [cs:p_flags], 0
+        mov word [cs:p_ring], 0         ; (and P_RING2)
+        mov cx, 8                       ; its item lists, each a thing: +8, +0Ah, +0Ch
+.list:  les bx, [CREATURES]
+        add bx, [cs:r_creature]
+        add bx, cx
+        mov dx, [es:bx]
+        cmp dx, NO_THING
+        jae .next
+        mov es, [cs:r_things]
+        mov bx, dx
+        imul bx, bx, 3
+        cmp byte [es:bx+THINGS], 1
+        jne .next                       ; not an item
+        mov dx, [es:bx+THINGS+1]
+        mov byte [cs:r_left], 100
+.item:  cmp dx, NO_THING
+        jae .next
+        les bx, [ITEMS]
+        mov ax, dx
+        imul ax, ax, 0x15
+        add bx, ax
+        mov dx, [es:bx+4]               ; (the next)
+        mov si, [es:bx+0x0A]            ; the type
+        mov al, [es:bx+0x11]            ; the slot
+        mov ah, [es:bx+0x14]            ; the plus
+        cmp si, RING_TYPE
+        jne .type
+        cmp ah, 0
+        jle .on
+        cmp al, FINGER
+        jne .ring2
+        mov [cs:p_ring], ah
+        jmp .on
+.ring2: cmp al, FINGER2
+        jne .on
+        mov [cs:p_ring2], ah
+        jmp .on
+.type:  les bx, [ITEM_TYPES]
+        imul si, si, 0x14
+        add bx, si
+        test byte [es:bx], 4            ; a shield (the flag the game's AC reads for one)
+        jz .body
+        cmp al, HAND_RIGHT
+        je .shield
+        cmp al, HAND_LEFT
+        jne .on
+.shield: or byte [cs:p_flags], P_SHIELD
+        jmp .on
+.body:  cmp al, ARM_SLOT                ; armour: worn on the arms, legs, head or chest, and
+        je .armour                      ; counting for AC
+        cmp al, LEG_SLOT
+        je .armour
+        cmp al, HEAD_SLOT
+        je .armour
+        cmp al, CHEST_SLOT
+        jne .on
+.armour: test byte [es:bx+0x0F], 0x80
+        jz .on
+        cmp ah, 0
+        jle .metal
+        or byte [cs:p_flags], P_MAGIC_ARMOUR
+.metal: mov al, [es:bx+8]               ; its material (no material: 40h with 0)
+        and al, 0x4F
+        cmp al, MATERIAL_METAL
+        jne .on
+        or byte [cs:p_flags], P_METAL_ARMOUR
+.on:    dec byte [cs:r_left]
+        jnz .item
+.next:  add cx, 2
+        cmp cx, 0x0E
+        jb .list
+        clc
+        jmp .out
+.not:   stc
+.out:   pop es
+        popad
+        ret
+
+P_MAGIC_ARMOUR equ 1
+P_METAL_ARMOUR equ 2
+P_SHIELD       equ 4
+ARM_SLOT       equ 0                    ; the item slots of armour (the game's: arm, legs,
+LEG_SLOT       equ 6                    ; head, chest)
+HEAD_SLOT      equ 7
+CHEST_SLOT     equ 9
+HAND_RIGHT     equ 3
+HAND_LEFT      equ 10
+MATERIAL_METAL equ 4
+p_flags    db 0
+p_ring     db 0
+p_ring2    db 0
 
 ; The items creature AX (DS = the game's, R_THINGS the things table's segment) wears in slot
 ; WS_SLOT, of type WS_TYPE (0FFFFh: any): WS_COUNT of them, their positive pluses adding up to
@@ -2345,6 +2547,7 @@ RULE_STEALTH equ 64             ; (the companion rolls the hiding and moving sil
 RULE_LEVEL_10 equ 128          ; class levels go up to 10, not 9
 RULE_THIEF_TABLE equ 256        ; thief skills from AD&D's table and Dark Sun's DEX adjustments
 RULE_HALF_GIANT equ 512         ; half-giants wield two-handed weapons in one hand
+RULE_PROTECTION equ 1024        ; AD&D's rings and cloaks of protection (PROBE_RING_AC, RING_PLUS)
 FOOT       equ 13               ; the item's slot byte while worn on the feet
 THINGS_SEG equ 0x3972 - 0x4356  ; the things table's segment, relative to DS
 
