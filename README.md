@@ -52,13 +52,15 @@ can be switched off on its Options tab.
 
 - **Optional AD&D rule changes**, all on by default and each one switchable:
   - helms give AC;
-  - boots give an extra move;
+  - boots give an extra move in a fight ("Boots (Speed+1)");
   - two-weapon penalties;
   - spells saved against with the spell save;
   - DEX on saves against fire, cold and electricity instead of a doubled d20;
   - a new spell, Cat's Grace;
   - thieves hiding in shadows and moving silently to backstab, and rangers
-    to attack from behind (a cloak and boots help);
+    to attack from behind (a cloak and boots help, and say so in their item
+    boxes);
+  - a worn belt helping a thief pick pockets and open locks;
   - thief skills from AD&D's table, with Dark Sun's race and DEX adjustments;
   - half-giants wielding two-handed weapons in one hand;
   - class levels up to 10 (the game stops at 9).
@@ -75,6 +77,10 @@ can be switched off on its Options tab.
   Tools for every thief;
   picking anyone's pockets; and no more thief skill penalty for what a thief
   holds.
+- **Two named magic weapons:** the arena's Bone Gythka becomes **Kreenfang**
+  (+1), and Kurzak's short sword **Shadowseeker** (+1), whose wielder sees the
+  invisible; lifting it from Kurzak is worth 200 XP, and Alagorn, the Painted
+  Badlands' wizard who identifies magic items, tells the story of each.
 - **A mini-quest:** the cooked vulture, at last good for something (Dinos
   cooks it for the party, to the game's own quest-done sound).
 - **A new person in the slave pens:** Kalzith, a defiler slave who, treated
@@ -112,7 +118,8 @@ can be switched off on its Options tab.
 
 - **Game speed:** DOSBox is given more of the computer (20,000 cycles by
   default, on its faster dynamic core), for smoother walking with the whole
-  party in view; GOG's own speed and a faster one can be chosen.
+  party in view; GOG's own speed and a faster one can be chosen. At the
+  fastest (35,000), the whole party walks as fast as the leader alone.
 - **Crash reports:** if DOSBox crashes or the game stops with an error, the
   game's message stays on screen and what happened is saved in a file to send.
 
@@ -149,17 +156,20 @@ double-click, with the options as last set.)
 
 ## What's new
 
-In [pull request #16](https://github.com/daaki85/darksun-companion-mod/pull/16)
+In [pull request #17](https://github.com/daaki85/darksun-companion-mod/pull/17)
 (in review):
-- **Semyon breaks out with Scar** if he is beside the party when they take
-  Scar's offer, and the Trustee knows he got away.
-- **Smoother walking:** a game speed setting (20,000 cycles by default, on
-  DOSBox's dynamic core), and the party's gear pictures no longer slow the game.
-- **Switches for all the new content,** and the Options tab regrouped.
-- **Crash reports** saved when DOSBox crashes or the game stops with an error.
-- **A crash in the opening fight fixed:** a bug of the game's own made it
-  draw over its own code.
-- **Fixes** from a review of the code.
+- **Kreenfang and Shadowseeker:** two named magic weapons, Shadowseeker
+  letting its wielder see the invisible; 200 XP for lifting it from Kurzak;
+  Alagorn tells of both.
+- **Cloaks, boots and belts:** their item boxes say what they give a thief,
+  a worn belt helps pick pockets and open locks, and plain ones cost 24.
+- **Faster walking:** shadows and dust drawn much more cheaply; at the fastest
+  game speed, the whole party walks as fast as the leader alone.
+
+In [pull request #16](https://github.com/daaki85/darksun-companion-mod/pull/16)
+(merged): Semyon breaks out with Scar, the game speed setting, switches for
+all the new content, crash reports, a crash in the opening fight fixed, and
+fixes from a review of the code.
 
 Everything that changed, pull request by pull request, is in
 [`CHANGELOG.md`](CHANGELOG.md). Release **1.0.0** is pull requests #1 to #13;

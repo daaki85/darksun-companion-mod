@@ -4,7 +4,7 @@ What changed in Templar's Ledger, pull request by pull request, newest first.
 Release **1.0.0** is pull requests #1 to #13; its notes are in
 [`release-notes/v1.0.0.md`](release-notes/v1.0.0.md).
 
-### After pull request #16
+## Pull request #17 (in review)
 
 **Changed**
 - **The whole party walks as fast as the leader alone, at the fastest game
@@ -49,7 +49,7 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
 - The Ledger's new item pictures no longer wipe an item's spell: changing an
   icon cleared four bytes of the item where the game's picture cache is two.
 
-### Pull request #16
+## Pull request #16 ([merged 2026-10-04](https://github.com/daaki85/darksun-companion-mod/pull/16))
 
 **Added**
 - **Semyon breaks out with Scar:** recruit Semyon before the fight with Scar,

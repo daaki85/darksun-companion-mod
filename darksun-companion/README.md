@@ -128,10 +128,12 @@ records; this ledger keeps the ones the game doesn't show you.
   boots a move more in a fight, AD&D's two-weapon penalties, spells saved
   against with the spell save, DEX rather than a doubled d20 on saves against
   fire, cold and electricity, a new spell (Cat's Grace), thieves and rangers
-  hiding in shadows to attack from behind, class levels up to 10, and thief
-  skills from AD&D's table with Dark Sun's race and DEX adjustments, and
-  half-giants wielding two-handed weapons in one hand (see
-  [Rule changes](#rule-changes)). And thieves no longer lose skill for what
+  hiding in shadows to attack from behind (a worn cloak and boots helping, and
+  a worn belt helping a thief pick pockets and open locks), class levels up to
+  10, and thief skills from AD&D's table with Dark Sun's race and DEX
+  adjustments, and half-giants wielding two-handed weapons in one hand (see
+  [Rule changes](#rule-changes)). Cloaks, boots and belts say what they give in
+  their item boxes (`Hide +10`, `Move +10`, `Pick +5, Lock +5`). And thieves no longer lose skill for what
   they hold (see [Thief skills](#thief-skills)).
 
 **New content** (each can be switched off on the Options tab)
@@ -1140,6 +1142,7 @@ right-hand panel, drawn by the game's text routine so they look like the rest:
   `TRAP`s, `MOVE` silently, `HIDE` in shadows and `CLMB` walls. Move silently
   and hide in shadows are the ones the Ledger rolls (for
   [picking pockets](#picking-pockets) and the [stealth rule](#rule-changes)).
+  A worn belt's 5 is in `PICK` and `LOCK` (see [Rule changes](#rule-changes)).
   Hear noise, which one script check in the game rolls, is left out for want
   of room (the Characters tab shows it), as is read languages, which nothing
   checks (see Where the game rolls them). Not below the weapons: three weapons fill the panel down to its
@@ -1718,7 +1721,7 @@ thief as the party's leader (keys 1-4):
 - **P in a conversation** (if ticked). In a conversation, press **P**.
 
 Either way, the Ledger rolls the leader's pick pockets chance as
-it stands now (effects counted, as in the thief rows):
+it stands now (effects and a worn belt's 5 counted, as in the thief rows):
 
 - **Success:** one small thing goes into the thief's backpack (its first free
   cell): something weighing 10 or less (a bag or arrows are 10, a helm 15, a
@@ -1807,12 +1810,12 @@ there to be found):
 
 | Who | Gear | Can a thief lift it? |
 |---|---|---|
-| **Kurzak**, the guards' leader | a metal **Short Sword** (1d6, in his pack) and a leather **Helm** (worn) | the sword, yes |
+| **Kurzak**, the guards' leader | a metal **Short Sword** (1d6, in his pack: Shadowseeker, a short sword +1, with [Kreenfang and Shadowseeker](#kreenfang-and-shadowseeker) on) and a leather **Helm** (worn) | the sword, yes (200 XP for it) |
 | **Legcrusher**, the half-giant | **Leather Chest Armor +1** (worn) | no |
 | **Pehtucl**, the head templar (the Templar in the pens' south-west corner with the Obsidian Bloodwrath) | a **Cloak of Protection +1** (worn) and a **Ring of Protection +1** (worn) | the ring, yes; not the cloak |
 
 They're priced as magic items: Leather Chest Armor +1 3000, the Cloak and the
-Ring 5000 each. Nothing is given where it's in the game already (a game saved
+Ring 5000 each (and Shadowseeker 22000). Nothing is given where it's in the game already (a game saved
 after it was given, loaded again), and a short sword lifted from Kurzak isn't
 replaced.
 
