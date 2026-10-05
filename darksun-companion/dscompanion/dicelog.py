@@ -338,7 +338,7 @@ class DiceLog:
         self._shadows = shadows.Shadows()
         self.show_dust = True  # dust raised by walkers on sand and dirt (dust.py)
         self.pens_gear = True  # the slave pens' gear for Kurzak, Legcrusher, Pehtucl, the bone scale set
-        self.magic_arms = True  # the arena's gythka and Kurzak's short sword +1 (arms.py)
+        self.magic_arms = True  # the arena's dead body's gythka and Kurzak's short sword +1 (arms.py)
         self.vulture_on = True  # the cooked vulture quest (vulture.py)
         self.stealth_gear = True  # a worn cloak's and boots' bonuses to hiding (stealth.py)
         self._dust = dust.Dust()

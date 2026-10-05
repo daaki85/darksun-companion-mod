@@ -14,6 +14,7 @@ import test_npcitems
 from test_npcitems import KURZAK, PEHTUCL
 
 GYTHKA, PARTY_THING = 90, 410
+BODY, BODY_THING, BODY_CONTENTS, LOOSE, LOOSE_THING = 91, 411, 412, 92, 413
 
 
 def record(m, item):
@@ -77,33 +78,56 @@ class ArmsTests(unittest.TestCase):
         self.assertEqual(record(self.m, sword), (1, arms.SWORD_NAME, arms.SWORD_VALUE, game.DETECT_INVISIBILITY + 1))
         self.assertEqual(arms.upgrade(self.gd, set()), [])
 
-    def test_gythka_only_in_the_arena(self):
-        """A gythka out of the arena (here the party's, in the pens) stays plain; in the arena, off
-        any living monster, it becomes Kreenfang, once a game."""
-        self.give_party_gythka()
-        given = set()
-        self.assertEqual(arms.upgrade(self.gd, given), [line for line in arms.upgrade(self.gd, set())
-                                                         if "Gythka" not in line])
-        self.assertEqual(record(self.m, GYTHKA)[0], 0)
-        self.in_arena()
-        lines = arms.upgrade(self.gd, given)
-        self.assertIn("The arena's 2 handed Bone Gythka (the Tohr-kreen's) is Kreenfang, a gythka +1.", lines)
-        self.assertEqual(record(self.m, GYTHKA), (1, arms.GYTHKA_NAME, arms.GYTHKA_VALUE, 0))
-        self.assertIn(arms.key(self.gd), given)
+    def item(self, item, **fields):
+        rec = bytearray(game.ITEM_SIZE)
+        struct.pack_into("<h", rec, game.ITEM_NEXT, game.NO_ITEM)
+        struct.pack_into("<H", rec, ring.ITEM_CONTENTS, game.NO_ITEM)
+        for offset, value in fields.items():
+            struct.pack_into("<H", rec, {"picture": 0, "type": game.ITEM_TYPE, "name": game.ITEM_NAME,
+                                         "contents": ring.ITEM_CONTENTS}[offset], value)
+        self.m[ITEMS + item * game.ITEM_SIZE:ITEMS + (item + 1) * game.ITEM_SIZE] = rec
 
-    def test_gythka_a_living_monster_holds(self):
-        """The Tohr-kreen's while it lives (here Pehtucl's list stands for its): left plain."""
-        self.give_party_gythka()
-        struct.pack_into("<h", self.m, CREATURES + 8, game.NO_ITEM)  # (not the party's)
-        struct.pack_into("<h", self.m, CREATURES + PEHTUCL * game.CREATURE_SIZE + 8, PARTY_THING)
+    def arena_start(self):
+        """The arena at a game's start: the dead body (object 1204) on the ground with a plain
+        gythka in it, and the loose gythka (object 1011) lying elsewhere."""
+        things = ring.Items(self.gd).things
+        self.item(BODY, picture=arms.BODY_PICTURE, type=0x6C, name=0xAE, contents=BODY_CONTENTS)
+        self.item(GYTHKA, picture=arms.GYTHKA_PICTURE, type=game.GYTHKA_TYPE, name=0x3A)
+        self.item(LOOSE, picture=arms.GYTHKA_PICTURE, type=game.GYTHKA_TYPE, name=0x3A)
+        for thing, item in ((BODY_THING, BODY), (BODY_CONTENTS, GYTHKA), (LOOSE_THING, LOOSE)):
+            struct.pack_into("<Bh", self.m, things + thing * 3, game.THING_ITEM, item)
         self.in_arena()
+
+    def test_the_bodys_gythka(self):
+        """In the arena, the gythka in the dead body becomes Kreenfang, once a game; the loose one
+        stays plain."""
+        self.arena_start()
+        given = set()
+        lines = arms.upgrade(self.gd, given)
+        self.assertIn("The 2 handed Bone Gythka on the dead body in the arena is Kreenfang, a gythka +1.", lines)
+        self.assertEqual(record(self.m, GYTHKA), (1, arms.GYTHKA_NAME, arms.GYTHKA_VALUE, 0))
+        self.assertEqual(record(self.m, LOOSE)[0], 0)
+        self.assertIn(arms.key(self.gd), given)
+        self.assertFalse([line for line in arms.upgrade(self.gd, given) if "Gythka" in line])
+        self.assertEqual(record(self.m, LOOSE)[0], 0)
+
+    def test_gythka_once_a_game(self):
+        self.arena_start()
+        arms.upgrade(self.gd, {arms.key(self.gd)})
+        self.assertEqual(record(self.m, GYTHKA)[0], 0)
+
+    def test_only_in_the_arena(self):
+        self.arena_start()
+        struct.pack_into("<H", self.m, DS * 16 + ring.REGION, 0x29)  # (the pens)
         arms.upgrade(self.gd, set())
         self.assertEqual(record(self.m, GYTHKA)[0], 0)
 
-    def test_gythka_once_a_game(self):
-        self.give_party_gythka()
-        self.in_arena()
-        arms.upgrade(self.gd, {arms.key(self.gd)})
+    def test_taken_from_the_body_first(self):
+        """Out of the body already (taken without the Ledger running): left plain, as any other."""
+        self.arena_start()
+        self.give_party_gythka()  # (the same item, now Dag's)
+        struct.pack_into("<H", self.m, ITEMS + BODY * game.ITEM_SIZE + ring.ITEM_CONTENTS, game.NO_ITEM)
+        arms.upgrade(self.gd, set())
         self.assertEqual(record(self.m, GYTHKA)[0], 0)
 
     def test_gythka_from_an_earlier_version(self):

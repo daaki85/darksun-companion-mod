@@ -32,8 +32,8 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
   the game's own lock picking and by the Ledger; its item box says
   `Pick +5, Lock +5`.
 - **Kreenfang and Shadowseeker** (Options, New content; on unless turned off):
-  the arena's 2 handed Bone Gythka (that one only, looted in the arena; every
-  other gythka stays plain) is Kreenfang, a gythka +1 (18000), and
+  the 2 handed Bone Gythka on the dead body in the arena (that one only, made
+  so while still in the body; every other gythka stays plain) is Kreenfang, a gythka +1 (18000), and
   Kurzak's short sword is Shadowseeker, a short sword +1 (22000) whose wielder
   sees the invisible (the game's own Detect Invisibility from a readied item).
   Each has a name, as the Bloodwrath has, and an icon of its own.

@@ -149,9 +149,9 @@ records; this ledger keeps the ones the game doesn't show you.
   cooks it properly for the party (see [The cooked vulture](#the-cooked-vulture)).
 - **Gear for the slave pens' bosses:** Kurzak, Legcrusher and Pehtucl carry
   things worth taking from them (see [The slave pens' gear](#the-slave-pens-gear)).
-- **Two named magic weapons:** the arena's 2 handed Bone Gythka becomes
-  Kreenfang, and Kurzak's short sword Shadowseeker, which lets its wielder see
-  the invisible; lifting Shadowseeker from Kurzak is worth 200 XP (see
+- **Two named magic weapons:** the 2 handed Bone Gythka on the arena's dead
+  body becomes Kreenfang, and Kurzak's short sword Shadowseeker, which lets its
+  wielder see the invisible; lifting Shadowseeker from Kurzak is worth 200 XP (see
   [Kreenfang and Shadowseeker](#kreenfang-and-shadowseeker)).
 - **Kalzith, a defiler in the slave pens,** who sells spell scrolls to a party
   that treats him well (see [Kalzith](#kalzith)).
@@ -1843,15 +1843,16 @@ Templar's Obsidian Bloodwrath (a long sword +1, 20800) is:
 
 | Weapon | Was | Now | Price |
 |---|---|---|---|
-| **Kreenfang** | the arena's 2 handed Bone Gythka, the Tohr-kreen's | a gythka +1 (2d4+1) | 18000 |
+| **Kreenfang** | the 2 handed Bone Gythka on the dead body in the arena | a gythka +1 (2d4+1) | 18000 |
 | **Shadowseeker** | Kurzak's metal Short Sword ([the slave pens' gear](#the-slave-pens-gear)) | a short sword +1 (1d6+1); whoever wields it, in either hand, sees the invisible | 22000 |
 
-The game has gythkas only in the hands of kreen. Only the arena's becomes
-Kreenfang: in the arena, once no living monster holds it (on the Tohr-kreen's
-body, on the ground, or taken by the party there), once a game. The Tohr-kreen
-fights with its plain one, and every gythka anywhere else stays plain (a game
-already past the arena gets no Kreenfang). Shadowseeker is made so wherever it
-is, on Kurzak or taken.
+Kreenfang is the gythka on the dead body lying by the stone arch in the arena
+(the game's object 1204, "Dead Body"), and only that one: from the start of a
+game, while the gythka is still in the body, the Ledger makes it Kreenfang,
+once a game, so whoever loots the body finds Kreenfang. Every other gythka in
+the game stays plain, and a game already past the arena (or one where the body
+was looted without the Ledger running) gets no Kreenfang. Shadowseeker is made
+so wherever it is, on Kurzak or taken.
 Their plus counts for hitting and damage as any magic weapon's, the game shows
 it with the name (`+1 Kreenfang`), and each has its own icon (see
 [Item icons](#item-icons)). A thief who lifts Shadowseeker from Kurzak gets
@@ -1869,7 +1870,7 @@ each is made:
 
 ```
 Kurzak's Short Sword is Shadowseeker, a short sword +1: its wielder sees the invisible.
-The arena's 2 handed Bone Gythka (the Tohr-kreen's) is Kreenfang, a gythka +1.
+The 2 handed Bone Gythka on the dead body in the arena is Kreenfang, a gythka +1.
 ```
 
 **Alagorn**, the wizard of the Painted Badlands who identifies magic items,

@@ -1,10 +1,12 @@
 """Two plain weapons made magic (the MAGIC_ARMS switch, on unless turned off).
 
-- The arena's 2 handed Bone Gythka, the Tohr-kreen's: Kreenfang, a gythka +1. The game has gythkas
-  only in the hands of kreen, none with a plus. Only the arena's becomes Kreenfang: in the arena
-  (where every game starts), once no living monster holds it (on the Tohr-kreen's body, on the
-  ground, or taken by the party there), once a game (the key in the tools_given set, kept in
-  settings). The Tohr-kreen fights with its plain one, and gythkas anywhere else stay plain.
+- The 2 handed Bone Gythka on the dead body lying by the stone arch in the arena, where every game
+  starts: Kreenfang, a gythka +1. The body is the game's object 1204, "Dead Body" (an item, its
+  picture BODY_PICTURE, whose contents are a list: SEGOBJEX's RDFF 1204 has the gythka in it).
+  That gythka, while still in the body, is made Kreenfang, once a game (the key in the
+  tools_given set, kept in settings): the Ledger looks from the game's start, before anyone can
+  take it. Every other gythka stays plain: the one the arena also has lying loose (object 1011),
+  those in kreen hands, and this one if it was taken without the Ledger running.
 - Kurzak's Short Sword (npcitems.py): Shadowseeker, a short sword +1, wherever it is (on him or
   taken). Whoever wields it (in either hand) can see the invisible: the game's own way with a
   magic item's spell (its +0Fh, one past the spell's number), which it puts on the wearer when the
@@ -21,7 +23,7 @@ earlier version made +1 get the name and price too.
 """
 
 import struct
-from typing import List, Set
+from typing import List, Optional, Set
 
 from . import game, ring
 from .game import GameData
@@ -29,6 +31,7 @@ from .game import GameData
 ARENA = ring.ARENA
 KEY = "arena gythka +1"
 GYTHKA_PICTURE = 0xFC0D  # the game's gythka
+BODY_PICTURE = 0x10000 - 1204  # the arena's dead body with the gythka (object 1204)
 SWORD_NAME, GYTHKA_NAME = 0x147, 0x148  # name entries DSCLOG adds
 NAMES = {SWORD_NAME: b"Shadowseeker", GYTHKA_NAME: b"Kreenfang"}  # as DSCLOG's EXTRA_NAMES has them
 # near the Bloodwrath's 20800 (the plain ones: 6 and 500); metal is the dearer, on Athas
@@ -44,19 +47,18 @@ def key(gd: GameData) -> str:
     return f"{gd.creature_name(0)}|{KEY}"
 
 
-def _held_by_monsters(gd: GameData, it: ring.Items) -> Set[int]:
-    """The items of the living creatures in the area who aren't in the party."""
-    out: Set[int] = set()
-    for index in set(gd.combatants().values()):
-        if index < game.PARTY_SIZE:
-            continue
-        rec = gd.creature(index)
-        if len(rec) < game.CREATURE_SIZE or struct.unpack_from("<h", rec, 0)[0] <= 0:
-            continue
-        for offset in game.CREATURE_ITEM_LISTS:
-            thing, = struct.unpack_from("<h", rec, offset)
-            out.update(item for item, _ in it.chain(thing))
-    return out
+def _arena_gythka(it: ring.Items) -> Optional[int]:
+    """The plain gythka still in the arena's dead body (BODY_PICTURE), or None."""
+    for thing in range(ring.THING_COUNT):
+        for _, rec in it.chain(thing):
+            if struct.unpack_from("<H", rec, 0)[0] != BODY_PICTURE:
+                continue
+            contents, = struct.unpack_from("<H", rec, ring.ITEM_CONTENTS)
+            for item, inside in it.chain(contents, inside=False):
+                if struct.unpack_from("<H", inside, game.ITEM_TYPE)[0] == game.GYTHKA_TYPE \
+                        and inside[game.ITEM_PLUS] == 0:
+                    return item
+    return None
 
 
 def _make_magic(gd: GameData, it: ring.Items, item: int, value: int, name: int, spell: int = 0) -> None:
@@ -85,11 +87,10 @@ def _rename(gd: GameData, it: ring.Items, item: int, rec: bytes, value: int, nam
 
 
 def upgrade(gd: GameData, given: Set[str]) -> List[str]:
-    """Kurzak's Short Sword made +1 wherever it is; in the arena, its gythka once no living monster
-    holds it, made +1, once a game (GIVEN: the key, added). Lines for the log."""
+    """Kurzak's Short Sword made +1 wherever it is; in the arena, the gythka still in the dead body
+    there made +1, once a game (GIVEN: the key, added). Lines for the log."""
     out: List[str] = []
     it = ring.Items(gd)
-    gythkas: List[int] = []
     done = set()
     for thing in range(ring.THING_COUNT):
         for item, rec in it.chain(thing):
@@ -110,17 +111,14 @@ def upgrade(gd: GameData, given: Set[str]) -> List[str]:
                     out.append("Shadowseeker lets its wielder see the invisible (from the next time it's readied).")
                 elif struct.unpack_from("<H", rec, ITEM_SPELL_SHOWN)[0] != SWORD_SPELL:
                     _give_spell(gd, it.items + item * game.ITEM_SIZE, SWORD_SPELL)  # (its box's icon)
-            elif kind == game.GYTHKA_TYPE and plus == 0:
-                gythkas.append(item)
             elif kind == game.GYTHKA_TYPE and plus == 1:  # (only the companion's has a plus)
                 done.add(item)
                 if _rename(gd, it, item, rec, GYTHKA_VALUE, GYTHKA_NAME):
                     out.append("The arena's Gythka +1 is named Kreenfang.")
-    if gythkas and key(gd) not in given and it.word(ring.REGION) == ARENA:
-        held = _held_by_monsters(gd, it)  # (the Tohr-kreen's while it lives)
-        free = next((item for item in gythkas if item not in held), None)
-        if free is not None:
-            _make_magic(gd, it, free, GYTHKA_VALUE, GYTHKA_NAME)
+    if key(gd) not in given and it.word(ring.REGION) == ARENA:
+        body = _arena_gythka(it)
+        if body is not None:
+            _make_magic(gd, it, body, GYTHKA_VALUE, GYTHKA_NAME)
             given.add(key(gd))
-            out.append("The arena's 2 handed Bone Gythka (the Tohr-kreen's) is Kreenfang, a gythka +1.")
+            out.append("The 2 handed Bone Gythka on the dead body in the arena is Kreenfang, a gythka +1.")
     return out

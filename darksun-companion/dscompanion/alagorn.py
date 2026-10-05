@@ -46,8 +46,8 @@ KINDS = (
     Kind("  Balkazar's Staff", "I don't see any magic weapons that I know anything about. ", "Kreenfang",
          "Kreenfang! The tohr-kreen say a gythka's blades are grown, not carved, and a clutch's "
          "elder blessed this one before the hunt. It strikes truer and deeper than any common "
-         "gythka. A kreen does not part with such a weapon, even in death; you must have earned "
-         "it in the arena."),
+         "gythka. A kreen does not part with such a weapon while it lives; whoever carried it "
+         "into the arena died with it in hand."),
 )
 
 

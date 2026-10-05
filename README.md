@@ -77,9 +77,9 @@ can be switched off on its Options tab.
   Tools for every thief;
   picking anyone's pockets; and no more thief skill penalty for what a thief
   holds.
-- **Two named magic weapons:** the arena's Bone Gythka becomes **Kreenfang**
-  (+1), and Kurzak's short sword **Shadowseeker** (+1), whose wielder sees the
-  invisible; lifting it from Kurzak is worth 200 XP, and Alagorn, the Painted
+- **Two named magic weapons:** the Bone Gythka on the dead body in the arena
+  becomes **Kreenfang** (+1), and Kurzak's short sword **Shadowseeker** (+1),
+  whose wielder sees the invisible; lifting it from Kurzak is worth 200 XP, and Alagorn, the Painted
   Badlands' wizard who identifies magic items, tells the story of each.
 - **A mini-quest:** the cooked vulture, at last good for something (Dinos
   cooks it for the party, to the game's own quest-done sound).

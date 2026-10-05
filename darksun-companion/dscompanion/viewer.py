@@ -356,7 +356,7 @@ class Viewer:
                 ("vulture", "The cooked vulture: Dinos cooks it for the party (XP and a full rest)"),
                 ("pens_gear", "Gear for Kurzak, Legcrusher and Pehtucl, and the rest of the bone scale "
                               "armour with a Bone Helm"),
-                ("magic_arms", "The arena's 2 handed Bone Gythka and Kurzak's Short Sword are +1 magic "
+                ("magic_arms", "The 2 handed Bone Gythka on the arena's dead body and Kurzak's Short Sword are +1 magic "
                                "weapons")):
             self.content_vars[key] = tk.BooleanVar(value=settings.get(key, True) is not False)
             ttk.Checkbutton(new, text=text, variable=self.content_vars[key],
