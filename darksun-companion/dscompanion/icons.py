@@ -271,7 +271,7 @@ def cat_icon(strength: Rows) -> Rows:
 
 def write_resources(source: str, dest: str) -> None:
     """The game's RESOURCE.GFF (SOURCE, only read) with Cat's Grace's icon and the save/load
-    window's PAGE 1 and PAGE 2 buttons (savepages.py), to DEST."""
+    window's PAGE 1 to PAGE 4 buttons (savepages.py), to DEST."""
     with open(source, "rb") as f:
         data = f.read()
     chunks = gff.read_gff(data)

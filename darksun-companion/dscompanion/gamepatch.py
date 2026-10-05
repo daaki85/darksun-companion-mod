@@ -198,10 +198,10 @@ PATCHES = (
     # picking pockets and opening locks)
     Patch("belt", 0x803B2, bytes.fromhex("8bc6"), _interrupt(VEC_BELT, 2)),
     # the save/load window's events, where a key it has no use for goes to its end: jmp (DSCLOG
-    # shows ten more saves for PgDn, the game's ten for PgUp, then goes there)
+    # shows the next page of ten saves for PgDn, the one before for PgUp, then goes there)
     Patch("save_page", 0x74901, bytes.fromhex("e9e804"), _interrupt(VEC_SAVE_PAGE, 3)),
-    # ... and where a click on a button it doesn't know goes to its end: jmp (DSCLOG: PAGE 1 and
-    # PAGE 2, savepages.py)
+    # ... and where a click on a button it doesn't know goes to its end: jmp (DSCLOG: PAGE 1 to
+    # PAGE 4, savepages.py)
     Patch("save_click", 0x74B9F, bytes.fromhex("e94302"), _interrupt(VEC_SAVE_CLICK, 3)),
     Patch("thief_skill", 0x80307, bytes.fromhex("8bc6c1e00203d08bf2"),
           bytes((0xCD, VEC_THIEF_SKILL, 0x72, 0x80386 - 0x8030B)) + b"\x90" * 5),

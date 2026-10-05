@@ -44,7 +44,7 @@ class WindowTests(unittest.TestCase):
     def test_buttons_put_in(self):
         window = savepages.window_with_buttons(fake_window())
         self.assertEqual(struct.unpack_from("<I", window, 4)[0], len(window))
-        self.assertEqual(struct.unpack_from("<H", window, savepages.WIND_COUNT)[0], 16)
+        self.assertEqual(struct.unpack_from("<H", window, savepages.WIND_COUNT)[0], 14 + len(savepages.PAGES))
         for i, (cid, _, y) in enumerate(savepages.PAGES):
             item = window[261 + 30 * (14 + i):261 + 30 * (15 + i)]
             self.assertEqual(item[:4], bytes(4))  # (the game's: the chunk's address)

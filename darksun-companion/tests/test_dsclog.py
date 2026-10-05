@@ -1145,24 +1145,46 @@ class SavePageTests(unittest.TestCase):
         self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x5100), (self.DONE, 0x4321))  # PgDn
         self.assertEqual(self.page(), b"BB")
         self.assertEqual(self.calls, {"scan": 1, "row": 10, "button": 2, "pick": 1, "window": 1})
-        self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x5100), (self.KEY_END, 0x4321))  # (there already)
-        self.assertEqual(self.calls, {})
+        self.run_at(self.KEY_AT, 0x12, 0x5100)
+        self.run_at(self.KEY_AT, 0x12, 0x5100)
+        self.assertEqual(self.page(), b"DD")
+        self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x5100), (self.KEY_END, 0x4321))  # (the last page)
+        self.assertEqual((self.page(), self.calls), (b"DD", {}))
         self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x49E0), (self.DONE, 0x4321))  # PgUp, the grey key
+        self.assertEqual(self.page(), b"CC")
+        self.run_at(self.KEY_AT, 0x12, 0x4900)
+        self.run_at(self.KEY_AT, 0x12, 0x4900)
         self.assertEqual(self.page(), b"EE")
+        self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x4900), (self.KEY_END, 0x4321))  # (the first page)
         self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x1E61), (self.KEY_END, 0x4321))  # another key
         self.assertEqual((self.page(), self.calls), (b"EE", {}))
 
     def test_buttons(self):
-        self.assertEqual(self.run_at(self.CLICK_AT, 8, 0x816), (self.DONE, 0))  # PAGE 2 (the routine returns 0)
-        self.assertEqual(self.page(), b"BB")
-        self.assertEqual(self.calls["scan"], 1)
-        self.assertEqual(self.run_at(self.CLICK_AT, 8, 0x815), (self.DONE, 0))  # PAGE 1
-        self.assertEqual(self.page(), b"EE")
-        self.assertEqual(self.run_at(self.CLICK_AT, 8, 0x900), (self.CLICK_END, 0x4321))  # another button
+        for button, page in ((0x818, b"DD"), (0x816, b"BB"), (0x817, b"CC"), (0x815, b"EE")):
+            self.assertEqual(self.run_at(self.CLICK_AT, 8, button), (self.DONE, 0))  # (the routine returns 0)
+            self.assertEqual(self.page(), page)
+        self.assertEqual(self.run_at(self.CLICK_AT, 8, 0x815), (self.CLICK_END, 0x4321))  # (the page shown)
+        self.assertEqual(self.run_at(self.CLICK_AT, 8, 0x819), (self.CLICK_END, 0x4321))  # another button
         self.assertEqual((self.page(), self.calls), (b"EE", {}))
 
     def test_loading_a_page_with_no_saves(self):
         self.mu.mem_write(self.SAVE * 16 + 0x4EA, struct.pack("<H", 1))  # the load window; no saves found
         self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x5100), (self.KEY_END, 0x4321))
         self.assertEqual(self.page(), b"EE")  # (back)
-        self.assertEqual(self.calls, {"scan": 2})
+        self.assertEqual(self.calls, {"scan": 4})  # (pages 2, 3 and 4 looked at)
+        self.assertEqual(self.run_at(self.CLICK_AT, 8, 0x817), (self.CLICK_END, 0x4321))
+        self.assertEqual((self.page(), self.calls), (b"EE", {"scan": 2}))  # (page 3 only)
+
+    def test_loading_passes_a_page_with_no_saves(self):
+        """PgDn in the load window: page 2 has none, page 3 a save in its third row."""
+        mu = self.mu
+        mu.mem_write(self.SAVE * 16 + 0x4EA, struct.pack("<H", 1))
+        rows = self.SAVE * 16 + 2 + 2 * 0x7D
+        scan = self.STUBS["scan"]
+        # the folder search: a save in the third row when the page's letter is C
+        mu.hook_add(UC_HOOK_CODE, lambda m, *_: m.mem_write(rows, b"x" if bytes(m.mem_read(self.DS * 16 + 0x1DD2, 1)) == b"C"
+                                                             else b"\0"),
+                    begin=scan[0] * 16 + scan[1], end=scan[0] * 16 + scan[1])
+        self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x5100), (self.DONE, 0x4321))
+        self.assertEqual(self.page(), b"CC")
+        self.assertEqual(struct.unpack("<H", mu.mem_read(self.SAVE * 16 + 0x4E4, 2))[0], 2)  # (chosen: that row)

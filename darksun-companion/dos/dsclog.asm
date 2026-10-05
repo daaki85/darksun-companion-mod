@@ -1520,16 +1520,17 @@ use_win dd 0                    ; the USE screen's window, as PROBE_USE last saw
 
 ; PROBE_SAVE_PAGE: INT VEC_SAVE_PAGE replaces "jmp <the end>" (3 bytes: INT + NOP; DSUN.EXE 74901h),
 ; where the save/load window's event routine (74 8CAh; BP its frame) leaves a key it has no use
-; for. The window shows ten saves; PgDn shows ten more (page 2: SAVB01.SAV to SAVB10.SAV), PgUp
-; the game's own (SAVE01.SAV to SAVE10.SAV); so do its PAGE 2 and PAGE 1 buttons (PROBE_SAVE_CLICK). The page is one letter of the game's two save names,
-; the folder search's ("SAVE??.SAV") and the name a save is written to ("SAVE%.2d.SAV"): loading
-; takes the name the search found. (Page 2's names don't match the game's search, so the game
-; without the Ledger never sees them: its list has room for ten, and a SAVE11.SAV would run past
-; it.) For the new page, the window's own routines (in its overlay, at CS: nothing they call is
-; an overlay, so it stays put) search the folder again and draw the rows, the selected row
-; stays (in the load window, the first save, and the page doesn't change if it has none), and
-; the window is drawn again (SAVE_LABEL greys the page's button); then on as the routine goes
-; on after Up or Down.
+; for. The window shows ten saves, on four pages: the game's own (SAVE01.SAV to SAVE10.SAV), then
+; SAVB, SAVC and SAVD01.SAV to 10.SAV. PgDn shows the next page, PgUp the one before; the PAGE 1
+; to PAGE 4 buttons theirs (PROBE_SAVE_CLICK). The page is one letter of the game's two save
+; names, the folder search's ("SAVE??.SAV") and the name a save is written to ("SAVE%.2d.SAV"):
+; loading takes the name the search found. (The other pages' names don't match the game's
+; search, so the game without the Ledger never sees them: its list has room for ten, and a
+; SAVE11.SAV would run past it.) For the new page, the window's own routines (in its overlay, at
+; CS: nothing they call is an overlay, so it stays put) search the folder again and draw the
+; rows, the selected row stays (in the load window, the first save: PgUp and PgDn pass by pages
+; with none, and a button's page with none isn't shown), and the window is drawn again
+; (SAVE_LABEL greys the page's button); then on as the routine goes on after Up or Down.
 SP_IGNORE  equ 0x74DEC - 0x74903 ; (DSUN.EXE, from the way back: the NOP after the INT) the routine's end
 SP_DONE    equ 0x74A21 - 0x74903 ; ... after Up or Down: the screen updated, then the end
 SP_KEY     equ 0x12             ; the key, at the routine's BP+12h
@@ -1564,23 +1565,27 @@ probe_save_page:
         cmp al, 0xE0
         jne .scan
         xor al, al              ; (the grey keys': as the number pad's)
-.scan:  mov bl, 'E'
+.scan:  mov dl, -1              ; (the page before)
         cmp ax, KEY_PGUP
-        je sp_want
-        mov bl, 'B'
+        je .step
+        mov dl, 1               ; (the next)
         cmp ax, KEY_PGDN
-        je sp_want
-        jmp sp_skip
+        jne sp_skip
+.step:  mov [cs:sp_step], dl
+        call sp_now
+        add al, dl
+        mov bl, al
+        jmp sp_want
 
 ; PROBE_SAVE_CLICK: INT VEC_SAVE_CLICK replaces "jmp <the end>" (3 bytes: INT + NOP; DSUN.EXE
-; 74B9Fh), where the window's event routine leaves a click on a button it doesn't know: PAGE 1
-; and PAGE 2 (savepages.py) show that page, as PgUp and PgDn do (then the routine's end returns
-; 0, as for the game's own buttons).
+; 74B9Fh), where the window's event routine leaves a click on a button it doesn't know: PAGE 1 to
+; PAGE 4 (savepages.py) show that page (then the routine's end returns 0, as for the game's own
+; buttons).
 SC_DONE    equ 0x74A21 - 0x74BA1 ; (DSUN.EXE, from the way back) the screen updated, then the end
 SC_IGNORE  equ 0x74DE5 - 0x74BA1 ; the end for the game's buttons
 SC_ID      equ 8                ; the button, at the routine's BP+8
-PAGE1_ID   equ 0x815
-PAGE2_ID   equ 0x816
+PAGE1_ID   equ 0x815            ; (PAGE 1 to PAGE 4: 815h to 818h)
+PAGES      equ 4
 probe_save_click:
         push bp
         mov bp, sp
@@ -1592,23 +1597,27 @@ probe_save_click:
         mov byte [cs:sp_zero], 1
         mov si, [bp]
         mov ax, [ss:si + SC_ID]
-        mov bl, 'E'
-        cmp ax, PAGE1_ID
-        je sp_want
-        mov bl, 'B'
-        cmp ax, PAGE2_ID
-        je sp_want
-        jmp sp_skip
+        sub ax, PAGE1_ID
+        cmp ax, PAGES
+        jae sp_skip
+        mov bl, al
+        mov byte [cs:sp_step], 0  ; (that page or none)
 
-sp_want:
-        cmp bl, [NAME_FIND]
+sp_want:                        ; BL the page wanted (0 to 3), SP_STEP: where to look on from it
+        cmp bl, PAGES           ;   if the load window has no saves on it (-1, 1; 0: nowhere)
+        jae sp_skip             ; (no page before the first, or after the last)
+        call sp_now
+        cmp bl, al
         je sp_skip              ; (on that page already)
+        mov [cs:sp_target], bl
         mov al, [NAME_FIND]
-        mov [cs:sp_was], al     ; the page now, if the new one has nothing to load
+        mov [cs:sp_was], al     ; the page now, if no page wanted has anything to load
         mov ax, [bp + 4]
         mov [cs:sp_call + 2], ax
         call sp_es
         mov di, [es:SAVE_CHOSEN]
+.try:   movzx bx, byte [cs:sp_target]
+        mov bl, [cs:sp_letters + bx]
         call sp_page
         cmp word [es:SAVE_LOADING], 0
         je .rows
@@ -1619,7 +1628,13 @@ sp_want:
         inc di
         cmp di, 10
         jb .first
-        mov bl, [cs:sp_was]     ; none: back to the page there was
+        mov al, [cs:sp_step]    ; none: the next page that way, if there is one
+        add [cs:sp_target], al
+        or al, al
+        jz .none
+        cmp byte [cs:sp_target], PAGES
+        jb .try
+.none:  mov bl, [cs:sp_was]     ; none at all: back to the page there was
         call sp_page
         jmp sp_skip
 .rows:  xor cx, cx
@@ -1669,6 +1684,20 @@ sp_skip:
         pop bp
         iret
 
+sp_now:                         ; AL the page shown (0 to 3: the game's names' letter in SP_LETTERS)
+        push bx
+        mov al, [NAME_FIND]
+        xor bx, bx
+.find:  cmp al, [cs:sp_letters + bx]
+        je .found
+        inc bx
+        cmp bx, PAGES
+        jb .find
+        xor bx, bx              ; (not one of them: as the first)
+.found: mov al, bl
+        pop bx
+        ret
+
 sp_page:                        ; BL the page's letter: the names, then the folder searched again
         mov [NAME_FIND], bl     ;   (ES the window's data again after)
         mov [NAME_SAVE], bl
@@ -1702,12 +1731,15 @@ sp_button_id:                   ; (AX the button)
 sp_btn  dw BTN_OFF, 0           ; the game's routine for a button's state
 sp_call dd 0
 sp_was  db 0
+sp_letters db 'EBCD'            ; the pages' letters (SAVE??.SAV, SAVB, SAVC, SAVD)
+sp_target db 0
+sp_step   db 0
 sp_done   dw 0                  ; where the event routine goes on: after the page changes,
 sp_ignore dw 0                  ;   or not (from the way back)
 sp_zero   db 0                  ; 1: a click (the routine to return 0)
 
 ; SAVE_LABEL: (PROBE_WIN; EAX the window drawn, DS the game's) on the save/load window, the
-; button of the page shown (PAGE 1 or PAGE 2, savepages.py) out of use: so it shows which.
+; button of the page shown (PAGE 1 to PAGE 4, savepages.py) out of use: so it shows which.
 save_label:
         pushad
         push es
@@ -1719,26 +1751,28 @@ save_label:
         cmp eax, [es:SAVE_WIN]
         jne .out
         mov byte [cs:sl_busy], 1
+        call sp_now
+        mov [cs:sl_page], al
+        xor si, si
+.button:
         xor cx, cx              ; (states: 1 out of use, 0 in use)
-        cmp byte [NAME_FIND], 'E'
-        jne .one
+        mov ax, si
+        cmp al, [cs:sl_page]
+        jne .state
         inc cx
-.one:   push cx
-        mov ax, PAGE1_ID
+.state: push cx
+        lea ax, [si + PAGE1_ID]
         call sp_button_id
-        xor cx, cx
-        cmp byte [NAME_FIND], 'E'
-        je .two
-        inc cx
-.two:   push cx
-        mov ax, PAGE2_ID
-        call sp_button_id
+        inc si
+        cmp si, PAGES
+        jb .button
         mov byte [cs:sl_busy], 0
 .out:   pop es
         popad
         ret
 
 sl_busy    db 0
+sl_page    db 0
 
 use_draw:                       ; the selected character's slots in the USE screen's panel
         mov ax, ds
