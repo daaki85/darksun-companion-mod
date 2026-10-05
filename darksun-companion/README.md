@@ -57,6 +57,7 @@ records; this ledger keeps the ones the game doesn't show you.
 - [Controls](#controls)
   - [Choosing an enemy: Tab, Enter and the rings](#choosing-an-enemy-tab-enter-and-the-rings)
   - [Scrolling the map](#scrolling-the-map)
+- [More saves](#more-saves)
 - [Game speed](#game-speed)
   - [Suggested system requirements](#suggested-system-requirements)
 - [Accessibility](#accessibility)
@@ -185,6 +186,9 @@ records; this ledger keeps the ones the game doesn't show you.
 
 **Smoother play, and help when something goes wrong**
 
+- **More saves:** 40 instead of the game's 10, on four pages of the save and
+  load window: PAGE 1 to PAGE 4 buttons, or PgUp and PgDn (see
+  [More saves](#more-saves)).
 - **Game speed:** DOSBox is given more of the computer, for smoother walking
   with the whole party in view (see [Game speed](#game-speed)).
 - **Crash reports:** if DOSBox crashes or the game stops with an error, what
@@ -205,7 +209,7 @@ dice log, the launcher runs a patched copy of the game, and copies of four of
 its files (the objects with the new icons and Kalzith; the scripts with
 Kalzith, Semyon, Dinos's and the Trustee's new questions and Alagorn's
 stories; the slave pens with Kalzith; the screens' pictures with Cat's
-Grace's icon), that it keeps in its own folder (see
+Grace's icon and the save window's page buttons), that it keeps in its own folder (see
 [How the dice log works](#how-the-dice-log-works)).
 
 The window is dressed in the game's own colours: its grey stone panels, the
@@ -1074,7 +1078,9 @@ Every roll in the game goes through one function, Borland C++'s `rand()`.
    pointer `INT DBh` (for [choosing an enemy](#choosing-an-enemy-tab-enter-and-the-rings)), and
    the end of the routines filling an item's box `INT DAh` and working out a
    thief skill's chance `INT D9h` (for a cloak's, boots' and belt's bonuses,
-   see [rule changes](#rule-changes)). The
+   see [rule changes](#rule-changes)), and in the save and load window's
+   events, where a key and a button it has no use for go, `INT D8h` and
+   `INT D7h` (for [more saves](#more-saves)). The
    copy also allocates a bigger buffer for the game's scripts (11,776 bytes
    rather than 10,000, for
    [Dinos and the Trustee](#dinos-and-the-trustee-on-kalzith-and-semyon)), and
@@ -2369,6 +2375,36 @@ while DOSBox's window is in front) and tells DSCLOG how far to scroll
 The view can't be zoomed: the game draws a 320 by 200 screen at one scale,
 with the view's size built into its drawing code and its video memory pages.
 
+## More saves
+
+The game's save and load window holds 10 saves. With the Ledger it holds 40,
+on four pages of ten: the **PAGE 1** to **PAGE 4** buttons under EXIT show a
+page, the page shown has its button greyed, and **PgDn** and **PgUp** go to
+the next page and the one before. Save and load as always; the window opens
+on the page last shown. In the load window, PgDn and PgUp pass by pages with
+no saves, and a page with none isn't shown.
+
+![The load window on page 1: the game's ten saves, and the PAGE 1 (greyed) to PAGE 4 buttons under LOAD and EXIT](docs/save-pages.png)
+
+Page 1 is the game's own saves, `SAVE01.SAV` to `SAVE10.SAV` in the game
+folder; pages 2 to 4 are `SAVB01.SAV` to `SAVB10.SAV`, `SAVC..` and `SAVD..`,
+next to them. The game started without the Ledger shows page 1 only, as
+always: it looks for `SAVE??.SAV`, and the other pages' names don't match. (It
+had better not see them: it puts each save it finds in the row its number
+names, with room for ten, and a `SAVE11.SAV` would be written past the end.)
+
+How: the save names the game searches the folder for and writes a save to
+(`SAVE??.SAV`, `SAVE%.2d.SAV`) are two strings in its memory; DSCLOG changes
+their fourth letter for the page. The window's event routine leaves keys and
+buttons it has no use for to a jump to its end; the patched game has DSCLOG
+take them there (`INT D8h`, `INT D7h`), and for a new page run the window's
+own routines that search the folder, draw the rows and draw the window. The
+buttons are the game's kind, in the Ledger's copy of `RESOURCE.GFF`: placed
+in the window under EXIT, with pictures made from EXIT's, its letters taken
+away and the page's put in with the game's text font
+(`dscompanion/savepages.py`; the buttons' own carved letters have no P, G or
+digits).
+
 ## Game speed
 
 The game draws the view a frame at a time and shows each at the screen's next
@@ -2576,7 +2612,7 @@ After changing `dos/dsclog.asm`, rebuild the helper with
 nasm -f bin -o dos/DSCLOG.EXE dos/dsclog.asm
 ```
 
-The header's signature (`DSCLOGvX` now) goes up whenever the helper and the
+The header's signature (`DSCLOGvY` now) goes up whenever the helper and the
 Ledger must change together (`HDR_SIG` in `dscompanion/dicelog.py`), so a
 Ledger never talks to an older helper.
 

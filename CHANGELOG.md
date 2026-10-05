@@ -36,6 +36,16 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
   ones keep their prices.
 
 **Added**
+- **More saves:** 40 instead of the game's 10, on four pages of ten in the
+  save and load window: PAGE 1 to PAGE 4 buttons under EXIT (the page shown
+  greyed), and PgDn and PgUp for the next page and the one before (in the load
+  window passing pages with no saves). Page 1 is the game's own `SAVE01.SAV` to
+  `SAVE10.SAV`; pages 2 to 4 are `SAVB`, `SAVC` and `SAVD01.SAV` to `10.SAV`,
+  which the game started without the Ledger doesn't see (it would write a
+  `SAVE11.SAV` past the end of its list of ten). DSCLOG changes the page's
+  letter in the game's two save names and has the window's own routines search
+  the folder and draw it again; the buttons are in the Ledger's copy of
+  `RESOURCE.GFF`, made from EXIT's. Signature `DSCLOGvY`.
 - **A worn belt helps a thief:** +5 to picking pockets and opening locks (the
   same switch as the cloak's and boots' bonuses, hiding on or not), counted by
   the game's own lock picking and by the Ledger; its item box says
