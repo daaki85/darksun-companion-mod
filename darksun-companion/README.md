@@ -1677,7 +1677,8 @@ saving throw. With **Rings and cloaks of protection as in AD&D** ticked, they
 follow the AD&D rules for them:
 
 - **Two rings don't add up:** only the better one counts (the left hand's,
-  if they're equal). A ring +1 and a ring +2 give +2, not +3.
+  if they're equal). The arena's ring and Pehtucl's, both +1, give +1 together,
+  not +2.
 - **A ring gives no AC with magical armour** (any worn armour piece, helm
   included, with a plus), but still adds to saving throws.
 - **A cloak does nothing,** neither AC nor saves, with magical armour, with
@@ -1690,7 +1691,7 @@ Armour here is what is worn on the arms, legs, head or chest; something only
 carried in a backpack doesn't count. Untick it and every ring and cloak worn
 counts, whatever else is worn (the game's way with the patched game).
 
-The dice log's saving throws name each: `+2 Ring of Protection +1 Cloak of
+The dice log's saving throws name each: `+1 Ring of Protection +1 Cloak of
 Protection`, and its attack lines show the AC that results (`target AC`).
 
 How: where the game's AC routine asks the helper about each worn item
