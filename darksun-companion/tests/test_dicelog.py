@@ -319,6 +319,7 @@ class AttackTests(unittest.TestCase):
         sheet = SHEETS + STALKER * game.SHEET_SIZE
         struct.pack_into("<h", m, sheet + game.SHEET_MAX_HP, 60)
         m[sheet + game.SHEET_MAGIC_RESISTANCE] = 30
+        m[sheet + monsters.SHEET_ALIGNMENT] = 9  # chaotic evil
         kinds = (LOAD_SEG + monsters.MONSTER_KINDS_SEG) * 16  # kind 3: resistance class 11
         m[kinds + monsters.KIND_CLASS_OFF + 3] = 11
         struct.pack_into("<2H", m, kinds + monsters.CLASS_MASKS_OFF + 11 * monsters.CLASS_SIZE, 0x38, 0xB200)
@@ -333,11 +334,13 @@ class AttackTests(unittest.TestCase):
         lines = log._answer_look()
         self.assertEqual(struct.unpack_from("<H", m, HDR + dicelog.TSR_LOOK_REPLY)[0], 1)
         self.assertEqual(bytes(m[HDR + 0x300:HDR + 0x340]).split(b"\0")[0],
-                         b"HP 38/60 AC 4|THAC0 11 MR 30|NEEDS +1 WEAPON")
+                         b"HP: 38/60 AC: 4|THAC0: 11 MR: 30|NEEDS +1 WEAPON")
         whole = bytes(m[HDR + 0x500:HDR + 0x600]).split(b"\0")[0].decode()
         self.assertIn("magic resistance 30 pct", whole)
         self.assertIn("Only +1 or better weapons hurt it.", whole)
-        self.assertEqual(lines[0], "Look: Mountain Stalker: HP 38/60, AC 4, THAC0 11, magic resistance 30%.")
+        # (no room for AL: CE after MR 30 in the box: the description has it)
+        self.assertEqual(lines[0], "Look: Mountain Stalker: HP 38/60, AC 4, THAC0 11, magic resistance 30%, "
+                                   "chaotic evil.")
         self.assertEqual(log._answer_look(), [])  # asked once
         # nothing special about it: the box's lines, but no window
         m[kinds + monsters.KIND_CLASS_OFF + 3] = 0
@@ -345,8 +348,19 @@ class AttackTests(unittest.TestCase):
         struct.pack_into("<H", m, HDR + dicelog.TSR_LOOK_WHO, 0x29)
         log._look_seq = 4
         self.assertEqual(len(log._answer_look()), 1)
-        self.assertEqual(bytes(m[HDR + 0x300:HDR + 0x340]).split(b"\0")[0], b"HP 38/60 AC 4|THAC0 11 MR 30")
+        self.assertEqual(bytes(m[HDR + 0x300:HDR + 0x340]).split(b"\0")[0], b"HP: 38/60 AC: 4|THAC0: 11 MR: 30")
         self.assertEqual(m[HDR + 0x500], 0)
+        # no magic resistance: AL: and its alignment in two letters after THAC0
+        m[sheet + game.SHEET_MAGIC_RESISTANCE] = 0
+        struct.pack_into("<HH", m, HDR + dicelog.TSR_LOOK_SEQ, 6, 5)
+        log._look_seq = 5
+        self.assertEqual(log._answer_look(), ["Look: Mountain Stalker: HP 38/60, AC 4, THAC0 11, chaotic evil."])
+        self.assertEqual(bytes(m[HDR + 0x300:HDR + 0x340]).split(b"\0")[0], b"HP: 38/60 AC: 4|THAC0: 11 AL: CE")
+        m[sheet + monsters.SHEET_ALIGNMENT] = 0  # (none set: nothing said)
+        struct.pack_into("<HH", m, HDR + dicelog.TSR_LOOK_SEQ, 7, 6)
+        log._look_seq = 6
+        log._answer_look()
+        self.assertEqual(bytes(m[HDR + 0x300:HDR + 0x340]).split(b"\0")[0], b"HP: 38/60 AC: 4|THAC0: 11")
         # a party member: nothing to add (the game shows the View Character screen)
         struct.pack_into("<HH", m, HDR + dicelog.TSR_LOOK_SEQ, 2, 1)
         struct.pack_into("<H", m, HDR + dicelog.TSR_LOOK_WHO, 0)

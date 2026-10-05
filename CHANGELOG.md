@@ -7,6 +7,12 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
 ## Pull request #17 (in review)
 
 **Changed**
+- **A monster's alignment in the Look box:** `THAC0: 17 AL: LE`, the
+  alignment in two letters where the line has room (with magic resistance it
+  hasn't); the description in the dialogue window and the dice log's `Look:`
+  line name it in words. The box's lines are labelled with colons as the
+  game's `LEVEL:` is (`HP: 18/18 AC: 3`, `MR: 30`), and measured in the game
+  font's own widths so none runs past the box's edge.
 - **The Options tab's sections open and close:** each group of switches is
   under a heading to click (or Tab to and press Space or Enter), so the tab
   is short; which are open is remembered.
