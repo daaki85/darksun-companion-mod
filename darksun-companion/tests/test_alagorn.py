@@ -108,7 +108,7 @@ class AlagornTests(unittest.TestCase):
 
     def test_new_story_said(self):
         lines = " ".join(s for s in gpl.strings(self.added))
-        self.assertIn("Shadowseeker! A blade of true metal", lines)
+        self.assertIn("Shadowseeker! The head guards of the Draj slave pens", lines)
         self.assertIn("Kreenfang!", lines)
 
     def test_once(self):

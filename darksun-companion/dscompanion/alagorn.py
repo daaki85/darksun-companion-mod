@@ -39,9 +39,10 @@ class Kind:
 
 KINDS = (
     Kind("  Darkflame", "It's too bad that you have no magic swords I know about. ", "Shadowseeker",
-         "Shadowseeker! A blade of true metal, forged long ago for a templar of Draj who feared "
-         "the assassins he could not see. Whoever holds it sees what is hidden by magic. The "
-         "slavers who carried it after him never knew what they had."),
+         "Shadowseeker! The head guards of the Draj slave pens have passed it down, one to the "
+         "next. With it in hand, no slave could hide from them: not in the pens' shadows, not "
+         "behind an illusion, not even made invisible by a friend's magic. Many an escape ended "
+         "at its point. Better that it is in your hands now."),
     Kind("  Balkazar's Staff", "I don't see any magic weapons that I know anything about. ", "Kreenfang",
          "Kreenfang! The tohr-kreen say a gythka's blades are grown, not carved, and a clutch's "
          "elder blessed this one before the hunt. It strikes truer and deeper than any common "
