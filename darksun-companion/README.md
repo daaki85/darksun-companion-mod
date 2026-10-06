@@ -1702,7 +1702,8 @@ and thief skills are worked out from the level. So at 10th level:
 
 The level-up comes as the game's usual one ("Gerakis gains a level"), and
 View Character stops showing the XP for the next level at 10, as it does at
-9 without the rule. Untick it and nobody goes past the level they have: a
+9 without the rule (and for a character of more than one class, stops naming
+that class as the next to go up). Untick it and nobody goes past the level they have: a
 10th-level character stays 10th.
 
 How: the game holds a class level against 9 in two places, where a character

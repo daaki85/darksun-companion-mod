@@ -173,7 +173,8 @@ double-click, with the options as last set.)
 
 ## What's new
 
-In pull request #19 (in review):
+In [pull request #19](https://github.com/daaki85/darksun-companion-mod/pull/19)
+(in review):
 - **View Character, for more than one class:** whose next level the XP in
   brackets is, `EXP:87230 (90000 Pr)`: a letter for each class, Pr and Ps for
   preserver and psionicist, both when two are due at once (`(20000 Pr/T)`).

@@ -6,7 +6,7 @@ Release **1.1.0** is pull requests #14 to #18; its notes are in
 requests #1 to #13; its notes are in
 [`release-notes/v1.0.0.md`](release-notes/v1.0.0.md).
 
-## Pull request #19 (in review)
+## Pull request #19 ([in review](https://github.com/daaki85/darksun-companion-mod/pull/19))
 
 **Added**
 - **Whose next level, on View Character:** for a character of more than one
