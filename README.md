@@ -40,7 +40,8 @@ can be switched off on its Options tab.
 
 - **In the game:**
   - THAC0, saves, thief skills and DEX adjustments on the inventory screen,
-    THAC0 and saves on View Character;
+    THAC0 and saves on View Character, and for more than one class, which
+    class levels up next (`(16000 F)`);
   - spell slots on the USE screen;
   - each turn's rolls in a pop-up during fights, if you tick it (three levels
     of detail);
@@ -171,6 +172,19 @@ addition in detail, and how it works.
 double-click, with the options as last set.)
 
 ## What's new
+
+In [pull request #19](https://github.com/daaki85/darksun-companion-mod/pull/19)
+(in review):
+- **Which class levels up next, on View Character:** for a character of more
+  than one class, the XP in brackets now names its class,
+  `EXP:87230 (90000 Pr)`: a letter for each class, Pr and Ps for preserver and
+  psionicist, and both when two level up at once (`(20000 Pr/T)`).
+- **Kalzith's prices put right:** Blur 6,000 and Haste 9,000 (were 3,000 and
+  12,000, read from the wrong scrolls in the game's data; now the game's price
+  for each spell's level).
+- **Kalzith sells Shield and Burning Hands** in place of Magic Missile and
+  Color Spray, so none of his scrolls is one you can find elsewhere in the
+  game.
 
 Release **1.1.0** is out: pull requests #14 to #18, below.
 

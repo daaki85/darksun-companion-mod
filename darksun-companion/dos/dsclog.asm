@@ -72,6 +72,7 @@ VEC_ITEM_WEAPON equ 0xD6   ; PROBE_ITEM_WEAPON
 VEC_ITEM_SKIP equ 0xD5     ; PROBE_ITEM_SKIP
 VEC_ITEM_ARMOUR equ 0xD4   ; PROBE_ITEM_ARMOUR
 VEC_SCRIPT_RAND equ 0xD3   ; PROBE_SCRIPT_RAND
+VEC_XP_NEXT equ 0xD2       ; PROBE_XP_NEXT
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 128         ; entries in the ring
@@ -2480,6 +2481,115 @@ prot_scan:
 .out:   pop es
         popad
         ret
+
+; PROBE_XP_NEXT: INT VEC_XP_NEXT replaces "push 10F4h" (3 bytes: INT + NOP; DSUN.EXE 67DBEh) in
+; View Character's line "EXP:10301 (16000)", where the game adds ")" (DS:10F4h) after the XP the
+; next level needs: the least of its classes' ([BP-6], a dword, never 0 here), each class's from
+; its table (a word, x100, at the class x 40 + its level x 2 + 27Ch, in the segment the game's
+; "mov ax,seg" at 67D35h holds) unless it is at the level cap. The routine's character ([BP+0Ah])
+; is the screen's copy of the sheet, its classes numbered 1-8 as at character creation (cleric,
+; druid, fighter, gladiator, preserver, psionicist, ranger, thief), not the sheet's 1-17; its +18h
+; is the race. For a character of more than one class (a second one in the second slot; not a
+; human, who dual-classes and whose first class alone the game counts here), it pushes DSCLOG's
+; XP_SUFFIX instead (the game's DS, pushed before, becomes CS): the class whose next level that
+; is, then ")": " F)", " Pr/T)" if two are due at once. Preserver and psionicist are "Pr" and
+; "Ps", the rest a letter (CLASS_LETTERS).
+XP_SEG_BACK equ 0x8A            ; the "mov ax,seg"'s immediate, back from the INT's return
+XP_CLOSE equ 0x10F4             ; DS: the game's ")"
+probe_xp_next:
+        pop word [cs:x_ip]
+        pop word [cs:x_cs]
+        pop word [cs:x_fl]
+        push ax
+        push bx
+        push cx
+        push dx
+        push si
+        push di
+        push es
+        push gs
+        mov byte [cs:xp_ours], 0
+        les bx, [bp + 0x0A]     ; the screen's copy of the sheet
+        cmp byte [es:bx + 0x18], 1
+        je .out                 ; (a human: the game's ")")
+        cmp byte [es:bx + 0x22], 0
+        je .out                 ; (one class: the game's ")")
+        mov si, [cs:x_ip]
+        mov gs, [cs:x_cs]
+        mov ax, [gs:si - XP_SEG_BACK]
+        mov gs, ax
+        mov di, xp_suffix + 1
+        mov cl, 9               ; the level cap (as PROBE_LEVEL)
+        test byte [cs:rules], RULE_LEVEL_10
+        jz .slots
+        inc cl
+.slots: xor dx, dx
+.slot:  push bx
+        add bx, dx
+        movzx si, byte [es:bx + 0x21]   ; the class
+        mov al, [es:bx + 0x24]          ; its level
+        pop bx
+        or si, si
+        jz .next
+        cmp si, 8
+        ja .next
+        cmp al, cl
+        je .next
+        mov ch, al
+        imul ax, si, 40
+        push si
+        movzx si, ch
+        add si, si
+        add si, ax
+        movzx eax, word [gs:si + 0x27C]
+        pop si
+        imul eax, eax, 100
+        cmp eax, [bp - 6]
+        jne .next
+        cmp di, xp_suffix + 1
+        je .letters
+        mov byte [cs:di], '/'
+        inc di
+.letters:
+        add si, si
+        mov ax, [cs:si + class_letters]
+        mov [cs:di], al
+        inc di
+        or ah, ah
+        jz .one
+        mov [cs:di], ah
+        inc di
+.one:   mov byte [cs:xp_ours], 1
+.next:  inc dx
+        cmp dx, 3
+        jb .slot
+        mov word [cs:di], ')'   ; (and its NUL)
+.out:   pop gs
+        pop es
+        pop di
+        pop si
+        pop dx
+        pop cx
+        pop bx
+        pop ax
+        cmp byte [cs:xp_ours], 0
+        je .game
+        add sp, 2               ; the game's DS
+        push cs
+        push xp_suffix
+        jmp .back
+.game:  push XP_CLOSE
+.back:  push word [cs:x_fl]
+        push word [cs:x_cs]
+        push word [cs:x_ip]
+        iret
+x_ip    dw 0
+x_cs    dw 0
+x_fl    dw 0
+xp_ours db 0
+xp_suffix db ' ', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+; by class, 1-8 (CREATION_CLASS_NAMES in dscompanion/game.py)
+class_letters db 0, 0, 'C', 0, 'D', 0, 'F', 0, 'G', 0, 'P', 'r', 'P', 's', 'R', 0, 'T', 0
 
 ; PROBE_SCRIPT_RAND: INT VEC_SCRIPT_RAND replaces "inc eax / mov edx,eax" (5 bytes: INT + 3 NOPs;
 ; DSUN.EXE B300h) in the scripts' random command (0 to N, each as likely: rand() * (N + 1) /
@@ -5807,6 +5917,9 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_SCRIPT_RAND
         mov dx, probe_script_rand
         int 21h
+        mov ax, 2500h + VEC_XP_NEXT
+        mov dx, probe_xp_next
+        int 21h
         mov ax, 3516h           ; the keyboard's (TARGETING)
         int 21h
         mov [old16], bx
@@ -5847,8 +5960,8 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or D3h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
-all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND
+busy    db 'DSCLOG: interrupts 60h-65h or D2h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT
 all_vectors_end:
 
         align 16, db 0
