@@ -401,10 +401,11 @@ class DiceLog:
         self._break_first: Optional[int] = None  # the 0-7 roll of a break check in progress
         self._ability_tries: List[int] = []  # character creation: this ability's 4d4 totals so far
         self._ability_of: Optional[int] = None  # ... and which ability they are for
-        self._creation_hp: List[Tuple[int, int, int, str]] = []  # (sheet, class, hit points, text)
+        self._creation_hp: List[Tuple[int, int, int, str, int]] = []  # (sheet, class, hit points, text, level)
         self._creation_hp_at = 0.0
         self._hp_first: Optional[Tuple[tuple, int]] = None  # RULE_HP_BEST: a hit die's first roll
         self._creation_con: Optional[int] = None  # the CON just rolled
+        self._creation_abilities: Dict[int, Tuple[int, str]] = {}  # ability: (value, line), this set's
         self._hp: Dict[int, int] = {}  # creature index -> HP at the last look
         self._spell_until = 0.0  # HP changes before this are a spell's doing
         self._spell_name = ""
@@ -1020,8 +1021,8 @@ class DiceLog:
         if self._initiative and now - self._initiative_at >= INITIATIVE_WAIT:
             out += self.initiative_lines()
         out += self.turn_lines()  # after the round's order and the last turn's XP
-        if self._creation_hp and now - self._creation_hp_at >= CREATION_HP_WAIT:
-            out += self.creation_hp_lines()
+        if (self._creation_hp or self._creation_abilities) and now - self._creation_hp_at >= CREATION_HP_WAIT:
+            out += self.creation_lines()
         out += self.flush(now)
         refused = getattr(self.guest, "refused", None)
         if refused:
@@ -1787,7 +1788,7 @@ class DiceLog:
                 return [f"    {self._name(attacker)}'s special effect on {self._name(target)}: d10 = {faces[0]}, "
                         f"works on a 1 -> {'it works' if faces[0] == 1 else 'no effect'}"]
             if e.parent_code.startswith(CREATION_ABILITY_RETURN):
-                return self._creation_ability(e, sum(faces))
+                return self._creation_ability(e, sum(faces), now)
             if count == 1 and e.parent_code.startswith(LEVEL_HP_RETURNS) and e.parent_arg(2) == CREATION_HP_CALLER:
                 return self._creation_hp_roll(e, sides, faces[0], now)
             if count == 1 and any(e.parent_code.startswith(c) for c in RANDOM_NAME_RETURNS):
@@ -2093,7 +2094,7 @@ class DiceLog:
 
     # character creation ----------------------------------------------------------------
 
-    def _creation_ability(self, e: Entry, roll: int) -> List[str]:
+    def _creation_ability(self, e: Entry, roll: int, now: float = 0.0) -> List[str]:
         """One of the four 4d4 rolls for an ability; the line comes with the fourth."""
         ability, class_count = e.parent_arg(8), e.parent_arg(0x0E)
         if self._ability_of != ability:  # a new ability (or rolls went missing)
@@ -2102,7 +2103,12 @@ class DiceLog:
         if len(self._ability_tries) < CREATION_ABILITY_TRIES:
             return []
         tries, self._ability_tries, self._ability_of = self._ability_tries, [], None
-        out = self.creation_hp_lines()  # the last character's, when the die is clicked again
+        # (the die rolls a whole character again and again while it tumbles: a set begun anew, or
+        # one whose hit points have come, gives way to the next; the last is logged when it stops)
+        if self._creation_hp or (ability is not None and any(a >= ability for a in self._creation_abilities)):
+            self._creation_hp, self._creation_abilities = [], {}
+        self._creation_hp_at = now
+        out: List[str] = []
         g = self.game
         if ability is None or not 0 <= ability < 6:
             return out + [f"Character creation: 4d4 four times: {', '.join(map(str, tries))}"]
@@ -2126,7 +2132,8 @@ class DiceLog:
                 value = least
         if ability == 2:
             self._creation_con = value
-        return out + [f"Character creation, {ABILITIES[ability]} {value}: {steps}"]
+        self._creation_abilities[ability] = (value, f"Character creation, {ABILITIES[ability]} {value}: {steps}")
+        return out
 
     def _creation_hp_roll(self, e: Entry, sides: int, roll: int, now: float) -> List[str]:
         """A class level's hit point die on the creation screen: (sheet, class, level)."""
@@ -2146,9 +2153,32 @@ class DiceLog:
             text, gained = f"{roll}{best} (raised to {minimum} for CON {con})", minimum
         if sheet[game.SHEET_RACE] == game.RACE_HALF_GIANT:
             gained *= 2
-        self._creation_hp.append((index, cls, gained, text))
+        if any(r[1] == cls and r[4] == level for r in self._creation_hp):
+            self._creation_hp = []  # (rolled again: a new set, the last one given way)
+        self._creation_hp.append((index, cls, gained, text, level))
         self._creation_hp_at = now
         return []
+
+    def creation_lines(self) -> List[str]:
+        """The character the die stopped on: its abilities as rolled, each checked against the one
+        the game shows (rolls that came too fast to record leave only the game's), and its hit
+        points."""
+        got, self._creation_abilities = self._creation_abilities, {}
+        shown = self.game.creation_abilities()
+        out = []
+        if got:
+            for ability in range(6):
+                line = got.get(ability)
+                if shown is not None and (line is None or line[0] != shown[ability]):
+                    out.append(f"Character creation, {ABILITIES[ability]} {shown[ability]} "
+                               f"(its rolls came too fast to record)")
+                    if ability == 2:
+                        self._creation_con = shown[ability]
+                elif line is not None:
+                    out.append(line[1])
+        if shown is not None:
+            self._creation_con = shown[2]
+        return out + self.creation_hp_lines()
 
     def creation_hp_lines(self) -> List[str]:
         """The new character's hit points, from the rolls collected. The game adds them up,
@@ -2161,7 +2191,7 @@ class DiceLog:
         index = rolls[-1][0]
         sheet = g.sheet_at(index)
         by_class: Dict[int, List[str]] = {}
-        for _, cls, _, text in rolls:
+        for _, cls, _, text, _ in rolls:
             by_class.setdefault(cls, []).append(text)
         parts = []
         for cls, texts in by_class.items():
@@ -2189,7 +2219,7 @@ class DiceLog:
             else g.creature(index)[CREATURE_ABILITIES + 2]
         bonus_per_level = g.level_hp_con_bonus(con)
         levels = {}
-        for _, cls, _, _ in rolls:
+        for _, cls, _, _, _ in rolls:
             levels[cls] = levels.get(cls, 0) + 1
         warrior = max((n for c, n in levels.items() if g.level_hp_group(c) == 1), default=0)
         highest = max(levels.values())
@@ -2203,6 +2233,11 @@ class DiceLog:
         if hp < least:
             hp = least
             steps += f", raised to {least} (at least 1 per level)"
+        shown = struct.unpack_from("<h", g.creation_sheet(), game.SHEET_MAX_HP)[0] \
+            if len(g.creation_sheet()) >= game.SHEET_SIZE else 0
+        if shown > 0 and shown != hp:  # (rolls missed: the game's own)
+            return [f"Character creation, hit points {shown} (some of its rolls came too fast to record; "
+                    f"those caught: {steps})"]
         return [f"Character creation, hit points {hp}: {steps}"]
 
     # saving throws -------------------------------------------------------------------

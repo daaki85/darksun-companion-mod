@@ -1547,6 +1547,13 @@ class GameData:
         """The character being made on the creation screen."""
         return self.guest.read(far_pointer(self.guest, self.ds, CREATION_SHEET_PTR), SHEET_SIZE)
 
+    def creation_abilities(self) -> Optional[List[int]]:
+        """The abilities the creation screen shows, STR to CHA: in the creature record after the
+        creation sheet (None if they don't look like abilities)."""
+        at = far_pointer(self.guest, self.ds, CREATION_SHEET_PTR) + SHEET_SIZE + CREATURE_ABILITIES
+        values = list(self.guest.read(at, 6))
+        return values if len(values) == 6 and all(3 <= v <= 25 for v in values) else None
+
     def race_adjustment(self, race: int, ability: int) -> int:
         if not 0 < race < 16 or not 0 <= ability < 6:
             return 0

@@ -1314,16 +1314,33 @@ class CreationTests(unittest.TestCase):
     def test_abilities(self):
         log = make_creation()
         # best of 7, 11, 9, 10 = 11, +4, +1 dwarf = 16: a Fighter's STR is at least 17
-        self.assertEqual(ability_rolls(log, 0, [(1, 2, 2, 2), (4, 4, 2, 1), (3, 3, 2, 1), (4, 3, 2, 1)]),
-                         ["Character creation, STR 17: best of four 4d4 (7, 11, 9, 10) = 11, +4, +1 dwarf = 16, "
-                          "raised to 17 (the Fighter's prime requisite)"])
+        self.assertEqual(ability_rolls(log, 0, [(1, 2, 2, 2), (4, 4, 2, 1), (3, 3, 2, 1), (4, 3, 2, 1)]), [])
         # CON: +2 dwarf, above the classes' least of 9
-        self.assertEqual(ability_rolls(log, 2, [(4, 4, 4, 1), (1, 1, 1, 1), (2, 2, 2, 2), (3, 3, 3, 3)]),
-                         ["Character creation, CON 19: best of four 4d4 (13, 4, 8, 12) = 13, +4, +2 dwarf = 19"])
+        ability_rolls(log, 2, [(4, 4, 4, 1), (1, 1, 1, 1), (2, 2, 2, 2), (3, 3, 3, 3)])
         # CHA: 4 + 4 - 2 dwarf = 6, raised to the least the Fighter and Thief allow
-        self.assertEqual(ability_rolls(log, 5, [(1, 1, 1, 1)] * 4),
-                         ["Character creation, CHA 9: best of four 4d4 (4, 4, 4, 4) = 4, +4, -2 dwarf = 6, "
+        ability_rolls(log, 5, [(1, 1, 1, 1)] * 4)
+        # (the lines come when the die stops)
+        self.assertEqual(log.creation_lines(),
+                         ["Character creation, STR 17: best of four 4d4 (7, 11, 9, 10) = 11, +4, +1 dwarf = 16, "
+                          "raised to 17 (the Fighter's prime requisite)",
+                          "Character creation, CON 19: best of four 4d4 (13, 4, 8, 12) = 13, +4, +2 dwarf = 19",
+                          "Character creation, CHA 9: best of four 4d4 (4, 4, 4, 4) = 4, +4, -2 dwarf = 6, "
                           "raised to 9 (the Thief's least)"])
+
+    def test_only_the_character_the_die_stops_on(self):
+        """The die rolls whole characters while it tumbles: only the last is logged, each ability
+        checked against the one the game shows (one whose rolls were missed, the game's)."""
+        log = make_creation()
+        ability_rolls(log, 0, [(4, 4, 4, 4)] * 4)  # a first character's STR 21...
+        ability_rolls(log, 2, [(4, 4, 4, 4)] * 4)  # ... and CON 22
+        ability_rolls(log, 0, [(1, 2, 2, 2), (4, 4, 2, 1), (3, 3, 2, 1), (4, 3, 2, 1)])  # the next: STR 17
+        shown = CREATION + game.SHEET_SIZE + game.CREATURE_ABILITIES
+        log.guest.mem[shown:shown + 6] = bytes((17, 12, 18, 10, 11, 9))  # its CON's rolls missed
+        self.assertEqual(log.creation_lines()[:3],
+                         ["Character creation, STR 17: best of four 4d4 (7, 11, 9, 10) = 11, +4, +1 dwarf = 16, "
+                          "raised to 17 (the Fighter's prime requisite)",
+                          "Character creation, DEX 12 (its rolls came too fast to record)",
+                          "Character creation, CON 18 (its rolls came too fast to record)"])
 
     def test_hit_points(self):
         log = make_creation()
@@ -1335,6 +1352,19 @@ class CreationTests(unittest.TestCase):
         self.assertEqual(log.creation_hp_lines(),
                          ["Character creation, hit points 18: Fighter d10 per level: 10 + 5; Thief d6 per level: "
                           "3 + 6 = 24, / 2 classes = 12, +6 CON 17 = 18"])
+
+    def test_hit_points_against_the_game(self):
+        """A hit point roll missed: the game's own total, with the rolls that were caught."""
+        log = make_creation()
+        for cls, sides, level, face in ((9, 10, 1, 10), (17, 6, 1, 3), (17, 6, 2, 6)):
+            e = entry(raw_for(face, sides), dicelog.DICE_SITE, words(0, 0, 1, sides),
+                      words(dicelog.CREATION_HP_CALLER, 0x54FA, 1, cls, level), parent_code=dicelog.LEVEL_HP_RETURN)
+            log.describe(e)
+        struct.pack_into("<h", log.guest.mem, CREATION + game.SHEET_MAX_HP, 21)
+        self.assertEqual(log.creation_hp_lines(),
+                         ["Character creation, hit points 21 (some of its rolls came too fast to record; those "
+                          "caught: Fighter d10 per level: 10; Thief d6 per level: 3 + 6 = 19, / 2 classes = 9 "
+                          "(rounded down), +5 CON 17 = 14)"])
 
     def test_hit_points_shared(self):
         """RULE_MULTI_HP: each level's die shared between the classes, at least 1, and CON's bonus too."""
