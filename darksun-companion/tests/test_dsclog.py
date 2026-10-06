@@ -1971,7 +1971,7 @@ class LevelPickTests(unittest.TestCase):
         at = re.search(pattern, self.image, re.S).start()
         mu = self.mu
         mu.mem_write(vector * 4, struct.pack("<HH", at, TSR))
-        self.code_at = getattr(self, "code_at", 0x800) + 0x10  # (each its own: the emulator keeps
+        self.code_at = getattr(self, "code_at", 0x800) + 0x20  # (each its own: the emulator keeps
         mu.mem_write(CALLER * 16 + self.code_at, bytes(code))    #  the code it has translated)
         values = dict(cs=CALLER, ds=GAME_DS, ss=SS, esp=0x7FC, ebp=BP, eflags=IF | 2)
         values.update(regs)
@@ -1992,9 +1992,11 @@ class LevelPickTests(unittest.TestCase):
         self.run_probe(rb"\x83\xec\x02\x55\x89\xe5\x50.{18}\xc7\x46\x08\x5d\x44", VEC_PK_WIN, (0xCD, VEC_PK_WIN, 0x90), {}, 3)
         self.assertEqual(mu.reg_read(r.UC_X86_REG_SP), 0x7FA)
         self.assertEqual(struct.unpack("<H", mu.mem_read(SS * 16 + 0x7FA, 2))[0], 0x445D)
-        self.run_probe(rb"\x83\xec\x04\x55\x89\xe5\x50.{18}\x8c\x5e\x0a", VEC_PK_TITLE, (0xCD, VEC_PK_TITLE, 0x90, 0x90), {}, 4)
+        self.run_probe(rb"\x83\xec\x04\x55\x89\xe5\x50.{18}\x8c\x5e\x0a", VEC_PK_TITLE, bytes((0xCD, VEC_PK_TITLE, 0x90, 0x90)) + bytes(16), {}, 4)
         self.assertEqual(mu.reg_read(r.UC_X86_REG_SP), 0x7F8)
         self.assertEqual(struct.unpack("<HH", mu.mem_read(SS * 16 + 0x7F8, 4)), (0x3026, GAME_DS))
+        after = CALLER * 16 + self.code_at + 2  # (the line's colours, in the pushes after it: the game's)
+        self.assertEqual((mu.mem_read(after + 6, 1)[0], mu.mem_read(after + 0xC, 1)[0]), (0xD0, 0xD3))
         self.run_probe(rb"\x31\xff\x89\xfe\x2e\x80\x3e", VEC_PK_FILL, (0xCD, VEC_PK_FILL, 0x90, 0x90), dict(esi=5, edi=6), 4)
         self.assertEqual((mu.reg_read(r.UC_X86_REG_SI), mu.reg_read(r.UC_X86_REG_DI)), (0, 0))
         mu.mem_write(SS * 16 + BP + 8, struct.pack("<H", 0x2C38))

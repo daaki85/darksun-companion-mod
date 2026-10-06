@@ -29,20 +29,12 @@ PSIONIC_PICKER = 17501
 PICK_FIRST = 0x860  # its rows, 0x860 + kind (the carved names without the mark's room)
 PICK_COUNT_BUTTON, PICK_EXIT = 0x2C37, 0x4396  # (the psionicists' window's: picks left, EXIT)
 PICK_X, PICK_GAP_X, PICK_Y, PICK_PITCH = 6, 82, 6, 8  # the rows' place: two columns of eight
-# The rows on a black panel, and the window's line under them on a black plate (PICK_PLATE, a
-# button that does nothing), so that they read clearly over the marble: near-white 19.4:1 on the
-# black, grey out of use 4.6:1 (WCAG 2.0 AA's 4.5:1); the interface's own greys, which no region's
-# palette changes
-PICK_COLOURS = [255, 212, 212]
-PICK_BLACK = 254
-PICK_WIDTHS = (80, 66)  # the columns' panels
-PICK_PLATE = 0x870
-# Its marble (the psionicists' window's background, BMP 17001, named at the window's +C2h) in
-# bronze, so that it isn't taken for the psionicists': its greys made the interface's browns
-PICK_MARBLE_FROM, PICK_MARBLE = 17001, 17021
-PICK_MARBLE_AT = 0xC2
-BRONZE = {208: 207, 209: 204, 210: 203, 211: 205, 212: 206, 213: 201, 251: 200}
-PICK_PLATE_AT, PICK_PLATE_SIZE = (6, 70), (147, 20)
+# The rows' letters outlined in black, so that they read clearly over the marble: near-white
+# 19.4:1 against the outline, light grey out of use 8.1:1 (WCAG 2.0 AA asks 4.5:1); the
+# interface's own greys, which no region's palette changes. (DSCLOG's PROBE_PK_TITLE has the
+# window's line under them drawn in the same near-white.)
+PICK_COLOURS = [255, 214, 214]
+PICK_OUTLINE = 254
 ROW_FIRST = 0x840  # the 16 kinds' rows, 0x840 + kind (after the dialogue window's and others', 81Ch-833h)
 MORE, BACK, VIEW = 0x850, 0x851, 0x852  # MORE SPECS, VIEW PSIONICS, WEAPON SPEC
 ROW_TEMPLATE, TOGGLE_TEMPLATE = 0x7FA, 0x7FF  # (AIR's row and VIEW PSIONICS's button)
@@ -157,14 +149,20 @@ def _encode(frames: List[Rows]) -> bytes:
     return encode_frames(frames)
 
 
-def plated(font: Dict[str, Glyph], text: str, width: int, colours: List[int]) -> bytes:
-    """TEXT on black, WIDTH wide and a row taller than the letters (rows one under another make
-    one panel), a column in; a frame for each colour."""
+def outlined(font: Dict[str, Glyph], text: str, colours: List[int]) -> bytes:
+    """TEXT with a black outline a pixel wide (the picture a pixel bigger all round than the
+    letters); a frame for each colour."""
     frames = []
     for colour in colours:
         rows = label(font, text, 1, colour)
-        rows = [r + [None] * (width - len(r)) for r in rows] + [[None] * width]
-        frames.append([[PICK_BLACK if p is None else p for p in r[:width]] for r in rows])
+        width = len(rows[0]) + 1
+        rows = [[None] * width] + [r + [None] for r in rows] + [[None] * width]
+        ink = {(x, y) for y, r in enumerate(rows) for x, p in enumerate(r) if p is not None}
+        for y, r in enumerate(rows):
+            for x in range(width):
+                if (x, y) not in ink and any((x + dx, y + dy) in ink for dx in (-1, 0, 1) for dy in (-1, 0, 1)):
+                    r[x] = PICK_OUTLINE
+        frames.append(rows)
     return _encode(frames)
 
 
@@ -230,18 +228,9 @@ def chunks(resource: gff.Chunks) -> Dict[Tuple[str, int], bytes]:
     keep = [(c, x, y) for c, x, y in _items(psionic) if c in (PICK_COUNT_BUTTON, PICK_EXIT)]
     for kind in range(len(specialize.KINDS)):
         cid = PICK_FIRST + kind
-        added[("ICON", cid)] = plated(font, page_text(kind), PICK_WIDTHS[kind // 8], PICK_COLOURS)
+        added[("ICON", cid)] = outlined(font, page_text(kind), PICK_COLOURS)
         added[("BUTN", cid)] = _button(row_button, ROW_TEMPLATE, cid)
-    width, height = PICK_PLATE_SIZE
-    added[("ICON", PICK_PLATE)] = _encode([[[PICK_BLACK] * width for _ in range(height)]] * 3)
-    added[("BUTN", PICK_PLATE)] = _button(row_button, ROW_TEMPLATE, PICK_PLATE)
-    rows = [(PICK_FIRST + k, PICK_X + PICK_GAP_X * (k // 8), PICK_Y + PICK_PITCH * (k % 8))
-            for k in range(len(specialize.KINDS))]
-    window = bytearray(_window(psionic, PICKER, [(PICK_PLATE, *PICK_PLATE_AT)] + rows + keep))
-    if struct.unpack_from("<H", window, PICK_MARBLE_AT)[0] == PICK_MARBLE_FROM:
-        _, _, marble = decode_frame(resource[("BMP ", PICK_MARBLE_FROM)], 0)
-        added[("BMP ", PICK_MARBLE)] = _encode([[[None if p is None else BRONZE.get(p, p) for p in r]
-                                                 for r in marble]])
-        struct.pack_into("<H", window, PICK_MARBLE_AT, PICK_MARBLE)
-    added[("WIND", PICKER)] = bytes(window)
+    rows = [(PICK_FIRST + k, PICK_X - 1 + PICK_GAP_X * (k // 8), PICK_Y - 1 + PICK_PITCH * (k % 8))
+            for k in range(len(specialize.KINDS))]  # (the outline a pixel out from the letters)
+    added[("WIND", PICKER)] = _window(psionic, PICKER, rows + keep)
     return added

@@ -3468,7 +3468,8 @@ lv_ask:
 ; PROBE_PK_COUNT: "mov dx,ax / or dx,dx" (85F01h; 4 bytes), the powers it has to pick: some.
 ; PROBE_PK_WIN: "push 445Dh" (85FF4h; 3 bytes), the window: the weapon window.
 ; PROBE_PK_LEFT: "mov al,[4AECh]" (8602Dh; 3 bytes), the number shown: the kinds left to pick.
-; PROBE_PK_TITLE: "push ds / push 3026h" (860C3h; 4 bytes), "PICK A PSIONIC POWER,": the weapons'.
+; PROBE_PK_TITLE: "push ds / push 3026h" (860C3h; 4 bytes), "PICK A PSIONIC POWER,": the weapons',
+;   and its colours near-white on black (the next pushes' bytes; the game's own put back otherwise).
 ; PROBE_PK_FILL: "xor di,di / mov si,di" (8610Fh; 4 bytes), at the start of the powers' pictures
 ;   put in: none; the rows of the kinds it can't pick out of use (the routine's end, 862A7h).
 ; PROBE_PK_CLICK: "mov ax,[bp+8]" (862D4h; 3 bytes), a button clicked: a row it can pick taken
@@ -3483,6 +3484,12 @@ PK_CLOSE      equ 0x86370 - 0x862D6
 PK_OP_CALL    equ 0x86069 - 0x86111 ; (140:71Ah's far address, in a call, less the address after
 PK_LABEL_CALL equ 0x86054 - 0x86111 ;   PROBE_PK_FILL's INT; and 140:7FAh's)
 PK_WINDOW     equ 0x11A4            ; DS: the window up (far)
+PK_TITLE_SECOND equ 0x860CB - 0x860C5 ; ("push 0D000FEh" and "push 0D3009Fh", after PROBE_PK_TITLE's
+PK_TITLE_INK  equ 0x860D1 - 0x860C5 ;   INT: their colour bytes, less the address after it)
+PK_GAME_SECOND equ 0xD0
+PK_GAME_INK   equ 0xD3              ; (dark grey)
+PK_PICK_SECOND equ 0xD0             ; (as the game has it)
+PK_PICK_INK   equ 0xD9              ; (near-white: 234, 234, 234)
 probe_pk_count:
         mov dx, ax
         cmp byte [cs:lv_mode], 0
@@ -3540,11 +3547,20 @@ probe_pk_title:
         mov [bp + 6], ax
         mov [bp + 10], ds
         mov word [bp + 8], 0x3026
+        push ds
+        push bx
+        lds bx, [bp + 2]        ; the line's colours, in the pushes that come next: the game's ...
+        mov byte [bx + PK_TITLE_SECOND], PK_GAME_SECOND
+        mov byte [bx + PK_TITLE_INK], PK_GAME_INK
         cmp byte [cs:lv_mode], 0
         je .out
+        mov byte [bx + PK_TITLE_SECOND], PK_PICK_SECOND  ; ... or near-white on black, as the rows
+        mov byte [bx + PK_TITLE_INK], PK_PICK_INK
         mov [bp + 10], cs
         mov word [bp + 8], lv_title
-.out:   pop ax
+.out:   pop bx
+        pop ds
+        pop ax
         pop bp
         iret
 
