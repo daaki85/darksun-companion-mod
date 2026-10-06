@@ -3941,6 +3941,19 @@ probe_wp_class:
         mov cx, 1
         test word [cs:rules], RULE_SPECIALIZE
         jz .ret
+        push eax                ; (the classes changed: their defaults, until a kind is clicked;
+        push es                 ;   the routine runs after every click on the screen)
+        push bx
+        les bx, [WP_CREATION]
+        mov eax, [es:bx + 0x21]
+        and eax, 0x00FFFFFF
+        cmp eax, [cs:wp_classes_seen]
+        je .same
+        mov [cs:wp_classes_seen], eax
+        mov byte [cs:wp_touched], 0
+.same:  pop bx
+        pop es
+        pop eax
         push ax
         push bx
         push es
@@ -4194,11 +4207,13 @@ wp_marks:
         mov [cs:wp_ok], ax
         les bx, [WP_CREATION]
         movzx cx, byte [es:bx + SPEC_SLOTS]     ; none yet, or one its classes don't allow: the
-        jcxz .default                           ; long sword, or else the first allowed
-        dec cx
+        jcxz .none                              ; long sword, or else the first allowed (unless
+        dec cx                                  ; the player has taken it back: WP_TOUCHED)
         bt ax, cx
         jc .first
-.default:
+        mov word [es:bx + SPEC_SLOTS], 0
+.none:  cmp byte [cs:wp_touched], 0
+        jne .first
         xor cx, cx
         bt ax, 0
         jc .put
@@ -4212,6 +4227,8 @@ wp_marks:
         jz .one
         cmp byte [es:bx + SPEC_SLOTS + 1], 0
         jne .marked
+        cmp byte [cs:wp_touched], 0
+        jne .marked
         mov al, 2                               ; (the club; or the long sword, if the club is first)
         cmp byte [es:bx + SPEC_SLOTS], al
         jne .second
@@ -4223,6 +4240,15 @@ wp_marks:
 .marked:
         mov ax, [es:bx + SPEC_SLOTS]
         mov [cs:wp_kind], ax
+        mov byte [cs:wp_full], 0                ; all its picks made (a gladiator's two, another's
+        or al, al                               ;   one): the other kinds out of use until one is
+        jz .count                               ;   taken back, as the game's classes and disciplines
+        call wp_gladiator
+        jz .full
+        or ah, ah
+        jz .count
+.full:  mov byte [cs:wp_full], 1
+.count:
         movzx bx, byte [cs:wp_page]
         shl bx, 2               ; (four to a page)
         mov cx, 4
@@ -4241,9 +4267,10 @@ wp_marks:
         je .chosen
         cmp bl, [cs:wp_kind + 1]
         je .chosen
-        push 3
+        push 3                  ; one not chosen: in use, or greyed once all are picked
         call wp_button_op
-        push 0
+        movzx dx, byte [cs:wp_full]
+        push dx
         call wp_button_op
         push 0
         jmp .next
@@ -4310,25 +4337,31 @@ wp_page_button:
         sub ax, WP_ROW
         cmp ax, 16
         jae .ret
-        bt [cs:wp_ok], ax       ; (one out of use: nothing)
+        bt [cs:wp_ok], ax       ; (one its classes don't allow: nothing)
         jnc .ret
         inc ax
+        mov byte [cs:wp_touched], 1
         les bx, [WP_CREATION]
-        call wp_gladiator
-        jz .only
-        cmp al, [es:bx + SPEC_SLOTS]            ; a gladiator's: a new kind in place of the older
-        je .ret
+        cmp al, [es:bx + SPEC_SLOTS]            ; a kind chosen: taken back (a gladiator's second
+        je .first_off                           ;   moving up), as the game's classes are
         cmp al, [es:bx + SPEC_SLOTS + 1]
-        je .ret
-        cmp byte [es:bx + SPEC_SLOTS + 1], 0    ; (the second not chosen yet)
-        jne .shift
+        je .second_off
+        cmp byte [es:bx + SPEC_SLOTS], 0        ; another: chosen, where a pick is free
+        je .put_first
+        call wp_gladiator
+        jz .ret
+        cmp byte [es:bx + SPEC_SLOTS + 1], 0
+        jne .ret
         mov [es:bx + SPEC_SLOTS + 1], al
         jmp wp_marks
-.shift: mov ah, al
-        mov al, [es:bx + SPEC_SLOTS + 1]
-        mov [es:bx + SPEC_SLOTS], ax
+.put_first:
+        mov [es:bx + SPEC_SLOTS], al
         jmp wp_marks
-.only:  mov [es:bx + SPEC_SLOTS], al
+.first_off:
+        mov al, [es:bx + SPEC_SLOTS + 1]
+        mov [es:bx + SPEC_SLOTS], al
+.second_off:
+        mov byte [es:bx + SPEC_SLOTS + 1], 0
         jmp wp_marks
 .more:  mov byte [cs:wp_from], 2
         mov al, [cs:wp_page]
@@ -4356,6 +4389,9 @@ wp_titles  db 'WEAPONS 1 OF 4', 0, 0
 wp_page    db 0
 wp_from    db 0
 wp_kind    db 0, 0
+wp_full    db 0
+wp_touched db 0                 ; 1 once the player has clicked a kind (no defaults put back after)
+wp_classes_seen dd 0xFFFFFFFF   ; the classes being made, when WP_TOUCHED was last cleared
 wp_button  dw 0
 wp_ret_file dw 0
 wp_end_file dw 0
