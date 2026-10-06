@@ -1496,11 +1496,36 @@ ticked, a skill is:
 - AD&D's average for the thief level (the Player's Handbook's table, up to
   10th level),
 - plus the race's adjustment, the game's own (already the Dark Sun rules'
-  numbers: an elf +5 pick pockets, −5 open locks, +5 move silently, +10 hide
-  in shadows, +5 hear noise),
+  numbers),
 - plus DEX's: AD&D's table up to 19, the Dark Sun rules' exceptional DEX
   past it, for the first five skills (hear noise, climb walls and read
-  languages have none):
+  languages have none).
+
+AD&D's averages, by thief level:
+
+| Thief level | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Pick pockets | 30 | 35 | 40 | 45 | 50 | 55 | 60 | 65 | 70 | 80 |
+| Open locks | 25 | 29 | 33 | 37 | 42 | 47 | 52 | 57 | 62 | 67 |
+| Find/remove traps | 20 | 25 | 30 | 35 | 40 | 45 | 50 | 55 | 60 | 65 |
+| Move silently | 15 | 21 | 27 | 33 | 40 | 47 | 55 | 62 | 70 | 78 |
+| Hide in shadows | 10 | 15 | 20 | 25 | 31 | 37 | 43 | 49 | 56 | 63 |
+| Hear noise | 10 | 10 | 15 | 15 | 20 | 20 | 25 | 25 | 30 | 30 |
+| Climb walls | 85 | 86 | 87 | 88 | 90 | 92 | 94 | 96 | 98 | 99 |
+| Read languages | 0 | 0 | 0 | 20 | 25 | 30 | 35 | 40 | 45 | 50 |
+
+The race adjustments, as the game has them (humans, half-giants and
+thri-kreen have none):
+
+| Race | Pick pockets | Open locks | Find/remove traps | Move silently | Hide in shadows | Hear noise | Climb walls | Read languages |
+|---|---|---|---|---|---|---|---|---|
+| Dwarf | 0 | +10 | +15 | 0 | 0 | 0 | −10 | −5 |
+| Elf | +5 | −5 | 0 | +5 | +10 | +5 | 0 | 0 |
+| Half-elf | +10 | 0 | 0 | 0 | +5 | 0 | 0 | 0 |
+| Halfling | +5 | +5 | +5 | +10 | +15 | +5 | −15 | −5 |
+| Mul | 0 | −5 | 0 | +5 | 0 | 0 | +5 | −5 |
+
+The DEX adjustments:
 
 | DEX | Pick pockets | Open locks | Find/remove traps | Move silently | Hide in shadows |
 |---|---|---|---|---|---|
