@@ -711,8 +711,9 @@ class ScriptRandTests(unittest.TestCase):
 class XpNextTests(unittest.TestCase):
     """View Character's next-level XP (PROBE_XP_NEXT): for more than one class, the class (or
     classes) whose next level it is before the ")", by the game's own XP tables; for one, the
-    game's ")" as before. (The screen's copy of the sheet numbers classes 1-8: 3 fighter, 5
-    preserver, 6 psionicist, 8 thief.)"""
+    game's ")" as before, and for a human (who dual-classes: the game counts the first class
+    only). (The screen's copy of the sheet numbers classes 1-8: 3 fighter, 5 preserver, 6
+    psionicist, 8 thief; its +18h is the race, 1 human, 3 elf.)"""
     SHEET, TABLE = 0x8000, 0x9000
     RULES = 170
 
@@ -730,11 +731,11 @@ class XpNextTests(unittest.TestCase):
         for cls, level, xp in ((3, 4, 16000), (5, 4, 20000), (8, 5, 20000), (6, 4, 20000), (3, 9, 0), (3, 10, 0)):
             mu.mem_write(self.TABLE * 16 + cls * 40 + level * 2 + 0x27C, struct.pack("<H", xp // 100))
 
-    def run_with(self, classes, levels, least, rules=0):
+    def run_with(self, classes, levels, least, rules=0, race=3):
         mu = self.mu
         mu.mem_write(TSR * 16 + load_image().find(HDR_SIG) + self.RULES, struct.pack("<H", rules))
         sheet = bytearray(0x30)
-        sheet[0x18] = len([c for c in classes if c])
+        sheet[0x18] = race
         sheet[0x21:0x24], sheet[0x24:0x27] = bytes(classes), bytes(levels)
         mu.mem_write(self.SHEET * 16, bytes(sheet))
         mu.mem_write(SS * 16 + BP - 6, struct.pack("<I", least))
@@ -764,7 +765,12 @@ class XpNextTests(unittest.TestCase):
         self.assertEqual(self.run_with((5, 6, 0), (4, 4, 0), 20000), " Pr/Ps)")
 
     def test_one_class_as_the_game(self):
+        """An elf fighter: one class, nothing to tell apart."""
         self.assertEqual(self.run_with((3, 0, 0), (4, 0, 0), 16000), 0x10F4)
+
+    def test_human_as_the_game(self):
+        """A dual-classed human: the game's own line, whatever the slots hold."""
+        self.assertEqual(self.run_with((3, 8, 0), (4, 5, 0), 16000, race=1), 0x10F4)
 
     def test_at_the_cap(self):
         """A class at the level cap (9, or 10 with that rule) has no next level, so isn't named."""

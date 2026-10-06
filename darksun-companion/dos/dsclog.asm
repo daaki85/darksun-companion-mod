@@ -2488,10 +2488,12 @@ prot_scan:
 ; its table (a word, x100, at the class x 40 + its level x 2 + 27Ch, in the segment the game's
 ; "mov ax,seg" at 67D35h holds) unless it is at the level cap. The routine's character ([BP+0Ah])
 ; is the screen's copy of the sheet, its classes numbered 1-8 as at character creation (cleric,
-; druid, fighter, gladiator, preserver, psionicist, ranger, thief), not the sheet's 1-17. For a
-; character of more than one class, it pushes DSCLOG's XP_SUFFIX instead (the game's DS, pushed
-; before, becomes CS): the class whose next level that is, then ")": " F)", " Pr/T)" if two are
-; due at once. Preserver and psionicist are "Pr" and "Ps", the rest a letter (CLASS_LETTERS).
+; druid, fighter, gladiator, preserver, psionicist, ranger, thief), not the sheet's 1-17; its +18h
+; is the race. For a character of more than one class (a second one in the second slot; not a
+; human, who dual-classes and whose first class alone the game counts here), it pushes DSCLOG's
+; XP_SUFFIX instead (the game's DS, pushed before, becomes CS): the class whose next level that
+; is, then ")": " F)", " Pr/T)" if two are due at once. Preserver and psionicist are "Pr" and
+; "Ps", the rest a letter (CLASS_LETTERS).
 XP_SEG_BACK equ 0x8A            ; the "mov ax,seg"'s immediate, back from the INT's return
 XP_CLOSE equ 0x10F4             ; DS: the game's ")"
 probe_xp_next:
@@ -2509,6 +2511,8 @@ probe_xp_next:
         mov byte [cs:xp_ours], 0
         les bx, [bp + 0x0A]     ; the screen's copy of the sheet
         cmp byte [es:bx + 0x18], 1
+        je .out                 ; (a human: the game's ")")
+        cmp byte [es:bx + 0x22], 0
         je .out                 ; (one class: the game's ")")
         mov si, [cs:x_ip]
         mov gs, [cs:x_cs]

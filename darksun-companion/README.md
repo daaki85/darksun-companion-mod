@@ -1282,7 +1282,9 @@ class is a letter, except preserver and psionicist, which both start with P:
 When two classes go up at the same XP, both are named:
 `(20000 Pr/T)`. A class already at the highest level (9, or 10 with
 [levels up to 10](#levels-up-to-10)) has no next level, so it is never named.
-A character of one class shows the line as the game always has.
+A character of one class shows the line as the game always has, and so
+does a human, who can only dual-class: the game counts only one of their
+classes there.
 
 ![View Character's experience line for a fighter/thief, (110000 T), and a fighter/preserver/thief, (90000 Pr)](docs/xp-next.png)
 
