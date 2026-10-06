@@ -6,7 +6,24 @@ Release **1.1.0** is pull requests #14 to #18; its notes are in
 requests #1 to #13; its notes are in
 [`release-notes/v1.0.0.md`](release-notes/v1.0.0.md).
 
-## Pull request #18 (in review)
+## Pull request #19 (in review)
+
+**Added**
+- **Whose next level, on View Character:** for a character of more than one
+  class, the experience line names the class whose next level the XP in
+  brackets is: `EXP:87230 (90000 Pr)`. A letter for each class, but **Pr** and
+  **Ps** for preserver and psionicist (both P); both named when two are due at
+  once (`(20000 Pr/T)`); a class at the level cap not named. One class: as
+  before. (The patched game's `INT D2h`, where the game adds the bracket.)
+
+**Fixed**
+- **Kalzith's prices:** Blur 6,000 (was 3,000) and Haste 9,000 (was 12,000).
+  They were taken from the game's scrolls with the spell numbers read one off
+  (Wall of Fog's and Flame Arrow's); the game has no scroll of either, so
+  they're its price for the spell's level, 3,000 a level. His stock is
+  repriced when the Ledger next sees the game.
+
+## Pull request #18 ([merged 2026-10-06](https://github.com/daaki85/darksun-companion-mod/pull/18))
 
 - **Release 1.1.0:** the version, its notes, and pull request #17 marked
   merged in the READMEs.

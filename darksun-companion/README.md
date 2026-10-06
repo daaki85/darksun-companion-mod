@@ -128,8 +128,8 @@ records; this ledger keeps the ones the game doesn't show you.
   also shows each character's THAC0 (for each weapon too), saving throws,
   DEX reaction and defensive adjustments and (for thieves) their thief
   skills, all as they stand now, and the
-  View Character screen their THAC0 and saves
-  (see [In the game](#in-the-game-thac0-saves-and-thief-skills)); the USE
+  View Character screen their THAC0 and saves, and for a character of more
+  than one class whose next level is coming (see [In the game](#in-the-game-thac0-saves-and-thief-skills)); the USE
   screen shows their spell slots left (see
   [spell slots](#in-the-game-spell-slots-on-the-use-screen)); and, if you
   tick it, after each turn in a fight the game stops to show what came of
@@ -1149,7 +1149,7 @@ Every roll in the game goes through one function, Borland C++'s `rand()`.
    `INT D7h` (for [more saves](#more-saves)), and in the routines that
    destroy an item hit by acid or a corroding touch `INT D6h`, `INT D5h` and
    `INT D4h` (for [items saving against acid](#items-saving-against-acid)), and in the scripts'
-   random command `INT D3h` (for [searching junk, hay and wardrobes](#searching-junk-hay-and-wardrobes)). The
+   random command `INT D3h` (for [searching junk, hay and wardrobes](#searching-junk-hay-and-wardrobes)), and where View Character closes the bracket after the next level's XP `INT D2h` (for the class it is). The
    copy keeps 29 characters rather than 19, deletes the one chosen in the
    roster and counts a New character as Okay (see
    [more characters](#more-characters)), lets Enter load only a save that is
@@ -1261,6 +1261,21 @@ game waits a moment for it), so putting on a ring or readying another weapon
 shows at once. Spells start and end as time passes in the game, which it
 doesn't while these screens are open; open the screen again to see such a
 change.
+
+For a character of more than one class, View Character's experience line
+also says whose next level the number in brackets is: `EXP:87230 (90000 Pr)`
+is the preserver's. Each class is a letter (C cleric, D druid, F fighter, G
+gladiator, R ranger, T thief), but preserver and psionicist, which both start
+with P, are **Pr** and **Ps**. Two classes due at the same XP are both named,
+`(20000 Pr/T)`, and a class at the level cap (9, or 10 with
+[levels up to 10](#levels-up-to-10)) has no next level and isn't. A
+character of one class shows it as the game does.
+
+![View Character's experience line for a fighter/thief, (110000 T), and a fighter/preserver/thief, (90000 Pr)](docs/xp-next.png)
+
+How: the game works out each class's next level from its tables and shows
+the least; where it adds the closing bracket, the helper (`INT D2h`) looks
+up which classes that number belongs to and adds their letters first.
 
 - **THAC0**: the character's THAC0 less STR's to-hit adjustment (DEX's for a
   missile weapon), the weapon's plus (or, for a plain wooden, bone, stone or
@@ -2204,7 +2219,7 @@ arena Defiler's figure and a face of his own: the game's portrait 61 with a
 slave's brand on the brow, so the Dialogue tab never mistakes him for anyone
 else.
 
-![Kalzith: his talk, and his shop of six scrolls at 3,000 to 12,000 ceramic](docs/kalzith.png)
+![Kalzith: his talk, and his shop of six scrolls at 3,000 to 9,000 ceramic](docs/kalzith.png)
 
 Talk to him as to anyone (click him with the look pointer, then the Look box's
 Talk button). His conversation is the game's kind, just him speaking:
@@ -2217,15 +2232,13 @@ Talk button). His conversation is the game's kind, just him speaking:
   | Level | Scroll | Price |
   |---|---|---|
   | 1 | Magic Missile, Color Spray | 3,000 ceramic each |
-  | 2 | Blur | 3,000 |
-  | 2 | Cat's Grace | 6,000 |
-  | 3 | Lightning Bolt | 9,000 |
-  | 3 | Haste | 12,000 |
+  | 2 | Blur, Cat's Grace | 6,000 each |
+  | 3 | Lightning Bolt, Haste | 9,000 each |
 
   These are the game's own prices: its scroll of the same spell where it has
-  one (Blur, Lightning Bolt and Haste), else its price for the spell's level
-  (3,000 a level). Scrolls he stocked with an earlier version, at 100 to 500,
-  are repriced when the Ledger next sees the game.
+  one (Color Spray), else its price for the spell's level (3,000 a level, as
+  most of its scrolls are). Scrolls he stocked with an earlier version are
+  repriced when the Ledger next sees the game.
 
   Cat's Grace is there only with its rule on (see
   [Rule changes](#rule-changes)). A preserver learns a scroll's spell as from

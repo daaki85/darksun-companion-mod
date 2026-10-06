@@ -40,7 +40,8 @@ can be switched off on its Options tab.
 
 - **In the game:**
   - THAC0, saves, thief skills and DEX adjustments on the inventory screen,
-    THAC0 and saves on View Character;
+    THAC0 and saves on View Character, and for more than one class, whose
+    next level the XP in brackets is (`(16000 F)`);
   - spell slots on the USE screen;
   - each turn's rolls in a pop-up during fights, if you tick it (three levels
     of detail);
@@ -171,6 +172,13 @@ addition in detail, and how it works.
 double-click, with the options as last set.)
 
 ## What's new
+
+In pull request #19 (in review):
+- **View Character, for more than one class:** whose next level the XP in
+  brackets is, `EXP:87230 (90000 Pr)`: a letter for each class, Pr and Ps for
+  preserver and psionicist, both when two are due at once (`(20000 Pr/T)`).
+- **Kalzith's prices put right:** Blur 6,000 and Haste 9,000 (were 3,000 and
+  12,000, from the wrong scrolls of the game's: the price for their level).
 
 Release **1.1.0** is out: pull requests #14 to #18, below.
 
