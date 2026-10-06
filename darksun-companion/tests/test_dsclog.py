@@ -744,7 +744,7 @@ class SpecializeTests(unittest.TestCase):
         mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
         mu.mem_write(GAME_DS * 16 + 0x1661, struct.pack("<HH", 0, self.SHEETS))
 
-    def attack(self, halves, weapon, chosen=(), classes=(9, 0, 0), levels=(5, 0, 0), rules=4096, missile=False):
+    def attack(self, halves, weapon, chosen=(), classes=(9, 0, 0), levels=(5, 0, 0), rules=4096, missile=False, race=0):
         """(attacks in halves, THAC0, damage bonus, sides) after both probes, with THAC0 15, a
         damage bonus of 1 before the STR bonus of 2 is added, 1d8."""
         mu = self.mu
@@ -753,6 +753,7 @@ class SpecializeTests(unittest.TestCase):
         for i, k in enumerate(chosen):
             sheet[0x14 + i] = k + 1
         sheet[0x21:0x24], sheet[0x24:0x27] = bytes(classes), bytes(levels)
+        sheet[0x18] = race
         mu.mem_write(self.SHEETS * 16 + 3 * 0x47, bytes(sheet))  # (sheet 3)
         mu.mem_write(SS * 16 + BP + 0x0A, struct.pack("<H", 15))
         mu.mem_write(SS * 16 + BP + 0x10, struct.pack("<H", 3))
@@ -806,6 +807,13 @@ class SpecializeTests(unittest.TestCase):
 
     def test_missile_keeps_its_rate(self):
         self.assertEqual(self.attack(4, 1, chosen=(13,), levels=(4, 0, 0), missile=True), (4, 14, 5, 8))  # (a bow)
+
+    def test_dual_class(self):
+        """A human fighter turned preserver: the game's numbers until its preserver level passes
+        the fighter's, then mastery again (specialize.skill)."""
+        human = dict(classes=(11, 9, 0), race=1)
+        self.assertEqual(self.attack(2, self.LONG_SWORD, chosen=(0,), levels=(3, 5, 0), **human), (2, 15, 3, 8))
+        self.assertEqual(self.attack(2, self.LONG_SWORD, chosen=(0,), levels=(6, 5, 0), **human), (2, 12, 6, 8))
 
     def test_not_a_warrior(self):
         self.assertEqual(self.attack(2, self.AXE, chosen=(0,), classes=(11, 0, 0)), (2, 15, 3, 8))
@@ -917,6 +925,19 @@ class CanUseTests(unittest.TestCase):
         self.assertEqual([mu.reg_read(getattr(r, "UC_X86_REG_" + x)) for x in ("SP", "BX", "CX", "DX", "SI", "DI", "ES", "DS")],
                          [0x7FC, 0x100, 0x3333, t, 0x5555, 0x7777, self.SHEET, GAME_DS])
         return mu.reg_read(r.UC_X86_REG_AX)
+
+    def test_dual_class(self):
+        """A fighter turned psionicist (or cleric): its long sword back once the new level passes."""
+        for new in (12, 3):
+            for first in (3, 4, 5, 6):
+                s = bytearray(test_restrict.sheet(new, 9, race=game.HUMAN))
+                s[0x14] = 1
+                s[0x24:0x26] = bytes((first, 5))
+                for t in (45, 81, 22, 17):
+                    with self.subTest(new=new, level=first, type=t):
+                        mask = test_restrict.TYPES[t][3] & int.from_bytes(s[0x12:0x14], "little")
+                        expected = mask if mask and restrict.allowed(bytes(s), t, test_restrict.record(t)) else 0
+                        self.assertEqual(self.can_use(bytes(s), t), expected)
 
     def test_off_as_the_game(self):
         psi = test_restrict.sheet(12)

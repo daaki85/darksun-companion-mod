@@ -7,7 +7,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from dscompanion import game, specialize
+from dscompanion import game, restrict, specialize
 
 # The game's weapon types (DSUN's IT1R: a weapon's flags at +0, 1 melee, 2 missile, 10h thrown),
 # and the ones that are no kind: spell-made weapons, gloves, the broken weapon
@@ -61,6 +61,19 @@ class SkillTests(unittest.TestCase):
         self.assertEqual(S.skill(sheet((0,), classes=(13, 0, 0)), self.LONG_SWORD), S.EXPERT)
         self.assertEqual(S.skill(sheet((0,), classes=(11, 17, 9), levels=(5, 5, 5)), self.LONG_SWORD), S.MASTER)
 
+    def test_dual_class(self):
+        """A human fighter turned preserver: no specialization until the new class's level passes
+        the fighter's, then the fighter's again."""
+        S = specialize
+        s = bytearray(sheet((0,), classes=(11, 9, 0), levels=(3, 5, 0)))
+        s[game.SHEET_RACE] = game.HUMAN
+        self.assertEqual(S.skill(bytes(s), self.LONG_SWORD), S.PLAIN)
+        s[game.SHEET_LEVELS] = 6
+        self.assertEqual(S.skill(bytes(s), self.LONG_SWORD), S.MASTER)
+        s[game.SHEET_RACE] = 2  # (an elf's are multiclass: all at once)
+        s[game.SHEET_LEVELS] = 3
+        self.assertEqual(S.skill(bytes(s), self.LONG_SWORD), S.MASTER)
+
     def test_bonuses(self):
         S = specialize
         self.assertEqual([(S.to_hit(l), S.damage(l)) for l in range(6)],
@@ -99,6 +112,16 @@ class NewCharacterTests(unittest.TestCase):
         self.assertEqual(self.kinds((), (15, 0, 0)), [1, 0, 0, 0])  # a ranger
         self.assertEqual(self.kinds((2,), (10, 0, 0)), [3, 2, 0, 0])  # (kinds + 1 in the sheet)
         self.assertEqual(self.kinds((1,), (10, 0, 0)), [2, 1, 0, 0])
+
+    def test_allowed_kinds(self):
+        """A fighter/psionicist's choice kept to what the psionicist may use: its long sword
+        default becomes the club, the first allowed."""
+        from dscompanion import weaponchoice
+        psi_kinds = sorted(restrict.PSIONICIST_KINDS)
+        s = sheet((0,), classes=(9, 12, 0))
+        self.assertEqual(weaponchoice.kinds_for(s, psi_kinds), [2, 0, 0, 0])
+        s = sheet((2,), classes=(9, 12, 0))  # (the dagger: allowed)
+        self.assertEqual(weaponchoice.kinds_for(s, psi_kinds), [3, 0, 0, 0])
 
     def test_extra_kinds_cleared(self):
         self.assertEqual(self.kinds((2, 5), (9, 0, 0)), [3, 0, 0, 0])

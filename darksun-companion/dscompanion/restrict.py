@@ -17,12 +17,15 @@ PROBE_CAN_USE does this in the game; this is its model, for the tests and the Le
 - A multiclass preserver: no spells, wizard or priest, while it wears armour (DSCLOG's
   PROBE_NO_CAST, at the game's test for its "No spell use" effect); a shield doesn't count.
 
+A human who was a fighter, gladiator or ranger and has changed class keeps the weapons it
+specialized in, whatever the new class allows, once its new class's level has passed the old.
+
 Helms count as armour. A human who has changed class (dual-classed: the class it has now is the
 first) is held only by that class; another race's classes (multiclass) all hold it. Weapons of
 no kind (spell-made weapons, gloves, the broken weapon) are as the game has them.
 """
 
-from typing import Iterable, Set
+from typing import Iterable, List, Set
 
 from . import game, specialize
 
@@ -76,6 +79,20 @@ def sphere_allows(sphere: int, typ: bytes, kind: int) -> bool:
     return material(typ) in {EARTH: (STONE, OBSIDIAN, METAL, WOOD), FIRE: (OBSIDIAN,), WATER: (BONE, WOOD)}[sphere]
 
 
+WARRIORS = frozenset((9, 10)) | frozenset(RANGERS)
+
+
+def specialized_back(sheet: bytes, kind: int) -> bool:
+    """A human who was a fighter, gladiator or ranger and has dual-classed keeps the weapons it
+    specialized in once the new class's level has passed the old: none of the new class's
+    limits on them."""
+    if sheet[game.SHEET_RACE] != game.HUMAN or kind + 1 not in sheet[game.SPEC_SLOTS:game.SPEC_SLOTS + game.SPEC_COUNT]:
+        return False
+    classes = sheet[game.SHEET_CLASSES:game.SHEET_CLASSES + 3]
+    levels = sheet[game.SHEET_LEVELS:game.SHEET_LEVELS + 3]
+    return any(classes[i] in WARRIORS and levels[i] < levels[0] for i in (1, 2))
+
+
 def allowed(sheet: bytes, item_type: int, typ: bytes) -> bool:
     """Whether the character may equip an item of this type, given that the game lets it."""
     classes = [c for c in sheet[game.SHEET_CLASSES:game.SHEET_CLASSES + 3] if c]
@@ -84,6 +101,8 @@ def allowed(sheet: bytes, item_type: int, typ: bytes) -> bool:
     multiclass = not human and len(classes) > 1
     armour, shield = is_armour(typ), is_shield(typ)
     kind = specialize.kind_of(item_type) if is_weapon(typ) else None
+    if kind is not None and specialized_back(sheet, kind):
+        kind = None  # (its own: as the game has it)
     if PSIONICIST in holding:
         if armour and not is_light(typ) or shield and material(typ) != LEATHER:
             return False
@@ -114,3 +133,17 @@ def no_spells(sheet: bytes, worn: Iterable[bytes]) -> bool:
     if sheet[game.SHEET_RACE] == game.HUMAN or len(classes) < 2 or PRESERVER not in classes:
         return False
     return any(is_armour(t) for t in worn)
+
+
+def allowed_kinds(sheet: bytes, type_record) -> List[int]:
+    """The weapon kinds a character can choose: those whose plain weapon (weaponchoice.PLAIN)
+    the game's class lists and these restrictions both let it use (a fighter/psionicist, say,
+    only the psionicist's). TYPE_RECORD(type) gives an item type's record."""
+    from .weaponchoice import PLAIN
+    flags = int.from_bytes(sheet[game.SHEET_FLAGS:game.SHEET_FLAGS + 2], "little")
+    out = []
+    for kind, (type_, _, _, _) in enumerate(PLAIN):
+        typ = type_record(type_)
+        if int.from_bytes(typ[TYPE_CLASSES:TYPE_CLASSES + 2], "little") & flags and allowed(sheet, type_, typ):
+            out.append(kind)
+    return out

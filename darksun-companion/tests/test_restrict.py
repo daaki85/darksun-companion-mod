@@ -140,5 +140,19 @@ class RestrictTests(unittest.TestCase):
         self.assertFalse(restrict.no_spells(sheet(9, 17), worn))
 
 
+    def test_dual_class_keeps_specialized_weapons(self):
+        """A fighter turned psionicist keeps the long sword it specialized in, once its new level
+        passes its fighter level; never another kind."""
+        s = bytearray(sheet(12, 9, race=game.HUMAN))
+        s[game.SPEC_SLOTS] = 1  # (the long sword)
+        s[game.SHEET_LEVELS:game.SHEET_LEVELS + 2] = bytes((4, 5))
+        self.assertFalse(ok(bytes(s), 45))
+        s[game.SHEET_LEVELS] = 6
+        self.assertTrue(ok(bytes(s), 45))
+        self.assertTrue(ok(bytes(s), 81))  # (any long sword)
+        self.assertFalse(ok(bytes(s), 22))  # an axe: not its kind
+        self.assertFalse(ok(bytes(s), 57))  # (armour: the psionicist's limits as before)
+
+
 if __name__ == "__main__":
     unittest.main()

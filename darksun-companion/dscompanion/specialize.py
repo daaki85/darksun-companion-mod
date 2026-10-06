@@ -12,7 +12,7 @@ page, long sword first: the default, as the game marks the first psionic discipl
 clerical sphere; a gladiator's two at creation are the long sword and the club, the first two.
 """
 
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Tuple
 
 from . import game
 
@@ -58,12 +58,27 @@ def page_of(kind: int) -> int:
 
 # A character's skill with a weapon, as DSCLOG's SPEC_OF works it out (game.SPEC_SLOTS holds the
 # chosen kinds, kind + 1 each): NONE when it has chosen none (monsters too: the game's numbers),
-# PLAIN with a weapon of another kind, EXPERT a ranger's (no fighter or gladiator class: the
+# PLAIN with a weapon of another kind (or as a dual-classed warrior whose warrior class isn't
+# back yet), EXPERT a ranger's (no fighter or gladiator class: the
 # attacks only), SPECIAL, MASTER (a fighter's own kind, its first, from 5th level), GRAND (9th)
 NONE, PLAIN, EXPERT, SPECIAL, MASTER, GRAND = range(6)
 SKILL_NAMES = {SPECIAL: "specialized", MASTER: "mastery", GRAND: "grand mastery"}
 FIGHTER, GLADIATOR = 9, 10
 MASTERY, GRAND_MASTERY = 5, 9
+
+
+RANGERS = range(13, 17)
+
+
+def active_classes(sheet: bytes) -> List[Tuple[int, int]]:
+    """(class, level) for the classes whose abilities a character has now: all of them, but a
+    human's earlier ones (dual-classed: the class it has now is the first) only once the new
+    class's level has passed theirs."""
+    classes = sheet[game.SHEET_CLASSES:game.SHEET_CLASSES + 3]
+    levels = sheet[game.SHEET_LEVELS:game.SHEET_LEVELS + 3]
+    human = sheet[game.SHEET_RACE] == game.HUMAN
+    return [(classes[i], levels[i]) for i in range(3)
+            if classes[i] and not (human and i and levels[i] >= levels[0])]
 
 
 def skill(sheet: bytes, item_type: Optional[int]) -> int:
@@ -73,12 +88,15 @@ def skill(sheet: bytes, item_type: Optional[int]) -> int:
     kind = kind_of(item_type) if item_type is not None else None
     if kind is None or kind + 1 not in chosen:
         return PLAIN
-    classes = sheet[game.SHEET_CLASSES:game.SHEET_CLASSES + 3]
-    if not {FIGHTER, GLADIATOR} & set(classes):
+    active = active_classes(sheet)
+    classes = {c for c, _ in active}
+    if not classes & ({FIGHTER, GLADIATOR} | set(RANGERS)):
+        return PLAIN  # (a dual-classed warrior, until the new class's level passes the old)
+    if not {FIGHTER, GLADIATOR} & classes:
         return EXPERT
     if chosen.index(kind + 1):
         return SPECIAL
-    fighter = next((sheet[game.SHEET_LEVELS + i] for i in range(3) if classes[i] == FIGHTER), 0)
+    fighter = next((level for c, level in active if c == FIGHTER), 0)
     return GRAND if fighter >= GRAND_MASTERY else MASTER if fighter >= MASTERY else SPECIAL
 
 

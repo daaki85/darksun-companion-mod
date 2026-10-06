@@ -2743,6 +2743,10 @@ class_forbids:
         dec al
         mov [cs:cu_kind], al
 .kind:  pop ds
+        call specialized_back   ; (a dual-classed warrior's own kinds: as the game has them)
+        jnc .holds0
+        mov byte [cs:cu_kind], 0xFF
+.holds0:
         mov cx, 3                       ; CL the classes that hold, CH more than one (not human)
         cmp byte [es:bx + 0x18], 1
         jne .multi
@@ -2769,6 +2773,49 @@ class_forbids:
         pop cx
         pop bx
         pop ax
+        ret
+
+; SPECIALIZED_BACK: carry set if CU_KIND is a kind the character (sheet ES:BX) specialized in as a
+; fighter, gladiator or ranger, a human who has dual-classed and whose new class's level has
+; passed the old (restrict.specialized_back). All registers kept.
+specialized_back:
+        pusha
+        mov al, [cs:cu_kind]
+        cmp al, 0xFF
+        je .no
+        cmp byte [es:bx + 0x18], 1
+        jne .no
+        inc al
+        cmp [es:bx + SPEC_SLOTS], al
+        je .kind
+        cmp [es:bx + SPEC_SLOTS + 1], al
+        je .kind
+        cmp [es:bx + SPEC_SLOTS + 2], al
+        je .kind
+        cmp [es:bx + SPEC_SLOTS + 3], al
+        jne .no
+.kind:  mov si, 1
+.class: mov al, [es:bx + si + 0x21]
+        cmp al, FIGHTER_CLASS
+        je .warrior
+        cmp al, GLADIATOR_CLASS
+        je .warrior
+        cmp al, 13
+        jb .next
+        cmp al, 16
+        ja .next
+.warrior:
+        mov al, [es:bx + si + 0x24]
+        cmp al, [es:bx + 0x24]
+        jb .yes
+.next:  inc si
+        cmp si, 3
+        jb .class
+.no:    popa
+        clc
+        ret
+.yes:   popa
+        stc
         ret
 
 ; CLASS_FORBIDS_ONE: carry set if class AL keeps the character (sheet ES:BX, CH 1 if multiclass)
@@ -3136,6 +3183,118 @@ probe_wp_sphere_win:
         pop bp
         iret
 
+; WP_ALLOWED: AX the kinds (bit 0 the long sword) the sheet being made can choose: those whose
+; plain weapon (WP_PLAIN) the game's class lists and CLASS_FORBIDS let it use, its classes as the
+; sheet numbers them (a cleric's or ranger's by the sphere marked). restrict.allowed_kinds.
+wp_allowed:
+        push bx
+        push cx
+        push dx
+        push si
+        push di
+        push es
+        les bx, [WP_CREATION]
+        push ds
+        push cs
+        pop ds
+        mov di, wp_sheet
+        mov cx, 0x47 / 2 + 1
+        xor ax, ax
+.zero:  mov [di], ax
+        add di, 2
+        loop .zero
+        pop ds
+        mov al, [es:bx + 0x18]
+        mov [cs:wp_sheet + 0x18], al
+        xor si, si
+        xor dx, dx              ; DX the class flags
+.class: mov al, [es:bx + si + 0x24]
+        mov [cs:wp_sheet + si + 0x24], al
+        movzx di, byte [es:bx + si + 0x21]
+        cmp di, 8
+        ja .next
+        shl di, 2
+        mov al, [cs:di + wp_class_map]
+        mov cx, [cs:di + wp_class_map + 2]
+        cmp byte [cs:di + wp_class_map + 1], 0  ; (a sphere to add: 0-3 by the mark)
+        je .put
+        mov ah, 0x80
+.sphere:
+        test [WP_SPHERE_MASK], ah
+        jnz .put
+        inc al
+        shl cx, 1
+        shr ah, 1
+        cmp ah, 0x08
+        ja .sphere
+        sub al, 4               ; (none marked: the first)
+        shr cx, 4
+.put:   mov [cs:wp_sheet + si + 0x21], al
+        cmp byte [cs:di + wp_class_map + 1], 2  ; (a ranger's sphere doesn't change its flag)
+        jne .flag
+        mov cx, 0x200
+.flag:  or dx, cx
+.next:  inc si
+        cmp si, 3
+        jb .class
+        mov [cs:wp_sheet + 0x12], dx
+        push cs
+        pop es
+        mov bx, wp_sheet
+        xor si, si
+        xor di, di
+.kind:  mov dx, [cs:si + wp_plain]
+        push es
+        push bx
+        imul ax, dx, 0x14
+        les bx, [0x1669]
+        add bx, ax
+        mov ax, [es:bx + 0x10]
+        pop bx
+        pop es
+        and ax, [cs:wp_sheet + 0x12]
+        jz .no
+        call class_forbids
+        jc .no
+        mov cx, si
+        shr cx, 1
+        bts di, cx
+.no:    add si, 2
+        cmp si, 32
+        jb .kind
+        mov ax, di
+        pop es
+        pop di
+        pop si
+        pop dx
+        pop cx
+        pop bx
+        ret
+
+; By class as the creation screen numbers it (0-8): the sheet's number (the first of four, by
+; sphere), 1 if a sphere is added (2 for a ranger, whose flag is one), the class's flag
+wp_class_map db 0, 0
+             dw 0
+             db 1, 1
+             dw 0x01            ; cleric (air, earth, fire, water: flags 1, 2, 4, 8)
+             db 5, 0
+             dw 0x10            ; druid
+             db 9, 0
+             dw 0x20            ; fighter
+             db 10, 0
+             dw 0x40            ; gladiator
+             db 11, 0
+             dw 0x80            ; preserver
+             db 12, 0
+             dw 0x100           ; psionicist
+             db 13, 2
+             dw 0x200           ; ranger
+             db 17, 0
+             dw 0x400           ; thief
+wp_plain   dw 81, 18, 17, 115, 20, 22, 2, 112, 3, 19, 44, 21, 48, 1, 64, 0   ; (weaponchoice.PLAIN's types, by kind)
+wp_ok      dw 0
+wp_sheet   times 0x48 db 0
+
 ; WP_GLADIATOR: ZF clear if the sheet being made (ES:BX) is a gladiator's (two kinds to choose).
 ; All registers kept.
 wp_gladiator:
@@ -3482,10 +3641,23 @@ wp_marked:
 wp_marks:
         push es
         push bx
+        call wp_allowed
+        mov [cs:wp_ok], ax
         les bx, [WP_CREATION]
-        cmp byte [es:bx + SPEC_SLOTS], 0
-        jne .first
-        mov byte [es:bx + SPEC_SLOTS], 1        ; (the long sword)
+        movzx cx, byte [es:bx + SPEC_SLOTS]     ; none yet, or one its classes don't allow: the
+        jcxz .default                           ; long sword, or else the first allowed
+        dec cx
+        bt ax, cx
+        jc .first
+.default:
+        xor cx, cx
+        bt ax, 0
+        jc .put
+        bsf cx, ax
+        jnz .put
+        mov cx, -1                              ; (none at all)
+.put:   inc cx
+        mov [es:bx + SPEC_SLOTS], cl
 .first: mov word [es:bx + SPEC_SLOTS + 2], 0
         call wp_gladiator
         jz .one
@@ -3507,7 +3679,16 @@ wp_marks:
         mov cx, 4
 .row:   inc bx                  ; (the kind + 1)
         lea ax, [bx + WP_ROW - 1]
-        cmp bl, [cs:wp_kind]
+        lea dx, [bx - 1]
+        bt [cs:wp_ok], dx
+        jc .open
+        push 3                  ; a kind its other class doesn't allow: out of use
+        call wp_button_op
+        push 1
+        call wp_button_op
+        push 0
+        jmp .next
+.open:  cmp bl, [cs:wp_kind]
         je .chosen
         cmp bl, [cs:wp_kind + 1]
         je .chosen
@@ -3580,6 +3761,8 @@ wp_page_button:
         sub ax, WP_ROW
         cmp ax, 16
         jae .ret
+        bt [cs:wp_ok], ax       ; (one out of use: nothing)
+        jnc .ret
         inc ax
         les bx, [WP_CREATION]
         call wp_gladiator
@@ -3695,22 +3878,42 @@ spec_of_sheet:
         jb .slot
         jmp .ret
 .found: mov dl, SPEC_EXPERT
-        xor ax, ax              ; AH a fighter or gladiator, CH the fighter level
+        xor ax, ax              ; AH a fighter or gladiator, AL any warrior, CH the fighter level
         xor ch, ch
         push si
         xor si, si
 .class: mov cl, [es:bx + si + 0x21]
-        cmp cl, FIGHTER_CLASS
+        or si, si               ; a human's earlier classes (dual-classed) count only once the
+        jz .on                  ; first's level has passed theirs
+        cmp byte [es:bx + 0x18], 1
+        jne .on
+        push ax
+        mov al, [es:bx + si + 0x24]
+        cmp al, [es:bx + 0x24]
+        pop ax
+        jae .next
+.on:    cmp cl, FIGHTER_CLASS
         jne .glad
-        mov ah, 1
+        mov ax, 0x0101
         mov ch, [es:bx + si + 0x24]
 .glad:  cmp cl, GLADIATOR_CLASS
-        jne .next
-        mov ah, 1
+        jne .ranger
+        mov ax, 0x0101
+.ranger:
+        cmp cl, 13
+        jb .next
+        cmp cl, 16
+        ja .next
+        mov al, 1
 .next:  inc si
         cmp si, 3
         jb .class
         pop si
+        or al, al
+        jnz .warrior
+        mov dl, SPEC_PLAIN      ; (a warrior class not back yet)
+        jmp .ret
+.warrior:
         or ah, ah
         jz .ret
         mov dl, SPEC_SPECIAL

@@ -15,7 +15,7 @@ played (its status New) the Ledger makes them whole:
 import struct
 from typing import List, Optional, Tuple
 
-from . import game, specialize
+from . import game, restrict, specialize
 
 FIGHTER, GLADIATOR = 9, 10
 RANGERS = range(13, 17)
@@ -49,16 +49,24 @@ MISSILE_KINDS = frozenset(specialize.KINDS.index(k) for k in ("bow", "sling", "s
 BOW = specialize.KINDS.index("bow")
 
 
-def kinds_for(sheet: bytes) -> List[int]:
-    """The kinds (+1 each, as in the sheet) a new character ends up with."""
+def kinds_for(sheet: bytes, allowed: Optional[List[int]] = None) -> List[int]:
+    """The kinds (+1 each, as in the sheet) a new character ends up with; ALLOWED: the kinds its
+    classes let it choose (restrict.allowed_kinds; None: all), the first of them the default
+    where the long sword (and the club) isn't."""
+    allowed = list(range(len(PLAIN))) if allowed is None else allowed
+    ok = [k + 1 for k in allowed]
     classes = set(sheet[game.SHEET_CLASSES:game.SHEET_CLASSES + 3])
-    chosen = list(sheet[game.SPEC_SLOTS:game.SPEC_SLOTS + game.SPEC_COUNT])
+    chosen = [k if k in ok else 0 for k in sheet[game.SPEC_SLOTS:game.SPEC_SLOTS + game.SPEC_COUNT]]
+    if not ok:
+        return [0, 0, 0, 0]
+    defaults = [k for k in (1, 2) if k in ok] + [k for k in ok if k not in (1, 2)]
     if GLADIATOR in classes:
-        first = chosen[0] or 1
-        second = chosen[1] if chosen[1] and chosen[1] != first else (2 if first != 2 else 1)
+        first = chosen[0] or defaults[0]
+        seconds = [k for k in (2, 1) if k in ok] + defaults  # (the club, as the panel puts in)
+        second = chosen[1] if chosen[1] and chosen[1] != first else next((k for k in seconds if k != first), 0)
         return [first, second, 0, 0]
     if FIGHTER in classes or classes & set(RANGERS):
-        return [chosen[0] or 1, 0, 0, 0]
+        return [chosen[0] or defaults[0], 0, 0, 0]
     return [0, 0, 0, 0]
 
 
@@ -106,7 +114,9 @@ def finish_new(gd) -> List[str]:
         sheet = gd.guest.read(sheets + index * game.SHEET_SIZE, game.SHEET_SIZE)
         if len(sheet) < game.SHEET_SIZE:
             continue
-        kinds = kinds_for(sheet)
+        types = game.far_pointer(gd.guest, gd.ds, game.ITEM_TYPES_PTR)
+        kinds = kinds_for(sheet, restrict.allowed_kinds(
+            sheet, lambda t: gd.guest.read(types + t * game.ITEM_TYPE_SIZE, game.ITEM_TYPE_SIZE)))
         if bytes(kinds) != sheet[game.SPEC_SLOTS:game.SPEC_SLOTS + game.SPEC_COUNT]:
             gd.guest.write(sheets + index * game.SHEET_SIZE + game.SPEC_SLOTS, bytes(kinds))
         if not kinds[0] or kinds[0] == 1:
