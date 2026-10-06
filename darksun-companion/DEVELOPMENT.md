@@ -375,6 +375,26 @@ the classes allowed to use it (`INT CDh`), and a multiclass preserver's armour
 where the game checks for "No spell use" (`INT CCh`). (`dscompanion/restrict.py`
 says the same in Python, for the tests.)
 
+### Multiclass hit points
+
+([In the README](README.md#multiclass-hit-points).)
+
+How: the helper divides the die where the game adds a level's hit points to
+the sheet's total (`INT CBh`), and shares CON's bonus where the game adds it
+to the maximum (`INT CAh`, and `INT C9h` where it takes it off again to work
+back to the total when CON changes).
+
+### Hit dice: the better of two
+
+([In the README](README.md#hit-dice-the-better-of-two).)
+
+How: where the game has rolled a level's die (`INT BAh`, in place of the
+`mov cx,ax` after the roll, DSUN.EXE 87319h), the helper keeps the first roll
+and sends the game back to the start of its roll (872FDh), so both rolls are
+the game's own and the dice log sees both; the second time it keeps the
+better. Creation goes through the same routine, a die for each starting
+level.
+
 ### Items saving against acid
 
 ([In the README](README.md#items-saving-against-acid).)

@@ -430,13 +430,13 @@ screenshots here are taken that way).
 | `Slig is killed (270 XP)` | A creature dying, with the XP it's worth (from its character sheet). |
 | `XP: Gerakis +67, K'ratchek +22, ... (for Slig 270)` | Experience the party got, and for which kills. The game gives it right after the kill: an equal share to each character, split again between a multi-class character's classes (the sheet counts XP per class, so a three-class thri-kreen shows a third of the share). |
 | `Cilla is now a 3rd level Ranger` / `    max HP 15 -> 21 (+6)` | A level gained, and the new maximum HP. |
-| `    max HP unchanged: the game divides the hit point total by the classes, ...` | A multi-class character gained a level and its most hit points stayed the same: every class level rolls its die, but the game divides the whole total by the number of classes, so a small roll can add only a fraction (it counts at a later level). A human who changed class gets none in the new class until its level passes the old class's. |
-| `Cilla's 3rd Ranger level: hit points d10 = 2, raised to 3 for CON 21` | The hit point roll for a new level: the class's die (d8 clerics and druids, d10 fighters, gladiators and rangers, d4 preservers, d6 psionicists and thieves), never less than 2, 3 or 4 with CON 20, 21-22 or 23+, and doubled for half-giants. After level 9 or 10 there's no roll, just a fixed gain (thieves roll at 10th too with [levels up to 10](#rule-changes)). |
+| `    max HP unchanged: the game divides the hit point total by the classes, ...` | A multi-class character gained a level and its most hit points stayed the same: every class level rolls its die, but the game divides the whole total by the number of classes, so a small roll can add only a fraction (it counts at a later level). (With [multiclass hit points](#multiclass-hit-points) each level adds at least 1.) A human who changed class gets none in the new class until its level passes the old class's. |
+| `Cilla's 3rd Ranger level: hit points d10 = 2, raised to 3 for CON 21` | The hit point roll for a new level: the class's die (d8 clerics and druids, d10 fighters, gladiators and rangers, d4 preservers, d6 psionicists and thieves), never less than 2, 3 or 4 with CON 20, 21-22 or 23+, and doubled for half-giants. After level 9 or 10 there's no roll, just a fixed gain (thieves roll at 10th too with [levels up to 10](#rule-changes)). With [the better of two](#hit-dice-the-better-of-two) both rolls show (`d10 = 2 and 7, the better 7`), and with [multiclass hit points](#multiclass-hit-points) the share (`, / 2 classes = 3`). |
 | `Cilla hides in shadows: d100 = 21, needs 27 or less (54, halved in daylight) -> hidden` / `  Cilla moves silently: ...` | A thief's or ranger's hiding and moving silently at the start of their turn (the [stealth rule](#rule-changes)). |
 | `Chosen with Tab: Guard (50 HP) - Enter attacks it` | An enemy chosen with Tab in a fight (see [Choosing an enemy](#choosing-an-enemy-tab-enter-and-the-rings)). |
 | `Dinos cooks the vulture and the party eats with him: ... restored as after a full rest (HP, PSP and spell slots); the game gives each 100 XP` | Dinos asked about the cooked vulture (see [The cooked vulture](#the-cooked-vulture)); the XP itself is on the `XP:` line after it. |
 | `Character creation, STR 17: best of four 4d4 (7, 11, 9, 10) = 11, +4, +1 dwarf = 16, raised to 17 (the Fighter's prime requisite)` | An ability score rolled on the character creation screen (see below). The die rolls a whole character several times while it tumbles; the log gives only the one it stops on, once it stops, each ability checked against the one the screen shows. Rolls that came too fast to record leave the game's number: `Character creation, DEX 19 (its rolls came too fast to record)`, and likewise for hit points. |
-| `Character creation, hit points 15: Fighter d10 per level: 7 + 9; Thief d6 per level: 5 + 1 = 22, / 2 classes = 11, +4 CON 16 = 15` | The new character's hit points: a die for every level of every class, divided by the number of classes, plus CON's bonus (see below). |
+| `Character creation, hit points 15: Fighter d10 per level: 7 + 9; Thief d6 per level: 5 + 1 = 22, / 2 classes = 11, +4 CON 16 = 15` | The new character's hit points: a die for every level of every class, divided by the number of classes, plus CON's bonus (see below). With [the better of two](#hit-dice-the-better-of-two) each die shows both rolls (`10 (the better of 2 and 10)`); with [multiclass hit points](#multiclass-hit-points) each is shared on its own and CON's bonus too (`each / 2 classes (at least 1) = 9, +2 CON 16 shared = 11`). |
 | `Character creation: a name picked at random, 1d33 = 6` | The game picks a new name from its lists when the sex or race changes. |
 | `Dice: 1d8 = [3] = 3` | Dice the log couldn't tie to anything (for example a spell with no saving throw). |
 | `(The Ledger stopped one of its own writes over the game's memory: ...)` | A safety net: the Ledger never writes over the start of memory (the interrupt vectors, the BIOS's and DOS's data) or the first bytes of the game's data, which its C runtime checks ("Null pointer assignment"). Such a write could only come from a pointer the game has left empty for a moment; the line says where in the Ledger it came from. Please report it. |
@@ -1498,9 +1498,10 @@ How it works: [DEVELOPMENT.md](DEVELOPMENT.md#class-restrictions).
 With **Multiclass hit points** ticked, a character of more than one class
 gains hit points as in AD&D: each class's die at its level, divided by the
 number of classes (dropping fractions, at least 1), and CON's bonus divided
-between them too (dropping fractions). The game adds each level's full die and divides only the total, and
-gives CON's bonus whole. At creation, too, each class's die is shared on its
-own. A human who dual-classes isn't affected (one class at a time). The rule
+between them too (dropping fractions). The game adds each level's full die
+and divides only the total, and gives CON's bonus whole. At creation, too,
+each class's die is shared on its own. A human who dual-classes isn't
+affected (one class at a time). The rule
 is meant for a new game: ticked during one, a character's next level shares
 CON's bonus for all its levels, which can lower its most hit points. The log
 shows the share:
@@ -1509,9 +1510,7 @@ shows the share:
 Gerrard's 4th Fighter level: hit points d10 = 8, / 2 classes = 4
 ```
 
-How: the helper divides the die where the game adds a level's hit points
-(`INT CBh`) and shares CON's bonus where the game adds it to the maximum
-(`INT CAh`, and `INT C9h` where it takes a level's away).
+How it works: [DEVELOPMENT.md](DEVELOPMENT.md#multiclass-hit-points).
 
 ### Hit dice: the better of two
 
@@ -1529,10 +1528,7 @@ Cilla's 3rd Ranger level: hit points d10 = 2 and 7, the better 7
 Character creation, hit points 18: Fighter d10 per level: 10 (the better of 2 and 10) + 5 (the better of 5 and 1); ...
 ```
 
-How: where the game has rolled a level's die (`INT BAh`, in place of the
-`mov cx,ax` after the roll), the helper keeps the first roll and sends the
-game back to roll again, so both are the game's own rolls; the second time it
-keeps the better.
+How it works: [DEVELOPMENT.md](DEVELOPMENT.md#hit-dice-the-better-of-two).
 
 ### Levels up to 10
 

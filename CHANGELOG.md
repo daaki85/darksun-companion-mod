@@ -19,15 +19,21 @@ requests #1 to #13; its notes are in
   class allows), a new warrior starting with a plain weapon of its kind; a
   gladiator's 3rd and 4th (and any warrior's from before the rule) picked at
   a level gained, in the game's own pop-up for a psionicist's new power; the
-  kinds listed on the **Effects** screen and counted on the DAM lines, the
-  Characters tab and in the dice log.
+  kinds listed on the **Effects** screen and counted on the DAM lines and in
+  the dice log. The Characters tab lists each character's kinds
+  (`Weapons: long sword (grand mastery)`) and gives the attacks a round with
+  each weapon held (`Attacks: 3/2 a round with Long Sword, 1 with Axe`).
 - **Class restrictions** (a new rule change, on by default): psionicists,
   multiclass thieves, preservers, druids and clerics held to their own limits
   on armour, shields and weapons whatever their other classes allow, the
-  strictest winning; a multiclass preserver casts no spells in armour.
+  strictest winning; a multiclass preserver casts no spells in armour (its
+  spell slots headed **NO SPELLS IN ARMOUR** on the USE screen, and
+  "(no spells in armour)" on the Characters tab).
 - **Multiclass hit points** (a new rule change, on by default): each level's
   die and CON's bonus divided between a character's classes, as in AD&D, at
-  creation and at every level; the dice log shows the share.
+  creation and at every level; the dice log shows the share. Meant for a new
+  game: ticked during one, a character's next level shares CON's bonus for
+  all its levels.
 - **Hit dice: the better of two** (a new rule change, on by default): every
   character's hit die is rolled twice, at creation and at each level, and the
   better roll kept; the dice log shows both.
@@ -41,6 +47,18 @@ requests #1 to #13; its notes are in
   bracket.)
 
 **Fixed**
+- **The Characters tab read the game as if every rule were off** (its
+  THAC0, attacks and specialization lines): it now uses the rules ticked.
+- **Character creation in the dice log:** one click on the die rolls a whole
+  character several times while it tumbles, and the log gave every one; when
+  rolls came too fast to record, the hit point line took CON from an earlier
+  one (37 logged where the game had 40). Now only the character the die stops
+  on is logged, each ability and the hit points checked against what the
+  screen shows (`DEX 19 (its rolls came too fast to record)`).
+- **"No hit point roll" on a level gained:** the dice log said the game rolls
+  hit points only when a character's highest class level rises. It rolls for
+  every new class level; a level that leaves the most hit points unchanged
+  only added a fraction (the game divides the whole total by the classes).
 - **Kalzith's prices:** Blur 6,000 (was 3,000) and Haste 9,000 (was 12,000).
   They were taken from the game's scrolls with the spell numbers read one off
   (Wall of Fog's and Flame Arrow's); the game has no scroll of either, so
@@ -48,7 +66,7 @@ requests #1 to #13; its notes are in
   repriced when the Ledger next sees the game.
 
 **Changed**
-- **The README is shorter** (2,974 lines to about 2,290): how each part works
+- **The README is shorter** (2,974 lines to about 2,300): how each part works
   (the helper's interrupts, the game's offsets and flags), how the dice log
   works, what's known of the game's data and the development notes are in a
   new `darksun-companion/DEVELOPMENT.md`, each README section linking to its
