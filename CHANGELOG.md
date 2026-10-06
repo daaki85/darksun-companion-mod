@@ -1,10 +1,17 @@
 # Changelog
 
 What changed in Templar's Ledger, pull request by pull request, newest first.
-Release **1.0.0** is pull requests #1 to #13; its notes are in
+Release **1.1.0** is pull requests #14 to #18; its notes are in
+[`release-notes/v1.1.0.md`](release-notes/v1.1.0.md). Release **1.0.0** is pull
+requests #1 to #13; its notes are in
 [`release-notes/v1.0.0.md`](release-notes/v1.0.0.md).
 
-## Pull request #17 (in review)
+## Pull request #18 (in review)
+
+- **Release 1.1.0:** the version, its notes, and pull request #17 marked
+  merged in the READMEs.
+
+## Pull request #17 ([merged 2026-10-06](https://github.com/daaki85/darksun-companion-mod/pull/17))
 
 **Changed**
 - **Kalzith's scrolls at the game's prices:** 3,000 to 12,000 ceramic (they

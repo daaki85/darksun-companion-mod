@@ -172,8 +172,10 @@ double-click, with the options as last set.)
 
 ## What's new
 
+Release **1.1.0** is out: pull requests #14 to #18, below.
+
 In [pull request #17](https://github.com/daaki85/darksun-companion-mod/pull/17)
-(in review):
+(merged):
 - **New content:**
   - **Kreenfang and Shadowseeker,** two named magic weapons, Shadowseeker
     letting its wielder see the invisible; 200 XP for lifting it from Kurzak;
@@ -216,5 +218,7 @@ all the new content, crash reports, a crash in the opening fight fixed, and
 fixes from a review of the code.
 
 Everything that changed, pull request by pull request, is in
-[`CHANGELOG.md`](CHANGELOG.md). Release **1.0.0** is pull requests #1 to #13;
-its notes are in [`release-notes/v1.0.0.md`](release-notes/v1.0.0.md).
+[`CHANGELOG.md`](CHANGELOG.md). Release **1.1.0** is pull requests #14 to #18,
+with notes in [`release-notes/v1.1.0.md`](release-notes/v1.1.0.md); release
+**1.0.0** is pull requests #1 to #13, with notes in
+[`release-notes/v1.0.0.md`](release-notes/v1.0.0.md).
