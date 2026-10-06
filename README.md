@@ -178,13 +178,18 @@ double-click, with the options as last set.)
 
 ## What's new
 
-In [pull request #19](https://github.com/daaki85/darksun-companion-mod/pull/19)
+In [pull request #20](https://github.com/daaki85/darksun-companion-mod/pull/20)
 (in review):
 - **Four new rule changes:** weapon specialization (chosen on the
   creation screen's new WEAPON SPEC pages, a gladiator's later picks in the
   game's own level-up pop-up, and listed on the Effects screen), class
   restrictions for multiclass characters, multiclass hit points as in
   AD&D, and hit dice rolled twice with the better kept.
+- **The dice log's character creation** gives only the character the die
+  stops on, checked against the screen.
+
+In [pull request #19](https://github.com/daaki85/darksun-companion-mod/pull/19)
+(merged):
 - **Which class levels up next, on View Character:** for a character of more
   than one class, the XP in brackets now names its class,
   `EXP:87230 (90000 Pr)`: a letter for each class, Pr and Ps for preserver and

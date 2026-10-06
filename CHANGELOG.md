@@ -6,7 +6,7 @@ Release **1.1.0** is pull requests #14 to #18; its notes are in
 requests #1 to #13; its notes are in
 [`release-notes/v1.0.0.md`](release-notes/v1.0.0.md).
 
-## Pull request #19 ([in review](https://github.com/daaki85/darksun-companion-mod/pull/19))
+## Pull request #20 ([in review](https://github.com/daaki85/darksun-companion-mod/pull/20))
 
 **Added**
 - **Weapon specialization** (a new rule change, on by default): fighters and
@@ -37,14 +37,6 @@ requests #1 to #13; its notes are in
 - **Hit dice: the better of two** (a new rule change, on by default): every
   character's hit die is rolled twice, at creation and at each level, and the
   better roll kept; the dice log shows both.
-- **Which class levels up next, on View Character:** for a character of more
-  than one class, the XP in brackets on the experience line now names the
-  class that reaches its next level there: `EXP:87230 (90000 Pr)`. A letter
-  for each class, but **Pr** and **Ps** for preserver and psionicist (both
-  start with P); both named when two level up at the same XP
-  (`(20000 Pr/T)`); a class already at the highest level never named. One
-  class: as before. (The patched game's `INT D2h`, where the game adds the
-  bracket.)
 
 **Fixed**
 - **The Characters tab read the game as if every rule were off** (its
@@ -59,11 +51,6 @@ requests #1 to #13; its notes are in
   hit points only when a character's highest class level rises. It rolls for
   every new class level; a level that leaves the most hit points unchanged
   only added a fraction (the game divides the whole total by the classes).
-- **Kalzith's prices:** Blur 6,000 (was 3,000) and Haste 9,000 (was 12,000).
-  They were taken from the game's scrolls with the spell numbers read one off
-  (Wall of Fog's and Flame Arrow's); the game has no scroll of either, so
-  they're its price for the spell's level, 3,000 a level. His stock is
-  repriced when the Ledger next sees the game.
 
 **Changed**
 - **The README is shorter** (2,974 lines to about 2,300): how each part works
@@ -75,6 +62,27 @@ requests #1 to #13; its notes are in
   two-weapon rule sits with the dice log's two weapons; the new items are one
   section with a table, Kalzith and Semyon one of new people told as a player
   meets them; and the helms' and boots' rules are one.
+
+## Pull request #19 ([merged 2026-10-06](https://github.com/daaki85/darksun-companion-mod/pull/19))
+
+**Added**
+- **Which class levels up next, on View Character:** for a character of more
+  than one class, the XP in brackets on the experience line now names the
+  class that reaches its next level there: `EXP:87230 (90000 Pr)`. A letter
+  for each class, but **Pr** and **Ps** for preserver and psionicist (both
+  start with P); both named when two level up at the same XP
+  (`(20000 Pr/T)`); a class already at the highest level never named. One
+  class: as before. (The patched game's `INT D2h`, where the game adds the
+  bracket.)
+
+**Fixed**
+- **Kalzith's prices:** Blur 6,000 (was 3,000) and Haste 9,000 (was 12,000).
+  They were taken from the game's scrolls with the spell numbers read one off
+  (Wall of Fog's and Flame Arrow's); the game has no scroll of either, so
+  they're its price for the spell's level, 3,000 a level. His stock is
+  repriced when the Ledger next sees the game.
+
+**Changed**
 - **Kalzith sells Shield and Burning Hands** in place of Magic Missile and
   Color Spray (3,000 each), so none of his scrolls is one the game has
   (Color Spray's is in the sewers). Magic Missile and Color Spray scrolls he
