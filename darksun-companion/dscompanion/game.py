@@ -120,7 +120,9 @@ RULE_SETTINGS = (("helm_ac", RULE_HELMS), ("boots_move", RULE_BOOTS), ("two_weap
                  ("spell_save", RULE_SPELL_SAVE), ("no_doubled_save", RULE_NO_DOUBLE),
                  ("cats_grace", RULE_CATS_GRACE), ("stealth", RULE_STEALTH), ("level_10", RULE_LEVEL_10),
                  ("thief_table", RULE_THIEF_TABLE), ("half_giant_hands", RULE_HALF_GIANT),
-                 ("protection_rules", RULE_PROTECTION), ("item_saves", RULE_ITEM_SAVES))
+                 ("protection_rules", RULE_PROTECTION), ("item_saves", RULE_ITEM_SAVES),
+                 ("weapon_specialization", RULE_SPECIALIZE), ("class_restrictions", RULE_RESTRICT),
+                 ("multiclass_hp", RULE_MULTI_HP))
 # Cat's Grace (RULE_CATS_GRACE): Flaming Sphere (wizard level 2) gets Strength's record and the
 # name, and DSCLOG sends it to Strength's code, which rolls 1d6 into an effect of its own (54,
 # a number the game leaves unused) that adds to DEX, at most 24, as Strength's adds to STR.

@@ -1,6 +1,7 @@
 """Weapon specialization's kinds (specialize.py)."""
 
 import os
+import struct
 import sys
 import unittest
 
@@ -75,6 +76,37 @@ class PageLabelTests(unittest.TestCase):
         self.assertEqual(labels[8], "QTR STAFF")
         self.assertEqual(labels[15], "STF SLING")
         self.assertTrue(all(len(t) <= 10 for t in labels))
+
+
+
+class NewCharacterTests(unittest.TestCase):
+    """weaponchoice: a new character's kinds made whole, and its starting weapon."""
+
+    def kinds(self, chosen, classes):
+        from dscompanion import weaponchoice
+        return weaponchoice.kinds_for(sheet(chosen, classes=classes))
+
+    def test_defaults(self):
+        self.assertEqual(self.kinds((), (10, 0, 0)), [1, 2, 0, 0])  # a gladiator: long sword, club
+        self.assertEqual(self.kinds((), (9, 0, 0)), [1, 0, 0, 0])
+        self.assertEqual(self.kinds((), (15, 0, 0)), [1, 0, 0, 0])  # a ranger
+        self.assertEqual(self.kinds((2,), (10, 0, 0)), [3, 2, 0, 0])  # (kinds + 1 in the sheet)
+        self.assertEqual(self.kinds((1,), (10, 0, 0)), [2, 1, 0, 0])
+
+    def test_extra_kinds_cleared(self):
+        self.assertEqual(self.kinds((2, 5), (9, 0, 0)), [3, 0, 0, 0])
+        self.assertEqual(self.kinds((2,), (11, 0, 0)), [0, 0, 0, 0])
+
+    def test_plain_weapon(self):
+        from dscompanion import weaponchoice
+        start = bytes.fromhex("0cfc00001f002d000f27510000000000040a1c0000")
+        new, slot = weaponchoice.plain_weapon(start, specialize.KINDS.index("dagger"))
+        self.assertEqual(new.hex(), "60fb00001f0002000f271100000000000403100000"[:6] + new.hex()[6:])
+        self.assertEqual((struct.unpack_from("<H", new, 0x0A)[0], struct.unpack_from("<H", new, 0x12)[0], slot), (17, 0x10, None))
+        self.assertEqual(struct.unpack_from("<H", new, 0x0C)[0], 0)
+        _, slot = weaponchoice.plain_weapon(start, specialize.KINDS.index("bow"))
+        self.assertEqual(slot, game.EQUIP_SLOTS.index("missile"))
+        self.assertEqual(len(weaponchoice.PLAIN), len(specialize.KINDS))
 
 
 if __name__ == "__main__":

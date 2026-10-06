@@ -327,6 +327,15 @@ class Viewer:
         self.stealth_gear = tk.BooleanVar(value=settings.get("stealth_gear", True) is not False)
         # (in the order the README's Rule changes has them: the ones that change most first)
         for n, (key, text) in enumerate((
+                ("weapon_specialization", "Weapon specialization: fighters and gladiators specialize (+1 to hit, +2 "
+                                          "damage), fighters on to mastery at 5th level and grand mastery at 9th, "
+                                          "rangers' expertise; warriors without it attack as AD&D's (chosen on the "
+                                          "creation panel's WEAPON SPEC pages)"),
+                ("class_restrictions", "Class restrictions on armour, shields and weapons, the strictest class "
+                                       "winning (psionicists, multiclass thieves, preservers, druids, clerics' "
+                                       "spheres); a multiclass preserver casts no spells in armour"),
+                ("multiclass_hp", "Multiclass hit points as in AD&D: each level's die and CON's bonus shared "
+                                  "between the classes"),
                 ("spell_save", "Spells are saved against with the spell save (the game uses "
                                "petrification/polymorph)"),
                 ("no_doubled_save", "Saves against fire, cold and electricity: DEX defensive adjustment "
