@@ -1266,9 +1266,20 @@ For a character of more than one class, the number in brackets on View
 Character's experience line is the XP at which the first of their classes
 goes up a level, and the Ledger adds which class that is:
 `EXP:87230 (90000 Pr)` means the preserver goes up next, at 90,000. Each
-class is a letter (C cleric, D druid, F fighter, G gladiator, R ranger, T
-thief), but preserver and psionicist, which both start with P, are **Pr** and
-**Ps**. When two classes go up at the same XP, both are named:
+class is a letter, except preserver and psionicist, which both start with P:
+
+| Class | Letters |
+|---|---|
+| Cleric | C |
+| Druid | D |
+| Fighter | F |
+| Gladiator | G |
+| Preserver | Pr |
+| Psionicist | Ps |
+| Ranger | R |
+| Thief | T |
+
+When two classes go up at the same XP, both are named:
 `(20000 Pr/T)`. A class already at the highest level (9, or 10 with
 [levels up to 10](#levels-up-to-10)) has no next level, so it is never named.
 A character of one class shows the line as the game always has.
