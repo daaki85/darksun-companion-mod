@@ -2065,6 +2065,10 @@ class DiceLog:
         if sheet[game.SHEET_RACE] == game.RACE_HALF_GIANT:
             gained *= 2
             text += f", doubled for a half-giant = {gained}"
+        classes = game.class_share(sheet)
+        if self.game.rules & game.RULE_MULTI_HP and classes > 1:
+            share = game.multiclass_gain(sheet, gained) // classes
+            text += f", / {classes} classes = {share}" + (" (at least 1)" if gained < classes else "")
         cls_name = game.CLASS_NAMES.get(cls, f"class {cls}")
         return [f"{self.game.creature_name(member)}'s {game.ordinal(level)} {cls_name} level: hit points {text}"]
 
@@ -2150,7 +2154,10 @@ class DiceLog:
         classes = game.class_share(sheet)
         multi = bool(g.rules & game.RULE_MULTI_HP) and classes > 1
         hp = rolled // classes
-        if classes > 1:
+        if multi:  # (RULE_MULTI_HP: each level's share, at least 1)
+            hp = sum(game.multiclass_gain(sheet, r[2]) for r in rolls) // classes
+            steps += f", each / {classes} classes (at least 1) = {hp}"
+        elif classes > 1:
             steps += f", / {classes} classes = {hp}" + (" (rounded down)" if rolled % classes else "")
         # CON's bonus counts levels that roll dice: a warrior's (group 1) at the full bonus, and
         # the rest of the highest class's up to +2

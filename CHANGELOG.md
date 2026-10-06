@@ -25,10 +25,9 @@ requests #1 to #13; its notes are in
   multiclass thieves, preservers, druids and clerics held to their own limits
   on armour, shields and weapons whatever their other classes allow, the
   strictest winning; a multiclass preserver casts no spells in armour.
-- **Multiclass hit points** (a new rule change, on by default): CON's hit
-  point bonus divided between a character's classes, as in AD&D (the game
-  gives it whole), at creation and at every level; the dice stay the game's.
-  The dice log shows the share.
+- **Multiclass hit points** (a new rule change, on by default): each level's
+  die and CON's bonus divided between a character's classes, as in AD&D, at
+  creation and at every level; the dice log shows the share.
 - **Which class levels up next, on View Character:** for a character of more
   than one class, the XP in brackets on the experience line now names the
   class that reaches its next level there: `EXP:87230 (90000 Pr)`. A letter

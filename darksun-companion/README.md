@@ -1380,7 +1380,7 @@ and [Saving throws](#saving-throws).
 |---|---|
 | [Weapon specialization](#weapon-specialization) | fighters and gladiators specialize in kinds of weapon, fighters on to mastery and grand mastery, rangers take expertise; other weapons at AD&D's plain attack rate |
 | [Class restrictions](#class-restrictions) | each class's limits on armour, shields and weapons hold, the strictest winning; a multiclass preserver casts no spells in armour |
-| [Multiclass hit points](#multiclass-hit-points) | CON's hit point bonus shared between a character's classes |
+| [Multiclass hit points](#multiclass-hit-points) | each level's die and CON's bonus shared between a character's classes |
 | [Spells saved against with the spell save](#spells-saved-against-with-the-spell-save) | the spell save rather than petrification/polymorph |
 | [Fire, cold and electricity: DEX instead of a doubled d20](#fire-cold-and-electricity-dex-instead-of-a-doubled-d20) | DEX's defensive adjustment on those saves rather than a doubled d20 |
 | [Two weapons: AD&D's penalties](#two-weapons-adds-penalties) | -2 main hand, -4 off hand, DEX's reaction adjustment added; rangers none |
@@ -1494,21 +1494,22 @@ How it works: [DEVELOPMENT.md](DEVELOPMENT.md#class-restrictions).
 ### Multiclass hit points
 
 With **Multiclass hit points** ticked, a character of more than one class
-gets CON's hit point bonus as in AD&D: divided between its classes (dropping
-fractions). The game gives it whole, as if the character had one class. The
-dice stay the game's: each level's die goes into a total, and the total is
-divided by the number of classes. A human who dual-classes isn't affected (one
-class at a time). The rule is meant for a new game: ticked during one, a
-character's next level shares CON's bonus for all its levels, which can lower
-its most hit points. The log shows the share:
+gains hit points as in AD&D: each class's die at its level, divided by the
+number of classes (dropping fractions, at least 1), and CON's bonus divided
+between them too (dropping fractions). The game adds each level's full die and divides only the total, and
+gives CON's bonus whole. At creation, too, each class's die is shared on its
+own. A human who dual-classes isn't affected (one class at a time). The rule
+is meant for a new game: ticked during one, a character's next level shares
+CON's bonus for all its levels, which can lower its most hit points. The log
+shows the share:
 
 ```
-Character creation, hit points 10: Fighter d10 per level: 3 + 9; Thief d6 per level: 3 + 1 = 16, / 2 classes = 8, +2 CON 16 shared = 10
+Gerrard's 4th Fighter level: hit points d10 = 8, / 2 classes = 4
 ```
 
-How: the helper shares CON's bonus where the game adds it to the maximum
-(`INT CAh`), and where it takes it off to work back to the dice total when
-CON changes (`INT C9h`).
+How: the helper divides the die where the game adds a level's hit points
+(`INT CBh`) and shares CON's bonus where the game adds it to the maximum
+(`INT CAh`, and `INT C9h` where it takes a level's away).
 
 ### Levels up to 10
 

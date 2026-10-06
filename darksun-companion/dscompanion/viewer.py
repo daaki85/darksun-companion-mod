@@ -335,7 +335,8 @@ class Viewer:
                 ("class_restrictions", "Class restrictions on armour, shields and weapons, the strictest class "
                                        "winning (psionicists, multiclass thieves, preservers, druids, clerics' "
                                        "spheres); a multiclass preserver casts no spells in armour"),
-                ("multiclass_hp", "Multiclass hit points as in AD&D: CON's bonus shared between the classes"),
+                ("multiclass_hp", "Multiclass hit points as in AD&D: each level's die and CON's bonus shared "
+                                  "between the classes"),
                 ("spell_save", "Spells are saved against with the spell save (the game uses "
                                "petrification/polymorph)"),
                 ("no_doubled_save", "Saves against fire, cold and electricity: DEX defensive adjustment "

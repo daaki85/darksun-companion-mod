@@ -61,8 +61,8 @@ can be switched off on its Options tab.
   - class restrictions: each class's limits on armour, shields and weapons
     hold for a multiclass character too, the strictest winning, and a
     multiclass preserver casts no spells in armour;
-  - multiclass hit points as in AD&D, CON's bonus shared between the
-    classes;
+  - multiclass hit points as in AD&D, each level's die and CON's bonus shared
+    between the classes;
   - spells saved against with the spell save;
   - DEX on saves against fire, cold and electricity instead of a doubled d20;
   - two-weapon penalties;
