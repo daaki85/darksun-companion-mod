@@ -429,7 +429,7 @@ screenshots here are taken that way).
 | `Slig is killed (270 XP)` | A creature dying, with the XP it's worth (from its character sheet). |
 | `XP: Gerakis +67, K'ratchek +22, ... (for Slig 270)` | Experience the party got, and for which kills. The game gives it right after the kill: an equal share to each character, split again between a multi-class character's classes (the sheet counts XP per class, so a three-class thri-kreen shows a third of the share). |
 | `Cilla is now a 3rd level Ranger` / `    max HP 15 -> 21 (+6)` | A level gained, and the new maximum HP. |
-| `    no hit point roll: that comes only when the highest class level rises (still 3rd)` | A multi-class character's level in one class went up without raising their highest level: the game gives no hit points for it. |
+| `    max HP unchanged: the game divides the hit point total by the classes, ...` | A multi-class character gained a level and its most hit points stayed the same: every class level rolls its die, but the game divides the whole total by the number of classes, so a small roll can add only a fraction (it counts at a later level). A human who changed class gets none in the new class until its level passes the old class's. |
 | `Cilla's 3rd Ranger level: hit points d10 = 2, raised to 3 for CON 21` | The hit point roll for a new level: the class's die (d8 clerics and druids, d10 fighters, gladiators and rangers, d4 preservers, d6 psionicists and thieves), never less than 2, 3 or 4 with CON 20, 21-22 or 23+, and doubled for half-giants. After level 9 or 10 there's no roll, just a fixed gain (thieves roll at 10th too with [levels up to 10](#rule-changes)). |
 | `Cilla hides in shadows: d100 = 21, needs 27 or less (54, halved in daylight) -> hidden` / `  Cilla moves silently: ...` | A thief's or ranger's hiding and moving silently at the start of their turn (the [stealth rule](#rule-changes)). |
 | `Chosen with Tab: Guard (50 HP) - Enter attacks it` | An enemy chosen with Tab in a fight (see [Choosing an enemy](#choosing-an-enemy-tab-enter-and-the-rings)). |
@@ -1380,7 +1380,7 @@ and [Saving throws](#saving-throws).
 |---|---|
 | [Weapon specialization](#weapon-specialization) | fighters and gladiators specialize in kinds of weapon, fighters on to mastery and grand mastery, rangers take expertise; other weapons at AD&D's plain attack rate |
 | [Class restrictions](#class-restrictions) | each class's limits on armour, shields and weapons hold, the strictest winning; a multiclass preserver casts no spells in armour |
-| [Multiclass hit points](#multiclass-hit-points) | each level's die and CON's bonus shared between a character's classes |
+| [Multiclass hit points](#multiclass-hit-points) | CON's hit point bonus shared between a character's classes |
 | [Spells saved against with the spell save](#spells-saved-against-with-the-spell-save) | the spell save rather than petrification/polymorph |
 | [Fire, cold and electricity: DEX instead of a doubled d20](#fire-cold-and-electricity-dex-instead-of-a-doubled-d20) | DEX's defensive adjustment on those saves rather than a doubled d20 |
 | [Two weapons: AD&D's penalties](#two-weapons-adds-penalties) | -2 main hand, -4 off hand, DEX's reaction adjustment added; rangers none |
@@ -1494,22 +1494,21 @@ How it works: [DEVELOPMENT.md](DEVELOPMENT.md#class-restrictions).
 ### Multiclass hit points
 
 With **Multiclass hit points** ticked, a character of more than one class
-gains hit points as in AD&D: each class's die at its level, divided by the
-number of classes (dropping fractions, at least 1), and CON's bonus divided
-between them too (dropping fractions). The game adds each level's full die and divides only the total, and
-gives CON's bonus whole. At creation, too, each class's die is shared on its
-own. A human who dual-classes isn't affected (one class at a time). The rule
-is meant for a new game: ticked during one, a character's next level shares
-CON's bonus for all its levels, which can lower its most hit points. The log
-shows the share:
+gets CON's hit point bonus as in AD&D: divided between its classes (dropping
+fractions). The game gives it whole, as if the character had one class. The
+dice stay the game's: each level's die goes into a total, and the total is
+divided by the number of classes. A human who dual-classes isn't affected (one
+class at a time). The rule is meant for a new game: ticked during one, a
+character's next level shares CON's bonus for all its levels, which can lower
+its most hit points. The log shows the share:
 
 ```
-Gerrard's 4th Fighter level: hit points d10 = 8, / 2 classes = 4
+Character creation, hit points 10: Fighter d10 per level: 3 + 9; Thief d6 per level: 3 + 1 = 16, / 2 classes = 8, +2 CON 16 shared = 10
 ```
 
-How: the helper divides the die where the game adds a level's hit points
-(`INT CBh`) and shares CON's bonus where the game adds it to the maximum
-(`INT CAh`, and `INT C9h` where it takes a level's away).
+How: the helper shares CON's bonus where the game adds it to the maximum
+(`INT CAh`), and where it takes it off to work back to the dice total when
+CON changes (`INT C9h`).
 
 ### Levels up to 10
 

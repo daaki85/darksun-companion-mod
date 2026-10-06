@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dscompanion.dicelog import FILTERS, HDR_SIG, Entry
 from dscompanion.textlog import TextBuffer
-from dscompanion.gamepatch import (VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_NO_CAST, VEC_CAN_USE, VEC_VIEW_DAM, VEC_DAM_LINE, VEC_SPEC_DAMAGE, VEC_ATTACKS, VEC_XP_NEXT, VEC_SCRIPT_RAND, VEC_ITEM_ARMOUR, VEC_ITEM_SKIP, VEC_ITEM_WEAPON, VEC_AC, VEC_DOUBLE, VEC_MSG, VEC_NEXT, VEC_RAND, VEC_RING_AC, VEC_USE_ITEM,
+from dscompanion.gamepatch import (VEC_MC_CON, VEC_MC_UNCON, VEC_NO_CAST, VEC_CAN_USE, VEC_VIEW_DAM, VEC_DAM_LINE, VEC_SPEC_DAMAGE, VEC_ATTACKS, VEC_XP_NEXT, VEC_SCRIPT_RAND, VEC_ITEM_ARMOUR, VEC_ITEM_SKIP, VEC_ITEM_WEAPON, VEC_AC, VEC_DOUBLE, VEC_MSG, VEC_NEXT, VEC_RAND, VEC_RING_AC, VEC_USE_ITEM,
                                   VEC_RING_SAVE, VEC_SAVE, VEC_TEXT, VEC_TWO, VEC_GRACE_CAST, VEC_GRACE_EFFECT,
                                   VEC_GRACE_ABILITY, VEC_NAMES_FILL, VEC_NAMES_SIZE, VEC_STEALTH, VEC_TYPES_FILL,
                                   VEC_TYPES_SIZE, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED,
@@ -1023,7 +1023,7 @@ class NoCastTests(unittest.TestCase):
 
 @unittest.skipIf(Uc is None, "unicorn is not installed")
 class MultiHpTests(unittest.TestCase):
-    """PROBE_MC_ROLL, PROBE_MC_CON, PROBE_MC_UNCON against game.multiclass_gain and con_share."""
+    """PROBE_MC_CON, PROBE_MC_UNCON against game.con_share."""
     SHEETS = 0x8000
     RULES = 170
 
@@ -1032,14 +1032,10 @@ class MultiHpTests(unittest.TestCase):
         self.mu = mu = Uc(UC_ARCH_X86, UC_MODE_16)
         mu.mem_map(0, 0x100000)
         mu.mem_write(TSR * 16, image)
-        add = image.find(bytes.fromhex("26014f0acf"))  # PROBE_MC_ROLL's last two instructions
-        self.assertGreater(add, 0)
-        start = image.rfind(bytes.fromhex("2ef706"), 0, add)  # its rule test, its first instruction
-        con = image.find(bytes.fromhex("01c7cf"), add)  # PROBE_MC_CON: call con_share, add di,ax, iret
-        uncon = image.find(bytes.fromhex("29c2cf"), add)
+        con = image.find(bytes.fromhex("01c7cf"))  # PROBE_MC_CON: call con_share, add di,ax, iret
+        uncon = image.find(bytes.fromhex("29c2cf"), con)
         self.assertGreater(con, 0)
         self.assertGreater(uncon, 0)
-        mu.mem_write(VEC_MC_ROLL * 4, struct.pack("<HH", start, TSR))
         mu.mem_write(VEC_MC_CON * 4, struct.pack("<HH", con - 3, TSR))
         mu.mem_write(VEC_MC_UNCON * 4, struct.pack("<HH", uncon - 3, TSR))
         mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
@@ -1061,18 +1057,6 @@ class MultiHpTests(unittest.TestCase):
     def sheets(self):
         sheet = test_restrict.sheet
         return [sheet(9), sheet(9, 11), sheet(9, 11, 17), sheet(11, 9, race=game.HUMAN)]
-
-    def test_roll(self):
-        for s in self.sheets():
-            for gain in range(0, 21):
-                for rules in (0, 16384):
-                    with self.subTest(sheet=s[0x21:0x24], gain=gain, rules=rules):
-                        self.mu.mem_write(self.SHEETS * 16 + 2 * 0x47 + 0x0A, struct.pack("<H", 0))
-                        out = self.run_probe(VEC_MC_ROLL, s[:0x0A] + struct.pack("<H", 100) + s[0x0C:], rules, ecx=gain)
-                        base, = struct.unpack("<H", self.mu.mem_read(self.SHEETS * 16 + 2 * 0x47 + 0x0A, 2))
-                        added = game.multiclass_gain(s, gain) if rules else gain
-                        self.assertEqual(base, 100 + added)
-                        self.assertEqual((out["sp"], out["ax"], out["dx"], out["si"], out["di"]), (0x7FC, 0x1111, 0x4444, 2, 0x7777))
 
     def test_con(self):
         for s in self.sheets():

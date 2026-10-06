@@ -1011,8 +1011,9 @@ class NewLinesTests(unittest.TestCase):
         self.assertEqual(tracker.check(1.0), [])
         m[SHEETS + game.SHEET_LEVELS + 1] = 2  # Preserver 2nd, still a 3rd level Gladiator
         self.assertEqual(tracker.check(2.0), ["Dag is now a 2nd level Preserver",
-                                              "    no hit point roll: that comes only when the highest class "
-                                              "level rises (still 3rd)"])
+                                              "    max HP unchanged: the game divides the hit point total by "
+                                              "the classes, and this level's roll left a fraction, which counts "
+                                              "at a later level"])
         m[SHEETS + game.SHEET_LEVELS] = 4
         struct.pack_into("<h", m, SHEETS + game.SHEET_MAX_HP, struct.unpack_from("<h", m, SHEETS + 8)[0] + 5)
         self.assertEqual(tracker.check(3.0)[0], "Dag is now a 4th level Gladiator")
@@ -1325,17 +1326,17 @@ class CreationTests(unittest.TestCase):
                           "3 + 6 = 24, / 2 classes = 12, +6 CON 17 = 18"])
 
     def test_hit_points_shared(self):
-        """RULE_MULTI_HP: each level's die shared between the classes, at least 1, and CON's bonus too."""
+        """RULE_MULTI_HP: the dice as the game has them, and CON's bonus shared between the classes."""
         log = make_creation()
         log.set_rules(game.RULE_MULTI_HP)
         for cls, sides, level, face in ((9, 10, 1, 10), (9, 10, 2, 5), (17, 6, 1, 1), (17, 6, 2, 6)):
             e = entry(raw_for(face, sides), dicelog.DICE_SITE, words(0, 0, 1, sides),
                       words(dicelog.CREATION_HP_CALLER, 0x54FA, 1, cls, level), parent_code=dicelog.LEVEL_HP_RETURN)
             self.assertEqual(log.describe(e), [])
-        # 5 + 2 + 1 (the 1 at least) + 3 = 11, and CON 17's +6 / 2
+        # 22 / 2 classes, as the game has it, and CON 17's +6 / 2
         self.assertEqual(log.creation_hp_lines(),
                          ["Character creation, hit points 14: Fighter d10 per level: 10 + 5; Thief d6 per level: "
-                          "1 + 6 = 22, each / 2 classes (at least 1) = 11, +3 CON 17 shared = 14"])
+                          "1 + 6 = 22, / 2 classes = 11, +3 CON 17 shared = 14"])
 
     def test_random_name(self):
         log = make_creation()
