@@ -63,6 +63,7 @@ can be switched off on its Options tab.
     multiclass preserver casts no spells in armour;
   - multiclass hit points as in AD&D, each level's die and CON's bonus shared
     between the classes;
+  - hit dice rolled twice, the better kept, for every character;
   - spells saved against with the spell save;
   - DEX on saves against fire, cold and electricity instead of a doubled d20;
   - two-weapon penalties;
@@ -179,11 +180,11 @@ double-click, with the options as last set.)
 
 In [pull request #19](https://github.com/daaki85/darksun-companion-mod/pull/19)
 (in review):
-- **Three new rule changes:** weapon specialization (chosen on the
+- **Four new rule changes:** weapon specialization (chosen on the
   creation screen's new WEAPON SPEC pages, a gladiator's later picks in the
   game's own level-up pop-up, and listed on the Effects screen), class
-  restrictions for multiclass characters, and multiclass hit points as in
-  AD&D.
+  restrictions for multiclass characters, multiclass hit points as in
+  AD&D, and hit dice rolled twice with the better kept.
 - **Which class levels up next, on View Character:** for a character of more
   than one class, the XP in brackets now names its class,
   `EXP:87230 (90000 Pr)`: a letter for each class, Pr and Ps for preserver and

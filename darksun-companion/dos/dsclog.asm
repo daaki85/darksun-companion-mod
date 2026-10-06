@@ -96,6 +96,7 @@ VEC_PK_TITLE equ 0xBE      ; PROBE_PK_TITLE
 VEC_PK_FILL equ 0xBD       ; PROBE_PK_FILL
 VEC_PK_CLICK equ 0xBC      ; PROBE_PK_CLICK
 VEC_EF_ROWS equ 0xBB       ; PROBE_EF_ROWS
+VEC_HP_BEST equ 0xBA       ; PROBE_HP_BEST
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 128         ; entries in the ring
@@ -4946,6 +4947,7 @@ RULE_ITEM_SAVES equ 2048        ; items save against acid as in AD&D where bette
 RULE_SPECIALIZE equ 4096        ; weapon specialization (PROBE_ATTACKS, PROBE_SPEC_DAMAGE)
 RULE_RESTRICT equ 8192          ; class restrictions on armour, shields and weapons (PROBE_CAN_USE)
 RULE_MULTI_HP equ 16384         ; multiclass hit points as in AD&D (PROBE_MC_*)
+RULE_HP_BEST equ 32768          ; a hit die rolled twice, the better kept (PROBE_HP_BEST)
 FOOT       equ 13               ; the item's slot byte while worn on the feet
 THINGS_SEG equ 0x3972 - 0x4356  ; the things table's segment, relative to DS
 
@@ -5148,6 +5150,35 @@ probe_mc_roll:
         pop ax
 .add:   add [es:bx + 0x0A], cx
         iret
+
+; PROBE_HP_BEST: INT VEC_HP_BEST replaces "mov cx,ax" (2 bytes; DSUN.EXE 87319h) after the game's
+; roll of a level's hit die (at creation too), AX the roll. With RULE_HP_BEST the game rolls it
+; twice and keeps the better: the first time the roll is kept and the INT returns to the start of
+; the game's roll (872FDh: the die from the class's table, then the call), so the dice log sees
+; both rolls as the game's; the second time CX gets the better of the two.
+HP_BEST_BACK equ 0x8731B - 0x872FD
+probe_hp_best:
+        test word [cs:rules], RULE_HP_BEST
+        jz .game
+        cmp byte [cs:hp_again], 0
+        jne .second
+        mov [cs:hp_first], ax
+        mov byte [cs:hp_again], 1
+        push bp
+        mov bp, sp
+        sub word [bp + 2], HP_BEST_BACK ; (the INT's return IP)
+        pop bp
+        iret
+.second:
+        mov byte [cs:hp_again], 0
+        cmp ax, [cs:hp_first]
+        jge .game
+        mov ax, [cs:hp_first]
+.game:  mov cx, ax
+        iret
+
+hp_first dw 0
+hp_again db 0
 
 probe_mc_con:
         call con_share
@@ -8112,6 +8143,9 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_PK_CLICK
         mov dx, probe_pk_click
         int 21h
+        mov ax, 2500h + VEC_HP_BEST
+        mov dx, probe_hp_best
+        int 21h
         mov ax, 2500h + VEC_EF_ROWS
         mov dx, probe_ef_rows
         int 21h
@@ -8155,8 +8189,8 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or BBh-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
-all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS, VEC_LV_PICK, VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK, VEC_EF_ROWS
+busy    db 'DSCLOG: interrupts 60h-65h or BAh-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS, VEC_LV_PICK, VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK, VEC_EF_ROWS, VEC_HP_BEST
 all_vectors_end:
 
         align 16, db 0

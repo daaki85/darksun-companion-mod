@@ -47,6 +47,7 @@ records; this ledger keeps the ones the game doesn't show you.
   - [Weapon specialization](#weapon-specialization)
   - [Class restrictions](#class-restrictions)
   - [Multiclass hit points](#multiclass-hit-points)
+  - [Hit dice: the better of two](#hit-dice-the-better-of-two)
   - [Levels up to 10](#levels-up-to-10)
   - [Items saving against acid](#items-saving-against-acid)
   - [Rings and cloaks of protection](#rings-and-cloaks-of-protection)
@@ -1381,6 +1382,7 @@ and [Saving throws](#saving-throws).
 | [Weapon specialization](#weapon-specialization) | fighters and gladiators specialize in kinds of weapon, fighters on to mastery and grand mastery, rangers take expertise; other weapons at AD&D's plain attack rate |
 | [Class restrictions](#class-restrictions) | each class's limits on armour, shields and weapons hold, the strictest winning; a multiclass preserver casts no spells in armour |
 | [Multiclass hit points](#multiclass-hit-points) | each level's die and CON's bonus shared between a character's classes |
+| [Hit dice: the better of two](#hit-dice-the-better-of-two) | each hit die rolled twice, the better kept, for every character |
 | [Spells saved against with the spell save](#spells-saved-against-with-the-spell-save) | the spell save rather than petrification/polymorph |
 | [Fire, cold and electricity: DEX instead of a doubled d20](#fire-cold-and-electricity-dex-instead-of-a-doubled-d20) | DEX's defensive adjustment on those saves rather than a doubled d20 |
 | [Two weapons: AD&D's penalties](#two-weapons-adds-penalties) | -2 main hand, -4 off hand, DEX's reaction adjustment added; rangers none |
@@ -1510,6 +1512,27 @@ Gerrard's 4th Fighter level: hit points d10 = 8, / 2 classes = 4
 How: the helper divides the die where the game adds a level's hit points
 (`INT CBh`) and shares CON's bonus where the game adds it to the maximum
 (`INT CAh`, and `INT C9h` where it takes a level's away).
+
+### Hit dice: the better of two
+
+With **Hit dice rolled twice** ticked, every character's hit die is rolled
+twice and the better roll kept: at creation (one die for each starting level
+of each class) and at every level gained. Everything after the roll is the
+game's (or the other rules'): CON's least, a half-giant's double, and a
+multiclass character's share. It isn't AD&D's, but it softens a bad roll; on
+average a d10 gives 7.15 instead of 5.5, a d8 5.8 instead of 4.5, a d6 4.5
+instead of 3.5 and a d4 3.1 instead of 2.5. Levels past the dice (a fixed
+gain) don't change. The log shows both rolls:
+
+```
+Cilla's 3rd Ranger level: hit points d10 = 2 and 7, the better 7
+Character creation, hit points 18: Fighter d10 per level: 10 (the better of 2 and 10) + 5 (the better of 5 and 1); ...
+```
+
+How: where the game has rolled a level's die (`INT BAh`, in place of the
+`mov cx,ax` after the roll), the helper keeps the first roll and sends the
+game back to roll again, so both are the game's own rolls; the second time it
+keeps the better.
 
 ### Levels up to 10
 

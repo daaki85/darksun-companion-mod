@@ -884,6 +884,17 @@ class NewLinesTests(unittest.TestCase):
         self.assertEqual(log.describe(e), ["Dag's 4th Fighter level: hit points d10 = 2, raised to 3 for CON 21, "
                                            "doubled for a half-giant = 6"])
 
+    def test_level_up_hit_points_best_of_two(self):
+        """RULE_HP_BEST: the game rolls the die twice (DSCLOG's PROBE_HP_BEST); the line comes with
+        the second, the better kept."""
+        log = make_game()
+        log.set_rules(game.RULE_HP_BEST)
+        first = entry(raw_for(2, 10), dicelog.DICE_SITE, words(0, 0, 1, 10), words(0, 0, 0, 9, 4))
+        second = entry(raw_for(7, 10), dicelog.DICE_SITE, words(0, 0, 1, 10), words(0, 0, 0, 9, 4))
+        self.assertEqual(log.describe(first), [])
+        self.assertEqual(log.describe(second), ["Dag's 4th Fighter level: hit points d10 = 2 and 7, the better 7, "
+                                                "doubled for a half-giant = 14"])
+
     def test_special_effect_roll(self):
         log = make_game()
         e = entry(raw_for(1, 10), dicelog.DICE_SITE, words(0, 0, 1, 10), words(0, 0, 0x29, 0),
@@ -1337,6 +1348,21 @@ class CreationTests(unittest.TestCase):
         self.assertEqual(log.creation_hp_lines(),
                          ["Character creation, hit points 14: Fighter d10 per level: 10 + 5; Thief d6 per level: "
                           "1 + 6 = 22, each / 2 classes (at least 1) = 11, +3 CON 17 shared = 14"])
+
+    def test_hit_points_best_of_two(self):
+        """RULE_HP_BEST: each level's die rolled twice, the better kept."""
+        log = make_creation()
+        log.set_rules(game.RULE_HP_BEST)
+        for cls, sides, level, faces in ((9, 10, 1, (2, 10)), (9, 10, 2, (5, 1)), (17, 6, 1, (3, 3)), (17, 6, 2, (1, 6))):
+            for face in faces:
+                e = entry(raw_for(face, sides), dicelog.DICE_SITE, words(0, 0, 1, sides),
+                          words(dicelog.CREATION_HP_CALLER, 0x54FA, 1, cls, level),
+                          parent_code=dicelog.LEVEL_HP_RETURNS[1])
+                self.assertEqual(log.describe(e), [])
+        self.assertEqual(log.creation_hp_lines(),
+                         ["Character creation, hit points 18: Fighter d10 per level: 10 (the better of 2 and 10) + "
+                          "5 (the better of 5 and 1); Thief d6 per level: 3 (the better of 3 and 3) + "
+                          "6 (the better of 1 and 6) = 24, / 2 classes = 12, +6 CON 17 = 18"])
 
     def test_random_name(self):
         log = make_creation()

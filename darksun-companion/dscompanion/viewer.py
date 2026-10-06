@@ -337,6 +337,8 @@ class Viewer:
                                        "spheres); a multiclass preserver casts no spells in armour"),
                 ("multiclass_hp", "Multiclass hit points as in AD&D: each level's die and CON's bonus shared "
                                   "between the classes"),
+                ("best_hit_die", "Hit dice rolled twice, the better kept, at creation and at every level "
+                                 "(every character)"),
                 ("spell_save", "Spells are saved against with the spell save (the game uses "
                                "petrification/polymorph)"),
                 ("no_doubled_save", "Saves against fire, cold and electricity: DEX defensive adjustment "

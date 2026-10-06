@@ -2004,6 +2004,34 @@ class LevelPickTests(unittest.TestCase):
         self.assertEqual(mu.reg_read(r.UC_X86_REG_AX), 0x2C38)
         self.assertEqual(mu.reg_read(r.UC_X86_REG_SP), 0x7FC)
 
+    def test_hit_die_best_of_two(self):
+        """PROBE_HP_BEST: with the rule, the first roll sends the game back to roll again (872FDh,
+        1Eh before the INT's return); the second gives CX the better of the two. Without, CX the
+        roll, as the "mov cx,ax" it replaced."""
+        import re
+        from dscompanion.gamepatch import VEC_HP_BEST
+        mu = self.mu
+        at = re.search(rb"\x2e\xf7\x06..\x00\x80\x74", self.image, re.S).start()
+        mu.mem_write(VEC_HP_BEST * 4, struct.pack("<HH", at, TSR))
+        int_at = 0xA00 + 0x8731B - 0x872FD - 2  # (the INT, so that going back lands on 0xA00)
+        mu.mem_write(CALLER * 16 + int_at, bytes((0xCD, VEC_HP_BEST)))
+
+        def roll(ax):
+            for name, value in dict(cs=CALLER, ds=GAME_DS, ss=SS, esp=0x7FC, ebp=BP, eflags=IF | 2, eax=ax,
+                                    ecx=0x3333).items():
+                mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+            mu.emu_start(CALLER * 16 + int_at, 0, count=40)
+            return mu.reg_read(r.UC_X86_REG_IP), mu.reg_read(r.UC_X86_REG_CX), mu.reg_read(r.UC_X86_REG_SP)
+        for rules, first, second in ((32768, 3, 8), (32768, 9, 2), (32768, 5, 5)):
+            with self.subTest(first=first, second=second):
+                mu.mem_write(TSR * 16 + self.image.find(HDR_SIG) + self.RULES, struct.pack("<H", rules))
+                mu.mem_write(CALLER * 16 + 0xA00, bytes((0xF4,)))  # (hlt: back at the roll)
+                mu.mem_write(CALLER * 16 + int_at + 2, bytes((0xF4,)))
+                self.assertEqual(roll(first)[:3:2], (0xA01, 0x7FC))  # back to roll again (past the hlt)
+                self.assertEqual(roll(second), (int_at + 3, max(first, second), 0x7FC))
+        mu.mem_write(TSR * 16 + self.image.find(HDR_SIG) + self.RULES, struct.pack("<H", 0))
+        self.assertEqual(roll(4)[:2], (int_at + 3, 4))
+
     def test_effects_rows_pops(self):
         """PROBE_EF_ROWS does the "pop di / pop si" it replaced (nothing drawn: the rule off, or
         the lower panel in use, past 21 cells)."""

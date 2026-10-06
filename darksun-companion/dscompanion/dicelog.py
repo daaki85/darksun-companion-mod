@@ -140,6 +140,8 @@ CREATION_ABILITY_TRIES = 4
 # Then each class level's hit point die, through the level-up routine (its caller's
 # arguments are (sheet, class, level)); called from the creation screen, it returns here:
 LEVEL_HP_RETURN = bytes.fromhex("83c4048bc8c45efc268a")
+# (the same with DSCLOG's PROBE_HP_BEST in place of "mov cx,ax", as the patched game has it)
+LEVEL_HP_RETURNS = (LEVEL_HP_RETURN, bytes.fromhex("83c404cdbac45efc268a"))
 CREATION_HP_CALLER = 0x0232
 CREATION_HP_WAIT = 0.3  # seconds after the last hit point roll before the total is shown
 # ... and in the handler for spells with rules of their own (its arguments: caster, target, ...,
@@ -401,6 +403,7 @@ class DiceLog:
         self._ability_of: Optional[int] = None  # ... and which ability they are for
         self._creation_hp: List[Tuple[int, int, int, str]] = []  # (sheet, class, hit points, text)
         self._creation_hp_at = 0.0
+        self._hp_first: Optional[Tuple[tuple, int]] = None  # RULE_HP_BEST: a hit die's first roll
         self._creation_con: Optional[int] = None  # the CON just rolled
         self._hp: Dict[int, int] = {}  # creature index -> HP at the last look
         self._spell_until = 0.0  # HP changes before this are a spell's doing
@@ -1785,13 +1788,13 @@ class DiceLog:
                         f"works on a 1 -> {'it works' if faces[0] == 1 else 'no effect'}"]
             if e.parent_code.startswith(CREATION_ABILITY_RETURN):
                 return self._creation_ability(e, sum(faces))
-            if count == 1 and e.parent_code.startswith(LEVEL_HP_RETURN) and e.parent_arg(2) == CREATION_HP_CALLER:
+            if count == 1 and e.parent_code.startswith(LEVEL_HP_RETURNS) and e.parent_arg(2) == CREATION_HP_CALLER:
                 return self._creation_hp_roll(e, sides, faces[0], now)
             if count == 1 and any(e.parent_code.startswith(c) for c in RANDOM_NAME_RETURNS):
                 return [f"Character creation: a name picked at random, 1d{sides} = {faces[0]}"]
             if count == 1:
                 level_up = self._level_hp(e, sides, faces[0])
-                if level_up:
+                if level_up is not None:
                     return level_up
             if count == 1 and sides == 10 and e.parent_code.startswith(CONFUSION_ROLL_RETURN):
                 what = next(text for top, text in CONFUSION_RESULTS if faces[0] <= top)
@@ -2041,22 +2044,38 @@ class DiceLog:
         return [f"    {who}{name} nearly broke: {first_roll if first_roll is not None else 0} on 0-7, "
                 f"then {second} on 0-19 (needed 0)"]
 
-    def _level_hp(self, e: Entry, sides: int, roll: int) -> List[str]:
-        """The hit point roll of a new level: the caller's arguments are (party member, class, level)."""
+    def _hp_rolls(self, key: tuple, roll: int) -> Optional[Tuple[int, ...]]:
+        """A hit die's rolls: just ROLL, or with RULE_HP_BEST (DSCLOG's PROBE_HP_BEST: the game rolls
+        it twice) None for the first of the two (kept by KEY: who, class, level), then both."""
+        if not self.game.rules & game.RULE_HP_BEST:
+            return (roll,)
+        if self._hp_first is not None and self._hp_first[0] == key:
+            first, self._hp_first = self._hp_first[1], None
+            return first, roll
+        self._hp_first = (key, roll)
+        return None
+
+    def _level_hp(self, e: Entry, sides: int, roll: int) -> Optional[List[str]]:
+        """The hit point roll of a new level: the caller's arguments are (party member, class, level).
+        None if it isn't one."""
         member, cls, level = e.parent_arg(6), e.parent_arg(8), e.parent_arg(0x0A)
         if member is None or not 0 <= member < game.PARTY_SIZE or cls is None or level is None:
-            return []
+            return None
         sheet = self.game.sheet(member)
         if len(sheet) < game.SHEET_SIZE:
-            return []
+            return None
         slots = [i for i in range(3) if sheet[game.SHEET_CLASSES + i] == cls]
         if not slots or sheet[game.SHEET_LEVELS + slots[0]] != level:
-            return []
+            return None
         rule = self.game.level_hp_rule(cls)
         if rule is None or rule.sides != sides:
-            return []
+            return None
+        rolls = self._hp_rolls(("level", member, cls, level), roll)
+        if rolls is None:
+            return []  # (the first of two: the line comes with the second)
+        roll = max(rolls)
         con = sheet[game.SHEET_ABILITIES + 2]
-        text = f"d{sides} = {roll}"
+        text = f"d{sides} = {roll}" if len(rolls) == 1 else f"d{sides} = {rolls[0]} and {rolls[1]}, the better {roll}"
         gained = roll
         minimum = self.game.level_hp_minimum(con)
         if minimum > roll:
@@ -2113,13 +2132,18 @@ class DiceLog:
         """A class level's hit point die on the creation screen: (sheet, class, level)."""
         index, cls, level = e.parent_arg(6), e.parent_arg(8), e.parent_arg(0x0A)
         sheet = self.game.sheet_at(index) if index is not None and index >= 0 else b""
+        rolls = self._hp_rolls(("creation", index, cls, level), roll)
+        if rolls is None:
+            return []  # (the first of two)
+        roll = max(rolls)
+        best = "" if len(rolls) == 1 else f" (the better of {rolls[0]} and {rolls[1]})"
         if len(sheet) < game.SHEET_SIZE or cls is None:
-            return [f"Character creation: hit points d{sides} = {roll}"]
-        text, gained = str(roll), roll
+            return [f"Character creation: hit points d{sides} = {roll}{best}"]
+        text, gained = f"{roll}{best}", roll
         con = sheet[game.SHEET_ABILITIES + 2]
         minimum = self.game.level_hp_minimum(con)
         if minimum > roll:
-            text, gained = f"{roll} (raised to {minimum} for CON {con})", minimum
+            text, gained = f"{roll}{best} (raised to {minimum} for CON {con})", minimum
         if sheet[game.SHEET_RACE] == game.RACE_HALF_GIANT:
             gained *= 2
         self._creation_hp.append((index, cls, gained, text))

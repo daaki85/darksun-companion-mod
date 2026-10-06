@@ -28,6 +28,9 @@ requests #1 to #13; its notes are in
 - **Multiclass hit points** (a new rule change, on by default): each level's
   die and CON's bonus divided between a character's classes, as in AD&D, at
   creation and at every level; the dice log shows the share.
+- **Hit dice: the better of two** (a new rule change, on by default): every
+  character's hit die is rolled twice, at creation and at each level, and the
+  better roll kept; the dice log shows both.
 - **Which class levels up next, on View Character:** for a character of more
   than one class, the XP in brackets on the experience line now names the
   class that reaches its next level there: `EXP:87230 (90000 Pr)`. A letter
