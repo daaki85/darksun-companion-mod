@@ -2168,7 +2168,7 @@ arena Defiler's figure and a face of his own: the game's portrait 61 with a
 slave's brand on the brow, so the Dialogue tab never mistakes him for anyone
 else.
 
-![Kalzith: his talk, and his shop](docs/kalzith.png)
+![Kalzith: his talk, and his shop of six scrolls at 3,000 to 12,000 ceramic](docs/kalzith.png)
 
 Talk to him as to anyone (click him with the look pointer, then the Look box's
 Talk button). His conversation is the game's kind, just him speaking:
@@ -2180,9 +2180,16 @@ Talk button). His conversation is the game's kind, just him speaking:
 
   | Level | Scroll | Price |
   |---|---|---|
-  | 1 | Magic Missile, Color Spray | 100 ceramic |
-  | 2 | Blur, Cat's Grace | 250 |
-  | 3 | Lightning Bolt, Haste | 500 |
+  | 1 | Magic Missile, Color Spray | 3,000 ceramic each |
+  | 2 | Blur | 3,000 |
+  | 2 | Cat's Grace | 6,000 |
+  | 3 | Lightning Bolt | 9,000 |
+  | 3 | Haste | 12,000 |
+
+  These are the game's own prices: its scroll of the same spell where it has
+  one (Blur, Lightning Bolt and Haste), else its price for the spell's level
+  (3,000 a level). Scrolls he stocked in a game before this build are repriced
+  when the Ledger next looks at the game.
 
   Cat's Grace is there only with its rule on (see
   [Rule changes](#rule-changes)). A preserver learns a scroll's spell as from

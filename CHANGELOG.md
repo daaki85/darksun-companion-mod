@@ -96,6 +96,9 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
   row clicked counted from the top of the list, not of what was shown, so with
   the list scrolled down another character was deleted. The patched game adds
   how far the list is scrolled, as ADD does.
+- **Kalzith's scrolls at the game's prices:** 3,000 to 12,000 ceramic (they
+  were 100 to 500): the game's own price for a scroll of the same spell, else
+  its price for the spell's level. Scrolls already stocked are repriced.
 - **Kalzith's and Semyon's questions are asked once a talk:** a reply that
   doesn't end the talk leaves the list once chosen, as the game's own people's
   do, and is back the next time you talk to them (Kalzith's shop stays).
