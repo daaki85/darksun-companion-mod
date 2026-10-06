@@ -2003,3 +2003,18 @@ class LevelPickTests(unittest.TestCase):
         self.run_probe(rb"\x55\x89\xe5\x53\x8b\x5e\x00\x36\x8b\x47\x08", VEC_PK_CLICK, (0xCD, VEC_PK_CLICK, 0x90), {}, 3)
         self.assertEqual(mu.reg_read(r.UC_X86_REG_AX), 0x2C38)
         self.assertEqual(mu.reg_read(r.UC_X86_REG_SP), 0x7FC)
+
+    def test_effects_rows_pops(self):
+        """PROBE_EF_ROWS does the "pop di / pop si" it replaced (nothing drawn: the rule off, or
+        the lower panel in use, past 21 cells)."""
+        from dscompanion.gamepatch import VEC_EF_ROWS
+        mu = self.mu
+        for rules, cells in ((0, 3), (4096, 30)):
+            with self.subTest(rules=rules, cells=cells):
+                mu.mem_write(TSR * 16 + self.image.find(HDR_SIG) + self.RULES, struct.pack("<H", rules))
+                mu.mem_write(SS * 16 + BP - 4, struct.pack("<H", cells))
+                mu.mem_write(SS * 16 + 0x7F8, struct.pack("<HH", 0x1111, 0x2222))  # (DI's, then SI's)
+                self.run_probe(rb"\xfb\x66\x60\x06\x2e\xf7\x06..\x00\x10", VEC_EF_ROWS,
+                               (0xCD, VEC_EF_ROWS), dict(esp=0x7F8, esi=5, edi=6), 2)
+                self.assertEqual([mu.reg_read(getattr(r, "UC_X86_REG_" + x)) for x in ("DI", "SI", "SP", "BP")],
+                                 [0x1111, 0x2222, 0x7FC, BP])

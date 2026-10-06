@@ -95,6 +95,7 @@ VEC_PK_LEFT equ 0xBF       ; PROBE_PK_LEFT
 VEC_PK_TITLE equ 0xBE      ; PROBE_PK_TITLE
 VEC_PK_FILL equ 0xBD       ; PROBE_PK_FILL
 VEC_PK_CLICK equ 0xBC      ; PROBE_PK_CLICK
+VEC_EF_ROWS equ 0xBB       ; PROBE_EF_ROWS
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 128         ; entries in the ring
@@ -3684,6 +3685,148 @@ lv_avail  dw 0
 lv_member dw 0
 lv_count_text db '  0', 0
 lv_title  db 'PICK A WEAPON SPECIALTY,', 0
+
+; PROBE_EF_ROWS: INT VEC_EF_ROWS replaces "pop di / pop si" (2 bytes; DSUN.EXE 7F13Eh) at the end of
+; the Effects screen's routine that puts the selected character's effects in their cells (7EDFAh,
+; run when the screen opens and when another character is picked; [BP-4] the cells it has used).
+; With weapon specialization, and the lower panel free (the game puts effects there only past 21),
+; the character's weapon kinds are drawn there: a heading for the skill (weaponpages.HEADINGS),
+; then a row a kind (weaponpages.PICK_FIRST's pictures), each as the routine draws an effect's
+; icon (100:4A4h loads it, 580:D9h draws it, 1A8:8Ch lets it go; their addresses as fixed up in
+; the routine's own calls). Then the pops, from under the interrupt frame.
+EF_SEL_SEG   equ 0x7EE07 - 0x7F140  ; ("mov ax,348h": the selected character's number's segment,
+EF_SELECTED  equ 0x25B              ;   at +25Bh there; and the calls, less the address after the INT)
+EF_LOAD_CALL equ 0x7F08D - 0x7F140
+EF_DRAW_CALL equ 0x7F110 - 0x7F140
+EF_FREE_CALL equ 0x7F11C - 0x7F140
+EF_CELLS     equ 21                 ; (the upper panel's)
+EF_X         equ 150                ; (the lower panel, in the window)
+EF_Y         equ 108
+EF_PITCH     equ 8
+EF_LINES     equ 5
+EF_HEADING   equ 0x871              ; (weaponpages.HEADINGS: specialized, master, grand master, expert)
+probe_ef_rows:
+        sti
+        pushad
+        push es
+        test word [cs:rules], RULE_SPECIALIZE
+        jz .pops
+        cmp word [bp - 4], EF_CELLS
+        jg .pops
+        mov bx, sp
+        les di, [ss:bx + 34]    ; the code after the INT
+        mov eax, [es:di + EF_LOAD_CALL]
+        mov [cs:ef_load], eax
+        mov eax, [es:di + EF_DRAW_CALL]
+        mov [cs:ef_draw_call], eax
+        mov eax, [es:di + EF_FREE_CALL]
+        mov [cs:ef_free], eax
+        mov es, [es:di + EF_SEL_SEG]
+        mov ax, [es:EF_SELECTED]
+        call ef_draw
+.pops:  pop es
+        popad
+        push bp                 ; the replaced pops: DI and SI from under the interrupt frame,
+        mov bp, sp              ;   the frame (and BP) moved up over them
+        push ax
+        mov di, [bp + 8]
+        mov si, [bp + 10]
+        mov ax, [bp + 6]
+        mov [bp + 10], ax       ; flags
+        mov ax, [bp + 4]
+        mov [bp + 8], ax        ; CS
+        mov ax, [bp + 2]
+        mov [bp + 6], ax        ; IP
+        mov ax, [bp]
+        mov [bp + 4], ax        ; BP
+        pop ax
+        mov sp, bp
+        add sp, 4
+        pop bp
+        iret
+
+; the kinds of party member AX (DS the game's): a heading where the skill changes, then the kind
+ef_draw:
+        les bx, [LV_SHEETS]
+        imul ax, ax, 0x47
+        add bx, ax
+        mov word [cs:ef_y], EF_Y
+        mov byte [cs:ef_last], 0xFF
+        xor di, di
+.slot:  movzx si, byte [es:bx + di + SPEC_SLOTS]
+        or si, si
+        jz .next
+        dec si
+        mov [cs:ef_kind], si
+        shl si, 1
+        mov si, [cs:si + wp_plain]  ; (its plain weapon's type: SPEC_OF_SHEET's skill with it)
+        call spec_of_sheet
+        mov al, 3
+        cmp dl, SPEC_EXPERT
+        je .heading
+        cmp dl, SPEC_SPECIAL
+        jb .next                ; (a warrior class not back yet: none)
+        mov al, dl
+        sub al, SPEC_SPECIAL
+.heading:
+        cmp al, [cs:ef_last]
+        je .row
+        mov [cs:ef_last], al
+        movzx ax, al
+        add ax, EF_HEADING
+        call ef_picture
+.row:   mov ax, [cs:ef_kind]
+        add ax, PICK_FIRST
+        call ef_picture
+.next:  inc di
+        cmp di, SPEC_COUNT
+        jb .slot
+        ret
+
+; ICON AX drawn in the Effects window's lower panel, on the next line (DS the game's)
+ef_picture:
+        pusha
+        push es
+        cmp word [cs:ef_y], EF_Y + (EF_LINES - 1) * EF_PITCH
+        ja .out
+        mov dword [cs:ef_pic], 0
+        push cs
+        push word ef_pic
+        movzx eax, ax
+        push eax
+        push dword 0x4E4F4349   ; 'ICON'
+        call far [cs:ef_load]
+        add sp, 12
+        cmp dword [cs:ef_pic], 0
+        je .out
+        push word 0
+        push dword [cs:ef_pic]
+        push word 0
+        les bx, [PK_WINDOW]
+        mov ax, [cs:ef_y]
+        add ax, [es:bx + 0x98]
+        push ax
+        mov ax, EF_X
+        add ax, [es:bx + 0x96]
+        push ax
+        push word 1
+        call far [cs:ef_draw_call]
+        add sp, 14
+        push dword [cs:ef_pic]
+        call far [cs:ef_free]
+        add sp, 4
+.out:   add word [cs:ef_y], EF_PITCH
+        pop es
+        popa
+        ret
+
+ef_load      dd 0
+ef_draw_call dd 0
+ef_free      dd 0
+ef_pic       dd 0
+ef_y         dw 0
+ef_kind      dw 0
+ef_last      db 0
 
 ; By class as the creation screen numbers it (0-8): the sheet's number (the first of four, by
 ; sphere), 1 if a sphere is added (2 for a ranger, whose flag is one), the class's flag
@@ -7941,6 +8084,9 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_PK_CLICK
         mov dx, probe_pk_click
         int 21h
+        mov ax, 2500h + VEC_EF_ROWS
+        mov dx, probe_ef_rows
+        int 21h
         mov ax, 3516h           ; the keyboard's (TARGETING)
         int 21h
         mov [old16], bx
@@ -7981,8 +8127,8 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or BCh-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
-all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS, VEC_LV_PICK, VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK
+busy    db 'DSCLOG: interrupts 60h-65h or BBh-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS, VEC_LV_PICK, VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK, VEC_EF_ROWS
 all_vectors_end:
 
         align 16, db 0

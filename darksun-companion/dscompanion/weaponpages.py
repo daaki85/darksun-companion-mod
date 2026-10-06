@@ -10,7 +10,7 @@ VIEW SPHERES or VIEW PSIONICS.
 
 The rows' and buttons' pictures (ICON, three frames: as they are, out of use, marked) are made in
 the game's small carved letters, taken from its own rows (CLERIC, P-KINESIS and the rest); the
-game has no X or Q in them, so those two are drawn here in the same hand. They go in the
+game has no X, Q or Z in them, so those are drawn here in the same hand. They go in the
 Ledger's copy of RESOURCE.GFF (icons.write_resources), with the buttons (BUTN, copies of the
 spheres') and the windows.
 """
@@ -35,6 +35,11 @@ PICK_X, PICK_GAP_X, PICK_Y, PICK_PITCH = 6, 82, 6, 8  # the rows' place: two col
 # window's line under them drawn in the same near-white.)
 PICK_COLOURS = [255, 214, 214]
 PICK_OUTLINE = 254
+# The Effects screen: under the selected character's effects (in the panel the game fills only
+# past 21 of them), a heading for the skill and the kinds' rows (DSCLOG's PROBE_EF_ROWS); by
+# skill (DSCLOG's SPEC_SPECIAL to SPEC_GRAND, then expertise)
+HEADINGS = ((0x871, "SPECIALIZED IN"), (0x872, "MASTER OF"), (0x873, "GRAND MASTER OF"), (0x874, "EXPERT IN"))
+HEADING_COLOURS = [214, 214, 214]
 ROW_FIRST = 0x840  # the 16 kinds' rows, 0x840 + kind (after the dialogue window's and others', 81Ch-833h)
 MORE, BACK, VIEW = 0x850, 0x851, 0x852  # MORE SPECS, VIEW PSIONICS, WEAPON SPEC
 ROW_TEMPLATE, TOGGLE_TEMPLATE = 0x7FA, 0x7FF  # (AIR's row and VIEW PSIONICS's button)
@@ -65,6 +70,13 @@ DRAWN = {
           "##.#.##.",
           "##..##..",
           ".####.##"),
+    "Z": ("#######",
+          "#...##.",
+          "...##..",
+          "..##...",
+          ".##....",
+          "##...#.",
+          "#######"),
 }
 GAP, SPACE = 1, 4  # columns between letters, and for a space
 
@@ -233,4 +245,6 @@ def chunks(resource: gff.Chunks) -> Dict[Tuple[str, int], bytes]:
     rows = [(PICK_FIRST + k, PICK_X - 1 + PICK_GAP_X * (k // 8), PICK_Y - 1 + PICK_PITCH * (k % 8))
             for k in range(len(specialize.KINDS))]  # (the outline a pixel out from the letters)
     added[("WIND", PICKER)] = _window(psionic, PICKER, rows + keep)
+    for cid, text in HEADINGS:
+        added[("ICON", cid)] = outlined(font, text, HEADING_COLOURS)
     return added
