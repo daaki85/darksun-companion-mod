@@ -77,6 +77,13 @@ class PageLabelTests(unittest.TestCase):
         self.assertEqual(labels[15], "STF SLING")
         self.assertTrue(all(len(t) <= 10 for t in labels))
 
+    def test_ids_clear_of_the_game(self):
+        """The game's own buttons and pictures run to 833h (the dialogue window's replies are
+        81Ch-821h): the pages' come after."""
+        from dscompanion import weaponpages
+        ids = [weaponpages.ROW_FIRST + k for k in range(16)] + [weaponpages.MORE, weaponpages.BACK, weaponpages.VIEW]
+        self.assertTrue(all(0x834 <= i < 0xBB8 for i in ids))
+
 
 
 class NewCharacterTests(unittest.TestCase):

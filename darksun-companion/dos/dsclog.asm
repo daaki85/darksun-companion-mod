@@ -3048,10 +3048,10 @@ WP_SPHERE_ID equ 0xBC5
 WP_PAGE_ID   equ 0xBC6
 WP_WDISC_ID  equ 0xBCA
 WP_WSPHERE_ID equ 0xBCB
-WP_ROW       equ 0x820              ; (buttons: the kinds' rows, MORE SPECS, VIEW PSIONICS, WEAPON SPEC)
-WP_MORE      equ 0x830
-WP_BACK      equ 0x831
-WP_VIEW      equ 0x832
+WP_ROW       equ 0x840              ; (buttons: the kinds' rows, MORE SPECS, VIEW PSIONICS, WEAPON SPEC)
+WP_MORE      equ 0x850
+WP_BACK      equ 0x851
+WP_VIEW      equ 0x852
 WP_PAGES     equ 4
 WP_DISC      equ 0xEA2              ; DS: the panel's windows (far)
 WP_SPHERE    equ 0xEA6
