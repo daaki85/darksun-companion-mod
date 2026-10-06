@@ -14,6 +14,47 @@ def _ifs_closed(ops) -> bool:
     return depth == 0
 
 
+def menu_replies(script: bytes):
+    """{reply text: its "if"} for every reply menu in SCRIPT."""
+    out = {}
+    for op in gpl.walk(gpl.decode(script, b"")):
+        if op.code == 0x48:
+            for reply in op.args[0]["replies"]:
+                out[reply["text"][1].strip()] = reply["if"]
+    return out
+
+
+class AskedOnceTests(unittest.TestCase):
+    """A reply that stays in the menu is shown once a talk (its own local, cleared as the menu
+    starts); one that leaves the menu, and Kalzith's shop, are shown as before."""
+
+    def test_semyon(self):
+        replies = menu_replies(semyon.conversation())
+        self.assertEqual(replies["Why did they tie you up out there?"],
+                         ("expr", ["(", ("var", 0x8E, 2), "==", ("n", 0), ")"]))
+        self.assertEqual(replies["Tell me about the Alliance."][1][1], ("var", 0x8E, 5))
+        self.assertEqual(replies["Farewell."], ("n", 1))
+
+    def test_kalzith(self):
+        replies = menu_replies(kalzith.conversation())
+        self.assertEqual(replies["Who are you?"][1][1][:2], ("var", 0x8E))
+        self.assertEqual(replies["Show us what you have."][0], "expr")
+        self.assertNotIn(("var", 0x8E), [t[:2] for t in replies["Show us what you have."][1] if isinstance(t, tuple)])
+        why = replies["Why would a defiler help a preserver?"]
+        self.assertEqual(why[1][1][:2], ("var", 0x8E))
+        left = replies["Anything left to sell?"]  # (its own test, and the local's)
+        self.assertEqual(left[1][-4:], [("var", 0x8E, left[1][-4][2]), "==", ("n", 0), ")"])
+        self.assertEqual(replies["We mean no harm. We're slaves too."], ("n", 1))
+
+    def test_bodies_set_their_local(self):
+        """Each such reply's subroutine sets its local to 1, and the menu clears them first."""
+        ops = list(gpl.walk(gpl.decode(semyon.conversation(), b"")))
+        sets = [op.args for op in ops if op.code == 0x16 and op.args[1][:2] == ("var", 14)]
+        for local in (2, 3, 4, 5):
+            self.assertIn([("n", 0), ("var", 14, local)], sets)
+            self.assertIn([("n", 1), ("var", 14, local)], sets)
+
+
 class SemyonTests(unittest.TestCase):
     MASTER = gpl.encode([(0x18, [("expr", [("var", 0x8D, 503), "==", ("n", 1)])]), (0x3E, [("n", 21)]),
                          (0x6F, [("n", 38), ("n", 145), ("n", -37)]), (0x67, []),

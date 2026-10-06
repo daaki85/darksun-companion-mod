@@ -2269,6 +2269,9 @@ isn't in the pens. Talk to him (Look, then Talk): he says why the templars tied
 him up in the arena (he was asking about the Veiled Alliance), passes on what he
 has heard (who carries keys), reminds the party where he hid his gem (the grain
 pots), and talks about the Alliance's plans, in his own voice from the arena.
+As with the game's own people, each question goes from the list once asked,
+and comes back the next time you talk to him (Kalzith's do the same; his shop
+stays).
 
 How: in the Ledger's copy of `GPLDATA.GFF`, the command that takes him off the
 map when he walks out after the fight (script 5 at 2400, run only from there)

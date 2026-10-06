@@ -96,6 +96,9 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
   row clicked counted from the top of the list, not of what was shown, so with
   the list scrolled down another character was deleted. The patched game adds
   how far the list is scrolled, as ADD does.
+- **Kalzith's and Semyon's questions are asked once a talk:** a reply that
+  doesn't end the talk leaves the list once chosen, as the game's own people's
+  do, and is back the next time you talk to them (Kalzith's shop stays).
 - **Searching junk, hay and wardrobes in the dice log:** each search's roll
   (0-14 for junk, 0-10 for hay and wardrobes), what it found, and how far the
   count of finds (or of wardrobe searches) has got; a rat's bite or a falling

@@ -215,13 +215,17 @@ class _Script:
 
     Menus are the game's: a loop showing the menu until a local flag (DONE) is set, each reply
     a subroutine returning to it, doing its own part (calling what comes next) and setting DONE
-    to end the talk. (Branching after the menu on a "which way" local went wrong in the game.)"""
+    to end the talk. (Branching after the menu on a "which way" local went wrong in the game.)
+    A reply that stays in the menu is shown once a talk, as the game's: it sets a local of its
+    own, cleared as the menu starts, and is shown only while that is 0 (but a body marked
+    AGAIN, such as a shop, stays; one marked LEAVES, ending the menu, needs none)."""
 
     def __init__(self):
         self.items: List = []
         self.shown = 0  # lines in the window since it was last cleared (as laid out)
         self.subs: Dict[str, Callable[[], None]] = {}
         self._n = 0
+        self._asked = DONE  # (the locals for replies asked: DONE + 1 on)
 
     def op(self, code: int, *args) -> None:
         self.items.append((code, list(args)))
@@ -285,18 +289,35 @@ class _Script:
         shown when) is a subroutine doing its own part (calling the rest of the talk, as the
         game's replies do), so nothing branches after the menu."""
         loop, out = self._new("menu"), self._new("menu out")
-        names = []
+        names, conditions, asked = [], [], []
         for text, body, shown in replies:
             name = self._new("reply")
             names.append(name)
-            self.sub(name, body)
+            if getattr(body, "leaves", False) or getattr(body, "again", False):
+                self.sub(name, body)
+                conditions.append(shown)
+                continue
+            self._asked += 1
+            local = self._asked
+            if local >= ASKED_LAST:
+                raise gpl.ScriptError("too many replies to hide once asked")
+            asked.append(local)
+            self.sub(name, lambda body=body, local=local: (self.set(local, 1), body()))
+            unasked = ["(", ("var", 0x8E, local), "==", ("n", 0), ")"]
+            if shown == ALWAYS:
+                conditions.append(("expr", unasked))
+            else:
+                inner = list(shown[1]) if shown[0] == "expr" else [shown]
+                conditions.append(("expr", ["("] + inner + [")", "and"] + unasked))
+        for local in asked:
+            self.set(local, 0)
         self.set(DONE, 0)
         self.label(loop)
         self.op(0x18, ("expr", [("var", 0x8E, DONE), "==", ("n", 0)]))
         self.op(0x63, ("label", out))
         self.op(0x48, {"before": [], "title": TITLE, "replies": [
             {"text": ("str", f"  {text}"), "goto": ("label", name), "if": shown, "before": [], "after": []}
-            for (text, _, shown), name in zip(replies, names)]})
+            for (text, _, _), shown, name in zip(replies, conditions, names)]})
         self.op(0x64, ("label", loop))
         self.label(out)
 
@@ -348,6 +369,19 @@ class _Script:
 
 ALWAYS = ("n", 1)
 DONE = 1  # the script's local ending a menu (as the game's merchants use 1 for the menu loop)
+ASKED_LAST = 15  # (the replies asked: locals 2 to 14)
+
+
+def leaves(body: Callable[[], None]) -> Callable[[], None]:
+    """BODY marked as a reply ending its menu (no local to hide it)."""
+    body.leaves = True
+    return body
+
+
+def again(body: Callable[[], None]) -> Callable[[], None]:
+    """BODY marked as a reply to stay in the menu once chosen (a shop)."""
+    body.again = True
+    return body
 WINDOW = 4  # the lines the dialogue window shows
 
 
@@ -374,7 +408,7 @@ def conversation() -> bytes:
             for part in parts:
                 part()
             s.leave()
-        return body
+        return leaves(body)
 
     def go():
         s.say("Go, then.")
@@ -407,7 +441,7 @@ def conversation() -> bytes:
 
     # -- a friend: the shop
     def friend():
-        s.menu([("Show us what you have.", shop, _is(sold_out, 0)),
+        s.menu([("Show us what you have.", again(shop), _is(sold_out, 0)),
                 ("Anything left to sell?", nothing_left, _is(sold_out, 1)),
                 ("Why would a defiler help a preserver?", why, ALWAYS),
                 ("Isn't this dangerous for you?", danger, ALWAYS),
