@@ -100,6 +100,15 @@ def skill(sheet: bytes, item_type: Optional[int]) -> int:
     return GRAND if fighter >= GRAND_MASTERY else MASTER if fighter >= MASTERY else SPECIAL
 
 
+def attacks(halves: int, level: int, missile: bool = False) -> int:
+    """The attacks a round (in halves) with a weapon, from the game's (sheet +2Ah) and the skill
+    with it, as DSCLOG's PROBE_ATTACKS has them: a warrior (more than 2 halves) in melee half an
+    attack less with a kind not chosen, a grand master one more; missiles as the game has them."""
+    if missile or halves <= 2:
+        return halves
+    return halves - 1 if level == PLAIN else halves + 2 if level == GRAND else halves
+
+
 def to_hit(level: int) -> int:
     """What the skill adds to hit (takes off THAC0)."""
     return 3 if level >= MASTER else 1 if level == SPECIAL else 0

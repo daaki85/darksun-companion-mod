@@ -81,6 +81,38 @@ class SkillTests(unittest.TestCase):
 
 
 
+class AttacksTests(unittest.TestCase):
+    """specialize.attacks, as DSCLOG's PROBE_ATTACKS (the Characters tab's attacks line)."""
+
+    def test_rates(self):
+        from dscompanion import specialize as sp
+        self.assertEqual(sp.attacks(3, sp.PLAIN), 2)            # 3/2 to 1: a kind not chosen
+        self.assertEqual(sp.attacks(4, sp.PLAIN), 3)            # 2 to 3/2
+        self.assertEqual(sp.attacks(3, sp.SPECIAL), 3)
+        self.assertEqual(sp.attacks(4, sp.GRAND), 6)            # one more
+        self.assertEqual(sp.attacks(3, sp.EXPERT), 3)           # a ranger's: the game's
+        self.assertEqual(sp.attacks(3, sp.NONE), 3)             # none chosen: the game's
+        self.assertEqual(sp.attacks(3, sp.PLAIN, missile=True), 3)
+        self.assertEqual(sp.attacks(2, sp.PLAIN), 2)            # not a warrior
+
+
+class SpecializationsTests(unittest.TestCase):
+    """GameData.specializations: the Characters tab's Weapons line."""
+
+    def gd(self, s, rules=game.RULE_SPECIALIZE):
+        gd = object.__new__(game.GameData)
+        gd.rules = rules
+        gd.sheet = lambda creature: s
+        return gd
+
+    def test_names(self):
+        s = sheet((0, 5), classes=(10, 0, 0), levels=(9, 0, 0))
+        self.assertEqual(self.gd(s).specializations(0), [("long sword", "specialized"), ("axe", "specialized")])
+        self.assertEqual(self.gd(sheet((0,), classes=(13, 0, 0))).specializations(0), [("long sword", "expertise")])
+        self.assertEqual(self.gd(sheet((0,), levels=(9, 0, 0))).specializations(0), [("long sword", "grand mastery")])
+        self.assertEqual(self.gd(s, rules=0).specializations(0), [])
+
+
 class PageLabelTests(unittest.TestCase):
     def test_short_forms(self):
         from dscompanion import weaponpages

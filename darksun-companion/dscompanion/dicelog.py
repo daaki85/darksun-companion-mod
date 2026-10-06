@@ -788,8 +788,14 @@ class DiceLog:
             cells = [f"{by_level.get(n, (0, 0))[0]}/{by_level.get(n, (0, 0))[1]}" for n in range(1, top + 1)]
             for i in range(0, len(cells), 6):
                 lines.append(("    " if i else f"{SLOT_KINDS.get(kind, kind[:3].upper())} ") + " ".join(cells[i:i + 6]))
+        if lines and self.game.no_spells(member):  # (a multiclass preserver in armour: class restrictions)
+            heading = "NO SPELLS IN ARMOUR"
+        else:
+            heading = "SPELLS LEFT BY LEVEL"
         if lines and len(lines) < SLOTS_LINES:
-            lines.insert(0, "SPELLS LEFT BY LEVEL")
+            lines.insert(0, heading)
+        elif lines and heading != "SPELLS LEFT BY LEVEL":
+            lines[-1] = heading
         return "|".join(lines[:SLOTS_LINES])
 
     def _write_slots(self) -> None:

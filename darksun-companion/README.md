@@ -1449,8 +1449,10 @@ with picks unmade: they're offered again at the next level).
 
 **Where it shows.** The **Effects** screen lists the selected character's
 kinds under its effects ("SPECIALIZED IN", "MASTER OF", "GRAND MASTER OF",
-"EXPERT IN"); View Character's DAM line and the Characters tab count it; and
-the dice log names it on each attack (`+1 specialized`, `+3 grand mastery`,
+"EXPERT IN"); View Character's DAM line counts it; the Characters tab lists
+the kinds (**Weapons: long sword (grand mastery)**) and gives the attacks a
+round with each weapon held (**Attacks: 3/2 a round with Long Sword, 1 with
+Axe**); and the dice log names it on each attack (`+1 specialized`, `+3 grand mastery`,
 `(d10 for d8: grand mastery)`).
 
 ![The Effects screen: Daaki, a 9th-level fighter, GRAND MASTER OF LONG SWORD](docs/effects-weapons.png)
@@ -1479,7 +1481,9 @@ own "Cannot use this item":
 
 A **multiclass preserver** may wear what its other classes allow, but casts no
 spells (wizard or priest) while wearing armour (a helm counts, a shield
-doesn't), as the game's own "No spell use" stops them. A human who has
+doesn't), as the game's own "No spell use" stops them. The **USE** screen
+heads its spell slots **NO SPELLS IN ARMOUR**, and the Characters tab adds
+"(no spells in armour)" to them. A human who has
 changed class is held by the class it has now; another race by all of its
 classes. A ranger turned cleric uses both spheres' weapons, and a warrior who
 dual-classed uses the weapons it specialized in once the new class's level

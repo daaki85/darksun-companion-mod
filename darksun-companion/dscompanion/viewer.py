@@ -790,7 +790,7 @@ class Viewer:
                 self.dice.stealth_gear = self.stealth_gear.get()
                 self.dice.load_picked(launch.pickpocketed())
                 self.dice.tools_given = launch.tools_given()
-                self.dice.rules = self._rules()
+                self.dice.set_rules(self._rules())
             try:
                 self.dice_status.set(self.dice.attach())
             except DiceLogError as e:
@@ -921,7 +921,7 @@ class Viewer:
             self.spell_text.insert("end", "Connect to the game to read its spells.")
             return
         try:
-            spells = spellbook.all_spells(game.GameData(self.guest, self.ds))
+            spells = spellbook.all_spells(game.GameData(self.guest, self.ds, self._rules()))
         except (struct.error, IndexError, ValueError, OSError) as e:
             self.spell_text.insert("end", f"Couldn't read the spells: {e}")
             return
@@ -1098,7 +1098,7 @@ class Viewer:
         labels = ("  THAC0 now, each weapon", "  Saves now " + "/".join(game.SAVE_SHORT))
         if self.ds is None:
             return [(label, [""] * len(slots)) for label in labels]
-        gd = game.GameData(self.guest, self.ds)
+        gd = game.GameData(self.guest, self.ds, self._rules())
         table = game.far_pointer(self.guest, self.ds, game.CREATURES_PTR)
         hits, saves = [], []
         for s in slots:
@@ -1117,7 +1117,7 @@ class Viewer:
         """Each slot's spell slots (GameData.spell_slots), or [] when the game isn't running."""
         if self.ds is None:
             return [[] for _ in slots]
-        gd = game.GameData(self.guest, self.ds)
+        gd = game.GameData(self.guest, self.ds, self._rules())
         table = game.far_pointer(self.guest, self.ds, game.CREATURES_PTR)
         out = []
         for s in slots:
@@ -1135,7 +1135,7 @@ class Viewer:
         rows = [(f"{kind} spells left", [game.slots_text(m.get(kind, [])) for m in per_member])
                 for kind, _ in game.MAGIC_KINDS]
         if self.ds is not None:  # each thief's skills as they stand (equipment and effects)
-            gd = game.GameData(self.guest, self.ds)
+            gd = game.GameData(self.guest, self.ds, self._rules())
             table = game.far_pointer(self.guest, self.ds, game.CREATURES_PTR)
             cells = []
             for s in slots:
@@ -1185,7 +1185,7 @@ class Viewer:
 
     def _refresh_cards(self, slots) -> None:
         """The Characters tab: each slot's card, with its condition and current AC."""
-        gd = game.GameData(self.guest, self.ds) if self.ds is not None else None
+        gd = game.GameData(self.guest, self.ds, self._rules()) if self.ds is not None else None
         effects = gd.effects_left() if gd else []
         combatants = gd.combatants() if gd else {}
         table = game.far_pointer(self.guest, self.ds, game.CREATURES_PTR) if gd else None
@@ -1215,8 +1215,13 @@ class Viewer:
             except (struct.error, IndexError, ValueError):
                 hits, saves = [], []
             boots = bool(known and self.rule_vars["boots_move"].get() and gd.wears_boots(index))
+            try:
+                weapons = gd.specializations(index) if known and index < game.PARTY_SIZE else []
+                no_spells = bool(known and index < game.PARTY_SIZE and gd.no_spells(index))
+            except (struct.error, IndexError, ValueError):
+                weapons, no_spells = [], False
             card.show(name, dict(fields), status, ac, self.art, member_slots, thief, equipment, hits, saves, boots,
-                      skills_label=label)
+                      skills_label=label, weapons=weapons, no_spells=no_spells)
 
     def _hex_base(self) -> Optional[int]:
         record = self.layout.records.get(self.hex_record.get())

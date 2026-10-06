@@ -434,6 +434,7 @@ class WeaponHit(NamedTuple):
     name: str
     thac0: int  # with this weapon, now
     parts: List[Tuple[str, int]]  # what is taken off the base THAC0 for it
+    skill: int = 0  # weapon specialization's skill with it (specialize.NONE...), with the rule on
 
 
 class ItemSave(NamedTuple):
@@ -1372,12 +1373,14 @@ class GameData:
                 parts.append((MATERIALS[material].lower(), MATERIAL_TO_HIT[material]))
             if two_weapons and not missile:
                 parts.append(self.two_weapons(creature, slot))
+            skill = 0
             if self.rules & RULE_SPECIALIZE:  # (weapon specialization: DSCLOG's PROBE_ATTACKS)
                 from . import specialize
                 skill = specialize.skill(self.sheet(creature), struct.unpack_from("<H", item, ITEM_TYPE)[0])
                 parts.append((specialize.SKILL_NAMES.get(skill, ""), specialize.to_hit(skill)))
             parts = [(why, n) for why, n in parts if n]
-            out.append(WeaponHit(index, slot, self.item_label(item, typ), base - sum(n for _, n in parts), parts))
+            out.append(WeaponHit(index, slot, self.item_label(item, typ), base - sum(n for _, n in parts), parts,
+                                 skill))
         if not out:
             parts = [(why, n) for why, n in [("STR", table(STR_TO_HIT, strength))] + common if n]
             out.append(WeaponHit(-1, -1, "unarmed", base - sum(n for _, n in parts), parts))
@@ -1469,6 +1472,33 @@ class GameData:
         if cloak and not blocked:
             out.append((cloak, "Cloak of Protection"))
         return out
+
+    def specializations(self, creature: int) -> List[Tuple[str, str]]:
+        """With weapon specialization, (kind, skill) for each weapon kind the creature has chosen:
+        "specialized", "mastery", "grand mastery", "expertise", or "not yet" for a dual-classed
+        warrior whose warrior class isn't back yet."""
+        if not self.rules & RULE_SPECIALIZE:
+            return []
+        from . import specialize, weaponchoice
+        sheet = self.sheet(creature)
+        if len(sheet) < SHEET_SIZE:
+            return []
+        names = {**specialize.SKILL_NAMES, specialize.EXPERT: "expertise", specialize.PLAIN: "not yet"}
+        out = []
+        for k in sheet[SPEC_SLOTS:SPEC_SLOTS + SPEC_COUNT]:
+            if 0 < k <= len(specialize.KINDS):
+                skill = specialize.skill(sheet, weaponchoice.PLAIN[k - 1][0])
+                out.append((specialize.KINDS[k - 1], names.get(skill, "")))
+        return out
+
+    def no_spells(self, creature: int) -> bool:
+        """With class restrictions, whether a multiclass preserver can't cast for the armour it
+        wears (DSCLOG's PROBE_NO_CAST; restrict.no_spells)."""
+        if not self.rules & RULE_RESTRICT:
+            return False
+        from . import restrict
+        worn = [typ for _, item, typ in self._worn(creature) if item[ITEM_SLOT] in ARMOUR_SLOTS]
+        return restrict.no_spells(self.sheet(creature), worn)
 
     def dex_ac(self, dex: int) -> int:
         """The game's AC adjustment for a DEX score."""
