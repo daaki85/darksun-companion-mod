@@ -79,6 +79,9 @@ VEC_DAM_LINE equ 0xCF      ; PROBE_DAM_LINE
 VEC_VIEW_DAM equ 0xCE      ; PROBE_VIEW_DAM
 VEC_CAN_USE equ 0xCD       ; PROBE_CAN_USE
 VEC_NO_CAST equ 0xCC       ; PROBE_NO_CAST
+VEC_MC_ROLL equ 0xCB       ; PROBE_MC_ROLL
+VEC_MC_CON equ 0xCA        ; PROBE_MC_CON
+VEC_MC_UNCON equ 0xC9      ; PROBE_MC_UNCON
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 128         ; entries in the ring
@@ -3518,6 +3521,7 @@ RULE_PROTECTION equ 1024        ; AD&D's rings and cloaks of protection (PROBE_R
 RULE_ITEM_SAVES equ 2048        ; items save against acid as in AD&D where better (PROBE_ITEM_*)
 RULE_SPECIALIZE equ 4096        ; weapon specialization (PROBE_ATTACKS, PROBE_SPEC_DAMAGE)
 RULE_RESTRICT equ 8192          ; class restrictions on armour, shields and weapons (PROBE_CAN_USE)
+RULE_MULTI_HP equ 16384         ; multiclass hit points as in AD&D (PROBE_MC_*)
 FOOT       equ 13               ; the item's slot byte while worn on the feet
 THINGS_SEG equ 0x3972 - 0x4356  ; the things table's segment, relative to DS
 
@@ -3687,6 +3691,88 @@ probe_hd_con:
 .cmp:   cmp al, dl
         pop dx
         retf 2
+
+; Multiclass hit points as in AD&D (RULE_MULTI_HP). The game adds each new level's die (or fixed
+; gain) to a sheet's base (+0Ah), and a character's most hit points are that base divided by its
+; number of classes (a human's, who dual-classes, counts one), plus CON's bonus for its levels:
+; the warrior's full bonus, the rest's up to +2, undivided. With the rule, of a character of more
+; than one class (not a human) each level's die counts its share, at least 1 (the base gains
+; that times the classes, which the game divides again), and CON's bonus is shared out too.
+; PROBE_MC_ROLL: INT VEC_MC_ROLL replaces "add es:[bx+0Ah],cx" (4 bytes: INT + 2 NOPs; DSUN.EXE
+; 8735Eh) where a new level's hit points go into the base: ES:BX the sheet, CX the gain.
+; PROBE_MC_CON: INT VEC_MC_CON replaces "add di,ax" (2 bytes; 87523h) where the most hit points
+; get CON's bonus: AX the bonus, SI the sheet's number.
+; PROBE_MC_UNCON: INT VEC_MC_UNCON replaces "sub dx,ax" (2 bytes; 877DAh) where the game takes
+; CON's bonus off the hit points to work back to the base (when CON changes): AX, SI as above.
+probe_mc_roll:
+        test word [cs:rules], RULE_MULTI_HP
+        jz .add
+        push ax
+        push dx
+        call class_share        ; AX the classes sharing, 1 for none
+        cmp ax, 1
+        jbe .out
+        xchg ax, cx             ; CX the classes, AX the gain
+        cwd
+        idiv cx
+        cmp ax, 1
+        jge .share
+        mov ax, 1
+.share: imul cx                 ; (the classes' times the share: the game divides it back)
+        mov cx, ax
+.out:   pop dx
+        pop ax
+.add:   add [es:bx + 0x0A], cx
+        iret
+
+probe_mc_con:
+        call con_share
+        add di, ax
+        iret
+
+probe_mc_uncon:
+        call con_share
+        sub dx, ax
+        iret
+
+; CON_SHARE: AX (CON's hit point bonus) divided by the classes of sheet SI (dropping fractions)
+; with RULE_MULTI_HP. Other registers kept.
+con_share:
+        test word [cs:rules], RULE_MULTI_HP
+        jz .ret
+        push bx
+        push cx
+        push dx
+        push es
+        push ax
+        les bx, [0x1661]
+        imul ax, si, 0x47
+        add bx, ax
+        call class_share
+        mov cx, ax
+        pop ax
+        cmp cx, 1
+        jbe .out
+        cwd
+        idiv cx
+.out:   pop es
+        pop dx
+        pop cx
+        pop bx
+.ret:   ret
+
+; CLASS_SHARE: AX the number of classes of the sheet at ES:BX, 1 for a human's. Others kept.
+class_share:
+        mov ax, 1
+        cmp byte [es:bx + 0x18], 1
+        je .ret
+        cmp byte [es:bx + 0x22], 0
+        je .ret
+        inc ax
+        cmp byte [es:bx + 0x23], 0
+        je .ret
+        inc ax
+.ret:   ret
 
 ; PROBE_THIEF_SKILL: INT VEC_THIEF_SKILL, then "jc" past the game's DEX formula, replaces
 ; "mov ax,si / shl ax,2 / add dx,ax / mov si,dx" (9 bytes) in the game's thief skill routine,
@@ -6554,6 +6640,15 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_NO_CAST
         mov dx, probe_no_cast
         int 21h
+        mov ax, 2500h + VEC_MC_ROLL
+        mov dx, probe_mc_roll
+        int 21h
+        mov ax, 2500h + VEC_MC_CON
+        mov dx, probe_mc_con
+        int 21h
+        mov ax, 2500h + VEC_MC_UNCON
+        mov dx, probe_mc_uncon
+        int 21h
         mov ax, 3516h           ; the keyboard's (TARGETING)
         int 21h
         mov [old16], bx
@@ -6594,8 +6689,8 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or CCh-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
-all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST
+busy    db 'DSCLOG: interrupts 60h-65h or C9h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON
 all_vectors_end:
 
         align 16, db 0

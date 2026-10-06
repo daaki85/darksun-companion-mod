@@ -55,6 +55,7 @@ VEC_DAM_LINE = 0xCF
 VEC_VIEW_DAM = 0xCE
 VEC_CAN_USE = 0xCD
 VEC_NO_CAST = 0xCC
+VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON = 0xCB, 0xCA, 0xC9
 
 
 SCRIPT_BUFFER = 0x2E00  # the scripts' buffer, made bigger (the game's: 10000 bytes)
@@ -301,6 +302,9 @@ PATCHES = (
     Patch("view_dam", 0x64EB6, bytes.fromhex("8956f2"), _interrupt(VEC_VIEW_DAM, 3)),
     Patch("can_use", 0x6EF34, bytes.fromhex("26234712"), _interrupt(VEC_CAN_USE, 4)),
     Patch("no_cast", 0x89B84, bytes.fromhex("83c404"), _interrupt(VEC_NO_CAST, 3)),
+    Patch("mc_roll", 0x8735E, bytes.fromhex("26014f0a"), _interrupt(VEC_MC_ROLL, 4)),
+    Patch("mc_con", 0x87523, bytes.fromhex("03f8"), _interrupt(VEC_MC_CON, 2)),
+    Patch("mc_uncon", 0x877DA, bytes.fromhex("2bd0"), _interrupt(VEC_MC_UNCON, 2)),
     # A bug of the game's own: the roster's DELETE (DSUN.EXE 54AC1h) picked the character by the
     # row clicked alone, where ADD takes the row plus how far the list is scrolled; with the list
     # scrolled, another character was deleted (the row's from the top). The same code, the scroll

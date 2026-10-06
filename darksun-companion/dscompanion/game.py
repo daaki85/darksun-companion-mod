@@ -106,6 +106,7 @@ RULE_ITEM_SAVES = 2048
 # each in the sheet's SPEC_SLOTS bytes (four the game never uses), set the attacks a round
 RULE_SPECIALIZE = 4096
 RULE_RESTRICT = 8192  # class restrictions on armour, shields and weapons (restrict.py)
+RULE_MULTI_HP = 16384  # multiclass hit points as in AD&D: each level's die and CON's bonus shared
 SPEC_SLOTS, SPEC_COUNT = 0x14, 4
 # AD&D's item saving throws against acid (the DMG's table), by the game's materials: wood
 # (thick), bone, stone and obsidian (glass's), metal, leather; and cloth for no material
@@ -466,6 +467,27 @@ CLASS_NAMES = {1: "Cleric (air)", 2: "Cleric (earth)", 3: "Cleric (fire)", 4: "C
 
 def ordinal(n: int) -> str:
     return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
+
+
+def class_share(sheet: bytes) -> int:
+    """The classes a character's hit points are shared between: its number of classes, 1 for a
+    human (who dual-classes)."""
+    if sheet[SHEET_RACE] == HUMAN:
+        return 1
+    return max(sum(1 for c in sheet[SHEET_CLASSES:SHEET_CLASSES + 3] if c), 1)
+
+
+def multiclass_gain(sheet: bytes, gain: int) -> int:
+    """With RULE_MULTI_HP (DSCLOG's PROBE_MC_ROLL), what a new level's hit point gain adds to the
+    sheet's base: its share (dropping fractions, at least 1) times the classes, as the game
+    divides the base by them."""
+    n = class_share(sheet)
+    return gain if n == 1 else max(int(gain / n), 1) * n
+
+
+def con_share(sheet: bytes, bonus: int) -> int:
+    """With RULE_MULTI_HP (PROBE_MC_CON), CON's hit point bonus shared between the classes."""
+    return int(bonus / class_share(sheet))
 
 
 class LevelHp(NamedTuple):
