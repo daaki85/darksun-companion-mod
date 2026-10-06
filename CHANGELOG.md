@@ -9,6 +9,25 @@ requests #1 to #13; its notes are in
 ## Pull request #19 ([in review](https://github.com/daaki85/darksun-companion-mod/pull/19))
 
 **Added**
+- **Weapon specialization** (a new rule change, on by default): fighters and
+  gladiators specialize in kinds of weapon (+1 to hit, +2 damage), fighters
+  on to mastery at 5th level (+3, +3) and grand mastery at 9th (the damage
+  die a size larger and an attack more), rangers take expertise; a warrior
+  with a weapon of another kind attacks at AD&D's plain rate. Sixteen kinds,
+  chosen on the creation screen's new **WEAPON SPEC** pages (greyed as the
+  game's disciplines are, a multiclass warrior's limited to what its other
+  class allows), a new warrior starting with a plain weapon of its kind; a
+  gladiator's 3rd and 4th (and any warrior's from before the rule) picked at
+  a level gained, in the game's own pop-up for a psionicist's new power; the
+  kinds listed on the **Effects** screen and counted on the DAM lines, the
+  Characters tab and in the dice log.
+- **Class restrictions** (a new rule change, on by default): psionicists,
+  multiclass thieves, preservers, druids and clerics held to their own limits
+  on armour, shields and weapons whatever their other classes allow, the
+  strictest winning; a multiclass preserver casts no spells in armour.
+- **Multiclass hit points** (a new rule change, on by default): each level's
+  die and CON's bonus divided between a character's classes, as in AD&D, at
+  creation and at every level; the dice log shows the share.
 - **Which class levels up next, on View Character:** for a character of more
   than one class, the XP in brackets on the experience line now names the
   class that reaches its next level there: `EXP:87230 (90000 Pr)`. A letter
@@ -26,6 +45,10 @@ requests #1 to #13; its notes are in
   repriced when the Ledger next sees the game.
 
 **Changed**
+- **The README is shorter:** the new items (the Ring +1, the slave pens' gear,
+  Kreenfang and Shadowseeker, the bone scale set, their icons and names) are
+  one section with a table, Kalzith and Semyon one section of new people, and
+  the helms' and boots' rules one.
 - **Kalzith sells Shield and Burning Hands** in place of Magic Missile and
   Color Spray (3,000 each), so none of his scrolls is one the game has
   (Color Spray's is in the sewers). Magic Missile and Color Spray scrolls he
