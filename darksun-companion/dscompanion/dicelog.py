@@ -24,7 +24,7 @@ from collections import Counter, deque
 from dataclasses import dataclass
 from typing import Callable, Deque, Dict, List, NamedTuple, Optional, Tuple
 
-from . import arms, bonescale, dust, game, rings, targeting, icons, kalzith, monsters, names, npcitems, pickpocket, ring, scrolling, searches, semyon, shadows, sprites, stealth, tools, vulture
+from . import arms, bonescale, dust, game, rings, targeting, icons, kalzith, monsters, names, npcitems, pickpocket, ring, scrolling, searches, semyon, shadows, specialize, sprites, stealth, tools, vulture
 from .game import (CONVENTIONAL_AND_UPPER, CREATURE_ABILITIES, CREATURE_SIDE, CREATURE_THAC0, EFFECT_NAMES,
                    EFFECT_RULES, MATERIAL_TO_HIT, MATERIALS, SAVE_NAMES, STR_DAMAGE, GameData)
 from .guestmem import GuestMemory
@@ -1673,20 +1673,30 @@ class DiceLog:
         needs = ("hits on anything but a 1" if need <= 2 else "only a 20 hits" if need > 20 else f"needs {need}+")
         head = (f"{g.creature_name(attacker)} attacks {target}{how}{with_what}: d20 = {d20}{note}, "
                 f"{needs} ({chance}%), hits AC {thac0 - d20}, target AC {ac} -> {'HIT' if hit else 'miss'}")
-        breakdown = self._thac0_breakdown(e, thac0, attacker, attacker_combatant, target_combatant, weapon, mode)
+        skill = self.weapon_skill(attacker, item_type)
+        breakdown = self._thac0_breakdown(e, thac0, attacker, attacker_combatant, target_combatant, weapon, mode,
+                                          (specialize.SKILL_NAMES.get(skill, ""), specialize.to_hit(skill)))
         self._turn_attacks.setdefault(attacker, []).append(
             {"target": target, "d20": d20, "need": need, "hit": hit, "damage": None})
         return [head, "    " + breakdown]
 
+    def weapon_skill(self, attacker: Optional[int], item_type: Optional[int]) -> int:
+        """A creature's weapon specialization skill with a weapon (specialize.skill), with the rule on."""
+        if attacker is None or not self.game.rules & game.RULE_SPECIALIZE:
+            return specialize.NONE
+        sheet = self.game.sheet(attacker)
+        return specialize.skill(sheet, item_type) if len(sheet) >= game.SHEET_SIZE else specialize.NONE
+
     def _thac0_breakdown(self, e: Entry, thac0: int, attacker: int, attacker_combatant: int,
-                         target_combatant: int, weapon, mode: int) -> str:
-        """'THAC0 16, +6 STR, +1 Blessed, ... = 9', from the attack setup's locals and the game's rules."""
+                         target_combatant: int, weapon, mode: int, skill: Tuple[str, int] = ("", 0)) -> str:
+        """'THAC0 16, +6 STR, +1 Blessed, ... = 9', from the attack setup's locals and the game's rules
+        (and SKILL, weapon specialization's (name, to-hit), which DSCLOG takes off after them)."""
         g = self.game
         base = g.creature(attacker)[CREATURE_THAC0]
         after_f1, hit_bonus = e.parent_local(-0x20), e.parent_local(-8)
         rear, backstab = e.parent_local(-0x1A), e.parent_local(-0x24)
         parts: List[Tuple[str, int]] = []
-        if None in (after_f1, hit_bonus) or after_f1 - hit_bonus != thac0:
+        if None in (after_f1, hit_bonus) or after_f1 - hit_bonus != thac0 + skill[1]:
             return f"THAC0 {base} base, {signed(base - thac0)} in bonuses = {thac0}"
         if rear:
             parts.append(("from behind", 2))
@@ -1742,6 +1752,8 @@ class DiceLog:
                 rest -= difficulty
         if rest:
             parts.append(("off-hand and other", rest))
+        if skill[1]:
+            parts.append(skill)
         text = ", ".join(f"{signed(v)} {name}" for name, v in parts if v)
         return f"THAC0 {base}" + (f", {text}" if text else "") + f" = {thac0}"
 
@@ -1833,7 +1845,12 @@ class DiceLog:
         g = self.game
         attacker, mode = e.parent_arg(0x0E), e.parent_arg(0x16)
         total = max(sum(faces) + bonus, 1)
-        steps = f"{count}d{sides} = {faces_text}" + (f" {signed(bonus)} weapon" if bonus else "")
+        skill = self.weapon_skill(attacker, e.parent_arg(0x14))
+        extra = specialize.damage(skill)
+        steps = f"{count}d{sides} = {faces_text}" + (f" {signed(bonus - extra)} weapon" if bonus - extra else "") \
+            + (f" {signed(extra)} {specialize.SKILL_NAMES[skill]}" if extra else "")
+        if skill == specialize.GRAND:
+            steps += f" (d{sides} for d{sides - 2}: grand mastery)"
         if sum(faces) + bonus < 1:
             steps += " (raised to the minimum of 1)"
         if mode is not None and mode <= 1:  # melee: the game adds the attacker's STR bonus

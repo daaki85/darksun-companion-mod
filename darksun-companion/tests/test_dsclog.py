@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dscompanion.dicelog import FILTERS, HDR_SIG, Entry
 from dscompanion.textlog import TextBuffer
-from dscompanion.gamepatch import (VEC_ATTACKS, VEC_XP_NEXT, VEC_SCRIPT_RAND, VEC_ITEM_ARMOUR, VEC_ITEM_SKIP, VEC_ITEM_WEAPON, VEC_AC, VEC_DOUBLE, VEC_MSG, VEC_NEXT, VEC_RAND, VEC_RING_AC, VEC_USE_ITEM,
+from dscompanion.gamepatch import (VEC_SPEC_DAMAGE, VEC_ATTACKS, VEC_XP_NEXT, VEC_SCRIPT_RAND, VEC_ITEM_ARMOUR, VEC_ITEM_SKIP, VEC_ITEM_WEAPON, VEC_AC, VEC_DOUBLE, VEC_MSG, VEC_NEXT, VEC_RAND, VEC_RING_AC, VEC_USE_ITEM,
                                   VEC_RING_SAVE, VEC_SAVE, VEC_TEXT, VEC_TWO, VEC_GRACE_CAST, VEC_GRACE_EFFECT,
                                   VEC_GRACE_ABILITY, VEC_NAMES_FILL, VEC_NAMES_SIZE, VEC_STEALTH, VEC_TYPES_FILL,
                                   VEC_TYPES_SIZE, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED,
@@ -719,10 +719,10 @@ class KindTableTests(unittest.TestCase):
 
 
 @unittest.skipIf(Uc is None, "unicorn is not installed")
-class AttacksTests(unittest.TestCase):
-    """A melee attack's attacks a round (PROBE_ATTACKS): the sheet's, or with RULE_SPECIALIZE half an
-    attack less for a warrior's weapon of a kind not chosen, one more for a fighter's grand mastery."""
-    SHEET = 0x8000
+class SpecializeTests(unittest.TestCase):
+    """Weapon specialization in the weapon attack routine (PROBE_ATTACKS, PROBE_SPEC_DAMAGE): the
+    attacks a round, the THAC0, the damage bonus and dice, by the attacker's chosen kinds."""
+    SHEETS = 0x8000
     RULES = 170
     LONG_SWORD, AXE = 45, 22  # (item types: obsidian long sword, axe)
 
@@ -731,50 +731,80 @@ class AttacksTests(unittest.TestCase):
         self.mu = mu = Uc(UC_ARCH_X86, UC_MODE_16)
         mu.mem_map(0, 0x100000)
         mu.mem_write(TSR * 16, image)
-        at = image.find(bytes.fromhex("268a472a2ef706"))
-        self.assertGreater(at, 0)
-        mu.mem_write(VEC_ATTACKS * 4, struct.pack("<HH", at, TSR))
+        attacks = image.find(bytes.fromhex("982ef706"))
+        damage = image.find(bytes.fromhex("0146ee2ef706"))
+        self.assertGreater(attacks, 0)
+        self.assertGreater(damage, 0)
+        mu.mem_write(VEC_ATTACKS * 4, struct.pack("<HH", attacks, TSR))
+        mu.mem_write(VEC_SPEC_DAMAGE * 4, struct.pack("<HH", damage, TSR))
         mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
+        mu.mem_write(GAME_DS * 16 + 0x1661, struct.pack("<HH", 0, self.SHEETS))
 
-    def attacks(self, halves, weapon, chosen=(), classes=(9, 0, 0), levels=(5, 0, 0), rules=4096):
+    def attack(self, halves, weapon, chosen=(), classes=(9, 0, 0), levels=(5, 0, 0), rules=4096, missile=False):
+        """(attacks in halves, THAC0, damage bonus, sides) after both probes, with THAC0 15, a
+        damage bonus of 1 before the STR bonus of 2 is added, 1d8."""
         mu = self.mu
         mu.mem_write(TSR * 16 + load_image().find(HDR_SIG) + self.RULES, struct.pack("<H", rules))
         sheet = bytearray(0x47)
-        sheet[0x2A] = halves
         for i, k in enumerate(chosen):
             sheet[0x14 + i] = k + 1
         sheet[0x21:0x24], sheet[0x24:0x27] = bytes(classes), bytes(levels)
-        mu.mem_write(self.SHEET * 16, bytes(sheet))
-        mu.mem_write(SS * 16 + BP + 0x14, struct.pack("<H", weapon))
-        mu.mem_write(CALLER * 16 + 0x600, bytes((0xCD, VEC_ATTACKS, 0x90, 0x90)))
-        for name, value in dict(cs=CALLER, ds=GAME_DS, ss=SS, esp=0x7FC, ebp=BP, eflags=IF | 2, eax=0x1234,
-                                ebx=0, ecx=0x3333, esi=0x5555, es=self.SHEET).items():
+        mu.mem_write(self.SHEETS * 16 + 3 * 0x47, bytes(sheet))  # (sheet 3)
+        mu.mem_write(SS * 16 + BP + 0x0A, struct.pack("<H", 15))
+        mu.mem_write(SS * 16 + BP + 0x10, struct.pack("<H", 3))
+        mu.mem_write(SS * 16 + BP + 0x14, struct.pack("<HH", weapon, 2 if missile else 0))
+        mu.mem_write(SS * 16 + BP - 0x12, struct.pack("<HHH", 1, 8, 1))  # damage bonus, sides, count
+        mu.mem_write(CALLER * 16 + 0x600, bytes((0xCD, VEC_ATTACKS, 0x90, 0x90, 0xB8, 2, 0, 0xCD, VEC_SPEC_DAMAGE, 0x90)))
+        for name, value in dict(cs=CALLER, ds=GAME_DS, ss=SS, esp=0x7FC, ebp=BP, eflags=IF | 2, eax=halves,
+                                ebx=0x2222, ecx=0x3333, edx=0x4444, esi=0x5555, es=0x6666).items():
             mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
-        mu.emu_start(CALLER * 16 + 0x600, CALLER * 16 + 0x604)
-        self.assertEqual([mu.reg_read(x) for x in (r.UC_X86_REG_SP, r.UC_X86_REG_CX, r.UC_X86_REG_SI, r.UC_X86_REG_BX)],
-                         [0x7FC, 0x3333, 0x5555, 0])
-        return mu.reg_read(r.UC_X86_REG_AX) & 0xFF
+        mu.emu_start(CALLER * 16 + 0x600, CALLER * 16 + 0x60A)
+        self.assertEqual([mu.reg_read(x) for x in (r.UC_X86_REG_SP, r.UC_X86_REG_BX, r.UC_X86_REG_CX, r.UC_X86_REG_DX,
+                                                   r.UC_X86_REG_SI, r.UC_X86_REG_ES)],
+                         [0x7FC, 0x2222, 0x3333, 0x4444, 0x5555, 0x6666])
+        attacks, = struct.unpack("<h", mu.mem_read(SS * 16 + BP - 8, 2))
+        thac0, = struct.unpack("<h", mu.mem_read(SS * 16 + BP + 0x0A, 2))
+        bonus, sides = struct.unpack("<hh", mu.mem_read(SS * 16 + BP - 0x12, 4))
+        return attacks, thac0, bonus, sides
 
     def test_off(self):
-        self.assertEqual(self.attacks(3, self.AXE, rules=0), 3)
+        self.assertEqual(self.attack(3, self.AXE, chosen=(0,), rules=0), (3, 15, 3, 8))
 
-    def test_chosen_kind_keeps_the_rate(self):
-        self.assertEqual(self.attacks(3, self.LONG_SWORD, chosen=(0,)), 3)  # (long sword, kind 0)
-        self.assertEqual(self.attacks(4, self.AXE, chosen=(10, 5), classes=(10, 0, 0), levels=(7, 0, 0)), 4)
+    def test_no_choices_as_the_game(self):
+        """Monsters, and characters who haven't chosen yet: the game's own numbers."""
+        self.assertEqual(self.attack(3, self.AXE), (3, 15, 3, 8))
+
+    def test_specialization(self):
+        self.assertEqual(self.attack(3, self.LONG_SWORD, chosen=(0,), levels=(4, 0, 0)), (3, 14, 5, 8))
 
     def test_other_kind_plain_rate(self):
-        self.assertEqual(self.attacks(3, self.AXE, chosen=(0,)), 2)
-        self.assertEqual(self.attacks(4, self.AXE, chosen=(0,), levels=(7, 0, 0)), 3)
-        self.assertEqual(self.attacks(3, 9999), 2)  # (bare hands: no kind)
+        self.assertEqual(self.attack(3, self.AXE, chosen=(0,)), (2, 15, 3, 8))
+        self.assertEqual(self.attack(4, self.AXE, chosen=(0,), levels=(7, 0, 0)), (3, 15, 3, 8))
+        self.assertEqual(self.attack(3, 9999, chosen=(0,)), (2, 15, 3, 8))  # (bare hands: no kind)
 
-    def test_not_a_warrior(self):
-        self.assertEqual(self.attacks(2, self.AXE, classes=(11, 0, 0)), 2)
+    def test_mastery(self):
+        self.assertEqual(self.attack(3, self.LONG_SWORD, chosen=(0,), levels=(5, 0, 0)), (3, 12, 6, 8))
 
     def test_grand_mastery(self):
-        """A fighter's own kind (the first) at 9th level: one attack more; a gladiator's: no."""
-        self.assertEqual(self.attacks(4, self.LONG_SWORD, chosen=(0,), levels=(9, 0, 0)), 6)
-        self.assertEqual(self.attacks(4, self.LONG_SWORD, chosen=(0,), levels=(8, 0, 0)), 4)
-        self.assertEqual(self.attacks(4, self.LONG_SWORD, chosen=(0,), classes=(10, 0, 0), levels=(9, 0, 0)), 4)
+        self.assertEqual(self.attack(4, self.LONG_SWORD, chosen=(0,), levels=(9, 0, 0)), (6, 12, 6, 10))
+
+    def test_gladiator_weapons(self):
+        """A gladiator: specialization with each chosen kind, never mastery."""
+        glad = dict(classes=(10, 0, 0), levels=(9, 0, 0))
+        self.assertEqual(self.attack(4, self.AXE, chosen=(0, 5), **glad), (4, 14, 5, 8))
+        self.assertEqual(self.attack(4, self.LONG_SWORD, chosen=(0, 5), **glad), (4, 14, 5, 8))
+
+    def test_ranger_expertise(self):
+        """A ranger: the rate with the chosen kind, no bonuses; another kind, the plain rate."""
+        ranger = dict(classes=(13, 0, 0), levels=(4, 0, 0))
+        self.assertEqual(self.attack(3, self.LONG_SWORD, chosen=(0,), **ranger), (3, 15, 3, 8))
+        self.assertEqual(self.attack(3, self.AXE, chosen=(0,), **ranger), (2, 15, 3, 8))
+
+    def test_missile_keeps_its_rate(self):
+        self.assertEqual(self.attack(4, 1, chosen=(13,), levels=(4, 0, 0), missile=True), (4, 14, 5, 8))  # (a bow)
+
+    def test_not_a_warrior(self):
+        self.assertEqual(self.attack(2, self.AXE, chosen=(0,), classes=(11, 0, 0)), (2, 15, 3, 8))
 
 
 @unittest.skipIf(Uc is None, "unicorn is not installed")

@@ -36,5 +36,35 @@ class KindTests(unittest.TestCase):
         self.assertIsNone(specialize.kind_of(game.CLOAK_TYPE))
 
 
+def sheet(chosen=(), classes=(9, 0, 0), levels=(4, 0, 0)):
+    s = bytearray(game.SHEET_SIZE)
+    for i, k in enumerate(chosen):
+        s[game.SPEC_SLOTS + i] = k + 1
+    s[game.SHEET_CLASSES:game.SHEET_CLASSES + 3] = bytes(classes)
+    s[game.SHEET_LEVELS:game.SHEET_LEVELS + 3] = bytes(levels)
+    return bytes(s)
+
+
+class SkillTests(unittest.TestCase):
+    """specialize.skill: as DSCLOG's SPEC_OF (tests/test_dsclog.py SpecializeTests)."""
+    LONG_SWORD, AXE = 45, 22
+
+    def test_levels(self):
+        S = specialize
+        self.assertEqual(S.skill(sheet(), self.AXE), S.NONE)
+        self.assertEqual(S.skill(sheet((0,)), self.AXE), S.PLAIN)
+        self.assertEqual(S.skill(sheet((0,)), self.LONG_SWORD), S.SPECIAL)
+        self.assertEqual(S.skill(sheet((0,), levels=(5, 0, 0)), self.LONG_SWORD), S.MASTER)
+        self.assertEqual(S.skill(sheet((0,), levels=(9, 0, 0)), self.LONG_SWORD), S.GRAND)
+        self.assertEqual(S.skill(sheet((0, 5), classes=(10, 0, 0), levels=(9, 0, 0)), self.AXE), S.SPECIAL)
+        self.assertEqual(S.skill(sheet((0,), classes=(13, 0, 0)), self.LONG_SWORD), S.EXPERT)
+        self.assertEqual(S.skill(sheet((0,), classes=(11, 17, 9), levels=(5, 5, 5)), self.LONG_SWORD), S.MASTER)
+
+    def test_bonuses(self):
+        S = specialize
+        self.assertEqual([(S.to_hit(l), S.damage(l)) for l in range(6)],
+                         [(0, 0), (0, 0), (0, 0), (1, 2), (3, 3), (3, 3)])
+
+
 if __name__ == "__main__":
     unittest.main()

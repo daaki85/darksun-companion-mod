@@ -54,3 +54,39 @@ def kind_of(item_type: int) -> Optional[int]:
 def page_of(kind: int) -> int:
     """The creation panel's weapon page a kind is on (0-3), and its row there is kind % PAGE_SIZE."""
     return kind // PAGE_SIZE
+
+
+# A character's skill with a weapon, as DSCLOG's SPEC_OF works it out (game.SPEC_SLOTS holds the
+# chosen kinds, kind + 1 each): NONE when it has chosen none (monsters too: the game's numbers),
+# PLAIN with a weapon of another kind, EXPERT a ranger's (no fighter or gladiator class: the
+# attacks only), SPECIAL, MASTER (a fighter's own kind, its first, from 5th level), GRAND (9th)
+NONE, PLAIN, EXPERT, SPECIAL, MASTER, GRAND = range(6)
+SKILL_NAMES = {SPECIAL: "specialized", MASTER: "mastery", GRAND: "grand mastery"}
+FIGHTER, GLADIATOR = 9, 10
+MASTERY, GRAND_MASTERY = 5, 9
+
+
+def skill(sheet: bytes, item_type: Optional[int]) -> int:
+    chosen = sheet[game.SPEC_SLOTS:game.SPEC_SLOTS + game.SPEC_COUNT]
+    if not any(chosen):
+        return NONE
+    kind = kind_of(item_type) if item_type is not None else None
+    if kind is None or kind + 1 not in chosen:
+        return PLAIN
+    classes = sheet[game.SHEET_CLASSES:game.SHEET_CLASSES + 3]
+    if not {FIGHTER, GLADIATOR} & set(classes):
+        return EXPERT
+    if chosen.index(kind + 1):
+        return SPECIAL
+    fighter = next((sheet[game.SHEET_LEVELS + i] for i in range(3) if classes[i] == FIGHTER), 0)
+    return GRAND if fighter >= GRAND_MASTERY else MASTER if fighter >= MASTERY else SPECIAL
+
+
+def to_hit(level: int) -> int:
+    """What the skill adds to hit (takes off THAC0)."""
+    return 3 if level >= MASTER else 1 if level == SPECIAL else 0
+
+
+def damage(level: int) -> int:
+    """What the skill adds to the damage."""
+    return 3 if level >= MASTER else 2 if level == SPECIAL else 0
