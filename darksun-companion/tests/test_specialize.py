@@ -66,5 +66,16 @@ class SkillTests(unittest.TestCase):
                          [(0, 0), (0, 0), (0, 0), (1, 2), (3, 3), (3, 3)])
 
 
+
+class PageLabelTests(unittest.TestCase):
+    def test_short_forms(self):
+        from dscompanion import weaponpages
+        labels = [weaponpages.page_text(k) for k in range(16)]
+        self.assertEqual(labels[:4], ["LNG SWORD", "DAGGER", "SHRT SWORD", "MACE"])
+        self.assertEqual(labels[8], "QTR STAFF")
+        self.assertEqual(labels[15], "STF SLING")
+        self.assertTrue(all(len(t) <= 10 for t in labels))
+
+
 if __name__ == "__main__":
     unittest.main()

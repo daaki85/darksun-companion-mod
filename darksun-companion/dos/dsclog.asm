@@ -82,6 +82,11 @@ VEC_NO_CAST equ 0xCC       ; PROBE_NO_CAST
 VEC_MC_ROLL equ 0xCB       ; PROBE_MC_ROLL
 VEC_MC_CON equ 0xCA        ; PROBE_MC_CON
 VEC_MC_UNCON equ 0xC9      ; PROBE_MC_UNCON
+VEC_WP_DISC_WIN equ 0xC8   ; PROBE_WP_DISC_WIN
+VEC_WP_SPHERE_WIN equ 0xC7 ; PROBE_WP_SPHERE_WIN
+VEC_WP_DISC_CLICK equ 0xC6 ; PROBE_WP_DISC_CLICK
+VEC_WP_SPHERE_CLICK equ 0xC5 ; PROBE_WP_SPHERE_CLICK
+VEC_WP_SHOWN equ 0xC4      ; PROBE_WP_SHOWN
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 128         ; entries in the ring
@@ -3013,6 +3018,524 @@ armour_worn:
         popad
         clc
         ret
+
+; Weapon pages in the character creation panel (RULE_SPECIALIZE; dscompanion/weaponpages.py, which
+; puts the windows and their pictures in the Ledger's RESOURCE.GFF). The panel shows the psionic
+; disciplines' window (3012, DS:EA2h its window) or the clerical spheres' (3013, DS:EA6h), which
+; the game swaps through its routines at DSUN.EXE 640E4h (to the spheres) and 641B9h (back). For a
+; fighter, gladiator or ranger it gets windows with WEAPON SPEC for its button (3018 for the
+; disciplines if it has no sphere, 3019 for the spheres), and that opens the four weapon pages
+; (3014-3017; kept at DS:EA6h, as the spheres' window is, so that the game closes it as one),
+; each four kinds (specialize.KINDS), MORE SPECS to the next, the last's VIEW PSIONICS back.
+; The kind marked is the creation sheet's (DS:119Ch) first SPEC_SLOTS byte, which goes with the
+; sheet when DONE is pressed (the Ledger puts in the long sword for a warrior who marks none).
+; PROBE_WP_DISC_WIN: INT replaces "push 0BC4h" (3 bytes: INT + NOP; 67BFBh), the disciplines'
+; window being opened: pushes 3018's id instead for a warrior with no sphere.
+; PROBE_WP_SPHERE_WIN: INT replaces "push 0BC5h" (6413Bh), the spheres' window being opened:
+; 3019's id instead for a warrior.
+; PROBE_WP_SHOWN: INT replaces "cmp ax,8" (3 bytes: INT + NOP; 6337Ah) where a new class has been
+; picked and the game asks whether the spheres' window is up (AX 8 if it is, from the routine it
+; has just called, 118:C36h, with the window's id) to close it: 8 too if a warrior's spheres or a
+; weapon page is up. RETF 2 keeps the compare's flags.
+; PROBE_WP_DISC_CLICK, PROBE_WP_SPHERE_CLICK: INT replaces "mov bx,[bp+8]" (3 bytes: INT + NOP;
+; 64311h, 642B0h) in those windows' click routines, [BP+8] the button: WEAPON SPEC opens the
+; first page, and the routine goes on at its end (6433Fh, 642E2h: the redraw). Both read
+; the far addresses of the game's window routines from the calls in their own overlay, as the
+; loader has fixed them (WP_CALLS), for WP_HANDLER to call.
+WP_DISC_ID   equ 0xBC4              ; (windows' ids: 3012, 3013, 3014-3017, 3018, 3019)
+WP_SPHERE_ID equ 0xBC5
+WP_PAGE_ID   equ 0xBC6
+WP_WDISC_ID  equ 0xBCA
+WP_WSPHERE_ID equ 0xBCB
+WP_ROW       equ 0x820              ; (buttons: the kinds' rows, MORE SPECS, VIEW PSIONICS, WEAPON SPEC)
+WP_MORE      equ 0x830
+WP_BACK      equ 0x831
+WP_VIEW      equ 0x832
+WP_PAGES     equ 4
+WP_DISC      equ 0xEA2              ; DS: the panel's windows (far)
+WP_SPHERE    equ 0xEA6
+WP_DISC_MASK equ 0x4980             ; DS: the disciplines and spheres marked, kept while hidden
+WP_SPHERE_MASK equ 0x4982
+WP_CREATION  equ 0x119C             ; DS: the sheet being made (far; its classes numbered 1-8)
+WP_STUB      equ 0x421D - 0x4356    ; the creation overlay's stub, less DS: its entries
+WP_MARKED    equ 0x66               ; (63EFAh: the rows marked, as a mask)
+WP_TO_DISC   equ 0x7A               ; (641B9h: back to the disciplines)
+WP_X         equ 0xD2               ; (the panel's place)
+WP_Y         equ 0x58
+CR_CLERIC    equ 1                  ; (classes at creation)
+CR_DRUID     equ 2
+CR_FIGHTER   equ 3
+CR_GLADIATOR equ 4
+CR_RANGER    equ 7
+; WP_CALLS: the routines' far calls (9Ah) in the overlay, back from the click probes' return
+; (the overlay's 642B3h and 64314h; the calls at 64127h close, 6413Eh open, 6416Fh print,
+; 6417Dh set the text colour, 641AFh the panel's help line, 6422Fh set a button, 642E2h redraw)
+WP_CALL_CLOSE  equ 0x64127
+WP_CALL_OPEN   equ 0x6413E
+WP_CALL_PRINT  equ 0x6416F
+WP_CALL_COLOUR equ 0x6417D
+WP_CALL_HELP   equ 0x641AF
+WP_CALL_BUTTON equ 0x6422F
+WP_CALL_REDRAW equ 0x642E2
+WP_CALL_MARK   equ 0x63FC4          ; (the row's mark: A0:3180h, as 63FEEh draws it)
+WP_MARK_SEG    equ 0x63FB2          ; ("mov ax,338h": the marks' table's segment, +1ABh)
+WP_MARK_WIN    equ 0xF32            ; DS: the window the marks are drawn through (far)
+WP_SPHERE_SEG  equ 0x6412F          ; ("push 538h": the spheres' routine's stub segment, as fixed)
+WP_SPHERE_ENTRY equ 0x57            ; (its entry there)
+WP_SPHERE_RET  equ 0x642B2          ; (the click probes' return, and where they go on to)
+WP_SPHERE_END  equ 0x642E2
+WP_DISC_RET    equ 0x64313
+WP_DISC_END    equ 0x6433F
+WP_SHOWN_CALL  equ 0x63372          ; (118:C36h's call, and PROBE_WP_SHOWN's return)
+WP_SHOWN_RET   equ 0x6337C
+
+probe_wp_disc_win:
+        sub sp, 2               ; push the window's id: the frame down a word
+        push bp
+        mov bp, sp
+        push ax
+        mov ax, [bp + 4]
+        mov [bp + 2], ax
+        mov ax, [bp + 6]
+        mov [bp + 4], ax
+        mov ax, [bp + 8]
+        mov [bp + 6], ax
+        mov word [bp + 8], WP_DISC_ID
+        test word [cs:rules], RULE_SPECIALIZE
+        jz .out
+        call wp_classes         ; AL a warrior, AH a sphere
+        or al, al
+        jz .out
+        or ah, ah
+        jnz .out
+        mov word [bp + 8], WP_WDISC_ID
+.out:   pop ax
+        pop bp
+        iret
+
+probe_wp_sphere_win:
+        sub sp, 2
+        push bp
+        mov bp, sp
+        push ax
+        mov ax, [bp + 4]
+        mov [bp + 2], ax
+        mov ax, [bp + 6]
+        mov [bp + 4], ax
+        mov ax, [bp + 8]
+        mov [bp + 6], ax
+        mov word [bp + 8], WP_SPHERE_ID
+        test word [cs:rules], RULE_SPECIALIZE
+        jz .out
+        call wp_classes
+        or al, al
+        jz .out
+        mov word [bp + 8], WP_WSPHERE_ID
+.out:   pop ax
+        pop bp
+        iret
+
+; WP_CLASSES: AL 1 if the sheet being made has a fighter, gladiator or ranger class, AH 1 if a
+; cleric, druid or ranger one (a sphere). Others kept.
+wp_classes:
+        push bx
+        push cx
+        push es
+        les bx, [WP_CREATION]
+        xor ax, ax
+        mov cx, 3
+.class: mov ch, [es:bx + 0x21]
+        cmp ch, CR_FIGHTER
+        je .warrior
+        cmp ch, CR_GLADIATOR
+        je .warrior
+        cmp ch, CR_RANGER
+        jne .sphere
+        mov ax, 0x0101
+        jmp .next
+.warrior:
+        mov al, 1
+        jmp .next
+.sphere:
+        cmp ch, CR_CLERIC
+        je .has
+        cmp ch, CR_DRUID
+        jne .next
+.has:   mov ah, 1
+.next:  inc bx
+        dec cl
+        jnz .class
+        pop es
+        pop cx
+        pop bx
+        ret
+
+probe_wp_shown:
+        sti
+        cmp ax, 8
+        je .ret
+        test word [cs:rules], RULE_SPECIALIZE
+        jz .ret
+        push bp
+        mov bp, sp
+        push bx
+        push cx
+        push dx
+        push es
+        mov es, [bp + 4]        ; 118:C36h's far address, from the call just made
+        mov bx, [bp + 2]
+        add bx, (WP_SHOWN_CALL + 1 - WP_SHOWN_RET) & 0xFFFF
+        mov ax, [es:bx]
+        mov [cs:wp_far], ax
+        mov ax, [es:bx + 2]
+        mov [cs:wp_far + 2], ax
+        mov bx, wp_mine
+.one:   push word 0
+        push word [cs:bx]
+        call far [cs:wp_far]
+        add sp, 4
+        cmp ax, 8
+        je .out
+        add bx, 2
+        cmp bx, wp_mine_end
+        jb .one
+.out:   pop es
+        pop dx
+        pop cx
+        pop bx
+        pop bp
+.ret:   cmp ax, 8
+        retf 2
+
+probe_wp_disc_click:
+        push bp
+        mov bp, sp
+        push ax
+        mov word [cs:wp_ret_file], WP_DISC_RET & 0xFFFF
+        mov word [cs:wp_end_file], WP_DISC_END & 0xFFFF
+        mov byte [cs:wp_from], 0
+        jmp wp_click
+
+probe_wp_sphere_click:
+        push bp
+        mov bp, sp
+        push ax
+        mov word [cs:wp_ret_file], WP_SPHERE_RET & 0xFFFF
+        mov word [cs:wp_end_file], WP_SPHERE_END & 0xFFFF
+        mov byte [cs:wp_from], 1
+; (BP: the frame, [BP] the game's BP, [BP+2] the return; AX pushed)
+wp_click:
+        push bx
+        mov bx, [bp]
+        mov bx, [ss:bx + 8]     ; the button
+        mov [cs:wp_button], bx
+        pop bx
+        test word [cs:rules], RULE_SPECIALIZE
+        jz .game
+        call wp_harvest
+        mov ax, [cs:wp_button]
+        cmp ax, WP_VIEW
+        je .view
+        cmp byte [cs:wp_from], 1    ; (a weapon page's button, in the spheres' routine)
+        jne .game
+        cmp ax, WP_ROW
+        jb .game
+        cmp ax, WP_VIEW
+        ja .game
+        sti
+        pushad
+        push es
+        call wp_page_button
+        pop es
+        popad
+        jmp .end
+.view:  sti
+        pushad
+        push es
+        xor al, al
+        call wp_open
+        pop es
+        popad
+.end:
+        mov ax, [cs:wp_end_file]  ; go on at the routine's end
+        sub ax, [cs:wp_ret_file]
+        add [bp + 2], ax
+.game:  pop ax
+        pop bp
+        mov bx, [cs:wp_button]
+        iret
+
+; WP_HARVEST: the window routines' far addresses from the overlay's calls (WP_CALLS), the
+; probe's frame at BP.
+wp_harvest:
+        push ax
+        push bx
+        push cx
+        push si
+        push es
+        mov es, [bp + 4]
+        mov si, wp_calls
+        mov bx, (WP_MARK_SEG + 1) & 0xFFFF
+        sub bx, [cs:wp_ret_file]
+        add bx, [bp + 2]
+        mov ax, [es:bx]
+        mov [cs:wp_mark_seg], ax
+        mov bx, (WP_SPHERE_SEG + 1) & 0xFFFF
+        sub bx, [cs:wp_ret_file]
+        add bx, [bp + 2]
+        mov ax, [es:bx]
+        mov [cs:wp_sphere_seg], ax
+        mov cx, 8
+.one:   mov bx, [cs:si]         ; a call's file offset (low word), less the return's
+        sub bx, [cs:wp_ret_file]
+        add bx, [bp + 2]
+        mov ax, [es:bx + 1]
+        mov [cs:si + 2], ax
+        mov ax, [es:bx + 3]
+        mov [cs:si + 4], ax
+        add si, 6
+        loop .one
+        pop es
+        pop si
+        pop cx
+        pop bx
+        pop ax
+        ret
+
+; WP_OPEN: page AL of the weapons in the panel, after closing what it shows (WP_FROM: 0 the
+; disciplines, 1 the spheres, 2 a weapon page), as 640E4h opens the spheres. DS = the game's.
+wp_open:
+        mov [cs:wp_page], al
+        cmp byte [cs:wp_from], 0
+        jne .sphere
+        push word 0x7F8         ; the disciplines marked, kept as the game keeps them
+        push word 0x7F6
+        push dword [WP_DISC]
+        call wp_marked
+        add sp, 8
+        mov [WP_DISC_MASK], ax
+        push dword [WP_DISC]
+        call far [cs:wp_close]
+        add sp, 4
+        mov dword [WP_DISC], 0
+        jmp .open
+.sphere:
+        cmp byte [cs:wp_from], 1
+        jne .page
+        push word 0x7FD
+        push word 0x7FA
+        push dword [WP_SPHERE]
+        call wp_marked
+        add sp, 8
+        mov [WP_SPHERE_MASK], ax
+.page:  mov ax, [WP_SPHERE]
+        or ax, [WP_SPHERE + 2]
+        jz .open
+        push dword [WP_SPHERE]
+        call far [cs:wp_close]
+        add sp, 4
+        mov dword [WP_SPHERE], 0
+.open:  push word [cs:wp_sphere_seg] ; the spheres' own routine (538h:57h), whose click probe
+        push word WP_SPHERE_ENTRY   ; (PROBE_WP_SPHERE_CLICK) answers the pages' buttons
+        push word WP_Y
+        push word WP_X
+        movzx ax, byte [cs:wp_page]
+        add ax, WP_PAGE_ID
+        push ax
+        call far [cs:wp_open_fn]
+        add sp, 10
+        mov [WP_SPHERE], ax
+        mov [WP_SPHERE + 2], dx
+        push cs                 ; its title, as the spheres' ("%C%C%C%s" at DS:E11h)
+        movzx bx, byte [cs:wp_page]
+        imul bx, bx, WP_TITLE_SIZE
+        add bx, wp_titles
+        push bx
+        push dword 0x3C0014
+        push dword 0xFE00FE
+        push dword 0xFF0000
+        push ds
+        push word 0xE11
+        push dword 0x6000E
+        push dx
+        push ax
+        call far [cs:wp_print]
+        add sp, 0x1C
+        push dword 0x3400FE
+        call far [cs:wp_colour]
+        add sp, 4
+        push word [0x3270]
+        push word 0x14
+        call far [cs:wp_colour]
+        add sp, 4
+        call wp_marks
+        push dword 0x11771
+        call far [cs:wp_help]
+        add sp, 4
+        ret
+
+; WP_MARKED: the game's 63EFAh through its stub (the window, the first and last row on the stack
+; as for it): AX the rows marked.
+wp_marked:
+        push bp
+        mov bp, sp
+        push word [bp + 10]
+        push word [bp + 8]
+        push dword [bp + 4]
+        mov ax, ds
+        add ax, WP_STUB
+        mov [cs:wp_far + 2], ax
+        mov word [cs:wp_far], WP_MARKED
+        call far [cs:wp_far]
+        add sp, 8
+        pop bp
+        ret
+
+; WP_MARKS: the page's rows, the kind marked (the creation sheet's; none yet: the long sword,
+; put in) chosen and the rest not, as 63FEEh marks the spheres.
+wp_marks:
+        push es
+        push bx
+        les bx, [WP_CREATION]
+        cmp byte [es:bx + SPEC_SLOTS], 0
+        jne .marked
+        mov byte [es:bx + SPEC_SLOTS], 1
+.marked:
+        mov al, [es:bx + SPEC_SLOTS]
+        mov [cs:wp_kind], al
+        movzx bx, byte [cs:wp_page]
+        shl bx, 2               ; (four to a page)
+        mov cx, 4
+.row:   inc bx                  ; (the kind + 1)
+        lea ax, [bx + WP_ROW - 1]
+        cmp bl, [cs:wp_kind]
+        je .chosen
+        push 3
+        call wp_button_op
+        push 0
+        call wp_button_op
+        push 0
+        jmp .next
+.chosen:
+        push 0
+        call wp_button_op
+        push 2
+        call wp_button_op
+        push 1
+.next:  call wp_mark
+        loop .row
+        pop bx
+        pop es
+        ret
+
+; WP_BUTTON_OP: the game's 140:71Ah on button AX of the page (DS:EA6h), with the operation pushed
+; (0 in use, 1 out of use, 2 marked, 3 not marked); takes it off the stack. AX, BX, CX kept.
+wp_button_op:
+        push bp
+        mov bp, sp
+        pusha
+        push word [bp + 4]
+        push word 0
+        push ax
+        push dword [WP_SPHERE]
+        call far [cs:wp_button_fn]
+        add sp, 10
+        popa
+        pop bp
+        ret 2
+
+; WP_MARK: the mark (pushed: 1) or none (0) at the page's row 4 - CX, as 63FEEh draws it; takes
+; the flag off the stack. AX, BX, CX kept.
+wp_mark:
+        push bp
+        mov bp, sp
+        pusha
+        push es
+        push word [bp + 4]
+        push dword [WP_MARK_WIN]
+        push word 0
+        mov bx, 4
+        sub bx, cx
+        shl bx, 1
+        mov es, [cs:wp_mark_seg]
+        mov ax, [es:bx + 0x1AB]
+        inc ax
+        push ax
+        push dword 0xDA0001
+        call far [cs:wp_mark_fn]
+        add sp, 0x0E
+        pop es
+        popa
+        pop bp
+        ret 2
+
+; WP_PAGE_BUTTON: button AX of a weapon page, clicked: a kind's row marked (on the creation sheet),
+; MORE SPECS the next page, VIEW PSIONICS back to the disciplines (641B9h). DS = the game's.
+wp_page_button:
+        cmp ax, WP_MORE
+        je .more
+        cmp ax, WP_BACK
+        je .back
+        sub ax, WP_ROW
+        cmp ax, 16
+        jae .ret
+        inc ax
+        les bx, [WP_CREATION]
+        mov [es:bx + SPEC_SLOTS], al
+        mov byte [es:bx + SPEC_SLOTS + 1], 0
+        mov word [es:bx + SPEC_SLOTS + 2], 0
+        jmp wp_marks
+.more:  mov byte [cs:wp_from], 2
+        mov al, [cs:wp_page]
+        inc al
+        cmp al, WP_PAGES
+        jb .open
+        xor al, al
+.open:  jmp wp_open
+.back:  push dword [WP_SPHERE]
+        call far [cs:wp_close]
+        add sp, 4
+        mov dword [WP_SPHERE], 0
+        mov ax, ds
+        add ax, WP_STUB
+        mov [cs:wp_far + 2], ax
+        mov word [cs:wp_far], WP_TO_DISC
+        call far [cs:wp_far]
+.ret:   ret
+
+WP_TITLE_SIZE equ 16
+wp_titles  db 'WEAPONS 1 OF 4', 0, 0
+           db 'WEAPONS 2 OF 4', 0, 0
+           db 'WEAPONS 3 OF 4', 0, 0
+           db 'WEAPONS 4 OF 4', 0, 0
+wp_page    db 0
+wp_from    db 0
+wp_kind    db 0
+wp_button  dw 0
+wp_ret_file dw 0
+wp_end_file dw 0
+wp_far     dd 0
+wp_mine    dw WP_WSPHERE_ID, WP_PAGE_ID, WP_PAGE_ID + 1, WP_PAGE_ID + 2, WP_PAGE_ID + 3
+wp_mine_end:
+wp_calls:                   ; each: the call's file offset (low word), then its far address
+           dw WP_CALL_CLOSE & 0xFFFF
+wp_close   dd 0
+           dw WP_CALL_OPEN & 0xFFFF
+wp_open_fn dd 0
+           dw WP_CALL_PRINT & 0xFFFF
+wp_print   dd 0
+           dw WP_CALL_COLOUR & 0xFFFF
+wp_colour  dd 0
+           dw WP_CALL_HELP & 0xFFFF
+wp_help    dd 0
+           dw WP_CALL_BUTTON & 0xFFFF
+wp_button_fn dd 0
+           dw WP_CALL_REDRAW & 0xFFFF
+wp_redraw  dd 0
+           dw WP_CALL_MARK & 0xFFFF
+wp_mark_fn dd 0
+wp_mark_seg dw 0
+wp_sphere_seg dw 0
 
 ; SPEC_OF: DL the attacker's skill with the attack's weapon (SPEC_OF_SHEET, for the attack
 ; routine's [BP+10h] sheet and [BP+14h] item type).
@@ -6649,6 +7172,21 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_MC_UNCON
         mov dx, probe_mc_uncon
         int 21h
+        mov ax, 2500h + VEC_WP_DISC_WIN
+        mov dx, probe_wp_disc_win
+        int 21h
+        mov ax, 2500h + VEC_WP_SPHERE_WIN
+        mov dx, probe_wp_sphere_win
+        int 21h
+        mov ax, 2500h + VEC_WP_DISC_CLICK
+        mov dx, probe_wp_disc_click
+        int 21h
+        mov ax, 2500h + VEC_WP_SPHERE_CLICK
+        mov dx, probe_wp_sphere_click
+        int 21h
+        mov ax, 2500h + VEC_WP_SHOWN
+        mov dx, probe_wp_shown
+        int 21h
         mov ax, 3516h           ; the keyboard's (TARGETING)
         int 21h
         mov [old16], bx
@@ -6689,8 +7227,8 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or C9h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
-all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON
+busy    db 'DSCLOG: interrupts 60h-65h or C4h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN
 all_vectors_end:
 
         align 16, db 0

@@ -56,6 +56,7 @@ VEC_VIEW_DAM = 0xCE
 VEC_CAN_USE = 0xCD
 VEC_NO_CAST = 0xCC
 VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON = 0xCB, 0xCA, 0xC9
+VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN = 0xC8, 0xC7, 0xC6, 0xC5, 0xC4
 
 
 SCRIPT_BUFFER = 0x2E00  # the scripts' buffer, made bigger (the game's: 10000 bytes)
@@ -305,6 +306,12 @@ PATCHES = (
     Patch("mc_roll", 0x8735E, bytes.fromhex("26014f0a"), _interrupt(VEC_MC_ROLL, 4)),
     Patch("mc_con", 0x87523, bytes.fromhex("03f8"), _interrupt(VEC_MC_CON, 2)),
     Patch("mc_uncon", 0x877DA, bytes.fromhex("2bd0"), _interrupt(VEC_MC_UNCON, 2)),
+    # the creation panel's weapon pages (weaponpages.py)
+    Patch("wp_disc_win", 0x67BFB, bytes.fromhex("68c40b"), _interrupt(VEC_WP_DISC_WIN, 3)),
+    Patch("wp_sphere_win", 0x6413B, bytes.fromhex("68c50b"), _interrupt(VEC_WP_SPHERE_WIN, 3)),
+    Patch("wp_disc_click", 0x64311, bytes.fromhex("8b5e08"), _interrupt(VEC_WP_DISC_CLICK, 3)),
+    Patch("wp_sphere_click", 0x642B0, bytes.fromhex("8b5e08"), _interrupt(VEC_WP_SPHERE_CLICK, 3)),
+    Patch("wp_shown", 0x6337A, bytes.fromhex("3d0800"), _interrupt(VEC_WP_SHOWN, 3)),
     # A bug of the game's own: the roster's DELETE (DSUN.EXE 54AC1h) picked the character by the
     # row clicked alone, where ADD takes the row plus how far the list is scrolled; with the list
     # scrolled, another character was deleted (the row's from the top). The same code, the scroll

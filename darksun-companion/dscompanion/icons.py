@@ -281,6 +281,11 @@ def write_resources(source: str, dest: str) -> None:
         added.update(savepages.chunks(chunks))
     except (KeyError, ValueError, IndexError, struct.error):
         pass  # (no buttons: PgUp and PgDn still change the page)
+    from . import weaponpages
+    try:
+        added.update(weaponpages.chunks(chunks))
+    except (KeyError, ValueError, IndexError, StopIteration, struct.error):
+        pass  # (no weapon pages: the panel as the game has it, the choice through the Ledger)
     out = with_chunks(data, added)
     tmp = dest + ".tmp"
     with open(tmp, "wb") as f:
