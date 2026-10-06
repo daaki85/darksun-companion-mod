@@ -77,6 +77,8 @@ VEC_ATTACKS equ 0xD1       ; PROBE_ATTACKS
 VEC_SPEC_DAMAGE equ 0xD0   ; PROBE_SPEC_DAMAGE
 VEC_DAM_LINE equ 0xCF      ; PROBE_DAM_LINE
 VEC_VIEW_DAM equ 0xCE      ; PROBE_VIEW_DAM
+VEC_CAN_USE equ 0xCD       ; PROBE_CAN_USE
+VEC_NO_CAST equ 0xCC       ; PROBE_NO_CAST
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 128         ; entries in the ring
@@ -2660,6 +2662,355 @@ probe_view_dam:
         pop ax
 .done:  iret
 
+; PROBE_CAN_USE: INT VEC_CAN_USE replaces "and ax,[es:bx+12h]" (4 bytes: INT + 2 NOPs; DSUN.EXE
+; 6EF34h) in the routine that says whether a character may equip an item (its "Cannot use this
+; item" when not; its only caller, the equip routine): AX the item type's mask of the classes that
+; may use it, ES:BX the character's sheet, its +12h a bit for each of its classes, DX the item
+; type. With RULE_RESTRICT, an item the game allows that the character's classes keep it from
+; (CLASS_FORBIDS) is not allowed either.
+probe_can_use:
+        and ax, [es:bx + 0x12]
+        jz .done
+        test word [cs:rules], RULE_RESTRICT
+        jz .done
+        call class_forbids
+        jnc .done
+        xor ax, ax
+.done:  iret
+
+; CLASS_FORBIDS: carry set if the classes of the character whose sheet is at ES:BX keep it from
+; item type DX (dscompanion/restrict.py, which says why): a psionicist, a multiclass thief, a
+; preserver of that class alone, a druid, a cleric. A human's first class alone holds it (the one
+; it has now, if it has changed class); another race's every class. All registers kept.
+RESTRICT_TYPE equ 0x14          ; (the item type record's size)
+NO_MATERIAL equ 0xFF            ; (CU_MAT: none)
+LEATHER equ 5
+THIEF_BIT equ 0x400
+PSI_KINDS equ 0x701E            ; bits by kind: dagger, short sword, mace, club, chatkcha, bow, sling
+SPHERE_EARTH equ 0x1D           ; bits by material: stone, obsidian, metal, wood
+SPHERE_FIRE equ 0x08            ; obsidian
+SPHERE_WATER equ 0x03           ; bone, wood
+class_forbids:
+        push ax
+        push bx
+        push cx
+        push dx
+        push si
+        push di
+        push ds
+        mov ax, dx
+        imul ax, ax, RESTRICT_TYPE
+        lds si, [0x1669]
+        add si, ax
+        mov al, [si]                    ; the flags: 1 melee, 2 missile, 4 shield, 10h thrown
+        mov [cs:cu_flags], al
+        mov al, [si + 8]                ; the material (its low nibble; 40h and 0 none)
+        mov ah, al
+        and al, 0x0F
+        jnz .mat
+        test ah, 0x40
+        jz .mat
+        mov al, NO_MATERIAL
+.mat:   mov [cs:cu_mat], al
+        xor al, al                      ; armour: +0Fh 80h, and not a shield
+        test byte [si + 0x0F], 0x80
+        jz .armour
+        test byte [cs:cu_flags], 4
+        jnz .armour
+        inc ax
+.armour:
+        mov [cs:cu_armour], al
+        mov ax, [si + 0x10]             ; the classes but thief that may use it
+        and ax, [es:bx + 0x12]
+        and ax, 0xFFFF - THIEF_BIT
+        mov [cs:cu_others], ax
+        mov byte [cs:cu_kind], 0xFF     ; a weapon's kind (0FFh none)
+        test byte [cs:cu_flags], 3
+        jz .kind
+        cmp dx, KIND_TYPES
+        jae .kind
+        mov si, dx
+        mov al, [cs:si + kind_of_type]
+        dec al
+        mov [cs:cu_kind], al
+.kind:  pop ds
+        mov cx, 3                       ; CL the classes that hold, CH more than one (not human)
+        cmp byte [es:bx + 0x18], 1
+        jne .multi
+        mov cl, 1
+        jmp .holds
+.multi: cmp byte [es:bx + 0x22], 0
+        je .holds
+        inc ch
+.holds: xor di, di
+.each:  mov al, [es:bx + di + 0x21]
+        or al, al
+        jz .next
+        call class_forbids_one
+        jc .out
+.next:  inc di
+        cmp di, cx                      ; (CH 1: DI never reaches it, and the third slot ends it)
+        jae .out                        ; (CF clear)
+        cmp di, 3
+        jb .each
+        clc
+.out:   pop di
+        pop si
+        pop dx
+        pop cx
+        pop bx
+        pop ax
+        ret
+
+; CLASS_FORBIDS_ONE: carry set if class AL keeps the character (sheet ES:BX, CH 1 if multiclass)
+; from the item CLASS_FORBIDS has described in CU_*.
+class_forbids_one:
+        cmp al, 12                      ; psionicist
+        jne .thief
+        call heavy
+        jc .ret
+        call shield_not_leather
+        jc .ret
+        mov dl, [cs:cu_kind]
+        cmp dl, 0xFF
+        je .ok
+        push cx
+        mov cl, dl
+        mov dx, 1
+        shl dx, cl
+        pop cx
+        test dx, PSI_KINDS
+        jnz .ok
+        stc
+        ret
+.thief: cmp al, 17
+        jne .pres
+        or ch, ch
+        jz .ok
+        call heavy
+        jc .ret
+        call shield_not_leather
+        jc .ret
+        test byte [cs:cu_flags], 4
+        jz .ok
+        cmp word [cs:cu_others], 0
+        jne .ok
+        stc
+        ret
+.pres:  cmp al, 11
+        jne .druid
+        or ch, ch
+        jnz .ok
+        jmp .bare
+.druid: cmp al, 5
+        jb .cleric
+        cmp al, 8
+        ja .ok
+.bare:  cmp byte [cs:cu_armour], 0      ; no armour, no shield
+        jne .no
+        test byte [cs:cu_flags], 4
+        jz .ok
+.no:    stc
+        ret
+.cleric:                                ; (1-4)
+        cmp byte [cs:cu_kind], 0xFF
+        je .ok
+        push si
+        xor si, si
+.sphere:
+        mov al, [es:bx + si + 0x21]     ; a cleric's or ranger's sphere: its class less 1 (13 a ranger's), mod 4
+        dec al
+        cmp al, 4
+        jb .is
+        sub al, 12
+        cmp al, 4
+        jae .nexts
+.is:    call sphere_allows
+        jnc .yes
+.nexts: inc si
+        cmp si, 3
+        jb .sphere
+        pop si
+        stc
+        ret
+.yes:   pop si
+.ok:    clc
+.ret:   ret
+
+; HEAVY: carry set for armour not light (not leather, and of a material)
+heavy:  cmp byte [cs:cu_armour], 0
+        je .light
+        cmp byte [cs:cu_mat], LEATHER
+        je .light
+        cmp byte [cs:cu_mat], NO_MATERIAL
+        je .light
+        stc
+        ret
+.light: clc
+        ret
+
+; SHIELD_NOT_LEATHER: carry set for a shield of a material not leather
+shield_not_leather:
+        test byte [cs:cu_flags], 4
+        jz .ok
+        cmp byte [cs:cu_mat], LEATHER
+        je .ok
+        stc
+        ret
+.ok:    clc
+        ret
+
+; SPHERE_ALLOWS: carry clear if sphere AL (0 air, 1 earth, 2 fire, 3 water) allows the weapon:
+; air, missile and thrown weapons and daggers; the others by material.
+sphere_allows:
+        push cx
+        or al, al
+        jnz .mat
+        test byte [cs:cu_flags], 0x12
+        jnz .yes
+        cmp byte [cs:cu_kind], 1        ; (a dagger)
+        je .yes
+        jmp .no
+.mat:   mov ah, SPHERE_EARTH
+        cmp al, 1
+        je .test
+        mov ah, SPHERE_FIRE
+        cmp al, 2
+        je .test
+        mov ah, SPHERE_WATER
+.test:  mov cl, [cs:cu_mat]
+        cmp cl, 8
+        jae .no
+        mov ch, 1
+        shl ch, cl
+        test ah, ch
+        jnz .yes
+.no:    pop cx
+        stc
+        ret
+.yes:   pop cx
+        clc
+        ret
+
+cu_flags   db 0
+cu_mat     db 0
+cu_armour  db 0
+cu_kind    db 0
+cu_others  dw 0
+
+; PROBE_NO_CAST: INT VEC_NO_CAST replaces "add sp,4" (3 bytes: INT + NOP; DSUN.EXE 89B84h) at the
+; end of the game's test of whether a character can't cast spells, which the USE screen asks
+; before it shows a spell as one to cast and before it casts one, wizard or priest (not a
+; psionic power), and so does a spell queued in a fight: DX the character, AX not 0 if it can't
+; (its "No spell use" effect). With RULE_RESTRICT, a multiclass preserver (not a human, who
+; dual-classes) can't either while it wears armour, a helm too (ARMOUR_WORN; a shield doesn't
+; count).
+PRESERVER_CLASS equ 11
+probe_no_cast:
+        push bp                 ; the replaced "add sp,4": move the interrupt frame (and BP)
+        mov bp, sp              ; up over the 4 bytes, so IRET returns with them gone
+        push ax
+        mov ax, [bp + 6]
+        mov [bp + 10], ax       ; flags
+        mov ax, [bp + 4]
+        mov [bp + 8], ax        ; CS
+        mov ax, [bp + 2]
+        mov [bp + 6], ax        ; IP
+        mov ax, [bp]
+        mov [bp + 4], ax        ; BP
+        pop ax
+        mov sp, bp
+        add sp, 4
+        pop bp
+        or ax, ax
+        jnz .done
+        test word [cs:rules], RULE_RESTRICT
+        jz .done
+        push bx
+        push cx
+        push es
+        mov bx, dx
+        imul bx, bx, 0x47
+        les cx, [0x1661]
+        add bx, cx
+        cmp byte [es:bx + 0x18], 1      ; a human: none
+        je .out
+        cmp byte [es:bx + 0x22], 0      ; one class: none
+        je .out
+        cmp byte [es:bx + 0x21], PRESERVER_CLASS
+        je .pres
+        cmp byte [es:bx + 0x22], PRESERVER_CLASS
+        je .pres
+        cmp byte [es:bx + 0x23], PRESERVER_CLASS
+        jne .out
+.pres:  call armour_worn
+        adc ax, 0                       ; (AX was 0)
+.out:   pop es
+        pop cx
+        pop bx
+.done:  iret
+
+; ARMOUR_WORN: carry set if creature DX (DS = the game's) wears armour, a helm too: an item of
+; a type the game marks armour (+0Fh 80h), not a shield, on its arms, legs, head or chest.
+; All registers kept.
+armour_worn:
+        pushad
+        push es
+        mov ax, ds
+        add ax, THINGS_SEG
+        mov [cs:r_things], ax
+        imul ax, dx, 0x3A
+        mov [cs:r_creature], ax
+        mov cx, 8               ; its item lists, each a thing: +8, +0Ah, +0Ch
+.list:  les bx, [CREATURES]
+        add bx, [cs:r_creature]
+        add bx, cx
+        mov dx, [es:bx]
+        cmp dx, NO_THING
+        jae .next
+        mov es, [cs:r_things]
+        mov bx, dx
+        imul bx, bx, 3
+        cmp byte [es:bx+THINGS], 1
+        jne .next               ; not an item
+        mov dx, [es:bx+THINGS+1]
+        mov byte [cs:r_left], 100
+.item:  cmp dx, NO_THING
+        jae .next
+        les bx, [ITEMS]
+        imul ax, dx, 0x15
+        add bx, ax
+        mov dx, [es:bx+4]       ; (the next)
+        mov al, [es:bx+0x11]    ; the slot
+        cmp al, ARM_SLOT
+        je .slot
+        cmp al, LEG_SLOT
+        je .slot
+        cmp al, HEAD_SLOT
+        je .slot
+        cmp al, CHEST_SLOT
+        jne .on
+.slot:  imul si, [es:bx+0x0A], 0x14
+        les bx, [ITEM_TYPES]
+        add bx, si
+        test byte [es:bx], 4    ; a shield
+        jnz .on
+        test byte [es:bx+0x0F], 0x80
+        jz .on
+        pop es
+        popad
+        stc
+        ret
+.on:    dec byte [cs:r_left]
+        jnz .item
+.next:  add cx, 2
+        cmp cx, 0x0E
+        jb .list
+        pop es
+        popad
+        clc
+        ret
+
 ; SPEC_OF: DL the attacker's skill with the attack's weapon (SPEC_OF_SHEET, for the attack
 ; routine's [BP+10h] sheet and [BP+14h] item type).
 spec_of:
@@ -3166,6 +3517,7 @@ RULE_HALF_GIANT equ 512         ; half-giants wield two-handed weapons in one ha
 RULE_PROTECTION equ 1024        ; AD&D's rings and cloaks of protection (PROBE_RING_AC, RING_PLUS)
 RULE_ITEM_SAVES equ 2048        ; items save against acid as in AD&D where better (PROBE_ITEM_*)
 RULE_SPECIALIZE equ 4096        ; weapon specialization (PROBE_ATTACKS, PROBE_SPEC_DAMAGE)
+RULE_RESTRICT equ 8192          ; class restrictions on armour, shields and weapons (PROBE_CAN_USE)
 FOOT       equ 13               ; the item's slot byte while worn on the feet
 THINGS_SEG equ 0x3972 - 0x4356  ; the things table's segment, relative to DS
 
@@ -6196,6 +6548,12 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_VIEW_DAM
         mov dx, probe_view_dam
         int 21h
+        mov ax, 2500h + VEC_CAN_USE
+        mov dx, probe_can_use
+        int 21h
+        mov ax, 2500h + VEC_NO_CAST
+        mov dx, probe_no_cast
+        int 21h
         mov ax, 3516h           ; the keyboard's (TARGETING)
         int 21h
         mov [old16], bx
@@ -6236,8 +6594,8 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or CEh-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
-all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM
+busy    db 'DSCLOG: interrupts 60h-65h or CCh-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST
 all_vectors_end:
 
         align 16, db 0

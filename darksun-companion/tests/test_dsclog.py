@@ -14,11 +14,15 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dscompanion.dicelog import FILTERS, HDR_SIG, Entry
 from dscompanion.textlog import TextBuffer
-from dscompanion.gamepatch import (VEC_VIEW_DAM, VEC_DAM_LINE, VEC_SPEC_DAMAGE, VEC_ATTACKS, VEC_XP_NEXT, VEC_SCRIPT_RAND, VEC_ITEM_ARMOUR, VEC_ITEM_SKIP, VEC_ITEM_WEAPON, VEC_AC, VEC_DOUBLE, VEC_MSG, VEC_NEXT, VEC_RAND, VEC_RING_AC, VEC_USE_ITEM,
+from dscompanion.gamepatch import (VEC_NO_CAST, VEC_CAN_USE, VEC_VIEW_DAM, VEC_DAM_LINE, VEC_SPEC_DAMAGE, VEC_ATTACKS, VEC_XP_NEXT, VEC_SCRIPT_RAND, VEC_ITEM_ARMOUR, VEC_ITEM_SKIP, VEC_ITEM_WEAPON, VEC_AC, VEC_DOUBLE, VEC_MSG, VEC_NEXT, VEC_RAND, VEC_RING_AC, VEC_USE_ITEM,
                                   VEC_RING_SAVE, VEC_SAVE, VEC_TEXT, VEC_TWO, VEC_GRACE_CAST, VEC_GRACE_EFFECT,
                                   VEC_GRACE_ABILITY, VEC_NAMES_FILL, VEC_NAMES_SIZE, VEC_STEALTH, VEC_TYPES_FILL,
                                   VEC_TYPES_SIZE, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED,
                                   VEC_SPELL_TEXT, VEC_CHUNK_ID)
+from dscompanion import game, restrict
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import test_restrict  # noqa: E402 (its item types and sheets)
 
 try:
     from unicorn import Uc, UC_ARCH_X86, UC_HOOK_CODE, UC_HOOK_INTR, UC_HOOK_MEM_WRITE, UC_MODE_16
@@ -878,6 +882,121 @@ class SpecializeTests(unittest.TestCase):
         self.assertEqual(self.view_dam(4, self.LONG_SWORD, chosen=(0,), levels=(9, 0, 0)), (6, 7, 10))
         self.assertEqual(self.view_dam(4, 1, chosen=(13,), levels=(4, 0, 0), missile=True), (4, 6, 8))
         self.assertEqual(self.view_dam(3, 1, chosen=(0,), missile=True), (3, 4, 8))
+
+
+
+@unittest.skipIf(Uc is None, "unicorn is not installed")
+class CanUseTests(unittest.TestCase):
+    """PROBE_CAN_USE (class restrictions) against restrict.py, for every class pairing, race and
+    item type of tests/test_restrict.py."""
+    TYPES_SEG, SHEET = 0x8000, 0x9000
+    RULES = 170
+
+    def setUp(self):
+        image = load_image()
+        self.mu = mu = Uc(UC_ARCH_X86, UC_MODE_16)
+        mu.mem_map(0, 0x100000)
+        mu.mem_write(TSR * 16, image)
+        at = image.find(bytes.fromhex("26234712"))
+        self.assertGreater(at, 0)
+        mu.mem_write(VEC_CAN_USE * 4, struct.pack("<HH", at, TSR))
+        mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
+        mu.mem_write(GAME_DS * 16 + 0x1669, struct.pack("<HH", 0, self.TYPES_SEG))
+        for t in test_restrict.TYPES:
+            mu.mem_write(self.TYPES_SEG * 16 + t * 0x14, test_restrict.record(t))
+        mu.mem_write(CALLER * 16 + 0x600, bytes((0xCD, VEC_CAN_USE, 0x90, 0x90)))
+
+    def can_use(self, sheet, t, rules=8192):
+        mu = self.mu
+        mu.mem_write(TSR * 16 + load_image().find(HDR_SIG) + self.RULES, struct.pack("<H", rules))
+        mu.mem_write(self.SHEET * 16 + 0x100, sheet)
+        for name, value in dict(cs=CALLER, ds=GAME_DS, ss=SS, esp=0x7FC, ebp=BP, eflags=IF | 2, eax=test_restrict.TYPES[t][3],
+                                ebx=0x100, ecx=0x3333, edx=t, esi=0x5555, edi=0x7777, es=self.SHEET).items():
+            mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+        mu.emu_start(CALLER * 16 + 0x600, CALLER * 16 + 0x604)
+        self.assertEqual([mu.reg_read(getattr(r, "UC_X86_REG_" + x)) for x in ("SP", "BX", "CX", "DX", "SI", "DI", "ES", "DS")],
+                         [0x7FC, 0x100, 0x3333, t, 0x5555, 0x7777, self.SHEET, GAME_DS])
+        return mu.reg_read(r.UC_X86_REG_AX)
+
+    def test_off_as_the_game(self):
+        psi = test_restrict.sheet(12)
+        self.assertEqual(self.can_use(psi, 57, rules=0), 0x100 & 0x126F)
+        self.assertEqual(self.can_use(test_restrict.sheet(11), 57, rules=0), 0)
+
+    def test_every_pairing(self):
+        sheet, classes = test_restrict.sheet, range(18)
+        for race in (game.HUMAN, 2):
+            for a in range(1, 18):
+                for b in classes:
+                    s = sheet(a, b, race=race) if b else sheet(a, race=race)
+                    for t in test_restrict.TYPES:
+                        with self.subTest(race=race, classes=(a, b), type=t):
+                            mask = test_restrict.TYPES[t][3] & int.from_bytes(s[0x12:0x14], "little")
+                            expected = mask if mask and restrict.allowed(s, t, test_restrict.record(t)) else 0
+                            self.assertEqual(self.can_use(s, t), expected)
+
+
+
+@unittest.skipIf(Uc is None, "unicorn is not installed")
+class NoCastTests(unittest.TestCase):
+    """PROBE_NO_CAST: a multiclass preserver in armour can't cast (restrict.no_spells)."""
+    SHEETS, CREATURES, ITEMS, TYPES_SEG = 0x8000, 0x8400, 0x8800, 0x9000
+    THINGS_SEG = GAME_DS + 0x3972 - 0x4356
+    RULES = 170
+    WHO = 1
+
+    def setUp(self):
+        image = load_image()
+        self.mu = mu = Uc(UC_ARCH_X86, UC_MODE_16)
+        mu.mem_map(0, 0x100000)
+        mu.mem_write(TSR * 16, image)
+        at = image.find(bytes.fromhex("5589e5508b460689460a"), image.find(bytes.fromhex("26234712")))
+        self.assertGreater(at, 0)
+        mu.mem_write(VEC_NO_CAST * 4, struct.pack("<HH", at, TSR))
+        mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
+        for ptr, seg in ((0x1661, self.SHEETS), (0x1665, self.CREATURES), (0x165D, self.ITEMS), (0x1669, self.TYPES_SEG)):
+            mu.mem_write(GAME_DS * 16 + ptr, struct.pack("<HH", 0, seg))
+        for t in test_restrict.TYPES:
+            mu.mem_write(self.TYPES_SEG * 16 + t * 0x14, test_restrict.record(t))
+        mu.mem_write(CALLER * 16 + 0x600, bytes((0xCD, VEC_NO_CAST, 0x90)))
+
+    def no_cast(self, sheet, worn, ax=0, rules=8192):
+        """AX after the probe, the character wearing (type, slot) pairs: list +8 one thing, the
+        items chained, and list +0Ah empty."""
+        mu = self.mu
+        mu.mem_write(TSR * 16 + load_image().find(HDR_SIG) + self.RULES, struct.pack("<H", rules))
+        mu.mem_write(self.SHEETS * 16 + self.WHO * 0x47, sheet)
+        rec = bytearray(0x3A)
+        rec[8:14] = struct.pack("<HHH", 4 if worn else 0x270F, 0x270F, 0x270F)
+        mu.mem_write(self.CREATURES * 16 + self.WHO * 0x3A, bytes(rec))
+        mu.mem_write(self.THINGS_SEG * 16 + 0xC36 + 4 * 3, struct.pack("<Bh", 1, 10))
+        for n, (t, slot) in enumerate(worn):
+            item = bytearray(0x15)
+            item[4:6] = struct.pack("<H", 10 + n + 1 if n + 1 < len(worn) else 0x270F)
+            item[0x0A:0x0C] = struct.pack("<H", t)
+            item[0x11] = slot
+            mu.mem_write(self.ITEMS * 16 + (10 + n) * 0x15, bytes(item))
+        mu.mem_write(SS * 16 + 0x7F8, struct.pack("<HH", self.WHO, 0))
+        for name, value in dict(cs=CALLER, ds=GAME_DS, ss=SS, esp=0x7F8, ebp=BP, eflags=IF | 2, eax=ax,
+                                ebx=0x2222, ecx=0x3333, edx=self.WHO, esi=0x5555, edi=0x7777, es=0x6666).items():
+            mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+        mu.emu_start(CALLER * 16 + 0x600, CALLER * 16 + 0x603)
+        self.assertEqual([mu.reg_read(getattr(r, "UC_X86_REG_" + x)) for x in ("SP", "BP", "BX", "CX", "DX", "SI", "DI", "ES", "DS")],
+                         [0x7FC, BP, 0x2222, 0x3333, self.WHO, 0x5555, 0x7777, 0x6666, GAME_DS])
+        return mu.reg_read(r.UC_X86_REG_AX)
+
+    def test_preserver_in_armour(self):
+        sheet = test_restrict.sheet
+        chest, head, hand, cloak = 9, 7, 3, 12
+        self.assertEqual(self.no_cast(sheet(9, 11), [(65, cloak), (5, head)]), 1)
+        self.assertEqual(self.no_cast(sheet(11, 17), [(6, chest)]), 1)
+        self.assertEqual(self.no_cast(sheet(9, 11), [(4, hand), (65, cloak)]), 0)  # a shield
+        self.assertEqual(self.no_cast(sheet(9, 11), [(6, 20)]), 0)  # (carried, not worn)
+        self.assertEqual(self.no_cast(sheet(9, 11), []), 0)
+        self.assertEqual(self.no_cast(sheet(11), [(6, chest)]), 0)
+        self.assertEqual(self.no_cast(sheet(11, 9, race=game.HUMAN), [(6, chest)]), 0)
+        self.assertEqual(self.no_cast(sheet(9, 11), [(6, chest)], rules=0), 0)
+        self.assertEqual(self.no_cast(sheet(9, 17), [(6, chest)], ax=1), 1)  # (the game's own reasons)
 
 
 @unittest.skipIf(Uc is None, "unicorn is not installed")

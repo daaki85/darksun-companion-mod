@@ -105,6 +105,7 @@ RULE_ITEM_SAVES = 2048
 # Weapon specialization (specialize.py; DSCLOG's PROBE_ATTACKS): the kinds a warrior chose, kind + 1
 # each in the sheet's SPEC_SLOTS bytes (four the game never uses), set the attacks a round
 RULE_SPECIALIZE = 4096
+RULE_RESTRICT = 8192  # class restrictions on armour, shields and weapons (restrict.py)
 SPEC_SLOTS, SPEC_COUNT = 0x14, 4
 # AD&D's item saving throws against acid (the DMG's table), by the game's materials: wood
 # (thick), bone, stone and obsidian (glass's), metal, leather; and cloth for no material
