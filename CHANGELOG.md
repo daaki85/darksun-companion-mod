@@ -45,10 +45,15 @@ requests #1 to #13; its notes are in
   repriced when the Ledger next sees the game.
 
 **Changed**
-- **The README is shorter:** the new items (the Ring +1, the slave pens' gear,
-  Kreenfang and Shadowseeker, the bone scale set, their icons and names) are
-  one section with a table, Kalzith and Semyon one section of new people, and
-  the helms' and boots' rules one.
+- **The README is shorter** (2,974 lines to about 2,290): how each part works
+  (the helper's interrupts, the game's offsets and flags), how the dice log
+  works, what's known of the game's data and the development notes are in a
+  new `darksun-companion/DEVELOPMENT.md`, each README section linking to its
+  part; "What it does" is a short overview; the thieves' skills and backstabs,
+  and the saving throws, are each one section with their rule changes, and the
+  two-weapon rule sits with the dice log's two weapons; the new items are one
+  section with a table, Kalzith and Semyon one of new people told as a player
+  meets them; and the helms' and boots' rules are one.
 - **Kalzith sells Shield and Burning Hands** in place of Magic Missile and
   Color Spray (3,000 each), so none of his scrolls is one the game has
   (Color Spray's is in the sewers). Magic Missile and Color Spray scrolls he
