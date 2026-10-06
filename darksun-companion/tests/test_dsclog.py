@@ -1878,3 +1878,126 @@ class SavePageTests(unittest.TestCase):
         self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x5100), (self.DONE, 0x4321))
         self.assertEqual(self.page(), b"CC")
         self.assertEqual(struct.unpack("<H", mu.mem_read(self.SAVE * 16 + 0x4E4, 2))[0], 2)  # (chosen: that row)
+
+
+@unittest.skipIf(Uc is None, "unicorn not installed")
+class LevelPickTests(unittest.TestCase):
+    """PROBE_LV_PICK: at a level gained, a warrior short of weapon kinds has the psionicists' pop-up
+    called (here a stand-in that counts its calls), if there is a kind it can pick (the stand-in
+    weapons are bone: none for a fire cleric); the PROBE_PK_* probes in that pop-up, out of weapon
+    mode, do just what they replaced."""
+    SHEETS, TYPES_SEG = 0x8000, 0x9000
+    RULES = 170
+    STAND_IN, CALLS = 0x700, 0x7F0
+    PLAIN_TYPES = (81, 18, 17, 115, 20, 22, 2, 112, 3, 19, 44, 21, 48, 1, 64, 0)
+
+    def setUp(self):
+        import re
+        from dscompanion.gamepatch import VEC_LV_PICK
+        self.image = image = load_image()
+        self.mu = mu = Uc(UC_ARCH_X86, UC_MODE_16)
+        mu.mem_map(0, 0x100000)
+        mu.mem_write(TSR * 16, image)
+        at = image.find(bytes.fromhex("fb66600689e31e5636c57722"))
+        self.assertGreater(at, 0)
+        mu.mem_write(VEC_LV_PICK * 4, struct.pack("<HH", at, TSR))
+        mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
+        mu.mem_write(GAME_DS * 16 + 0x1661, struct.pack("<HH", 0, self.SHEETS))
+        mu.mem_write(GAME_DS * 16 + 0x1669, struct.pack("<HH", 0, self.TYPES_SEG))
+        for t in self.PLAIN_TYPES:  # (every class may use them; melee, bone)
+            rec = bytearray(game.ITEM_TYPE_SIZE)
+            rec[0], rec[8] = 1, 1
+            rec[0x10:0x12] = b"\xff\xff"
+            mu.mem_write(self.TYPES_SEG * 16 + t * game.ITEM_TYPE_SIZE, bytes(rec))
+        # the level-up routine: the INT, its NOPs and the JNZ; the far call to the pop-up 13h on
+        mu.mem_write(CALLER * 16 + 0x600, bytes((0xCD, VEC_LV_PICK, 0x90, 0x90, 0x75, 0x07)))
+        mu.mem_write(CALLER * 16 + 0x602 + 0x13, struct.pack("<HH", self.STAND_IN, CALLER))
+        mu.mem_write(CALLER * 16 + self.STAND_IN, bytes.fromhex("2eff06f007cb"))  # inc word [cs:7F0h]; retf
+        self.stops = []
+
+        def stop(uc, address, size, _):
+            uc.emu_stop()
+            self.stops.append(address - CALLER * 16)
+        mu.hook_add(UC_HOOK_CODE, stop, begin=CALLER * 16 + 0x606, end=CALLER * 16 + 0x606)
+        mu.hook_add(UC_HOOK_CODE, stop, begin=CALLER * 16 + 0x60D, end=CALLER * 16 + 0x60D)
+
+    def level_up(self, classes, levels, chosen=(), member=1, cls=None, rules=4096, race=2):
+        """(the pop-up's calls, where the routine went on) for a level gained in class CLS."""
+        mu = self.mu
+        mu.mem_write(TSR * 16 + self.image.find(HDR_SIG) + self.RULES, struct.pack("<H", rules))
+        mu.mem_write(CALLER * 16 + self.CALLS, bytes(2))
+        sheet = bytearray(test_restrict.sheet(*classes, race=race))
+        sheet[0x24:0x24 + len(levels)] = bytes(levels)
+        sheet[0x12:0x14] = b"\xff\x07"
+        for i, k in enumerate(chosen):
+            sheet[0x14 + i] = k + 1
+        mu.mem_write(self.SHEETS * 16 + member * 0x47, bytes(sheet))
+        mu.mem_write(SS * 16 + BP + 8, struct.pack("<H", classes[0] if cls is None else cls))
+        self.stops.clear()
+        for name, value in dict(cs=CALLER, ds=GAME_DS, ss=SS, esp=0x7FC, ebp=BP, eflags=IF | 2, esi=member,
+                                es=0x6666).items():
+            mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+        mu.emu_start(CALLER * 16 + 0x600, CALLER * 16 + 0x6FF, count=200000)
+        self.assertEqual([mu.reg_read(getattr(r, "UC_X86_REG_" + x)) for x in ("SP", "SI", "ES", "DS")],
+                         [0x7FC, member, 0x6666, GAME_DS])
+        return struct.unpack("<H", mu.mem_read(CALLER * 16 + self.CALLS, 2))[0], self.stops[0]
+
+    def test_asked_while_short(self):
+        cases = [  # (classes, levels, kinds it has, asked)
+            ((10,), (5,), (), True), ((10,), (5,), (0,), True), ((10,), (5,), (0, 1), False),
+            ((10,), (6,), (0, 1), True), ((10,), (6,), (0, 1, 2), False), ((10,), (9,), (0, 1, 2), True),
+            ((9,), (2,), (), True), ((9,), (2,), (3,), False), ((14,), (3,), (), True),
+            ((9, 4), (4, 4), (), True), ((9, 3), (4, 4), (), False), ((11,), (5,), (), False), ((12,), (5,), (), False),
+        ]
+        for classes, levels, chosen, asked in cases:
+            with self.subTest(classes=classes, levels=levels, chosen=chosen):
+                self.assertEqual(self.level_up(classes, levels, chosen)[0], int(asked))
+
+    def test_not_asked(self):
+        self.assertEqual(self.level_up((10,), (5,), rules=0)[0], 0)
+        self.assertEqual(self.level_up((10,), (5,), member=4)[0], 0)  # (not in the party)
+        # a human fighter turned preserver: not until the preserver's level passes the fighter's
+        self.assertEqual(self.level_up((11, 9), (3, 4), race=game.HUMAN)[0], 0)
+        self.assertEqual(self.level_up((11, 9), (5, 4), race=game.HUMAN)[0], 1)
+
+    def test_goes_on_as_the_compare(self):
+        """A preserver's level on to its spell (past the JNZ), any other to the JNZ's target."""
+        self.assertEqual(self.level_up((11,), (5,), cls=11)[1], 0x606)
+        self.assertEqual(self.level_up((10,), (5,), cls=10)[1], 0x60D)
+        self.assertEqual(self.level_up((10,), (5,), cls=10, rules=0)[1], 0x60D)
+
+    def run_probe(self, pattern, vector, code, regs, stop):
+        import re
+        at = re.search(pattern, self.image, re.S).start()
+        mu = self.mu
+        mu.mem_write(vector * 4, struct.pack("<HH", at, TSR))
+        self.code_at = getattr(self, "code_at", 0x800) + 0x10  # (each its own: the emulator keeps
+        mu.mem_write(CALLER * 16 + self.code_at, bytes(code))    #  the code it has translated)
+        values = dict(cs=CALLER, ds=GAME_DS, ss=SS, esp=0x7FC, ebp=BP, eflags=IF | 2)
+        values.update(regs)
+        for name, value in values.items():
+            mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+        mu.emu_start(CALLER * 16 + self.code_at, CALLER * 16 + self.code_at + stop)
+
+    def test_popup_probes_as_the_game(self):
+        from dscompanion.gamepatch import VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK
+        mu = self.mu
+        mu.mem_write(GAME_DS * 16 + 0x4AEC, bytes((3,)))
+        self.run_probe(rb"\xa0\xec\x4a\x2e\x80\x3e", VEC_PK_LEFT, (0xCD, VEC_PK_LEFT, 0x90), dict(eax=0x1200), 3)
+        self.assertEqual(mu.reg_read(r.UC_X86_REG_AX), 0x1203)
+        for ax, zero in ((0, True), (5, False)):
+            self.run_probe(rb"\x89\xc2\x2e\x80\x3e..\x00\x74\x03\xba\x02\x00", VEC_PK_COUNT, (0xCD, VEC_PK_COUNT, 0x90, 0x90), dict(eax=ax, edx=0x99), 4)
+            self.assertEqual(mu.reg_read(r.UC_X86_REG_DX), ax)
+            self.assertEqual(bool(mu.reg_read(r.UC_X86_REG_EFLAGS) & 0x40), zero)
+        self.run_probe(rb"\x83\xec\x02\x55\x89\xe5\x50.{18}\xc7\x46\x08\x5d\x44", VEC_PK_WIN, (0xCD, VEC_PK_WIN, 0x90), {}, 3)
+        self.assertEqual(mu.reg_read(r.UC_X86_REG_SP), 0x7FA)
+        self.assertEqual(struct.unpack("<H", mu.mem_read(SS * 16 + 0x7FA, 2))[0], 0x445D)
+        self.run_probe(rb"\x83\xec\x04\x55\x89\xe5\x50.{18}\x8c\x5e\x0a", VEC_PK_TITLE, (0xCD, VEC_PK_TITLE, 0x90, 0x90), {}, 4)
+        self.assertEqual(mu.reg_read(r.UC_X86_REG_SP), 0x7F8)
+        self.assertEqual(struct.unpack("<HH", mu.mem_read(SS * 16 + 0x7F8, 4)), (0x3026, GAME_DS))
+        self.run_probe(rb"\x31\xff\x89\xfe\x2e\x80\x3e", VEC_PK_FILL, (0xCD, VEC_PK_FILL, 0x90, 0x90), dict(esi=5, edi=6), 4)
+        self.assertEqual((mu.reg_read(r.UC_X86_REG_SI), mu.reg_read(r.UC_X86_REG_DI)), (0, 0))
+        mu.mem_write(SS * 16 + BP + 8, struct.pack("<H", 0x2C38))
+        self.run_probe(rb"\x55\x89\xe5\x53\x8b\x5e\x00\x36\x8b\x47\x08", VEC_PK_CLICK, (0xCD, VEC_PK_CLICK, 0x90), {}, 3)
+        self.assertEqual(mu.reg_read(r.UC_X86_REG_AX), 0x2C38)
+        self.assertEqual(mu.reg_read(r.UC_X86_REG_SP), 0x7FC)

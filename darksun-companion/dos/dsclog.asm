@@ -88,6 +88,13 @@ VEC_WP_DISC_CLICK equ 0xC6 ; PROBE_WP_DISC_CLICK
 VEC_WP_SPHERE_CLICK equ 0xC5 ; PROBE_WP_SPHERE_CLICK
 VEC_WP_SHOWN equ 0xC4      ; PROBE_WP_SHOWN
 VEC_WP_CLASS equ 0xC3      ; PROBE_WP_CLASS
+VEC_LV_PICK equ 0xC2       ; PROBE_LV_PICK
+VEC_PK_COUNT equ 0xC1      ; PROBE_PK_COUNT
+VEC_PK_WIN equ 0xC0        ; PROBE_PK_WIN
+VEC_PK_LEFT equ 0xBF       ; PROBE_PK_LEFT
+VEC_PK_TITLE equ 0xBE      ; PROBE_PK_TITLE
+VEC_PK_FILL equ 0xBD       ; PROBE_PK_FILL
+VEC_PK_CLICK equ 0xBC      ; PROBE_PK_CLICK
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 128         ; entries in the ring
@@ -3241,6 +3248,23 @@ wp_allowed:
         push cs
         pop es
         mov bx, wp_sheet
+        call kinds_allowed
+        pop es
+        pop di
+        pop si
+        pop dx
+        pop cx
+        pop bx
+        ret
+
+; KINDS_ALLOWED: AX the kinds (bit 0 the long sword) the character whose sheet is at ES:BX can
+; choose: those whose plain weapon (WP_PLAIN) the game's class lists and CLASS_FORBIDS let it use.
+; DS = the game's. Others kept.
+kinds_allowed:
+        push cx
+        push dx
+        push si
+        push di
         xor si, si
         xor di, di
 .kind:  mov dx, [cs:si + wp_plain]
@@ -3252,7 +3276,7 @@ wp_allowed:
         mov ax, [es:bx + 0x10]
         pop bx
         pop es
-        and ax, [cs:wp_sheet + 0x12]
+        and ax, [es:bx + 0x12]
         jz .no
         call class_forbids
         jc .no
@@ -3263,13 +3287,387 @@ wp_allowed:
         cmp si, 32
         jb .kind
         mov ax, di
-        pop es
         pop di
         pop si
         pop dx
         pop cx
-        pop bx
         ret
+
+; PROBE_LV_PICK: INT VEC_LV_PICK replaces "cmp word [bp+8],0Bh" (4 bytes: INT + 2 NOPs, then the
+; game's "jnz +7"; DSUN.EXE 87A9Bh) in the routine that raises a character a level in a class
+; ([BP+8] the class, SI the character), where it goes on to have a preserver pick a new spell and a
+; psionicist a new power. With weapon specialization, a fighter, gladiator or ranger with fewer
+; weapon kinds than it is due (LV_DUE: a gladiator two, a third at 6th level and a fourth at 9th;
+; a fighter or ranger one) picks the rest the way a psionicist picks a power: the game's own
+; routine for that (its far call a little further on, 620:57h) is called in weapon mode (LV_MODE),
+; in which the PROBE_PK_* probes in it show the weapon window (weaponpages.PICKER) in place of the
+; powers' and take its clicks. Then on as the compare and the JNZ would have gone. The level-up
+; routine is overlay code: the way back is put in a frame the overlay manager can fix up, as for
+; PROBE_NEXT.
+LV_SHEETS   equ 0x1661          ; DS: the sheets (far, 47h bytes each) and creatures (3Ah each)
+LV_PARTY    equ 4
+LV_PSI_CALL equ 0x87AB0 - 0x87A9D  ; the psionicists' pop-up's far call's address, less the INT's
+probe_lv_pick:
+        sti
+        pushad
+        push es
+        mov bx, sp              ; the interrupt frame at BX+34: IP, CS, flags
+        push ds
+        push si
+        lds si, [ss:bx + 34]
+        mov eax, [si + LV_PSI_CALL]
+        mov [cs:lv_psi], eax
+        pop si
+        pop ds
+        mov ax, [ss:bx + 34]
+        add ax, 4               ; past the NOPs and the JNZ for a preserver ...
+        cmp word [bp + 8], 0x0B
+        je .frame
+        add ax, 7               ; ... and to its target for any other class
+.frame: push word [ss:bx + 36]
+        push ax
+        push bp
+        mov bp, sp
+        call lv_check
+        pop bp
+        pop ax                  ; the way back, as the overlay manager has left it
+        pop dx
+        mov bx, sp
+        mov [ss:bx + 34], ax
+        mov [ss:bx + 36], dx
+        pop es
+        popad
+        iret
+
+; Character SI (DS the game's) asked for weapon kinds while it has fewer than it is due
+lv_check:
+        test word [cs:rules], RULE_SPECIALIZE
+        jz .ret
+        cmp si, LV_PARTY
+        jae .ret
+        cmp byte [cs:showing], 0
+        jne .ret
+        les bx, [LV_SHEETS]
+        imul ax, si, 0x47
+        add bx, ax
+        call lv_due
+        xor dx, dx              ; DX the kinds it has, DI the first slot empty
+        mov di, SPEC_COUNT
+        push si
+        mov si, SPEC_COUNT - 1
+.have:  movzx ax, byte [es:bx + si + SPEC_SLOTS]
+        or ax, ax
+        jnz .has
+        mov di, si
+        jmp .next
+.has:   inc dx
+.next:  dec si
+        jns .have
+        pop si
+        cmp dx, cx
+        jae .ret
+        cmp di, SPEC_COUNT
+        jae .ret
+        mov [cs:lv_have], dl
+        sub cl, dl              ; (the kinds due less those it has: those left)
+        mov [cs:lv_left], cl
+        call kinds_allowed
+        push si
+        xor si, si              ; less those it has
+.mine:  movzx cx, byte [es:bx + si + SPEC_SLOTS]
+        jcxz .mine_next
+        dec cx
+        btr ax, cx
+.mine_next:
+        inc si
+        cmp si, SPEC_COUNT
+        jb .mine
+        pop si
+        or ax, ax
+        jz .ret
+        mov cl, [cs:lv_left]    ; (no more than there are to pick)
+        xor dx, dx
+        xor di, di
+.count: bt ax, di
+        adc dl, 0
+        inc di
+        cmp di, 16
+        jb .count
+        cmp dl, cl
+        jae .left
+        mov cl, dl
+.left:  mov [cs:lv_left], cl
+        call lv_ask
+.ret:   ret
+
+; LV_DUE: CX the weapon kinds the character whose sheet is ES:BX is due: a gladiator 2, 3 from 6th
+; level, 4 from 9th; a fighter or ranger 1; 0 for others. A human's earlier classes (dual-classed)
+; count only once its first class's level has passed theirs. Others kept.
+lv_due:
+        push ax
+        push si
+        xor cx, cx
+        xor si, si
+.class: mov al, [es:bx + si + 0x21]
+        mov ah, [es:bx + si + 0x24]
+        or si, si
+        jz .on
+        cmp byte [es:bx + 0x18], 1
+        jne .on
+        cmp ah, [es:bx + 0x24]
+        jae .next
+.on:    cmp al, GLADIATOR_CLASS
+        jne .warrior
+        mov al, 2
+        cmp ah, 6
+        jb .most
+        inc al
+        cmp ah, 9
+        jb .most
+        inc al
+        jmp .most
+.warrior:
+        cmp al, FIGHTER_CLASS
+        je .one
+        cmp al, 13
+        jb .next
+        cmp al, 16
+        ja .next
+.one:   mov al, 1
+.most:  cmp cl, al
+        jae .next
+        mov cl, al
+.next:  inc si
+        cmp si, 3
+        jb .class
+        pop si
+        pop ax
+        ret
+
+; LV_ASK: the psionicists' pop-up (LV_PSI) in weapon mode for character SI (DS the game's): the
+; kinds AX to pick from, LV_LEFT of them to pick. Each kind clicked goes in the sheet's first empty
+; SPEC_SLOTS byte (PK_TAKE); the window closes once LV_LEFT are picked, or with EXIT.
+lv_ask:
+        pusha
+        push es
+        mov [cs:lv_avail], ax
+        mov [cs:lv_member], si
+        mov byte [cs:lv_mode], 1
+        mov byte [cs:showing], 1
+        push si
+        call far [cs:lv_psi]
+        add sp, 2
+        mov byte [cs:lv_mode], 0
+        mov byte [cs:showing], 0
+        pop es
+        popa
+        ret
+
+; The PROBE_PK_* probes, in the psionicists' pop-up (DSUN.EXE 85EECh, its window routine 85F6Eh,
+; the window's drawing 86107h and clicks 862B6h); outside weapon mode each does what it replaced.
+; PROBE_PK_COUNT: "mov dx,ax / or dx,dx" (85F01h; 4 bytes), the powers it has to pick: some.
+; PROBE_PK_WIN: "push 445Dh" (85FF4h; 3 bytes), the window: the weapon window.
+; PROBE_PK_LEFT: "mov al,[4AECh]" (8602Dh; 3 bytes), the number shown: the kinds left to pick.
+; PROBE_PK_TITLE: "push ds / push 3026h" (860C3h; 4 bytes), "PICK A PSIONIC POWER,": the weapons'.
+; PROBE_PK_FILL: "xor di,di / mov si,di" (8610Fh; 4 bytes), at the start of the powers' pictures
+;   put in: none; the rows of the kinds it can't pick out of use (the routine's end, 862A7h).
+; PROBE_PK_CLICK: "mov ax,[bp+8]" (862D4h; 3 bytes), a button clicked: a row it can pick taken
+;   (PK_TAKE), then the window closed (as for a close, 86370h) once none are left to pick, or left up
+;   (86367h).
+PICK_WIN      equ 0xBCD             ; (weaponpages.PICKER: 3021)
+PICK_FIRST    equ 0x860             ; (weaponpages.PICK_FIRST: its rows)
+PICK_COUNT_BUTTON equ 0x2C37
+PK_FILL_DONE  equ 0x862A7 - 0x86111 ; (the drawing routine's end, less the address after the INT)
+PK_STAY       equ 0x86367 - 0x862D6 ; (the click handler's way out, and its close's)
+PK_CLOSE      equ 0x86370 - 0x862D6
+PK_OP_CALL    equ 0x86069 - 0x86111 ; (140:71Ah's far address, in a call, less the address after
+PK_LABEL_CALL equ 0x86054 - 0x86111 ;   PROBE_PK_FILL's INT; and 140:7FAh's)
+PK_WINDOW     equ 0x11A4            ; DS: the window up (far)
+probe_pk_count:
+        mov dx, ax
+        cmp byte [cs:lv_mode], 0
+        je .flags
+        mov dx, 2               ; (2: [4AECh] 1, as the routine counts; PROBE_PK_LEFT shows ours)
+.flags: push bp
+        mov bp, sp
+        push ax
+        or dx, dx
+        pushf
+        pop ax
+        and ax, 0x08D5
+        and word [bp + 6], 0xFFFF - 0x08D5
+        or [bp + 6], ax
+        pop ax
+        pop bp
+        iret
+
+probe_pk_win:
+        sub sp, 2               ; push the window's id: the frame down a word
+        push bp
+        mov bp, sp
+        push ax
+        mov ax, [bp + 4]
+        mov [bp + 2], ax
+        mov ax, [bp + 6]
+        mov [bp + 4], ax
+        mov ax, [bp + 8]
+        mov [bp + 6], ax
+        mov word [bp + 8], 0x445D
+        cmp byte [cs:lv_mode], 0
+        je .out
+        mov word [bp + 8], PICK_WIN
+.out:   pop ax
+        pop bp
+        iret
+
+probe_pk_left:
+        mov al, [0x4AEC]
+        cmp byte [cs:lv_mode], 0
+        je .out
+        mov al, [cs:lv_left]
+.out:   iret
+
+probe_pk_title:
+        sub sp, 4               ; push a far pointer: the frame down two words
+        push bp
+        mov bp, sp
+        push ax
+        mov ax, [bp + 6]
+        mov [bp + 2], ax
+        mov ax, [bp + 8]
+        mov [bp + 4], ax
+        mov ax, [bp + 10]
+        mov [bp + 6], ax
+        mov [bp + 10], ds
+        mov word [bp + 8], 0x3026
+        cmp byte [cs:lv_mode], 0
+        je .out
+        mov [bp + 10], cs
+        mov word [bp + 8], lv_title
+.out:   pop ax
+        pop bp
+        iret
+
+probe_pk_fill:
+        xor di, di
+        mov si, di
+        cmp byte [cs:lv_mode], 0
+        je .out
+        push bp
+        mov bp, sp
+        push ds
+        push bx
+        lds bx, [bp + 2]        ; the code after the INT: the far calls' addresses, as fixed up
+        mov eax, [bx + PK_OP_CALL]
+        mov [cs:lv_op_call], eax
+        mov eax, [bx + PK_LABEL_CALL]
+        mov [cs:lv_label_call], eax
+        pop bx
+        pop ds
+        add word [bp + 2], PK_FILL_DONE
+        pop bp
+        call pk_ops
+.out:   iret
+
+; every row in use if its kind is in LV_AVAIL, out of use if not (DS the game's)
+pk_ops:
+        pusha
+        push es
+        xor si, si
+.row:   xor ax, ax
+        bt [cs:lv_avail], si
+        jc .op
+        inc ax
+.op:    push ax
+        push word 0
+        lea bx, [si + PICK_FIRST]
+        push bx
+        push dword [PK_WINDOW]
+        call far [cs:lv_op_call]
+        add sp, 10
+        inc si
+        cmp si, 16
+        jb .row
+        pop es
+        popa
+        ret
+
+probe_pk_click:
+        push bp
+        mov bp, sp              ; ([BP]: the click handler's BP)
+        push bx
+        mov bx, [bp]
+        mov ax, [ss:bx + 8]     ; the replaced "mov ax,[bp+8]": the button
+        cmp byte [cs:lv_mode], 0
+        je .out
+        sub ax, PICK_FIRST
+        cmp ax, 16
+        jae .back
+        bt [cs:lv_avail], ax
+        jnc .back
+        btr [cs:lv_avail], ax
+        call pk_take
+        dec byte [cs:lv_left]
+        mov ax, PK_STAY
+        jnz .go
+        mov ax, PK_CLOSE
+.go:    add [bp + 2], ax
+        jmp .out
+.back:  add ax, PICK_FIRST
+.out:   pop bx
+        pop bp
+        iret
+
+; PK_TAKE: kind AX into the sheet of LV_MEMBER (its first empty SPEC_SLOTS byte), its row out of
+; use, and the number shown one less (DS the game's)
+pk_take:
+        pusha
+        push es
+        mov dx, ax
+        les bx, [LV_SHEETS]
+        imul ax, [cs:lv_member], 0x47
+        add bx, ax
+        xor si, si
+.slot:  cmp byte [es:bx + si + SPEC_SLOTS], 0
+        je .put
+        inc si
+        cmp si, SPEC_COUNT
+        jb .slot
+        jmp .shown
+.put:   mov al, dl
+        inc al
+        mov [es:bx + si + SPEC_SLOTS], al
+.shown: push word 1
+        push word 0
+        add dx, PICK_FIRST
+        push dx
+        push dword [PK_WINDOW]
+        call far [cs:lv_op_call]
+        add sp, 10
+        mov al, [cs:lv_left]
+        dec al
+        add al, '0'
+        mov [cs:lv_count_text + 2], al
+        push cs
+        push word lv_count_text
+        push dword PICK_COUNT_BUTTON
+        push dword [PK_WINDOW]
+        call far [cs:lv_label_call]
+        add sp, 12
+        pop es
+        popa
+        ret
+
+lv_psi    dd 0                  ; the psionicists' pop-up (620:57h, as fixed up)
+lv_op_call dd 0                 ; 140:71Ah, a button's state (0 in use, 1 out of use)
+lv_label_call dd 0              ; 140:7FAh, a button's text
+lv_mode   db 0                  ; 1 while LV_ASK has the pop-up up for weapons
+lv_left   db 0
+lv_have   db 0
+lv_avail  dw 0
+lv_member dw 0
+lv_count_text db '  0', 0
+lv_title  db 'PICK A WEAPON SPECIALTY,', 0
 
 ; By class as the creation screen numbers it (0-8): the sheet's number (the first of four, by
 ; sphere), 1 if a sphere is added (2 for a ranger, whose flag is one), the class's flag
@@ -7506,6 +7904,27 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_WP_CLASS
         mov dx, probe_wp_class
         int 21h
+        mov ax, 2500h + VEC_LV_PICK
+        mov dx, probe_lv_pick
+        int 21h
+        mov ax, 2500h + VEC_PK_COUNT
+        mov dx, probe_pk_count
+        int 21h
+        mov ax, 2500h + VEC_PK_WIN
+        mov dx, probe_pk_win
+        int 21h
+        mov ax, 2500h + VEC_PK_LEFT
+        mov dx, probe_pk_left
+        int 21h
+        mov ax, 2500h + VEC_PK_TITLE
+        mov dx, probe_pk_title
+        int 21h
+        mov ax, 2500h + VEC_PK_FILL
+        mov dx, probe_pk_fill
+        int 21h
+        mov ax, 2500h + VEC_PK_CLICK
+        mov dx, probe_pk_click
+        int 21h
         mov ax, 3516h           ; the keyboard's (TARGETING)
         int 21h
         mov [old16], bx
@@ -7546,8 +7965,8 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or C3h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
-all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS
+busy    db 'DSCLOG: interrupts 60h-65h or BCh-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS, VEC_LV_PICK, VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK
 all_vectors_end:
 
         align 16, db 0

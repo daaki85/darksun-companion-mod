@@ -24,6 +24,13 @@ from .art import decode_frame
 DISCIPLINES, SPHERES = 3012, 3013  # the game's windows
 PAGES = (3014, 3015, 3016, 3017)  # the weapon pages
 WARRIOR_DISCIPLINES, WARRIOR_SPHERES = 3018, 3019
+PICKER = 3021  # the level-up window (like the psionicists', 17501)
+PSIONIC_PICKER = 17501
+PICK_FIRST = 0x860  # its rows, 0x860 + kind (the carved names without the mark's room)
+PICK_COUNT_BUTTON, PICK_EXIT = 0x2C37, 0x4396  # (the psionicists' window's: picks left, EXIT)
+PICK_X, PICK_GAP_X, PICK_Y, PICK_PITCH = 6, 82, 6, 8  # the rows' place: two columns of eight
+PICK_COLOURS = [251, 211, 211]  # (on the marble: the light grey of the window's own words, dark grey
+                               #  out of use)
 ROW_FIRST = 0x840  # the 16 kinds' rows, 0x840 + kind (after the dialogue window's and others', 81Ch-833h)
 MORE, BACK, VIEW = 0x850, 0x851, 0x852  # MORE SPECS, VIEW PSIONICS, WEAPON SPEC
 ROW_TEMPLATE, TOGGLE_TEMPLATE = 0x7FA, 0x7FF  # (AIR's row and VIEW PSIONICS's button)
@@ -191,4 +198,13 @@ def chunks(resource: gff.Chunks) -> Dict[Tuple[str, int], bytes]:
     disciplines = resource[("WIND", DISCIPLINES)]
     added[("WIND", WARRIOR_DISCIPLINES)] = _window(
         disciplines, WARRIOR_DISCIPLINES, [(VIEW if c == DISCIPLINE_TOGGLE else c, x, y) for c, x, y in _items(disciplines)])
+    psionic = resource[("WIND", PSIONIC_PICKER)]
+    keep = [(c, x, y) for c, x, y in _items(psionic) if c in (PICK_COUNT_BUTTON, PICK_EXIT)]
+    for kind in range(len(specialize.KINDS)):
+        cid = PICK_FIRST + kind
+        added[("ICON", cid)] = picture(font, page_text(kind), 0, PICK_COLOURS)
+        added[("BUTN", cid)] = _button(row_button, ROW_TEMPLATE, cid)
+    rows = [(PICK_FIRST + k, PICK_X + PICK_GAP_X * (k // 8), PICK_Y + PICK_PITCH * (k % 8))
+            for k in range(len(specialize.KINDS))]
+    added[("WIND", PICKER)] = _window(psionic, PICKER, rows + keep)
     return added

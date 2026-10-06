@@ -97,6 +97,21 @@ class PageLabelTests(unittest.TestCase):
         ids = [weaponpages.ROW_FIRST + k for k in range(16)] + [weaponpages.MORE, weaponpages.BACK, weaponpages.VIEW]
         self.assertTrue(all(0x834 <= i < 0xBB8 for i in ids))
 
+    def test_picker_clear_of_the_game(self):
+        """The level-up window's rows come after the pages', and its id is none of the game's
+        windows (3000-3013, 3020, 3024...) nor the panel's."""
+        from dscompanion import weaponpages
+        rows = [weaponpages.PICK_FIRST + k for k in range(16)]
+        pages = [weaponpages.ROW_FIRST + k for k in range(16)] + [weaponpages.MORE, weaponpages.BACK, weaponpages.VIEW]
+        self.assertTrue(all(0x834 <= i < 0xBB8 and i not in pages for i in rows))
+        self.assertNotIn(weaponpages.PICKER, set(range(3000, 3014)) | {3020, 3024} | set(weaponpages.PAGES)
+                         | {weaponpages.WARRIOR_DISCIPLINES, weaponpages.WARRIOR_SPHERES})
+        # (two columns of eight, inside the psionicists' window, 159 wide, above its words at 73)
+        xs = [weaponpages.PICK_X + weaponpages.PICK_GAP_X * (k // 8) for k in range(16)]
+        ys = [weaponpages.PICK_Y + weaponpages.PICK_PITCH * (k % 8) for k in range(16)]
+        self.assertLess(max(ys) + 7, 73)
+        self.assertEqual(sorted(set(xs)), [6, 88])
+
 
 
 class NewCharacterTests(unittest.TestCase):
