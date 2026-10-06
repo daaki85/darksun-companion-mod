@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dscompanion.dicelog import FILTERS, HDR_SIG, Entry
 from dscompanion.textlog import TextBuffer
-from dscompanion.gamepatch import (VEC_SPEC_DAMAGE, VEC_ATTACKS, VEC_XP_NEXT, VEC_SCRIPT_RAND, VEC_ITEM_ARMOUR, VEC_ITEM_SKIP, VEC_ITEM_WEAPON, VEC_AC, VEC_DOUBLE, VEC_MSG, VEC_NEXT, VEC_RAND, VEC_RING_AC, VEC_USE_ITEM,
+from dscompanion.gamepatch import (VEC_VIEW_DAM, VEC_DAM_LINE, VEC_SPEC_DAMAGE, VEC_ATTACKS, VEC_XP_NEXT, VEC_SCRIPT_RAND, VEC_ITEM_ARMOUR, VEC_ITEM_SKIP, VEC_ITEM_WEAPON, VEC_AC, VEC_DOUBLE, VEC_MSG, VEC_NEXT, VEC_RAND, VEC_RING_AC, VEC_USE_ITEM,
                                   VEC_RING_SAVE, VEC_SAVE, VEC_TEXT, VEC_TWO, VEC_GRACE_CAST, VEC_GRACE_EFFECT,
                                   VEC_GRACE_ABILITY, VEC_NAMES_FILL, VEC_NAMES_SIZE, VEC_STEALTH, VEC_TYPES_FILL,
                                   VEC_TYPES_SIZE, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED,
@@ -805,6 +805,79 @@ class SpecializeTests(unittest.TestCase):
 
     def test_not_a_warrior(self):
         self.assertEqual(self.attack(2, self.AXE, chosen=(0,), classes=(11, 0, 0)), (2, 15, 3, 8))
+
+    def dam_line(self, halves, weapon, chosen=(), classes=(9, 0, 0), levels=(5, 0, 0), rules=4096):
+        """(attacks, bonus, sides, count) for the DAM line (PROBE_DAM_LINE): bonus 4, 1d8 pushed."""
+        mu = self.mu
+        at = load_image().find(bytes.fromhex("268a472a2ef706"))
+        self.assertGreater(at, 0)
+        mu.mem_write(VEC_DAM_LINE * 4, struct.pack("<HH", at, TSR))
+        mu.mem_write(TSR * 16 + load_image().find(HDR_SIG) + self.RULES, struct.pack("<H", rules))
+        sheet = bytearray(0x47)
+        sheet[0x2A] = halves
+        for i, k in enumerate(chosen):
+            sheet[0x14 + i] = k + 1
+        sheet[0x21:0x24], sheet[0x24:0x27] = bytes(classes), bytes(levels)
+        mu.mem_write(self.SHEETS * 16, bytes(sheet))
+        mu.mem_write(SS * 16 + 0x7F6, struct.pack("<HHH", 1, 8, 4))  # pushed: count, sides, bonus
+        mu.mem_write(CALLER * 16 + 0x600, bytes((0xCD, VEC_DAM_LINE, 0x90, 0x90)))
+        for name, value in dict(cs=CALLER, ds=GAME_DS, ss=SS, esp=0x7F6, ebp=BP, eflags=IF | 2, eax=0x1200,
+                                ebx=0, edx=0x4444, esi=weapon, es=self.SHEETS).items():
+            mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+        mu.emu_start(CALLER * 16 + 0x600, CALLER * 16 + 0x604)
+        self.assertEqual([mu.reg_read(x) for x in (r.UC_X86_REG_SP, r.UC_X86_REG_BP, r.UC_X86_REG_DX, r.UC_X86_REG_SI)],
+                         [0x7F6, BP, 0x4444, weapon])
+        count, sides, bonus = struct.unpack("<HHH", mu.mem_read(SS * 16 + 0x7F6, 6))
+        return mu.reg_read(r.UC_X86_REG_AX) & 0xFF, bonus, sides, count
+
+    def test_dam_line(self):
+        self.assertEqual(self.dam_line(3, self.AXE, rules=0), (3, 4, 8, 1))
+        self.assertEqual(self.dam_line(3, self.AXE, chosen=(0,)), (2, 4, 8, 1))
+        self.assertEqual(self.dam_line(3, self.LONG_SWORD, chosen=(0,), levels=(4, 0, 0)), (3, 6, 8, 1))
+        self.assertEqual(self.dam_line(4, self.LONG_SWORD, chosen=(0,), levels=(9, 0, 0)), (6, 7, 10, 1))
+
+
+    ITEMS, TYPES, WHO = 0x8800, 0x9000, 0x9800
+
+    def view_dam(self, halves, weapon, chosen=(), classes=(9, 0, 0), levels=(5, 0, 0), rules=4096, missile=False):
+        """(attacks, bonus, sides) for View Character's DAM line (PROBE_VIEW_DAM): DX the bonus 4,
+        1d8, character 2 on show, its weapon item 1."""
+        mu = self.mu
+        at = load_image().find(bytes.fromhex("8956f22ef706"))
+        self.assertGreater(at, 0)
+        mu.mem_write(VEC_VIEW_DAM * 4, struct.pack("<HH", at, TSR))
+        mu.mem_write(TSR * 16 + load_image().find(HDR_SIG) + self.RULES, struct.pack("<H", rules))
+        sheet = bytearray(0x47)
+        for i, k in enumerate(chosen):
+            sheet[0x14 + i] = k + 1
+        sheet[0x21:0x24], sheet[0x24:0x27] = bytes(classes), bytes(levels)
+        mu.mem_write(self.SHEETS * 16 + 2 * 0x47, bytes(sheet))
+        mu.mem_write(GAME_DS * 16 + 0x165D, struct.pack("<HH", 0, self.ITEMS))
+        mu.mem_write(GAME_DS * 16 + 0x1669, struct.pack("<HH", 0, self.TYPES))
+        mu.mem_write(self.ITEMS * 16 + 0x15 + 0x0A, struct.pack("<H", weapon))
+        mu.mem_write(self.TYPES * 16 + weapon * 0x14, bytes((2 if missile else 1,)))
+        mu.mem_write(self.WHO * 16 + 0x25B, struct.pack("<H", 2))
+        mu.mem_write(CALLER * 16 + 0x602 - 0x84, struct.pack("<H", self.WHO))
+        mu.mem_write(SS * 16 + BP - 0x0E, struct.pack("<HHHHHHH", 0, 0, 1, 0, halves, 8, 1))  # bonus .. count
+        mu.mem_write(CALLER * 16 + 0x600, bytes((0xCD, VEC_VIEW_DAM, 0x90)))
+        for name, value in dict(cs=CALLER, ds=GAME_DS, ss=SS, esp=0x7FC, ebp=BP, eflags=IF | 2, eax=0x1111,
+                                ebx=0x2222, ecx=0x3333, edx=4, esi=0x5555, edi=0x7777, es=0x6666).items():
+            mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+        mu.emu_start(CALLER * 16 + 0x600, CALLER * 16 + 0x603)
+        self.assertEqual([mu.reg_read(getattr(r, "UC_X86_REG_" + x)) for x in ("SP", "AX", "BX", "CX", "DX", "SI", "DI", "ES")],
+                         [0x7FC, 0x1111, 0x2222, 0x3333, 4, 0x5555, 0x7777, 0x6666])
+        bonus, = struct.unpack("<h", mu.mem_read(SS * 16 + BP - 0x0E, 2))
+        attacks, sides = struct.unpack("<hh", mu.mem_read(SS * 16 + BP - 6, 2) + mu.mem_read(SS * 16 + BP - 4, 2))
+        return attacks, bonus, sides
+
+    def test_view_dam(self):
+        self.assertEqual(self.view_dam(3, self.AXE, chosen=(0,), rules=0), (3, 4, 8))
+        self.assertEqual(self.view_dam(3, self.AXE), (3, 4, 8))
+        self.assertEqual(self.view_dam(3, self.AXE, chosen=(0,)), (2, 4, 8))
+        self.assertEqual(self.view_dam(3, self.LONG_SWORD, chosen=(0,), levels=(4, 0, 0)), (3, 6, 8))
+        self.assertEqual(self.view_dam(4, self.LONG_SWORD, chosen=(0,), levels=(9, 0, 0)), (6, 7, 10))
+        self.assertEqual(self.view_dam(4, 1, chosen=(13,), levels=(4, 0, 0), missile=True), (4, 6, 8))
+        self.assertEqual(self.view_dam(3, 1, chosen=(0,), missile=True), (3, 4, 8))
 
 
 @unittest.skipIf(Uc is None, "unicorn is not installed")

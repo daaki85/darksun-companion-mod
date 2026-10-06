@@ -1347,6 +1347,10 @@ class GameData:
                 parts.append((MATERIALS[material].lower(), MATERIAL_TO_HIT[material]))
             if two_weapons and not missile:
                 parts.append(self.two_weapons(creature, slot))
+            if self.rules & RULE_SPECIALIZE:  # (weapon specialization: DSCLOG's PROBE_ATTACKS)
+                from . import specialize
+                skill = specialize.skill(self.sheet(creature), struct.unpack_from("<H", item, ITEM_TYPE)[0])
+                parts.append((specialize.SKILL_NAMES.get(skill, ""), specialize.to_hit(skill)))
             parts = [(why, n) for why, n in parts if n]
             out.append(WeaponHit(index, slot, self.item_label(item, typ), base - sum(n for _, n in parts), parts))
         if not out:

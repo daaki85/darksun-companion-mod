@@ -75,6 +75,8 @@ VEC_SCRIPT_RAND equ 0xD3   ; PROBE_SCRIPT_RAND
 VEC_XP_NEXT equ 0xD2       ; PROBE_XP_NEXT
 VEC_ATTACKS equ 0xD1       ; PROBE_ATTACKS
 VEC_SPEC_DAMAGE equ 0xD0   ; PROBE_SPEC_DAMAGE
+VEC_DAM_LINE equ 0xCF      ; PROBE_DAM_LINE
+VEC_VIEW_DAM equ 0xCE      ; PROBE_VIEW_DAM
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 128         ; entries in the ring
@@ -2556,27 +2558,140 @@ probe_spec_damage:
 .out:   pop dx
 .done:  iret
 
-; SPEC_OF: DL the attacker's skill with the attack's weapon: SPEC_NONE (it has chosen no kinds),
-; SPEC_PLAIN (not this kind), SPEC_EXPERT (a ranger's: no fighter or gladiator class),
-; SPEC_SPECIAL, SPEC_MASTER (a fighter's own kind, the first, from 5th level), SPEC_GRAND (9th).
-spec_of:
+; PROBE_DAM_LINE: INT VEC_DAM_LINE replaces "mov al,es:[bx+2Ah]" (4 bytes: INT + 2 NOPs; DSUN.EXE
+; 72A77h) in the routine that writes a melee weapon's "DAM: 1.5x1D8+4" (View Character, the
+; inventory screen), ES:BX the sheet, SI the weapon's item type, the damage bonus, the dice's sides
+; and their count pushed (under the INT's return, in that order up). With RULE_SPECIALIZE, the
+; attacks as PROBE_ATTACKS gives them, and the bonus and sides as PROBE_SPEC_DAMAGE does.
+probe_dam_line:
+        mov al, [es:bx + 0x2a]
+        test word [cs:rules], RULE_SPECIALIZE
+        jz .done
+        push bp
+        mov bp, sp              ; BP+8 the count, +0Ah the sides, +0Ch the bonus
+        push dx
+        call spec_of_sheet
+        cmp al, 2
+        jbe .bonus
+        cmp dl, SPEC_PLAIN
+        jne .grand
+        dec al
+        jmp .bonus
+.grand: cmp dl, SPEC_GRAND
+        jne .bonus
+        add al, 2
+.bonus: cmp dl, SPEC_SPECIAL
+        jb .out
+        ja .three
+        add word [bp + 0x0C], 2
+        jmp .out
+.three: add word [bp + 0x0C], 3
+        cmp dl, SPEC_GRAND
+        jne .out
+        add word [bp + 0x0A], 2
+.out:   pop dx
+        pop bp
+.done:  iret
+
+; PROBE_VIEW_DAM: INT VEC_VIEW_DAM replaces "mov [bp-0Eh],dx" (3 bytes: INT + NOP; DSUN.EXE 64EB6h)
+; in View Character's routine for its "DAM: 1.5x1D8+4": DX the damage bonus it stores, its [BP-6]
+; the attacks a round (halves), [BP-2] the dice's count, [BP-4] their sides, [BP-0Ah] the weapon's
+; item. With RULE_SPECIALIZE, the attacks (not a missile weapon's), the bonus and the sides as the
+; attack has them (PROBE_ATTACKS, PROBE_SPEC_DAMAGE), for the character on show: its number in
+; the segment the routine's "mov ax,seg" at 64E33h holds, +25Bh (as PROBE_VIEW's CH_WHO).
+VIEW_DAM_WHO equ 0x84           ; that operand, back from the INT's return
+probe_view_dam:
+        mov [bp - 0x0E], dx
+        test word [cs:rules], RULE_SPECIALIZE
+        jz .done
         push ax
         push bx
-        push cx
+        push dx
         push si
+        push di
         push es
-        mov dl, SPEC_NONE
-        mov ax, [bp + 0x10]
+        mov ax, [bp - 0x0A]     ; the item, its type
+        imul ax, ax, 0x15
+        les bx, [0x165D]
+        add bx, ax
+        mov si, [es:bx + 0x0A]
+        mov di, sp
+        mov bx, [ss:di + 12]    ; (the INT's return, past the six pushes)
+        mov es, [ss:di + 14]
+        mov es, [es:bx - VIEW_DAM_WHO]
+        mov ax, [es:0x25B]      ; the character on show, its sheet
         imul ax, ax, 0x47
         les bx, [0x1661]
         add bx, ax
+        call spec_of_sheet
+        mov ax, si              ; a missile weapon (the type's +0, 2) keeps its rate
+        imul ax, ax, 0x14
+        push es
+        push bx
+        les bx, [0x1669]
+        add bx, ax
+        test byte [es:bx], 2
+        pop bx
+        pop es
+        jnz .bonus
+        cmp word [bp - 6], 2
+        jbe .bonus
+        cmp dl, SPEC_PLAIN
+        jne .grand
+        dec word [bp - 6]
+        jmp .bonus
+.grand: cmp dl, SPEC_GRAND
+        jne .bonus
+        add word [bp - 6], 2
+.bonus: cmp dl, SPEC_SPECIAL
+        jb .out
+        ja .three
+        add word [bp - 0x0E], 2
+        jmp .out
+.three: add word [bp - 0x0E], 3
+        cmp dl, SPEC_GRAND
+        jne .out
+        add word [bp - 4], 2
+.out:   pop es
+        pop di
+        pop si
+        pop dx
+        pop bx
+        pop ax
+.done:  iret
+
+; SPEC_OF: DL the attacker's skill with the attack's weapon (SPEC_OF_SHEET, for the attack
+; routine's [BP+10h] sheet and [BP+14h] item type).
+spec_of:
+        push bx
+        push si
+        push es
+        mov si, [bp + 0x10]
+        imul si, si, 0x47
+        les bx, [0x1661]
+        add bx, si
+        mov si, [bp + 0x14]
+        call spec_of_sheet
+        pop es
+        pop si
+        pop bx
+        ret
+
+; SPEC_OF_SHEET: DL the skill with item type SI of the character whose sheet is at ES:BX:
+; SPEC_NONE (it has chosen no kinds), SPEC_PLAIN (not this kind), SPEC_EXPERT (a ranger's: no
+; fighter or gladiator class), SPEC_SPECIAL, SPEC_MASTER (a fighter's own kind, the first, from
+; 5th level), SPEC_GRAND (9th).
+spec_of_sheet:
+        push ax
+        push cx
+        push si
+        mov dl, SPEC_NONE
         mov al, [es:bx + SPEC_SLOTS]
         or al, [es:bx + SPEC_SLOTS + 1]
         or al, [es:bx + SPEC_SLOTS + 2]
         or al, [es:bx + SPEC_SLOTS + 3]
         jz .ret
         mov dl, SPEC_PLAIN
-        mov si, [bp + 0x14]
         cmp si, KIND_TYPES
         jae .ret
         mov cl, [cs:si + kind_of_type]
@@ -2617,10 +2732,8 @@ spec_of:
         cmp ch, GRAND_MASTERY
         jb .ret
         mov dl, SPEC_GRAND
-.ret:   pop es
-        pop si
+.ret:   pop si
         pop cx
-        pop bx
         pop ax
         ret
 
@@ -6077,6 +6190,12 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_SPEC_DAMAGE
         mov dx, probe_spec_damage
         int 21h
+        mov ax, 2500h + VEC_DAM_LINE
+        mov dx, probe_dam_line
+        int 21h
+        mov ax, 2500h + VEC_VIEW_DAM
+        mov dx, probe_view_dam
+        int 21h
         mov ax, 3516h           ; the keyboard's (TARGETING)
         int 21h
         mov [old16], bx
@@ -6117,8 +6236,8 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or D0h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
-all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE
+busy    db 'DSCLOG: interrupts 60h-65h or CEh-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM
 all_vectors_end:
 
         align 16, db 0
