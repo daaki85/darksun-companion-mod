@@ -57,10 +57,10 @@ DIED = 772  # (set by the Ledger: seen dead; Dinos and the Trustee speak of him 
 
 # The scrolls: (spell, its name, price in ceramic pieces). Cat's Grace is the game's Flaming Sphere
 # (14) under the companion's rule, so it is sold only while the rule is on. The prices are the
-# game's own: its scroll of the same spell where it has one (Blur 3000, Lightning Bolt 9000, Haste
-# 12000: its objects 1417, 1406, 1403), else its price for the spell's level (3000 a level)
-SCROLLS = ((8, "Magic Missile", 3000), (4, "Color Spray", 3000), (12, "Blur", 3000),
-           (game.FLAMING_SPHERE, "Cat's Grace", 6000), (32, "Lightning Bolt", 9000), (29, "Haste", 12000))
+# game's own: its scroll of the same spell where it has one (Color Spray 3000: its object 1404),
+# else its price for the spell's level (3000 a level, as most of its 19 scrolls, objects 1400-1418)
+SCROLLS = ((8, "Magic Missile", 3000), (4, "Color Spray", 3000), (12, "Blur", 6000),
+           (game.FLAMING_SPHERE, "Cat's Grace", 6000), (32, "Lightning Bolt", 9000), (29, "Haste", 9000))
 SCROLL_TYPE = 0x60  # the game's spell scrolls (its objects 1400-1418)
 SCROLL_TEMPLATE = "88fa01000f2700000f2760000000000105ff7f0000"  # its scroll of spell 1 (object 1400)
 SCROLL_FROM = 1400  # the game's first scroll object, which his scrolls' objects copy

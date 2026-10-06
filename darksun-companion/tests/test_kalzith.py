@@ -248,14 +248,14 @@ class KalzithTests(unittest.TestCase):
         with mock.patch.object(ring, "Items", Items):
             self.assertEqual(kalzith.mend(Game()), 3)
             self.assertEqual(bytes(records[0]), kalzith.scroll(spell, 9000, k))
-            self.assertEqual(bytes(records[3]), kalzith.scroll(12, 3000, 2))  # (renumbered: it teaches now)
+            self.assertEqual(bytes(records[3]), kalzith.scroll(12, 6000, 2))  # (renumbered: it teaches now)
             self.assertEqual(bytes(records[1]), kalzith.scroll(8, 3000, 0))  # (repriced only)
             self.assertEqual(bytes(records[2]), game_scroll)
             self.assertEqual(kalzith.mend(Game()), 0)
 
     def test_six_scrolls(self):
         """Two of each level 1-3, at the game's prices (its own scroll of the spell's, else 3000 a level)."""
-        self.assertEqual([p for _, _, p in kalzith.SCROLLS], [3000, 3000, 3000, 6000, 9000, 12000])
+        self.assertEqual([p for _, _, p in kalzith.SCROLLS], [3000, 3000, 6000, 6000, 9000, 9000])
         self.assertIn(game.FLAMING_SPHERE, [s for s, _, _ in kalzith.SCROLLS])
 
 
