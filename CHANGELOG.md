@@ -25,6 +25,12 @@ requests #1 to #13; its notes are in
   they're its price for the spell's level, 3,000 a level. His stock is
   repriced when the Ledger next sees the game.
 
+**Changed**
+- **Kalzith sells Shield and Burning Hands** in place of Magic Missile and
+  Color Spray (3,000 each), so none of his scrolls is one the game has
+  (Color Spray's is in the sewers). Magic Missile and Color Spray scrolls he
+  stocked before become Shield and Burning Hands, wherever they are.
+
 ## Pull request #18 ([merged 2026-10-06](https://github.com/daaki85/darksun-companion-mod/pull/18))
 
 - **Release 1.1.0:** the version, its notes, and pull request #17 marked

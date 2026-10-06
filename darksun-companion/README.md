@@ -2245,14 +2245,16 @@ Talk button). His conversation is the game's kind, just him speaking:
 
   | Level | Scroll | Price |
   |---|---|---|
-  | 1 | Magic Missile, Color Spray | 3,000 ceramic each |
+  | 1 | Shield, Burning Hands | 3,000 ceramic each |
   | 2 | Blur, Cat's Grace | 6,000 each |
   | 3 | Lightning Bolt, Haste | 9,000 each |
 
-  These are the game's own prices: its scroll of the same spell where it has
-  one (Color Spray), else its price for the spell's level (3,000 a level, as
-  most of its scrolls are). Scrolls he stocked with an earlier version are
-  repriced when the Ledger next sees the game.
+  None of them is a spell the game has a scroll of, so they're something you
+  can't find elsewhere. The prices are the game's own for the spell's level
+  (3,000 a level, as most of its scrolls are). Scrolls he stocked with an
+  earlier version are made these when the Ledger next sees the game: his
+  Magic Missile becomes Shield and his Color Spray Burning Hands, wherever
+  they are, and every one is repriced.
 
   Cat's Grace is there only with its rule on (see
   [Rule changes](#rule-changes)). A preserver learns a scroll's spell as from

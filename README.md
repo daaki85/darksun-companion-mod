@@ -182,6 +182,9 @@ In [pull request #19](https://github.com/daaki85/darksun-companion-mod/pull/19)
 - **Kalzith's prices put right:** Blur 6,000 and Haste 9,000 (were 3,000 and
   12,000, read from the wrong scrolls in the game's data; now the game's price
   for each spell's level).
+- **Kalzith sells Shield and Burning Hands** in place of Magic Missile and
+  Color Spray, so none of his scrolls is one you can find elsewhere in the
+  game.
 
 Release **1.1.0** is out: pull requests #14 to #18, below.
 

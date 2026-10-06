@@ -249,9 +249,15 @@ class KalzithTests(unittest.TestCase):
             self.assertEqual(kalzith.mend(Game()), 3)
             self.assertEqual(bytes(records[0]), kalzith.scroll(spell, 9000, k))
             self.assertEqual(bytes(records[3]), kalzith.scroll(12, 6000, 2))  # (renumbered: it teaches now)
-            self.assertEqual(bytes(records[1]), kalzith.scroll(8, 3000, 0))  # (repriced only)
+            self.assertEqual(bytes(records[1]), kalzith.scroll(9, 3000, 0))  # (Magic Missile: now Shield)
             self.assertEqual(bytes(records[2]), game_scroll)
             self.assertEqual(kalzith.mend(Game()), 0)
+
+    def test_none_the_game_has(self):
+        """None of his spells has a scroll in the game (its objects 1400-1418, by the Ledger's
+        spell numbers: Color Spray 4, Enlarge 5, Wall of Fog 11, Mirror Image 19, ...)."""
+        game_scrolls = {4, 5, 11, 19, 24, 26, 28, 31, 33, 38, 44, 47, 50, 52, 53, 63, 65, 66}
+        self.assertFalse(game_scrolls & {s for s, _, _ in kalzith.SCROLLS})
 
     def test_six_scrolls(self):
         """Two of each level 1-3, at the game's prices (its own scroll of the spell's, else 3000 a level)."""
