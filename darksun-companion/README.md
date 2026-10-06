@@ -128,8 +128,8 @@ records; this ledger keeps the ones the game doesn't show you.
   also shows each character's THAC0 (for each weapon too), saving throws,
   DEX reaction and defensive adjustments and (for thieves) their thief
   skills, all as they stand now, and the
-  View Character screen their THAC0 and saves, and for a character of more
-  than one class whose next level is coming (see [In the game](#in-the-game-thac0-saves-and-thief-skills)); the USE
+  View Character screen their THAC0 and saves, and which class levels up
+  next for a character of more than one class (see [In the game](#in-the-game-thac0-saves-and-thief-skills)); the USE
   screen shows their spell slots left (see
   [spell slots](#in-the-game-spell-slots-on-the-use-screen)); and, if you
   tick it, after each turn in a fight the game stops to show what came of
@@ -1149,7 +1149,7 @@ Every roll in the game goes through one function, Borland C++'s `rand()`.
    `INT D7h` (for [more saves](#more-saves)), and in the routines that
    destroy an item hit by acid or a corroding touch `INT D6h`, `INT D5h` and
    `INT D4h` (for [items saving against acid](#items-saving-against-acid)), and in the scripts'
-   random command `INT D3h` (for [searching junk, hay and wardrobes](#searching-junk-hay-and-wardrobes)), and where View Character closes the bracket after the next level's XP `INT D2h` (for the class it is). The
+   random command `INT D3h` (for [searching junk, hay and wardrobes](#searching-junk-hay-and-wardrobes)), and where View Character adds the bracket after the XP for the next level `INT D2h` (to name the class). The
    copy keeps 29 characters rather than 19, deletes the one chosen in the
    roster and counts a New character as Okay (see
    [more characters](#more-characters)), lets Enter load only a save that is
@@ -1262,20 +1262,22 @@ shows at once. Spells start and end as time passes in the game, which it
 doesn't while these screens are open; open the screen again to see such a
 change.
 
-For a character of more than one class, View Character's experience line
-also says whose next level the number in brackets is: `EXP:87230 (90000 Pr)`
-is the preserver's. Each class is a letter (C cleric, D druid, F fighter, G
-gladiator, R ranger, T thief), but preserver and psionicist, which both start
-with P, are **Pr** and **Ps**. Two classes due at the same XP are both named,
-`(20000 Pr/T)`, and a class at the level cap (9, or 10 with
-[levels up to 10](#levels-up-to-10)) has no next level and isn't. A
-character of one class shows it as the game does.
+For a character of more than one class, the number in brackets on View
+Character's experience line is the XP at which the first of their classes
+goes up a level, and the Ledger adds which class that is:
+`EXP:87230 (90000 Pr)` means the preserver goes up next, at 90,000. Each
+class is a letter (C cleric, D druid, F fighter, G gladiator, R ranger, T
+thief), but preserver and psionicist, which both start with P, are **Pr** and
+**Ps**. When two classes go up at the same XP, both are named:
+`(20000 Pr/T)`. A class already at the highest level (9, or 10 with
+[levels up to 10](#levels-up-to-10)) has no next level, so it is never named.
+A character of one class shows the line as the game always has.
 
 ![View Character's experience line for a fighter/thief, (110000 T), and a fighter/preserver/thief, (90000 Pr)](docs/xp-next.png)
 
-How: the game works out each class's next level from its tables and shows
-the least; where it adds the closing bracket, the helper (`INT D2h`) looks
-up which classes that number belongs to and adds their letters first.
+How: the game looks up the XP for each class's next level in its tables and
+shows the lowest. Where it adds the closing bracket, the helper (`INT D2h`)
+finds which classes that number belongs to and adds their letters first.
 
 - **THAC0**: the character's THAC0 less STR's to-hit adjustment (DEX's for a
   missile weapon), the weapon's plus (or, for a plain wooden, bone, stone or
@@ -1702,8 +1704,8 @@ and thief skills are worked out from the level. So at 10th level:
 
 The level-up comes as the game's usual one ("Gerakis gains a level"), and
 View Character stops showing the XP for the next level at 10, as it does at
-9 without the rule (and for a character of more than one class, stops naming
-that class as the next to go up). Untick it and nobody goes past the level they have: a
+9 without the rule. For a character of more than one class, a class already
+at 10 isn't named in the brackets, since it has no next level. Untick it and nobody goes past the level they have: a
 10th-level character stays 10th.
 
 How: the game holds a class level against 9 in two places, where a character

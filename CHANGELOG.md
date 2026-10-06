@@ -9,12 +9,14 @@ requests #1 to #13; its notes are in
 ## Pull request #19 ([in review](https://github.com/daaki85/darksun-companion-mod/pull/19))
 
 **Added**
-- **Whose next level, on View Character:** for a character of more than one
-  class, the experience line names the class whose next level the XP in
-  brackets is: `EXP:87230 (90000 Pr)`. A letter for each class, but **Pr** and
-  **Ps** for preserver and psionicist (both P); both named when two are due at
-  once (`(20000 Pr/T)`); a class at the level cap not named. One class: as
-  before. (The patched game's `INT D2h`, where the game adds the bracket.)
+- **Which class levels up next, on View Character:** for a character of more
+  than one class, the XP in brackets on the experience line now names the
+  class that reaches its next level there: `EXP:87230 (90000 Pr)`. A letter
+  for each class, but **Pr** and **Ps** for preserver and psionicist (both
+  start with P); both named when two level up at the same XP
+  (`(20000 Pr/T)`); a class already at the highest level never named. One
+  class: as before. (The patched game's `INT D2h`, where the game adds the
+  bracket.)
 
 **Fixed**
 - **Kalzith's prices:** Blur 6,000 (was 3,000) and Haste 9,000 (was 12,000).
