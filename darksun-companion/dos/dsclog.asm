@@ -73,6 +73,7 @@ VEC_ITEM_SKIP equ 0xD5     ; PROBE_ITEM_SKIP
 VEC_ITEM_ARMOUR equ 0xD4   ; PROBE_ITEM_ARMOUR
 VEC_SCRIPT_RAND equ 0xD3   ; PROBE_SCRIPT_RAND
 VEC_XP_NEXT equ 0xD2       ; PROBE_XP_NEXT
+VEC_ATTACKS equ 0xD1       ; PROBE_ATTACKS
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 128         ; entries in the ring
@@ -2482,6 +2483,65 @@ prot_scan:
         popad
         ret
 
+; PROBE_ATTACKS: INT VEC_ATTACKS replaces "mov al,es:[bx+2Ah]" (4 bytes: INT + 2 NOPs; DSUN.EXE
+; 5888Eh) where a melee attack takes the attacker's attacks a round (in halves) from its sheet,
+; ES:BX, the game's [BP+14h] the weapon's item type. The game gives every fighter, gladiator and
+; ranger AD&D's specialist's rate (3/2, then 2 from 7th level, 5/2 from 13th); with
+; RULE_SPECIALIZE a warrior (more than 2 halves) whose weapon is not of a kind the sheet holds at
+; +14h..+17h (SPEC_SLOTS: the kind + 1 each, 0 none) has AD&D's plain rate, half an attack less,
+; and a fighter of 9th level or more with the kind first there (a fighter's one: grand mastery)
+; one more. AL the attacks, as the replaced instruction leaves it.
+SPEC_SLOTS equ 0x14
+SPEC_COUNT equ 4
+FIGHTER_CLASS equ 9
+GRAND_MASTERY equ 9             ; (the fighter level)
+probe_attacks:
+        mov al, [es:bx + 0x2a]
+        test word [cs:rules], RULE_SPECIALIZE
+        jz .done
+        cmp al, 2
+        jbe .done               ; (not a warrior)
+        push cx
+        push si
+        mov si, [bp + 0x14]
+        cmp si, KIND_TYPES
+        jae .plain
+        mov cl, [cs:si + kind_of_type]
+        or cl, cl
+        jz .plain
+        xor si, si
+.slot:  cmp [es:bx + si + SPEC_SLOTS], cl
+        je .chosen
+        inc si
+        cmp si, SPEC_COUNT
+        jb .slot
+.plain: dec al
+        jmp .out
+.chosen:
+        or si, si
+        jnz .out
+        xor si, si
+.class: cmp byte [es:bx + si + 0x21], FIGHTER_CLASS
+        jne .next
+        cmp byte [es:bx + si + 0x24], GRAND_MASTERY
+        jb .next
+        add al, 2
+        jmp .out
+.next:  inc si
+        cmp si, 3
+        jb .class
+.out:   pop si
+        pop cx
+.done:  iret
+
+; By item type (the game's 115, then the companion's own: 115 its short sword), the weapon kind
+; + 1 (dscompanion/specialize.py's KIND_OF_TYPE; 0 none)
+KIND_TYPES equ 128
+kind_of_type  db 16, 14, 7, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 5, 10, 4, 12, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0
+              db 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 11, 1, 4, 1, 13, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1
+              db 15, 0, 0, 0, 0, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 1, 0, 0, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0
+              db 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 8, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+
 ; PROBE_XP_NEXT: INT VEC_XP_NEXT replaces "push 10F4h" (3 bytes: INT + NOP; DSUN.EXE 67DBEh) in
 ; View Character's line "EXP:10301 (16000)", where the game adds ")" (DS:10F4h) after the XP the
 ; next level needs: the least of its classes' ([BP-6], a dword, never 0 here), each class's from
@@ -2902,6 +2962,7 @@ RULE_THIEF_TABLE equ 256        ; thief skills from AD&D's table and Dark Sun's 
 RULE_HALF_GIANT equ 512         ; half-giants wield two-handed weapons in one hand
 RULE_PROTECTION equ 1024        ; AD&D's rings and cloaks of protection (PROBE_RING_AC, RING_PLUS)
 RULE_ITEM_SAVES equ 2048        ; items save against acid as in AD&D where better (PROBE_ITEM_*)
+RULE_SPECIALIZE equ 4096        ; weapon specialization (PROBE_ATTACKS; dscompanion/specialize.py)
 FOOT       equ 13               ; the item's slot byte while worn on the feet
 THINGS_SEG equ 0x3972 - 0x4356  ; the things table's segment, relative to DS
 
@@ -5920,6 +5981,9 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_XP_NEXT
         mov dx, probe_xp_next
         int 21h
+        mov ax, 2500h + VEC_ATTACKS
+        mov dx, probe_attacks
+        int 21h
         mov ax, 3516h           ; the keyboard's (TARGETING)
         int 21h
         mov [old16], bx
@@ -5960,8 +6024,8 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or D2h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
-all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT
+busy    db 'DSCLOG: interrupts 60h-65h or D1h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS
 all_vectors_end:
 
         align 16, db 0

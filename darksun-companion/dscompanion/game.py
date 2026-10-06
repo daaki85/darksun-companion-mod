@@ -102,6 +102,10 @@ RULE_PROTECTION = 1024
 # corroding touch would destroy needs the easier of the game's number and AD&D's save for
 # its material (ACID_SAVES), less its plus and 1 more for a magical power
 RULE_ITEM_SAVES = 2048
+# Weapon specialization (specialize.py; DSCLOG's PROBE_ATTACKS): the kinds a warrior chose, kind + 1
+# each in the sheet's SPEC_SLOTS bytes (four the game never uses), set the attacks a round
+RULE_SPECIALIZE = 4096
+SPEC_SLOTS, SPEC_COUNT = 0x14, 4
 # AD&D's item saving throws against acid (the DMG's table), by the game's materials: wood
 # (thick), bone, stone and obsidian (glass's), metal, leather; and cloth for no material
 ACID_SAVES = {0: ("wood", 8), 1: ("bone", 11), 2: ("stone", 5), 3: ("obsidian", 5), 4: ("metal", 13),

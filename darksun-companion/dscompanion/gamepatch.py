@@ -49,6 +49,7 @@ VEC_SAVE_PAGE, VEC_SAVE_CLICK = 0xD8, 0xD7
 VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR = 0xD6, 0xD5, 0xD4  # (item saves)
 VEC_SCRIPT_RAND = 0xD3
 VEC_XP_NEXT = 0xD2
+VEC_ATTACKS = 0xD1
 
 
 SCRIPT_BUFFER = 0x2E00  # the scripts' buffer, made bigger (the game's: 10000 bytes)
@@ -282,6 +283,10 @@ PATCHES = (
     # View Character's "EXP:10301 (16000)": "push 10F4h", the ")" after the next level's XP (DSCLOG
     # puts the class whose next level it is before it, for more than one class: "(16000 F)")
     Patch("xp_next", 0x67DBE, bytes.fromhex("68f410"), _interrupt(VEC_XP_NEXT, 3)),
+    # a melee attack's attacks a round, "mov al,es:[bx+2Ah]" (the sheet's): with weapon
+    # specialization, AD&D's plain rate for a warrior's weapon of a kind not chosen, one more
+    # attack for a fighter's grand mastery
+    Patch("attacks", 0x5888E, bytes.fromhex("268a472a"), _interrupt(VEC_ATTACKS, 4)),
     # A bug of the game's own: the roster's DELETE (DSUN.EXE 54AC1h) picked the character by the
     # row clicked alone, where ADD takes the row plus how far the list is scrolled; with the list
     # scrolled, another character was deleted (the row's from the top). The same code, the scroll
