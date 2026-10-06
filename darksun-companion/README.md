@@ -1498,7 +1498,9 @@ gains hit points as in AD&D: each class's die at its level, divided by the
 number of classes (dropping fractions, at least 1), and CON's bonus divided
 between them too (dropping fractions). The game adds each level's full die and divides only the total, and
 gives CON's bonus whole. At creation, too, each class's die is shared on its
-own. A human who dual-classes isn't affected (one class at a time). The log
+own. A human who dual-classes isn't affected (one class at a time). The rule
+is meant for a new game: ticked during one, a character's next level shares
+CON's bonus for all its levels, which can lower its most hit points. The log
 shows the share:
 
 ```
