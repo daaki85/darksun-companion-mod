@@ -56,9 +56,11 @@ STOCKED = 763  # (set by the Ledger: his scrolls given)
 DIED = 772  # (set by the Ledger: seen dead; Dinos and the Trustee speak of him so, pensasks.py)
 
 # The scrolls: (spell, its name, price in ceramic pieces). Cat's Grace is the game's Flaming Sphere
-# (14) under the companion's rule, so it is sold only while the rule is on.
-SCROLLS = ((8, "Magic Missile", 100), (4, "Color Spray", 100), (12, "Blur", 250),
-           (game.FLAMING_SPHERE, "Cat's Grace", 250), (32, "Lightning Bolt", 500), (29, "Haste", 500))
+# (14) under the companion's rule, so it is sold only while the rule is on. The prices are the
+# game's own: its scroll of the same spell where it has one (Blur 3000, Lightning Bolt 9000, Haste
+# 12000: its objects 1417, 1406, 1403), else its price for the spell's level (3000 a level)
+SCROLLS = ((8, "Magic Missile", 3000), (4, "Color Spray", 3000), (12, "Blur", 3000),
+           (game.FLAMING_SPHERE, "Cat's Grace", 6000), (32, "Lightning Bolt", 9000), (29, "Haste", 12000))
 SCROLL_TYPE = 0x60  # the game's spell scrolls (its objects 1400-1418)
 SCROLL_TEMPLATE = "88fa01000f2700000f2760000000000105ff7f0000"  # its scroll of spell 1 (object 1400)
 SCROLL_FROM = 1400  # the game's first scroll object, which his scrolls' objects copy
@@ -215,13 +217,17 @@ class _Script:
 
     Menus are the game's: a loop showing the menu until a local flag (DONE) is set, each reply
     a subroutine returning to it, doing its own part (calling what comes next) and setting DONE
-    to end the talk. (Branching after the menu on a "which way" local went wrong in the game.)"""
+    to end the talk. (Branching after the menu on a "which way" local went wrong in the game.)
+    A reply that stays in the menu is shown once a talk, as the game's: it sets a local of its
+    own, cleared as the menu starts, and is shown only while that is 0 (but a body marked
+    AGAIN, such as a shop, stays; one marked LEAVES, ending the menu, needs none)."""
 
     def __init__(self):
         self.items: List = []
         self.shown = 0  # lines in the window since it was last cleared (as laid out)
         self.subs: Dict[str, Callable[[], None]] = {}
         self._n = 0
+        self._asked = DONE  # (the locals for replies asked: DONE + 1 on)
 
     def op(self, code: int, *args) -> None:
         self.items.append((code, list(args)))
@@ -285,18 +291,35 @@ class _Script:
         shown when) is a subroutine doing its own part (calling the rest of the talk, as the
         game's replies do), so nothing branches after the menu."""
         loop, out = self._new("menu"), self._new("menu out")
-        names = []
+        names, conditions, asked = [], [], []
         for text, body, shown in replies:
             name = self._new("reply")
             names.append(name)
-            self.sub(name, body)
+            if getattr(body, "leaves", False) or getattr(body, "again", False):
+                self.sub(name, body)
+                conditions.append(shown)
+                continue
+            self._asked += 1
+            local = self._asked
+            if local >= ASKED_LAST:
+                raise gpl.ScriptError("too many replies to hide once asked")
+            asked.append(local)
+            self.sub(name, lambda body=body, local=local: (self.set(local, 1), body()))
+            unasked = ["(", ("var", 0x8E, local), "==", ("n", 0), ")"]
+            if shown == ALWAYS:
+                conditions.append(("expr", unasked))
+            else:
+                inner = list(shown[1]) if shown[0] == "expr" else [shown]
+                conditions.append(("expr", ["("] + inner + [")", "and"] + unasked))
+        for local in asked:
+            self.set(local, 0)
         self.set(DONE, 0)
         self.label(loop)
         self.op(0x18, ("expr", [("var", 0x8E, DONE), "==", ("n", 0)]))
         self.op(0x63, ("label", out))
         self.op(0x48, {"before": [], "title": TITLE, "replies": [
             {"text": ("str", f"  {text}"), "goto": ("label", name), "if": shown, "before": [], "after": []}
-            for (text, _, shown), name in zip(replies, names)]})
+            for (text, _, _), shown, name in zip(replies, conditions, names)]})
         self.op(0x64, ("label", loop))
         self.label(out)
 
@@ -348,6 +371,19 @@ class _Script:
 
 ALWAYS = ("n", 1)
 DONE = 1  # the script's local ending a menu (as the game's merchants use 1 for the menu loop)
+ASKED_LAST = 15  # (the replies asked: locals 2 to 14)
+
+
+def leaves(body: Callable[[], None]) -> Callable[[], None]:
+    """BODY marked as a reply ending its menu (no local to hide it)."""
+    body.leaves = True
+    return body
+
+
+def again(body: Callable[[], None]) -> Callable[[], None]:
+    """BODY marked as a reply to stay in the menu once chosen (a shop)."""
+    body.again = True
+    return body
 WINDOW = 4  # the lines the dialogue window shows
 
 
@@ -374,7 +410,7 @@ def conversation() -> bytes:
             for part in parts:
                 part()
             s.leave()
-        return body
+        return leaves(body)
 
     def go():
         s.say("Go, then.")
@@ -407,7 +443,7 @@ def conversation() -> bytes:
 
     # -- a friend: the shop
     def friend():
-        s.menu([("Show us what you have.", shop, _is(sold_out, 0)),
+        s.menu([("Show us what you have.", again(shop), _is(sold_out, 0)),
                 ("Anything left to sell?", nothing_left, _is(sold_out, 1)),
                 ("Why would a defiler help a preserver?", why, ALWAYS),
                 ("Isn't this dangerous for you?", danger, ALWAYS),
@@ -539,10 +575,10 @@ def with_entry(entries: bytes, script: int = SCRIPT) -> bytes:
 
 
 def script_chunks(gpldata: bytes, kalzith: bool = True, semyon: bool = True,
-                  vulture: bool = True, ring: bool = True) -> Dict[Tuple[str, int], bytes]:
+                  vulture: bool = True, ring: bool = True, arms: bool = True) -> Dict[Tuple[str, int], bytes]:
     """For the Ledger's copy of GPLDATA: his conversation, and the master script running it (and
-    Semyon's, semyon.py; Dinos's and the Trustee's questions, pensasks.py), each part only if
-    switched on (the Options tab's new content)."""
+    Semyon's, semyon.py; Dinos's and the Trustee's questions, pensasks.py; Alagorn on Kreenfang
+    and Shadowseeker, alagorn.py), each part only if switched on (the Options tab's new content)."""
     chunks = read_gff(gpldata)
     if ("MAS ", MASTER) not in chunks:
         return {}
@@ -572,6 +608,9 @@ def script_chunks(gpldata: bytes, kalzith: bool = True, semyon: bool = True,
     # the questions about either show only once he is in the pens (their flags)
     from . import pensasks
     out.update(pensasks.script_chunks(chunks, field_types, vulture=vulture))
+    if arms:  # Alagorn tells of Kreenfang and Shadowseeker (alagorn.py)
+        from . import alagorn
+        out.update(alagorn.script_chunks(chunks, field_types))
     if ring:  # the XP for finding the arena's ring (ring.py), in the same script as Semyon's exit
         from . import ring as rg
         body = ("GPL ", rg.BODY_SCRIPT)
@@ -797,28 +836,31 @@ def stock(gd, cats_grace: bool) -> List[str]:
 def mend(gd) -> int:
     """His scrolls of earlier builds, wherever they are now (his things, the party's, the ground:
     each scroll is its own object), made as they are now: each teaching its own spell (before
-    SCROLL_SPELL_FROM, the one before it), and with its object among those the game teaches from
-    (before SCROLL_OBJECT, OLD_SCROLL_OBJECT + k, which it cast from). How many were."""
+    SCROLL_SPELL_FROM, the one before it), with its object among those the game teaches from
+    (before SCROLL_OBJECT, OLD_SCROLL_OBJECT + k, which it cast from), and at its price now
+    (before, 100 to 500). How many were."""
     from . import ring
     it = ring.Items(gd)
     want = {}
-    for k, (spell, _, _) in enumerate(SCROLLS):
+    for k, (spell, _, price) in enumerate(SCROLLS):
         for number in (SCROLL_OBJECT + k, OLD_SCROLL_OBJECT + k):
-            want[-number] = (-(SCROLL_OBJECT + k), spell + SCROLL_SPELL_FROM)
+            want[-number] = (-(SCROLL_OBJECT + k), spell + SCROLL_SPELL_FROM, price)
     done = set()
     for thing in range(ring.THING_COUNT):
         for index, rec in it.chain(thing):
             now = struct.unpack_from("<h", rec, ITEM_OBJECT)[0]
             if now not in want or index in done:
                 continue
-            obj, spell = want[now]
-            if (now, struct.unpack_from("<H", rec, ITEM_SPELL)[0], rec[ITEM_SPELL_AGAIN]) == (obj, spell, spell):
+            obj, spell, price = want[now]
+            if (now, struct.unpack_from("<H", rec, ITEM_SPELL)[0], rec[ITEM_SPELL_AGAIN],
+                    struct.unpack_from("<H", rec, ITEM_VALUE)[0]) == (obj, spell, spell, price):
                 continue
             done.add(index)
             at = it.items + index * game.ITEM_SIZE
             gd.guest.write(at + ITEM_OBJECT, struct.pack("<h", obj))
             gd.guest.write(at + ITEM_SPELL, struct.pack("<H", spell))
             gd.guest.write(at + ITEM_SPELL_AGAIN, bytes([spell]))
+            gd.guest.write(at + ITEM_VALUE, struct.pack("<H", price))
     return len(done)
 
 
@@ -838,10 +880,10 @@ def _write(source: str, dest: str, added) -> None:
 
 
 def write_scripts(source: str, dest: str, kalzith: bool = True, semyon: bool = True, vulture: bool = True,
-                  ring: bool = True) -> None:
+                  ring: bool = True, arms: bool = True) -> None:
     """The game's GPLDATA.GFF (SOURCE, only read) with Kalzith's conversation (and the rest of
     the new content switched on), to DEST."""
-    _write(source, dest, lambda data: script_chunks(data, kalzith, semyon, vulture, ring))
+    _write(source, dest, lambda data: script_chunks(data, kalzith, semyon, vulture, ring, arms))
 
 
 def write_region(source: str, dest: str) -> None:

@@ -49,7 +49,7 @@ CREATURE_NAME = 0x28
 # important active effect instead of "Okay")
 CREATURE_STATUS = 0x1C
 OUT_COLD = 3
-STATUS_NAMES = {1: "Okay", 2: "Stunned", 3: "Out Cold", 4: "Dying", 5: "Dead", 6: "Animated",
+STATUS_NAMES = {0: "New", 1: "Okay", 2: "Stunned", 3: "Out Cold", 4: "Dying", 5: "Dead", 6: "Animated",
                 7: "Petrified", 8: "Gone"}
 PARTY_SIZE = 4  # the party are the first creatures in the table
 
@@ -62,6 +62,7 @@ COMBATANTS_SEG, COMBATANTS_OFF = 0x3972, 0xC36  # 3 bytes per combatant: kind (2
 THING_ITEM = 1
 CREATURE_ITEM_LISTS = (0x08, 0x0A, 0x0C)  # (+0Ch: where the game puts items handed to a character)
 ITEM_NEXT, ITEM_SLOT, ITEM_TYPE, ITEM_NAME, ITEM_PLUS = 0x04, 0x11, 0x0A, 0x12, 0x14
+ITEM_POWER = 0x0F  # an item's magical power (0: none; the game's weapon breaking and acid read it)
 NO_ITEM = 9999
 # (as the inventory screen shows them: a ring on each hand, 4 and 11; the cloak 12, the feet 13)
 EQUIP_SLOTS = ("arm", "ammo", "missile", "right hand", "finger", "waist", "legs", "head", "neck", "chest",
@@ -70,6 +71,11 @@ FINGERS = tuple(n for n, s in enumerate(EQUIP_SLOTS) if s == "finger")
 FINGER = FINGERS[0]
 FOOT = EQUIP_SLOTS.index("foot")
 CLOAK_SLOT = EQUIP_SLOTS.index("cloak")
+# armour, as RULE_PROTECTION weighs it: a piece worn on the arms, legs, head or chest that counts
+# for AC (its type's +0Fh bit 80h); a shield, a type whose flags word (+00h) has bit 4 (the
+# flag the game's AC routine reads for one), held in a hand
+ARMOUR_SLOTS = tuple(EQUIP_SLOTS.index(s) for s in ("arm", "legs", "head", "chest"))
+TYPE_SHIELD = 4
 # The plain "Ring" item type. With the dice log's patched game, a worn one's plus betters AC
 # and saving throws (DSCLOG's PROBE_RING_AC and PROBE_RING_SAVE); the game has no such ring of
 # its own, and the companion can put a Ring +1 in the arena (ring.py).
@@ -79,6 +85,7 @@ RING_TYPE = 102
 # on saves as a ring's does
 GAME_TYPES = 115
 SHORT_SWORD_TYPE, CLOAK_TYPE, BONE_HELM_TYPE = GAME_TYPES, GAME_TYPES + 1, GAME_TYPES + 2
+GYTHKA_TYPE = 0x2C  # the game's gythka ("2 handed Bone Gythka")
 # The companion's rule changes (DSCLOG's RULES): helms count AC 1, boots add a move in a fight;
 # AD&D's two-weapon penalties; spells saved against with the spell save; no doubled d20
 RULE_HELMS, RULE_BOOTS, RULE_TWO_WEAPONS, RULE_SPELL_SAVE, RULE_NO_DOUBLE = 1, 2, 4, 8, 16
@@ -87,15 +94,32 @@ RULE_STEALTH = 64  # a thief hiding in shadows and moving silently backstabs (st
 RULE_LEVEL_10 = 128  # class levels go up to 10 (the game stops at 9)
 RULE_THIEF_TABLE = 256  # thief skills from AD&D's table and Dark Sun's DEX adjustments
 RULE_HALF_GIANT = 512  # half-giants wield two-handed weapons in one hand
+# AD&D's rings and cloaks of protection: of two rings only the better counts, and a ring betters
+# AC only without magical armour; a cloak counts only without magical armour, metal armour or a
+# shield (DSCLOG's PROBE_RING_AC and RING_PLUS)
+RULE_PROTECTION = 1024
+# Items saving against acid (DSCLOG's PROBE_ITEM_*): a weapon or armour the game's acid or
+# corroding touch would destroy needs the easier of the game's number and AD&D's save for
+# its material (ACID_SAVES), less its plus and 1 more for a magical power
+RULE_ITEM_SAVES = 2048
+# AD&D's item saving throws against acid (the DMG's table), by the game's materials: wood
+# (thick), bone, stone and obsidian (glass's), metal, leather; and cloth for no material
+ACID_SAVES = {0: ("wood", 8), 1: ("bone", 11), 2: ("stone", 5), 3: ("obsidian", 5), 4: ("metal", 13),
+              5: ("leather", 10), 6: ("cloth", 12)}
+# the game's attacks that destroy items, as the dice log names them
+ACID, TOUCH_ARMOUR, TOUCH_WEAPON = 178, 186, 187
+ITEM_ATTACKS = {ACID: "acid", TOUCH_ARMOUR: "corroding touch", TOUCH_WEAPON: "corroding touch"}
 # the Options' setting for each, all on unless unticked
 RULE_SETTINGS = (("helm_ac", RULE_HELMS), ("boots_move", RULE_BOOTS), ("two_weapons", RULE_TWO_WEAPONS),
                  ("spell_save", RULE_SPELL_SAVE), ("no_doubled_save", RULE_NO_DOUBLE),
                  ("cats_grace", RULE_CATS_GRACE), ("stealth", RULE_STEALTH), ("level_10", RULE_LEVEL_10),
-                 ("thief_table", RULE_THIEF_TABLE), ("half_giant_hands", RULE_HALF_GIANT))
+                 ("thief_table", RULE_THIEF_TABLE), ("half_giant_hands", RULE_HALF_GIANT),
+                 ("protection_rules", RULE_PROTECTION), ("item_saves", RULE_ITEM_SAVES))
 # Cat's Grace (RULE_CATS_GRACE): Flaming Sphere (wizard level 2) gets Strength's record and the
 # name, and DSCLOG sends it to Strength's code, which rolls 1d6 into an effect of its own (54,
 # a number the game leaves unused) that adds to DEX, at most 24, as Strength's adds to STR.
 FLAMING_SPHERE, STRENGTH_SPELL, GRACE_EFFECT = 14, 23, 54
+DETECT_INVISIBILITY = 13  # the spell (as the Ledger numbers them: 1 Burning Hands)
 GRACE_NAME, SPHERE_NAME = b"CAT'S GRACE", b"FLAMING SPHERE"  # (in the game's capitals)
 # The game's table of effects (DSUN.EXE 44CD0h, from the load segment 3F8Dh), 6 bytes each from
 # effect 1: a far pointer to its name (the line under a portrait: "Hasted" for "Okay") and its
@@ -142,6 +166,10 @@ def kind_to_save(kind: int, rules: int) -> int:
 
 # The rules in force (DiceLog.set_rules): GameData objects made without rules of their own use these
 RULES_IN_FORCE = 0
+# ... and whether a worn belt adds BELT_BONUS to picking pockets and opening locks (the Options tab's
+# cloak, boots and belt switch; DSCLOG adds it where the game works the chance out: PROBE_BELT)
+BELT_IN_FORCE = False
+BELT_BONUS, BELT_SKILLS, WAIST = 5, (0, 1), 5  # (the skills' numbers in THIEF_SKILLS; the slot)
 EFFECTS_SEG, EFFECTS_OFF = 0x3BF6, 0x106  # 10 bytes per active effect
 # The game's clock and event queue: a far pointer to the time (a dword, divided by the byte at
 # GAME_TIME_SCALE); the first queue's entries (17 bytes: due time, kind, then the event's data),
@@ -400,6 +428,16 @@ class WeaponHit(NamedTuple):
     parts: List[Tuple[str, int]]  # what is taken off the base THAC0 for it
 
 
+class ItemSave(NamedTuple):
+    """An item's numbers against the game's acid and corroding touch (game.item_save)."""
+    name: str  # "Leather Chest Armor +1"
+    material: str  # as ACID_SAVES names it
+    own: Optional[int]  # the game's number to reach (None: destroyed without a roll)
+    adnd: int  # AD&D's
+    plus: int
+    power: bool  # it has a magical power (the item's +0Fh)
+
+
 class SaveNow(NamedTuple):
     base: int  # the character sheet's
     needs: int  # the d20 needed now (2-20: a 1 always fails, a 20 always saves)
@@ -526,6 +564,8 @@ THIEF_BLOCKED = {8: (0, 1, 2, 3, 4, 6, 7), 17: tuple(range(8)), 11: tuple(range(
                  34: tuple(range(8)), 47: (1, 2, 3, 4, 5, 6, 7), 20: (0, 4), 25: (4,), 49: (0, 1, 6), 19: (7,)}
 THIEF_CERTAIN = {14: (2,), 23: (4,)}  # Detect Traps, Invisible
 STATUS_OKAY = 1
+STATUS_NEW = 0  # not yet played (the game makes it Okay when the game starts)
+STATUS_ABLE = (STATUS_NEW, STATUS_OKAY)  # counted as Okay (the patched game's NEW_AS_OKAY)
 
 
 # The spell's damage kinds (its flags word): the saving throw doubles the d20 against fire,
@@ -563,6 +603,7 @@ class GameData:
         if hasattr(guest, "guarded"):  # (the C runtime's check, at exit: "Null pointer assignment")
             guest.guarded["the game's data segment's start"] = (ds * 16, ds * 16 + NULL_AREA)
         self.rules = RULES_IN_FORCE if rules is None else rules
+        self.belt = BELT_IN_FORCE
 
     def _word(self, offset: int) -> int:
         return struct.unpack("<h", self.guest.read(self.ds * 16 + offset, 2))[0]
@@ -756,6 +797,8 @@ class GameData:
             names = self.guest.read(self.ds * 16 + SPELL_NAMES, 0x400).split(b"\0")
             text = names[spell - PSIONIC_FIRST].decode("cp437", "replace") if spell - PSIONIC_FIRST < len(names) else ""
             return title(text) if text else f"psionic power {spell}"
+        if spell in ITEM_ATTACKS:  # (the ones that can destroy an item)
+            return ITEM_ATTACKS[spell].capitalize()
         if spell > SPELL_COUNT:  # monsters' powers, such as a paralysing touch
             return f"special attack {spell}"
         if 1 <= spell <= SPELL_COUNT:
@@ -899,9 +942,7 @@ class GameData:
         theirs = {x.id for x in effects if x.owner == caster} if caster != target else set()
         caster_sheet = self.sheet(ci) if ci is not None else b""
         out: List[Tuple[int, str]] = []
-        ring = self.ring_plus(ti)
-        if ring:
-            out.append((ring, "Ring of Protection"))
+        out += self.protection(ti)
         if EFFECT_SAVE_PENALTY in mine:
             out.append((-1, EFFECT_NAMES[EFFECT_SAVE_PENALTY]))
         if EFFECT_SPIRIT_ARMOR in mine and save != PPD_SAVE:
@@ -1130,7 +1171,7 @@ class GameData:
         ids = {e.id for e in self._mine(creature, self.effects())}
         if any(skill in THIEF_CERTAIN.get(e, ()) for e in ids):
             return 100
-        if self.creature(creature)[CREATURE_STATUS] != STATUS_OKAY or any(skill in THIEF_BLOCKED.get(e, ()) for e in ids):
+        if self.creature(creature)[CREATURE_STATUS] not in STATUS_ABLE or any(skill in THIEF_BLOCKED.get(e, ()) for e in ids):
             return 0
         return max(0, min(255, sum(n for _, n in parts)))
 
@@ -1142,7 +1183,7 @@ class GameData:
 
     def thief_skills_now(self, creature: int, skills: Tuple[int, ...] = ROLLED_SKILLS) -> List[Tuple[str, int]]:
         """[(skill, chance), ...] for the skills the game rolls, as they stand now: with the
-        equipment penalty, 0 for a skill an effect rules out (or when the thief isn't Okay), 100
+        equipment penalty, a worn belt's bonus (BELT_IN_FORCE), 0 for a skill an effect rules out (or when the thief isn't Okay or New), 100
         for one an effect makes certain. Not the situation's bonus (a hard lock...). [] for
         someone without thief levels. `skills`: which (numbers in THIEF_SKILLS)."""
         rec = self.creature(creature)
@@ -1152,13 +1193,16 @@ class GameData:
         slots = self.thief_penalty_slots()
         penalty = any(item[ITEM_SLOT] in slots for _, item, _ in self._worn(creature))
         ids = {e.id for e in self._mine(creature, self.effects())}
-        okay = rec[CREATURE_STATUS] == STATUS_OKAY
+        okay = rec[CREATURE_STATUS] in STATUS_ABLE
+        belt = self.belt and any(item[ITEM_SLOT] == WAIST for _, item, _ in self._worn(creature))
         out = []
         for skill in skills:
             parts = self.thief_skill_parts(creature, skill)
             if parts is None:
                 return []
             chance = sum(n for _, n in parts) - (table[skill] if penalty and len(table) == 8 else 0)
+            if belt and skill in BELT_SKILLS:
+                chance += BELT_BONUS
             if any(skill in THIEF_CERTAIN.get(e, ()) for e in ids):
                 chance = 100
             elif not okay or any(skill in THIEF_BLOCKED.get(e, ()) for e in ids):
@@ -1235,13 +1279,12 @@ class GameData:
         mine = self._mine(creature, self.effects())
         ids = {e.id for e in mine}
         prayer = self._prayer(creature, mine)
-        ring = self.ring_plus(creature)
+        protection = self.protection(creature)
         con = rec[CREATURE_ABILITIES + 2]
         out = []
         for save in range(1, 6):
             parts: List[Tuple[int, str]] = []
-            if ring:
-                parts.append((ring, "Ring of Protection"))
+            parts += protection
             if EFFECT_SAVE_PENALTY in ids:
                 parts.append((-1, EFFECT_NAMES[EFFECT_SAVE_PENALTY]))
             if EFFECT_SPIRIT_ARMOR in ids and save != PPD_SAVE:
@@ -1345,6 +1388,54 @@ class GameData:
             if plus > 0 and (kind == RING_TYPE and slot in FINGERS or kind == CLOAK_TYPE and slot == CLOAK_SLOT):
                 total += plus
         return total
+
+    def item_save(self, item: int, armour: bool) -> Optional["ItemSave"]:
+        """What item ITEM needs on a d20 against the acid or corroding touch: the game's number
+        (None: armour with no magical power, destroyed without a roll) and AD&D's (ACID_SAVES)."""
+        rec = self.guest.read(far_pointer(self.guest, self.ds, ITEMS_PTR) + item * ITEM_SIZE, ITEM_SIZE)
+        if len(rec) < ITEM_SIZE:
+            return None
+        kind = struct.unpack_from("<H", rec, ITEM_TYPE)[0]
+        typ = self.guest.read(far_pointer(self.guest, self.ds, ITEM_TYPES_PTR) + kind * ITEM_TYPE_SIZE, ITEM_TYPE_SIZE)
+        if len(typ) < ITEM_TYPE_SIZE:
+            return None
+        plus = struct.unpack("b", rec[ITEM_PLUS:ITEM_PLUS + 1])[0]
+        power = struct.unpack("b", rec[ITEM_POWER:ITEM_POWER + 1])[0]
+        material = typ[0x08] & 0x0F
+        if typ[0x08] & NO_MATERIAL and not material:
+            material = 6
+        name, adnd = ACID_SAVES.get(material, ACID_SAVES[4])
+        adnd -= plus + (1 if power else 0)
+        own = (10 - power if power else None) if armour else 8 - plus
+        return ItemSave(self.item_label(rec, typ), name, own, adnd, plus, bool(power))
+
+    def protection(self, creature: int) -> List[Tuple[int, str]]:
+        """What the creature's rings and cloak of protection add to its saving throws, as
+        [(amount, why), ...]. The game's (with the patched game): every worn one's plus, as
+        "Ring of Protection". With RULE_PROTECTION, AD&D's: the better ring only, and the cloak
+        only without magical or metal armour (helms too) and without a shield."""
+        if not self.rules & RULE_PROTECTION:
+            ring = self.ring_plus(creature)
+            return [(ring, "Ring of Protection")] if ring else []
+        rings, cloak, blocked = [], 0, False
+        for _, item, typ in self._worn(creature):
+            plus = struct.unpack("b", item[ITEM_PLUS:ITEM_PLUS + 1])[0]
+            kind, slot = struct.unpack_from("<H", item, ITEM_TYPE)[0], item[ITEM_SLOT]
+            if kind == RING_TYPE:
+                if slot in FINGERS and plus > 0:
+                    rings.append(plus)
+            elif kind == CLOAK_TYPE:
+                if slot == CLOAK_SLOT and plus > 0:
+                    cloak = plus
+            elif len(typ) == ITEM_TYPE_SIZE:
+                if typ[0] & TYPE_SHIELD:
+                    blocked |= slot in WEAPON_HANDS
+                elif slot in ARMOUR_SLOTS and typ[0x0F] & 0x80:
+                    blocked |= plus > 0 or typ[0x08] & 0x4F == MATERIALS.index("Metal")
+        out = [(max(rings), "Ring of Protection")] if rings else []
+        if cloak and not blocked:
+            out.append((cloak, "Cloak of Protection"))
+        return out
 
     def dex_ac(self, dex: int) -> int:
         """The game's AC adjustment for a DEX score."""

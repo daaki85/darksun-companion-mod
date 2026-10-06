@@ -319,11 +319,12 @@ class AttackTests(unittest.TestCase):
         sheet = SHEETS + STALKER * game.SHEET_SIZE
         struct.pack_into("<h", m, sheet + game.SHEET_MAX_HP, 60)
         m[sheet + game.SHEET_MAGIC_RESISTANCE] = 30
+        m[sheet + monsters.SHEET_ALIGNMENT] = 9  # chaotic evil
         kinds = (LOAD_SEG + monsters.MONSTER_KINDS_SEG) * 16  # kind 3: resistance class 11
         m[kinds + monsters.KIND_CLASS_OFF + 3] = 11
         struct.pack_into("<2H", m, kinds + monsters.CLASS_MASKS_OFF + 11 * monsters.CLASS_SIZE, 0x38, 0xB200)
         m[kinds + monsters.CLASS_PERCENTS_OFF + 11 * monsters.CLASS_SIZE + 1] = 100
-        log.last_ac[STALKER] = 4
+        log.last_ac[STALKER], log._ac_whose[STALKER] = 4, "Mountain Stalker"
         struct.pack_into("<H", m, HDR + dicelog.TSR_HDR_OFF, 0)
         struct.pack_into("<HH", m, HDR + dicelog.TSR_LOOK_OFF, 0x300, 0x500)
         log.set_monster_info(True)
@@ -333,11 +334,12 @@ class AttackTests(unittest.TestCase):
         lines = log._answer_look()
         self.assertEqual(struct.unpack_from("<H", m, HDR + dicelog.TSR_LOOK_REPLY)[0], 1)
         self.assertEqual(bytes(m[HDR + 0x300:HDR + 0x340]).split(b"\0")[0],
-                         b"HP 38/60 AC 4|THAC0 11 MR 30|NEEDS +1 WEAPON")
+                         b"\x01MR 30|HP 38/60 AC 4|THAC0 11 AL CE|NEEDS +1 WEAPON")
         whole = bytes(m[HDR + 0x500:HDR + 0x600]).split(b"\0")[0].decode()
         self.assertIn("magic resistance 30 pct", whole)
         self.assertIn("Only +1 or better weapons hurt it.", whole)
-        self.assertEqual(lines[0], "Look: Mountain Stalker: HP 38/60, AC 4, THAC0 11, magic resistance 30%.")
+        self.assertEqual(lines[0], "Look: Mountain Stalker: HP 38/60, AC 4, THAC0 11, magic resistance 30%, "
+                                   "chaotic evil.")
         self.assertEqual(log._answer_look(), [])  # asked once
         # nothing special about it: the box's lines, but no window
         m[kinds + monsters.KIND_CLASS_OFF + 3] = 0
@@ -345,8 +347,24 @@ class AttackTests(unittest.TestCase):
         struct.pack_into("<H", m, HDR + dicelog.TSR_LOOK_WHO, 0x29)
         log._look_seq = 4
         self.assertEqual(len(log._answer_look()), 1)
-        self.assertEqual(bytes(m[HDR + 0x300:HDR + 0x340]).split(b"\0")[0], b"HP 38/60 AC 4|THAC0 11 MR 30")
+        self.assertEqual(bytes(m[HDR + 0x300:HDR + 0x340]).split(b"\0")[0], b"\x01MR 30|HP 38/60 AC 4|THAC0 11 AL CE")
         self.assertEqual(m[HDR + 0x500], 0)
+        # no magic resistance: nothing beside LEVEL
+        m[sheet + game.SHEET_MAGIC_RESISTANCE] = 0
+        struct.pack_into("<HH", m, HDR + dicelog.TSR_LOOK_SEQ, 6, 5)
+        log._look_seq = 5
+        self.assertEqual(log._answer_look(), ["Look: Mountain Stalker: HP 38/60, AC 4, THAC0 11, chaotic evil."])
+        self.assertEqual(bytes(m[HDR + 0x300:HDR + 0x340]).split(b"\0")[0], b"HP 38/60 AC 4|THAC0 11 AL CE")
+        m[sheet + monsters.SHEET_ALIGNMENT] = 0  # (none set: nothing said)
+        struct.pack_into("<HH", m, HDR + dicelog.TSR_LOOK_SEQ, 7, 6)
+        log._look_seq = 6
+        log._answer_look()
+        self.assertEqual(bytes(m[HDR + 0x300:HDR + 0x340]).split(b"\0")[0], b"HP 38/60 AC 4|THAC0 11")
+        # an AC worked out for another creature in the record (an earlier fight's): the sheet's
+        log._ac_whose[STALKER] = "Defiler"
+        struct.pack_into("<HH", m, HDR + dicelog.TSR_LOOK_SEQ, 8, 7)
+        log._look_seq = 7
+        self.assertEqual(log._answer_look()[0][:41], "Look: Mountain Stalker: HP 38/60, AC 10, ")
         # a party member: nothing to add (the game shows the View Character screen)
         struct.pack_into("<HH", m, HDR + dicelog.TSR_LOOK_SEQ, 2, 1)
         struct.pack_into("<H", m, HDR + dicelog.TSR_LOOK_WHO, 0)

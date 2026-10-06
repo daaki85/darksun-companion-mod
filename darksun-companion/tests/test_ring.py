@@ -73,9 +73,20 @@ class NameTests(unittest.TestCase):
         for entry, text in ((6, b"Helm"), (43, b"Boots")):
             m[NAMES + 3 + entry * game.ITEM_NAME_SIZE:NAMES + 3 + entry * game.ITEM_NAME_SIZE + len(text)] = text
         ring.name_items(log.game, game.RULE_HELMS | game.RULE_BOOTS)
-        self.assertEqual((log.game.item_name(6), log.game.item_name(43)), ("Helm (AC 1)", "Boots (+1 Move)"))
+        self.assertEqual((log.game.item_name(6), log.game.item_name(43)), ("Helm (AC 1)", "Boots (Speed+1)"))
         ring.name_items(log.game, game.RULE_BOOTS)
-        self.assertEqual((log.game.item_name(6), log.game.item_name(43)), ("Helm", "Boots (+1 Move)"))
+        self.assertEqual((log.game.item_name(6), log.game.item_name(43)), ("Helm", "Boots (Speed+1)"))
+
+    def test_old_boots_name(self):
+        """Boots an earlier version named "Boots (+1 Move)" get today's name."""
+        log = arena()
+        m = log.guest.mem
+        at = NAMES + 3 + 43 * game.ITEM_NAME_SIZE
+        m[at:at + 15] = b"Boots (+1 Move)"
+        ring.name_items(log.game, game.RULE_BOOTS)
+        self.assertEqual(log.game.item_name(43), "Boots (Speed+1)")
+        ring.name_items(log.game, 0)
+        self.assertEqual(log.game.item_name(43), "Boots")
 
     def test_rule_names_fit_the_look_box(self):
         """Names the rule would make longer than 15 letters stay the game's own (and one an

@@ -197,6 +197,9 @@ def already_there(gd: GameData, it: ring.Items, index: int, item: bytes) -> bool
     missing, would get a second). The Short Sword, Leather Chest Armor +1, the Cloak and
     Pehtucl's ring are the only ones of their kind: anywhere in the region (carried by the party
     or anyone, in a container, on the ground). The Helm is a common one: on its owner."""
+    if item is SWORD:  # (by its type alone: made +1 and renamed Shadowseeker, arms.py)
+        return any(len(rec) >= game.ITEM_SIZE and struct.unpack_from("<H", rec, game.ITEM_TYPE)[0] == SHORT_SWORD_TYPE
+                   for thing in range(ring.THING_COUNT) for _, rec in it.chain(thing))
     if item is HELM:
         lists = [struct.unpack_from("<h", gd.creature(index), o)[0] for o in game.CREATURE_ITEM_LISTS]
         return any(_same(rec, item) for t in lists for _, rec in it.chain(t))

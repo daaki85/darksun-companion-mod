@@ -25,7 +25,7 @@ gem in one of the pens' grain pots), with no narration, as the game's talks.
 from typing import Dict, Tuple
 
 from . import gpl, kalzith
-from .kalzith import START, _Script, ALWAYS, _is
+from .kalzith import START, _Script, ALWAYS, _is, leaves
 
 SEMYON = 280  # his object (RDFF 280, "Semyon"; the Tied-up Prisoner is 319)
 SCRIPT = 219  # his conversation in the pens (Kalzith's is 218; the game's run to 217)
@@ -213,7 +213,7 @@ def conversation() -> bytes:
                 ("Tell me about the Alliance.", reply(
                     "One village alone can't stand against an army. Bring them together, and Draj "
                     "will learn to fear the desert. But first, you have to get out of these pens."), ALWAYS),
-                ("Farewell.", farewell, ALWAYS)])
+                ("Farewell.", leaves(farewell), ALWAYS)])
 
     def breaking_out():
         s.say("Scar's gladiators and the Veiled Alliance, side by side! Who would have believed it? "

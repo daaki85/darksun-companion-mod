@@ -4,7 +4,130 @@ What changed in Templar's Ledger, pull request by pull request, newest first.
 Release **1.0.0** is pull requests #1 to #13; its notes are in
 [`release-notes/v1.0.0.md`](release-notes/v1.0.0.md).
 
-### Pull request #16 (in review)
+## Pull request #17 (in review)
+
+**Changed**
+- **Kalzith's scrolls at the game's prices:** 3,000 to 12,000 ceramic (they
+  were 100 to 500): the game's own price for a scroll of the same spell, else
+  its price for the spell's level. Scrolls already stocked are repriced.
+- **A monster's alignment in the Look box:** `THAC0 17 AL TN`, the alignment
+  in two letters; the description in the dialogue window and the dice log's
+  `Look:` line name it in words. Magic resistance moves beside the game's
+  level (`LEVEL: 3   MR 30`), drawn by DSCLOG on the game's own row. Lines are
+  measured in the game font's widths, and one that would run past the box's
+  edge (over 100 HP) loses its spaces.
+- **The Options tab's sections open and close:** each group of switches is
+  under a heading to click (or Tab to and press Space or Enter), so the tab
+  is short; which are open is remembered.
+- **The whole party walks as fast as the leader alone, at the fastest game
+  speed:** the Ledger's shadows and dust are drawn much more cheaply, and look
+  the same (a shadow is darkened a plane of the video memory at a time, a
+  puff's pixels worked out a row at a time, only within its outline and the
+  part of the view being drawn again). The game shows each frame at the
+  screen's next refresh, so a frame that takes a moment too long shows twice
+  as late and walking goes at half speed; with all four in view and everything
+  on, a frame now fits at 35,000 cycles, which is the **Fastest** game speed
+  on the Options tab (it was 30,000, and a setting of 30,000 is taken as
+  35,000). The companion's README has the measurements.
+- **Cloaks and boots say what they do:** with the cloak and boots bonuses on,
+  their item box says `Hide +10` or `Move +10` under the name (the skills'
+  short names, as the inventory screen's thief rows have them).
+- **Boots are named "Boots (Speed+1)"** for the boots rule (were "Boots (+1
+  Move)"), so their extra move in a fight isn't mistaken for the item box's
+  `Move +10` (moving silently).
+- **Plain cloaks, boots and belts cost 24** (the Leather Cloak was 20); magic
+  ones keep their prices.
+
+**Added**
+- **Searching junk, hay and wardrobes in the dice log:** each search's roll
+  (0-14 for junk, 0-10 for hay and wardrobes), what it found, and how far the
+  count of finds (or of wardrobe searches) has got; a rat's bite or a falling
+  pot shows its damage roll. DSCLOG records the scripts' random command.
+- **More saves:** 40 instead of the game's 10, on four pages of ten in the
+  save and load window: PAGE 1 to PAGE 4 buttons under EXIT (the page shown
+  greyed), and PgDn and PgUp for the next page and the one before (in the load
+  window passing pages with no saves). Page 1 is the game's own `SAVE01.SAV` to
+  `SAVE10.SAV`; pages 2 to 4 are `SAVB`, `SAVC` and `SAVD01.SAV` to `10.SAV`,
+  which the game started without the Ledger doesn't see (it would write a
+  `SAVE11.SAV` past the end of its list of ten). DSCLOG changes the page's
+  letter in the game's two save names and has the window's own routines search
+  the folder and draw it again; the buttons are in the Ledger's copy of
+  `RESOURCE.GFF`, made from EXIT's. Signature `DSCLOGvY`.
+- **More characters:** 29 saved characters instead of the game's 19 (CREATE
+  CHARACTERS says "Maximum characters" at 29). They are kept in the game's
+  `CHARSAVE.GFF` under numbers 1 to 29; the game started without the Ledger
+  shows 1 to 19 and leaves the others alone. The patched game's loops over the
+  characters, its roster list and its "Maximum characters" check are made 30
+  and 29 (a byte each); the game's file routines already took any number.
+- **Rule change: items saving against acid** (Options, Rule changes; on
+  unless turned off): a worn piece of armour or a held melee weapon the
+  Rampager's acid or the Babau's corroding touch could destroy needs the
+  easier of the game's number and AD&D's save against acid for its material
+  (the DMG's table: wood 8, bone 11, stone and obsidian 5, metal 13, leather
+  10, cloth 12), less its plus and 1 more for a magical power. The game
+  destroys armour without a magical power outright, plus or no plus. Every
+  check is in the dice log; the save line names the attacks ("Acid",
+  "Corroding touch"), and the monster description says what they can eat.
+  DSCLOG: `INT D6h`, `D5h` and `D4h` in the two routines.
+- **Rule change: rings and cloaks of protection as in AD&D** (Options, Rule
+  changes; on unless turned off): of two rings only the better counts; a ring
+  gives no AC with magical armour (saves still count); a cloak of protection
+  does nothing with magical armour, metal armour or a shield in either hand,
+  natural armour (leather, bone) being fine. Armour is what is worn on the
+  arms, legs, head or chest. DSCLOG weighs what the character wears where the
+  game's AC routine asks about each item (`INT F8h`) and where a saving throw's
+  modifiers start (`INT F9h`); the dice log names the ring and the cloak apart
+  in saving throws.
+- **A worn belt helps a thief:** +5 to picking pockets and opening locks (the
+  same switch as the cloak's and boots' bonuses, hiding on or not), counted by
+  the game's own lock picking and by the Ledger; its item box says
+  `Pick +5, Lock +5`.
+- **Kreenfang and Shadowseeker** (Options, New content; on unless turned off):
+  the 2 handed Bone Gythka on the dead body by the stone arch in the arena
+  (that one only, known by the body's place, and made so while still in the
+  body; every other gythka stays plain) is Kreenfang, a gythka +1 (18000), and
+  Kurzak's short sword is Shadowseeker, a short sword +1 (22000) whose wielder
+  sees the invisible (the game's own Detect Invisibility from a readied item).
+  Each has a name, as the Bloodwrath has, and an icon of its own.
+- **Alagorn knows Kreenfang and Shadowseeker:** the Painted Badlands wizard
+  who identifies magic items has each in his menus (Shadowseeker with the
+  swords, Kreenfang with the weapons) when the party carries it, with a story
+  of its own.
+- **200 XP for lifting Kurzak's sword:** the conversation says the thief lifts
+  "a metal short sword" and receives 200 experience points, with the quest's
+  sound, given by the game's own routine for a quest's XP (split among a
+  multi-class thief's classes, as the game's quests are).
+
+**Fixed**
+- A bug of the game's own: DELETE in the roster deleted the character in the
+  row clicked counted from the top of the list, not of what was shown, so with
+  the list scrolled down another character was deleted. The patched game adds
+  how far the list is scrolled, as ADD does.
+- **Kalzith's and Semyon's questions are asked once a talk:** a reply that
+  doesn't end the talk leaves the list once chosen, as the game's own people's
+  do, and is back the next time you talk to them (Kalzith's shop stays).
+- **The load window shows an empty page:** PAGE 2 to PAGE 4 did nothing in the
+  load window when that page had no saves. Now the page is shown, with LOAD
+  greyed and Enter doing nothing until a page with saves is chosen (the game
+  would otherwise start a new game: loading an empty row is something the
+  game itself never allows).
+- **Gear on the figures:** walking side-on, a shield showed nowhere (it was
+  edge on behind the body, on the far arm); now it is held forward of the
+  chest, its near half showing. Kreenfang's blades are in the fire colours and
+  Shadowseeker's in night steel, as their icons, and bone weapons are ivory
+  rather than grey.
+- A character not yet played (New, before the game starts) counted as not Okay:
+  a New thief's skills all showed 0 on the inventory screen. The patched game
+  and the Ledger count New as Okay wherever they test for Okay; the status
+  still reads New, and the game still gives New characters their starting gear.
+- The Look box no longer shows an AC the Ledger worked out for another
+  creature: the arena's first fight comes too soon after the opening one to
+  tell them apart by the game's time, and a Slig showed the opening fight's
+  Defiler's AC -9.
+- The Ledger's new item pictures no longer wipe an item's spell: changing an
+  icon cleared four bytes of the item where the game's picture cache is two.
+
+## Pull request #16 ([merged 2026-10-04](https://github.com/daaki85/darksun-companion-mod/pull/16))
 
 **Added**
 - **Semyon breaks out with Scar:** recruit Semyon before the fight with Scar,

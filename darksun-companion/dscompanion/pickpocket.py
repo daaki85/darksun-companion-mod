@@ -8,6 +8,10 @@ person into the backpack. On a failure, a move silently roll decides whether the
 unnoticed. With nothing else on them, the thief takes a few coins (party money), and that is
 the last try on them. A thief can go on trying the same person until caught (both rolls
 failed) or until they take the coins; after that, their pockets are out of reach.
+
+Lifting Kurzak's Short Sword (npcitems.py) is worth SWORD_XP to the thief, given as the game gives
+a quest's XP to one person ("Cilla receives 200 experience points!", and the quest's sound): the
+Ledger has DSCLOG call the game's own routine for it, which also sees to a level gained.
 """
 
 import random
@@ -28,6 +32,8 @@ MAX_WEIGHT = 10  # a bag, a quiver of arrows: pocket-sized (a long sword is 30, 
 ON_THE_BODY = (0x01, 0x02, 0x03, 0x04, 0x06, 0x08, 0x0A)
 SCENERY = 0x60  # in its +08h: doors, haystacks, walls...
 OWN_POCKETS = ("Trustee",)  # people whose script has its own pickpocket
+SWORD_XP = 200  # for lifting Kurzak's Short Sword
+SWORD_SEEN = "a metal short sword"  # what the conversation says was lifted
 MAX_ITEMS = 200
 
 
@@ -36,6 +42,8 @@ class Attempt:
     text: str  # for the game's dialogue window
     log: List[str]  # for the dice log
     key: Optional[str] = None  # the person's pockets, now out of reach (the thief was caught)
+    xp_to: Optional[int] = None  # a party member given XP for what was lifted (the game's routine)
+    xp: int = 0
 
 
 def _skill(gd: GameData, member: int, name: str) -> Optional[int]:
@@ -177,6 +185,12 @@ def attempt(gd: GameData, tried: set, roll: Callable[[], int] = lambda: random.r
             if not give(gd, ring.Items(gd), leader, item, cell):
                 return Attempt(f"{thief} can't take anything now.", lines)
             text = f"{thief} lifts {name} from {npc} unnoticed."
+            if struct.unpack_from("<H", data, game.ITEM_TYPE)[0] == game.SHORT_SWORD_TYPE:  # Kurzak's
+                # (what it is, Shadowseeker, is for the inventory screen to show: the log says)
+                seen = f"{thief} lifts {SWORD_SEEN} from {npc} unnoticed."
+                reward = f"{thief} receives {SWORD_XP} experience points!"
+                lines += ["  " + text, "  " + reward]
+                return Attempt(f"{seen} {reward}", lines, xp_to=leader, xp=SWORD_XP)
         lines.append("  " + text)
         return Attempt(text, lines)  # free to try again
     quiet = _skill(gd, leader, "move silently") or 0

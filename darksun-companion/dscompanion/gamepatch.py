@@ -43,10 +43,15 @@ VEC_TYPES_SIZE, VEC_TYPES_FILL = 0xE9, 0xE8
 VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED = 0xE7, 0xE6, 0xE5, 0xE4, 0xE3
 VEC_SPELL_TEXT, VEC_CHUNK_ID = 0xE2, 0xE1
 VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL = 0xE0, 0xDF, 0xDE, 0xDD
-VEC_SCROLL, VEC_HIT = 0xDC, 0xDB
+VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX = 0xDC, 0xDB, 0xDA
+VEC_BELT = 0xD9
+VEC_SAVE_PAGE, VEC_SAVE_CLICK = 0xD8, 0xD7
+VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR = 0xD6, 0xD5, 0xD4  # (item saves)
+VEC_SCRIPT_RAND = 0xD3
 
 
 SCRIPT_BUFFER = 0x2E00  # the scripts' buffer, made bigger (the game's: 10000 bytes)
+CHARACTERS = 29  # the saved characters (CHARSAVE.GFF's numbers 1 to this; the game's: 19)
 
 
 class Patch(NamedTuple):
@@ -58,6 +63,26 @@ class Patch(NamedTuple):
 
 def _interrupt(vector: int, length: int) -> bytes:
     return bytes((0xCD, vector)) + b"\x90" * (length - 2)
+
+
+# "New" counted as "Okay": a character not yet played has the status New (0, the creature's
+# +1Ch; the game makes it Okay, 1, when the game starts, and gives starting gear to a New one).
+# The game's tests for Okay ("cmp byte es:[bx+1Ch],1" then "jz" or "jnz", on the creature table's
+# record) left a New one out: the inventory screen's thief skills all 0, for one. Each test's
+# jump becomes "jbe" or "ja" (0 or 1, as Okay); the tests for New itself, and the code that
+# makes one Okay (DSUN.EXE 59DA4h, healing), are left as they are, and so is the one that
+# picks the status shown under the portrait (71DB6h): a New character still reads "New".
+NEW_AS_OKAY = ((0x1C97F, 0x75), (0x1DE08, 0x75), (0x1E0C5, 0x75), (0x1EBB3, 0x75), (0x200F7, 0x74),
+               (0x2075C, 0x74), (0x20B0F, 0x74), (0x556A9, 0x74), (0x5747B, 0x74), (0x583EA, 0x75),
+               (0x5843F, 0x74), (0x584A4, 0x75), (0x5850E, 0x74), (0x586C7, 0x74), (0x58809, 0x75),
+               (0x59E35, 0x75), (0x5A73F, 0x75), (0x5CA45, 0x75), (0x6B6D4, 0x75), (0x761F0, 0x74),
+               (0x802AC, 0x74), (0x806FA, 0x75), (0x80864, 0x74), (0x89B75, 0x75))
+_OKAY_TEST = bytes.fromhex("26807f1c01")  # cmp byte es:[bx+1Ch],1
+_OKAY_JUMPS = {0x74: 0x76, 0x75: 0x77}  # jz -> jbe, jnz -> ja
+
+
+def _new_as_okay(offset: int, jump: int) -> "Patch":
+    return Patch(f"new_okay_{offset:x}", offset, _OKAY_TEST + bytes((jump,)), _OKAY_TEST + bytes((_OKAY_JUMPS[jump],)))
 
 
 PATCHES = (
@@ -190,6 +215,22 @@ PATCHES = (
     # targeting (DSCLOG's TARGETING): the start, "push bp / mov bp,sp / sub sp,10h", of the routine
     # that finds the thing under the pointer
     Patch("hit", 0x25B52, bytes.fromhex("558bec83ec10"), _interrupt(VEC_HIT, 6)),
+    # the end of the routine filling an item's box: a cloak's or boots' bonus to hiding, moving silently
+    Patch("item_box", 0x8C1A1, bytes.fromhex("6a00"), _interrupt(VEC_ITEM_BOX, 2)),
+    # the end of the game's thief skill routine: mov ax,si (DSCLOG adds a worn belt's bonus to
+    # picking pockets and opening locks)
+    Patch("belt", 0x803B2, bytes.fromhex("8bc6"), _interrupt(VEC_BELT, 2)),
+    # the save/load window's events, where a key it has no use for goes to its end: jmp (DSCLOG
+    # shows the next page of ten saves for PgDn, the one before for PgUp, then goes there)
+    Patch("save_page", 0x74901, bytes.fromhex("e9e804"), _interrupt(VEC_SAVE_PAGE, 3)),
+    # ... and Enter taken out of the window's key table (the overlay's CS:B28h, its first key Esc
+    # at B26h), so it comes there too: DSCLOG goes on to LOAD (as the table did) unless the row
+    # chosen in the load window has no save, as on an empty page (where the game would start a
+    # new game)
+    Patch("save_enter", 0x74E28, bytes.fromhex("0d1c"), bytes.fromhex("ffff")),
+    # ... and where a click on a button it doesn't know goes to its end: jmp (DSCLOG: PAGE 1 to
+    # PAGE 4, savepages.py)
+    Patch("save_click", 0x74B9F, bytes.fromhex("e94302"), _interrupt(VEC_SAVE_CLICK, 3)),
     Patch("thief_skill", 0x80307, bytes.fromhex("8bc6c1e00203d08bf2"),
           bytes((0xCD, VEC_THIEF_SKILL, 0x72, 0x80386 - 0x8030B)) + b"\x90" * 5),
     # a bug of the game's own (DSUN.EXE 1DF3:142F, which makes two child pages of the view, frees
@@ -211,6 +252,48 @@ PATCHES = (
     # on: its two "not a psionic power" jumps (to the ending) go to the handler's way out instead.
     Patch("effects_click_low", 0x7F226, bytes.fromhex("7c51"), bytes.fromhex("7c73")),
     Patch("effects_click_high", 0x7F236, bytes.fromhex("7d41"), bytes.fromhex("7d63")),
+    # The saved characters: CHARSAVE.GFF holds each under a number, 1 to 19, and the game's
+    # loops over them stop at 20 (each "cmp ...,14h" or "push 14h" a byte); its roster list is
+    # made 20 long and its "too many characters" check is for 19 found. The file's own writing
+    # takes any number, the roster window scrolls by the number read and party members are
+    # found by their own tags, so these are all that hold it at 19.
+    Patch("characters_list", 0x53CD1, bytes.fromhex("666a14"), bytes((0x66, 0x6A, CHARACTERS + 1))),
+    Patch("characters_read", 0x53D02, bytes.fromhex("6a14"), bytes((0x6A, CHARACTERS + 1))),
+    Patch("characters_reread", 0x543B0, bytes.fromhex("6a14"), bytes((0x6A, CHARACTERS + 1))),
+    Patch("characters_roster", 0x53F43, bytes.fromhex("83fe14"), bytes((0x83, 0xFE, CHARACTERS + 1))),
+    Patch("characters_delete", 0x54B59, bytes.fromhex("83fe14"), bytes((0x83, 0xFE, CHARACTERS + 1))),
+    Patch("characters_save", 0x6692E, bytes.fromhex("83ff14"), bytes((0x83, 0xFF, CHARACTERS + 1))),
+    Patch("characters_join", 0x67094, bytes.fromhex("837efc14"), bytes((0x83, 0x7E, 0xFC, CHARACTERS + 1))),
+    Patch("characters_joined", 0x6709F, bytes.fromhex("837efc14"), bytes((0x83, 0x7E, 0xFC, CHARACTERS + 1))),
+    Patch("characters_count", 0x67CBF, bytes.fromhex("83fe14"), bytes((0x83, 0xFE, CHARACTERS + 1))),
+    Patch("characters_full", 0x67CC9, bytes.fromhex("83ff13"), bytes((0x83, 0xFF, CHARACTERS))),
+    # Items saving against the acid and corroding touch (the game's special attacks 178, 186
+    # and 187): where the weapon's routine works out the number its d20 must reach, "mov dx,8 /
+    # sub dx,[bp-2]" (DSCLOG gives the easier of the game's and AD&D's, and records the check);
+    # where the armour's skips the roll for armour with no magical power, "cmp word [bp-2],0"
+    # (before its "jz"); and where it works out the number, "mov dx,0Ah / sub dx,[bp-2]"
+    Patch("item_weapon", 0x7AABC, bytes.fromhex("ba08002b56fe"), _interrupt(VEC_ITEM_WEAPON, 6)),
+    Patch("item_skip", 0x7AC45, bytes.fromhex("837efe00"), _interrupt(VEC_ITEM_SKIP, 4)),
+    Patch("item_armour", 0x7AC59, bytes.fromhex("ba0a002b56fe"), _interrupt(VEC_ITEM_ARMOUR, 6)),
+    # the scripts' random command (0 to N): "inc eax / mov edx,eax", N in EAX (DSCLOG records the
+    # result, N and the script's position: the junk, haystack and wardrobe searches, search.py)
+    Patch("script_rand", 0xB300, bytes.fromhex("6640668bd0"), _interrupt(VEC_SCRIPT_RAND, 5)),
+    # A bug of the game's own: the roster's DELETE (DSUN.EXE 54AC1h) picked the character by the
+    # row clicked alone, where ADD takes the row plus how far the list is scrolled; with the list
+    # scrolled, another character was deleted (the row's from the top). The same code, the scroll
+    # added; both "mov ax,<segment>" left where they were (their segment is fixed up on loading).
+    Patch("roster_delete", 0x54ADF,
+          bytes.fromhex("833e8903007417b8d0028ec026a100006bc033c41e324903d8268b07eb26b8d0028ec026a1"
+                        "00006bc033c41e324903d8268b47028946fe6bc03ac41e651603d8268b4706"),
+          bytes.fromhex("90909090909090"  # (7 nops)
+                        "b8d0028ec0"  # mov ax,<segment>; mov es,ax
+                        "26a100002603060200"  # mov ax,es:[0] (the row); add ax,es:[2] (the scroll)
+                        "6bc033c41e324901c3"  # imul ax,ax,33h; les bx,[4932h] (the list); add bx,ax
+                        "b8d002"  # mov ax,<segment> (not used)
+                        "833e8903007405"  # cmp word [389h],0; je .party
+                        "268b07eb17"  # mov ax,es:[bx]; jmp .done
+                        "268b47028946fe6bc03ac41e651601c3268b4706"  # .party: as the game's
+                        "909090")),  # .done (54B23h)
     # (not changed: DSCLOG reads the segment this "mov dx,<segment>" loads, the pointer's items')
     Patch("use_item_seg", 0x73A14, bytes.fromhex("ba8003"), bytes.fromhex("ba8003")),
     # The data path is argv[0] cut after its last \ or :, kept at DS:4B81h. The
@@ -220,6 +303,7 @@ PATCHES = (
           bytes.fromhex("c706814b2e5c"  # mov word [4B81h], ".\"
                         "be834b"  # mov si, 4B83h
                         "eb14")),  # jmp to mov byte [si],0
+    *(_new_as_okay(offset, jump) for offset, jump in NEW_AS_OKAY),
 )
 
 

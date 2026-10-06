@@ -115,6 +115,16 @@ class CopyTests(unittest.TestCase):
         ids = [k for k in new if k[0] == "BMP "]
         self.assertEqual(len(ids), len(set(ids)))  # no icon numbered as another's map picture
 
+    def test_numbers_apart_from_the_rest(self):
+        """No object or icon of these numbered as Kalzith's moved scroll icons or the party's
+        sprites (the arms' first numbers were his: their boxes showed his pictures)."""
+        from dscompanion import kalzith, sprites
+        ours = {n for _, _, obj, icon, _ in icons.ICONS for n in (obj, icon)}
+        self.assertEqual(len(ours), 2 * len(icons.ICONS))
+        moved = set(range(kalzith.MOVED_ICONS, kalzith.MOVED_ICONS + len(kalzith.SCROLLS)))
+        self.assertFalse(ours & moved)
+        self.assertLess(max(ours), sprites.SPRITE_BASE)
+
 
 class WhichTests(unittest.TestCase):
     def test_items(self):
@@ -124,6 +134,14 @@ class WhichTests(unittest.TestCase):
         self.assertEqual(icons.which(ring.RING), "Ring of Protection +1")
         self.assertEqual(icons.which(npcitems.RING_ITEM), "Pehtucl's Ring of Protection +1")
         self.assertIsNone(icons.which(npcitems.HELM))
+        magic = bytearray(npcitems.SWORD)
+        magic[game.ITEM_PLUS] = 1
+        self.assertEqual(icons.which(bytes(magic)), "Shadowseeker")
+        gythka = bytearray(npcitems.SWORD)
+        struct.pack_into("<H", gythka, game.ITEM_TYPE, game.GYTHKA_TYPE)
+        self.assertIsNone(icons.which(bytes(gythka)))  # (the plain ones: the kreen's)
+        gythka[game.ITEM_PLUS] = 1
+        self.assertEqual(icons.which(bytes(gythka)), "Kreenfang")
         plain = bytearray(npcitems.CHEST_ARMOR)
         plain[game.ITEM_PLUS] = 0
         self.assertIsNone(icons.which(bytes(plain)))

@@ -26,8 +26,9 @@ can be switched off on its Options tab.
 ### In the Ledger's window
 
 - **The rolls behind the scenes:** attacks, damage, saving throws, magic
-  resistance, initiative, thief skills, character creation and level-up HP, with
-  each bonus named.
+  resistance, initiative, thief skills, character creation and level-up HP,
+  items' checks against acid, and searching junk, hay and wardrobes, with each
+  bonus named.
 - **A party viewer:** THAC0 with each weapon, saves as they stand now, AC and
   what makes it up, spell slots, thief skills, equipment and active effects.
 - **Dialogue and spells tabs:** a scrollable record of every conversation, and
@@ -43,7 +44,8 @@ can be switched off on its Options tab.
   - spell slots on the USE screen;
   - each turn's rolls in a pop-up during fights, if you tick it (three levels
     of detail);
-  - what hurts a monster in the Look box;
+  - what hurts a monster in the Look box, with its alignment and magic
+    resistance;
   - a party member's spell no longer ended by a click on the Effects screen.
 
 (More in [In the game](darksun-companion/README.md#in-the-game).)
@@ -51,17 +53,23 @@ can be switched off on its Options tab.
 ### Rule changes
 
 - **Optional AD&D rule changes**, all on by default and each one switchable:
-  - helms give AC;
-  - boots give an extra move;
-  - two-weapon penalties;
   - spells saved against with the spell save;
   - DEX on saves against fire, cold and electricity instead of a doubled d20;
-  - a new spell, Cat's Grace;
-  - thieves hiding in shadows and moving silently to backstab, and rangers
-    to attack from behind (a cloak and boots help);
+  - two-weapon penalties;
   - thief skills from AD&D's table, with Dark Sun's race and DEX adjustments;
+  - thieves hiding in shadows and moving silently to backstab, and rangers
+    to attack from behind (a cloak and boots help, and say so in their item
+    boxes), and a worn belt helping a thief pick pockets and open locks;
+  - class levels up to 10 (the game stops at 9);
+  - items saving against acid by material as in AD&D (the game destroys
+    armour without a magical power outright);
+  - rings and cloaks of protection as in AD&D: two rings don't add up, a
+    ring gives no AC with magical armour, and a cloak does nothing with
+    magical or metal armour or a shield;
   - half-giants wielding two-handed weapons in one hand;
-  - class levels up to 10 (the game stops at 9).
+  - a new spell, Cat's Grace;
+  - helms give AC;
+  - boots give movement in a fight ("Boots (Speed+1)").
 
 (More in [Rule changes](darksun-companion/README.md#rule-changes).)
 
@@ -75,10 +83,16 @@ can be switched off on its Options tab.
   Tools for every thief;
   picking anyone's pockets; and no more thief skill penalty for what a thief
   holds.
+- **Two named magic weapons:** the Bone Gythka on the dead body in the arena
+  becomes **Kreenfang** (+1), and Kurzak's short sword **Shadowseeker** (+1),
+  whose wielder sees the invisible; lifting it from Kurzak is worth 200 XP,
+  and Alagorn, the Painted Badlands' wizard who identifies magic items, tells
+  the story of each.
 - **A mini-quest:** the cooked vulture, at last good for something (Dinos
   cooks it for the party, to the game's own quest-done sound).
 - **A new person in the slave pens:** Kalzith, a defiler slave who, treated
-  with respect, sells arcane spell scrolls that a preserver can learn from.
+  with respect, sells arcane spell scrolls that a preserver can learn from, at
+  the game's own prices.
 - **Semyon kept his word:** after he leaves the arena through the entrance to
   the pens, he is in the pens to talk to, as the game promised and never did;
   and if he is still beside the party when they break out with Scar, he breaks
@@ -110,18 +124,27 @@ can be switched off on its Options tab.
 
 ### Smoother play, and help when something goes wrong
 
+- **More saves:** 40 instead of the game's 10, on four pages of the save and
+  load window (PAGE 1 to PAGE 4 buttons, or PgUp and PgDn).
+- **More characters:** 29 saved characters instead of the game's 19.
+- **Two of the game's own bugs fixed:** DELETE in the roster removed the wrong
+  character when the list was scrolled down, and a new character's thief skills
+  showed 0 until the game started.
 - **Game speed:** DOSBox is given more of the computer (20,000 cycles by
   default, on its faster dynamic core), for smoother walking with the whole
-  party in view; GOG's own speed and a faster one can be chosen.
+  party in view; GOG's own speed and a faster one can be chosen. At the
+  fastest (35,000), the whole party walks as fast as the leader alone.
 - **Crash reports:** if DOSBox crashes or the game stops with an error, the
   game's message stays on screen and what happened is saved in a file to send.
 
-(More in [Game speed](darksun-companion/README.md#game-speed) and [Crash reports](darksun-companion/README.md#crash-reports).)
+(More in [More saves](darksun-companion/README.md#more-saves), [More characters](darksun-companion/README.md#more-characters), [Game speed](darksun-companion/README.md#game-speed) and [Crash reports](darksun-companion/README.md#crash-reports).)
 
-The game folder is never modified, and your save files only keep what you'd
-expect from play: the items the Ledger hands out, the XP it gives. For the dice
-log, the launcher runs a patched copy of the game that it keeps in its own
-folder.
+The game's own files are never modified. What play writes to the game folder
+is what you'd expect: your saves, which keep the items the Ledger hands out and
+the XP it gives (save pages 2 to 4 are files of their own beside the game's,
+`SAVB`, `SAVC` and `SAVD`), and your characters, in the game's own
+`CHARSAVE.GFF` (numbers 20 to 29 for the extra ten). For the dice log, the
+launcher runs a patched copy of the game that it keeps in its own folder.
 
 **Everything else is in [`darksun-companion/README.md`](darksun-companion/README.md):**
 requirements, how to start it on Windows, every log line explained, each
@@ -149,17 +172,48 @@ double-click, with the options as last set.)
 
 ## What's new
 
-In [pull request #16](https://github.com/daaki85/darksun-companion-mod/pull/16)
+In [pull request #17](https://github.com/daaki85/darksun-companion-mod/pull/17)
 (in review):
-- **Semyon breaks out with Scar** if he is beside the party when they take
-  Scar's offer, and the Trustee knows he got away.
-- **Smoother walking:** a game speed setting (20,000 cycles by default, on
-  DOSBox's dynamic core), and the party's gear pictures no longer slow the game.
-- **Switches for all the new content,** and the Options tab regrouped.
-- **Crash reports** saved when DOSBox crashes or the game stops with an error.
-- **A crash in the opening fight fixed:** a bug of the game's own made it
-  draw over its own code.
-- **Fixes** from a review of the code.
+- **New content:**
+  - **Kreenfang and Shadowseeker,** two named magic weapons, Shadowseeker
+    letting its wielder see the invisible; 200 XP for lifting it from Kurzak;
+    Alagorn tells of both.
+  - **Cloaks, boots and belts:** their item boxes say what they give a thief,
+    a worn belt helps pick pockets and open locks, and plain ones cost 24.
+  - **Kalzith's scrolls** at the game's own prices (3,000 to 12,000), and
+    Kalzith's and Semyon's questions gone from the list once asked, as the
+    game's own people's are.
+- **Rule changes:**
+  - **Items saving against acid:** an item the Rampager's acid or the Babau's
+    touch could destroy saves by its material as in AD&D, a plus helping, where
+    that's better than the game's.
+  - **Rings and cloaks of protection as in AD&D:** two rings don't add up, a
+    ring gives no AC with magical armour, and a cloak does nothing with magical
+    or metal armour or a shield.
+- **Dice log:** each item's check against acid, and each search of a junk
+  pile, haystack or wardrobe: the roll, what it found and how close the party
+  is to finding everything there is.
+- **Saves and characters:**
+  - **40 saves,** on four pages of the save and load window; in the load
+    window an empty page can be shown too, with LOAD greyed.
+  - **29 saved characters** instead of 19.
+  - **Two of the game's own bugs fixed:** DELETE in the roster removed the
+    wrong character when the list was scrolled down; and a new character (one
+    not yet played) counted as not Okay, so a new thief's skills showed 0.
+- **On the screen and in the game:**
+  - **Faster walking:** shadows and dust drawn much more cheaply; at the
+    fastest game speed, the whole party walks as fast as the leader alone.
+  - **Gear on the figures:** a shield shows from the side; Kreenfang's and
+    Shadowseeker's blades in their icons' colours; bone weapons ivory.
+  - **The Look box:** a monster's alignment, and its magic resistance beside
+    its level.
+- **The Ledger:** the Options tab's sections open and close, and the rule
+  changes come with the ones that change play most first.
+
+In [pull request #16](https://github.com/daaki85/darksun-companion-mod/pull/16)
+(merged): Semyon breaks out with Scar, the game speed setting, switches for
+all the new content, crash reports, a crash in the opening fight fixed, and
+fixes from a review of the code.
 
 Everything that changed, pull request by pull request, is in
 [`CHANGELOG.md`](CHANGELOG.md). Release **1.0.0** is pull requests #1 to #13;

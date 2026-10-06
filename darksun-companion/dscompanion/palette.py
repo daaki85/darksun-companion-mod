@@ -69,6 +69,7 @@ TEXT_PAIRS: Dict[str, Tuple[str, str]] = {
     "label": (PALE, STONE),
     "status": (YELLOW, STONE),
     "section title": (YELLOW, STONE),
+    "section heading (Options, opens and closes)": (YELLOW, DARK),
     "button": (PALE, DARK),
     "button, pointer over it": (YELLOW, STONE),
     "button, pressed": (YELLOW, DEEP),

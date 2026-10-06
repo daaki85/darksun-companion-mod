@@ -14,14 +14,14 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dscompanion.dicelog import FILTERS, HDR_SIG, Entry
 from dscompanion.textlog import TextBuffer
-from dscompanion.gamepatch import (VEC_AC, VEC_DOUBLE, VEC_MSG, VEC_NEXT, VEC_RAND, VEC_RING_AC, VEC_USE_ITEM,
+from dscompanion.gamepatch import (VEC_SCRIPT_RAND, VEC_ITEM_ARMOUR, VEC_ITEM_SKIP, VEC_ITEM_WEAPON, VEC_AC, VEC_DOUBLE, VEC_MSG, VEC_NEXT, VEC_RAND, VEC_RING_AC, VEC_USE_ITEM,
                                   VEC_RING_SAVE, VEC_SAVE, VEC_TEXT, VEC_TWO, VEC_GRACE_CAST, VEC_GRACE_EFFECT,
                                   VEC_GRACE_ABILITY, VEC_NAMES_FILL, VEC_NAMES_SIZE, VEC_STEALTH, VEC_TYPES_FILL,
                                   VEC_TYPES_SIZE, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED,
                                   VEC_SPELL_TEXT, VEC_CHUNK_ID)
 
 try:
-    from unicorn import Uc, UC_ARCH_X86, UC_HOOK_INTR, UC_HOOK_MEM_WRITE, UC_MODE_16
+    from unicorn import Uc, UC_ARCH_X86, UC_HOOK_CODE, UC_HOOK_INTR, UC_HOOK_MEM_WRITE, UC_MODE_16
     from unicorn import x86_const as r
 except ImportError:  # optional dependency
     Uc = None
@@ -369,6 +369,40 @@ class UseItemTests(unittest.TestCase):
         self.taken = 1
         self.run_use(300, self.DONE)
 
+    def test_xp(self):
+        """What was lifted is worth XP (Kurzak's sword): before its text, DSCLOG's GIVE_XP calls
+        the game's routine for a quest's XP (who, amount) and plays the quest's sound, once."""
+        mu, calls = self.mu, []
+        image = load_image()
+        xp_who = image.find(HDR_SIG) + 262
+        give_xp = image.find(bytes.fromhex("2e833e") + struct.pack("<H", xp_who) + bytes.fromhex("ff74"))
+        self.assertGreater(give_xp, 0)
+        to_game = GAME_DS - 0x4356  # (the game's segments, from its DS)
+        xp, sound = (to_game + 0x4251) * 16 + 0x005C, (to_game + 0x1A0A) * 16 + 0x0663
+        for at in (xp, sound):
+            mu.mem_write(at, b"\xcb")  # retf
+
+        def called(uc, address, size, _):
+            sp = uc.reg_read(r.UC_X86_REG_SS) * 16 + uc.reg_read(r.UC_X86_REG_SP)
+            args = struct.unpack("<HH", uc.mem_read(sp + 4, 4))
+            calls.append(("xp", args) if address == xp else ("sound", args[:1]))
+        mu.hook_add(UC_HOOK_CODE, called, begin=xp, end=xp)
+        mu.hook_add(UC_HOOK_CODE, called, begin=sound, end=sound)
+        back = 0xE000  # (past the image: where its RET comes back to)
+
+        def run():
+            for name, value in dict(cs=TSR, ds=GAME_DS, ss=SS, esp=0x7FE, ebp=BP).items():
+                mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+            mu.mem_write(SS * 16 + 0x7FE, struct.pack("<H", back))
+            mu.emu_start(TSR * 16 + give_xp, TSR * 16 + back, count=10000)
+            self.assertEqual((mu.reg_read(r.UC_X86_REG_IP), mu.reg_read(r.UC_X86_REG_SP)), (back, 0x800))
+        mu.mem_write(self.hdr + 262, struct.pack("<HH", 3, 200))  # Cilla (3), 200
+        run()
+        self.assertEqual(calls, [("xp", (3, 200)), ("sound", (53,))])
+        self.assertEqual(struct.unpack("<H", mu.mem_read(self.hdr + 262, 2))[0], 0xFFFF)
+        run()
+        self.assertEqual(len(calls), 2)  # (asked for once)
+
 
 @unittest.skipIf(Uc is None, "unicorn is not installed")
 class PickKeyTests(unittest.TestCase):
@@ -412,6 +446,65 @@ class PickKeyTests(unittest.TestCase):
         self.assertTrue(self.press(P, 3))
         self.assertTrue(self.press(0x1970, 3))  # (p too)
         self.assertFalse(self.press(0x1E41, 3))  # (another key)
+
+
+@unittest.skipIf(Uc is None, "unicorn is not installed")
+class BeltTests(unittest.TestCase):
+    """PROBE_BELT, at the end of the game's thief skill routine (where "mov ax,si" was): a thief
+    wearing a belt gets 5 more to pick pockets and open locks, with SKILLS_ON's belt bit."""
+    CREATURES, ITEMS = 0x9000, 0xA000
+
+    def setUp(self):
+        from dscompanion.gamepatch import VEC_BELT
+        image = load_image()
+        self.mu = mu = Uc(UC_ARCH_X86, UC_MODE_16)
+        mu.mem_map(0, 0x100000)
+        mu.mem_write(TSR * 16, image)
+        self.hdr = TSR * 16 + image.find(HDR_SIG)
+        skills_on = image.find(HDR_SIG) + 266
+        handler = image.find(bytes.fromhex("fb2ef606") + struct.pack("<H", skills_on) + b"\x02")
+        self.assertGreater(handler, 0)
+        mu.mem_write(VEC_BELT * 4, struct.pack("<HH", handler, TSR))
+        mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
+        mu.mem_write(GAME_DS * 16 + 0x1665, struct.pack("<HH", 0, self.CREATURES))
+        mu.mem_write(GAME_DS * 16 + 0x165D, struct.pack("<HH", 0, self.ITEMS))
+        things = (GAME_DS + 0x3972 - 0x4356) * 16 + 0xC36  # (the things table, from the game's DS)
+        # object 3: creature 1, whose first list is object 10: item 4
+        for thing, kind, index in ((3, 2, 1), (10, 1, 4)):
+            mu.mem_write(things + thing * 3, struct.pack("<BH", kind, index))
+        mu.mem_write(self.CREATURES * 16 + 0x3A + 8, struct.pack("<HHH", 10, 9999, 9999))
+        self.wear(5)
+
+    def wear(self, slot):
+        rec = bytearray(21)
+        struct.pack_into("<H", rec, 4, 9999)
+        rec[0x11] = slot
+        self.mu.mem_write(self.ITEMS * 16 + 4 * 21, bytes(rec))
+
+    def chance(self, skill, on=2, si=40):
+        mu = self.mu
+        mu.mem_write(self.hdr + 266, struct.pack("<H", on))
+        mu.mem_write(SS * 16 + BP + 8, struct.pack("<I", skill))
+        mu.mem_write(CALLER * 16 + 0x600, bytes((0xCD, 0xD9)))
+        for name, value in dict(cs=CALLER, ds=GAME_DS, ss=SS, esp=0x800, ebp=BP, eflags=IF | 2,
+                                esi=si, edi=3, ebx=0x1234, ecx=0x5678, edx=0x9ABC, es=0x4444).items():
+            mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+        mu.emu_start(CALLER * 16 + 0x600, CALLER * 16 + 0x602, count=10000)
+        self.assertEqual([mu.reg_read(x) for x in (r.UC_X86_REG_SP, r.UC_X86_REG_SI, r.UC_X86_REG_DI, r.UC_X86_REG_BX,
+                                                   r.UC_X86_REG_CX, r.UC_X86_REG_DX, r.UC_X86_REG_ES)],
+                         [0x800, si, 3, 0x1234, 0x5678, 0x9ABC, 0x4444])
+        return mu.reg_read(r.UC_X86_REG_AX)
+
+    def test_pockets_and_locks(self):
+        self.assertEqual([self.chance(skill) for skill in range(4)], [45, 45, 40, 40])
+
+    def test_off(self):
+        self.assertEqual(self.chance(0, on=1), 40)  # (the stealth bit alone)
+        self.assertEqual(self.chance(0, on=0), 40)
+
+    def test_no_belt(self):
+        self.wear(20)  # (in the pack)
+        self.assertEqual(self.chance(1), 40)
 
 
 @unittest.skipIf(Uc is None, "unicorn is not installed")
@@ -496,6 +589,230 @@ class RingTests(unittest.TestCase):
             self.assertEqual(mu.reg_read(r.UC_X86_REG_AX), want)
             self.assertEqual((mu.reg_read(r.UC_X86_REG_CX), mu.reg_read(r.UC_X86_REG_BX)), (typ, 0))
 
+
+
+@unittest.skipIf(Uc is None, "unicorn is not installed")
+class ProtectionRuleTests(RingTests):
+    """RULE_PROTECTION: the better ring only, a ring's AC lost to magical armour, a cloak of
+    protection lost to magical or metal armour (helms too) or a shield."""
+    RULES, TYPES_FIRST = 170, 212  # the header's words
+    CLOAK = 116  # (the second of DSCLOG's types, the first being 115)
+    # (RingTests' own are the game's way, without the rule)
+    test_saves_count_worn_rings = test_saves_count_a_cloak_of_protection = test_ac_counts_rings = None
+
+    def setUp(self):
+        super().setUp()
+        mu = self.mu
+        hdr = TSR * 16 + load_image().find(HDR_SIG)
+        mu.mem_write(hdr + self.RULES, struct.pack("<H", 1024))
+        mu.mem_write(hdr + self.TYPES_FIRST, struct.pack("<H", 115))
+        mu.mem_write(GAME_DS * 16 + 0x1669, struct.pack("<HH", 0, self.TYPES))
+        # types: flags word, material (+08h), AC flag (+0Fh)
+        for typ, flags, material, ac in ((4, 4, 5, 0x80), (6, 0, 5, 0x80), (57, 0, 4, 0x80), (89, 0, 0x84, 0x84),
+                                         (15, 0, 1, 0x80), (self.CLOAK, 0, 5, 0x80), (102, 0, 0x40, 0)):
+            rec = bytearray(0x14)
+            struct.pack_into("<H", rec, 0, flags)
+            rec[0x08], rec[0x0F] = material, ac
+            mu.mem_write(self.TYPES * 16 + typ * 0x14, bytes(rec))
+        self.wear(7, 102, 11, 2)  # creature 1: ring 4 (+1) on the left hand's finger, ring 7 (+2) the right's
+
+    def wear(self, item, typ, slot, plus=0):
+        rec = self.ITEMS * 16 + item * 21
+        self.mu.mem_write(rec + 0x0A, struct.pack("<H", typ))
+        self.mu.mem_write(rec + 0x11, bytes([slot]))
+        self.mu.mem_write(rec + 0x14, bytes([plus & 0xFF]))
+
+    def counts(self, item, typ):
+        """INT VEC_RING_AC for creature 1's item ITEM of type TYPE: whether bit 80h is left set
+        (the things table's segment where the game's code has it, A8h bytes past the INT)."""
+        self.mu.mem_write(CALLER * 16 + self.at + 0x20 + 2 + 0xA8, struct.pack("<H", self.THINGS_SEG))
+        self.run_at(bytes((0xCD, VEC_RING_AC)), es=self.TYPES, ebx=typ * 0x14, ecx=typ, edx=item, edi=3,
+                    eax=0x1234)
+        mu = self.mu
+        self.assertEqual([mu.reg_read(x) for x in (r.UC_X86_REG_BX, r.UC_X86_REG_CX, r.UC_X86_REG_DX,
+                                                   r.UC_X86_REG_DI, r.UC_X86_REG_ES)],
+                         [typ * 0x14, typ, item, 3, self.TYPES])
+        return bool(mu.reg_read(r.UC_X86_REG_AX) & 0x80)
+
+    def test_the_better_ring(self):
+        self.assertEqual((self.counts(4, 102), self.counts(7, 102)), (False, True))
+        self.assertEqual(self.save(3), 2)
+        self.wear(7, 102, 11, 1)  # equal: the left hand's
+        self.assertEqual((self.counts(4, 102), self.counts(7, 102)), (True, False))
+        self.assertEqual(self.save(3), 1)
+
+    def test_rule_off(self):
+        self.mu.mem_write(TSR * 16 + load_image().find(HDR_SIG) + self.RULES, struct.pack("<H", 0))
+        self.assertEqual((self.counts(4, 102), self.counts(7, 102)), (True, True))
+        self.assertEqual(self.save(3), 3)
+
+    def test_ring_ac_lost_to_magical_armour(self):
+        self.wear(5, 6, 9, 1)  # leather chest armour +1 worn
+        self.assertEqual((self.counts(4, 102), self.counts(7, 102)), (False, False))
+        self.assertEqual(self.save(3), 2)  # (the saves stay)
+
+    def test_cloak(self):
+        self.wear(7, self.CLOAK, 12, 1)
+        self.wear(5, 15, 9)  # bone scale: natural
+        self.assertTrue(self.counts(7, self.CLOAK))
+        self.assertEqual(self.save(3), 2)  # ring 4 and the cloak
+        for typ, slot, plus in ((57, 9, 0), (6, 9, 1), (4, 10, 0), (4, 3, 0), (89, 7, 0), (6, 7, 1)):
+            self.wear(5, typ, slot, plus)  # metal, magical leather, a shield in either hand, metal or magic helm
+            self.assertFalse(self.counts(7, self.CLOAK), (typ, slot, plus))
+            self.assertEqual(self.save(3), 1, (typ, slot, plus))
+        self.wear(5, 57, 0xFF)  # only carried
+        self.assertTrue(self.counts(7, self.CLOAK))
+
+
+@unittest.skipIf(Uc is None, "unicorn is not installed")
+class ScriptRandTests(unittest.TestCase):
+    """The scripts' random command (PROBE_SCRIPT_RAND): EAX and EDX N + 1, as the replaced code
+    leaves them, and the command recorded with its result, N, the script's position and the
+    searches' counts."""
+    COUNTS = 0xA000
+
+    def setUp(self):
+        image = load_image()
+        self.mu = mu = Uc(UC_ARCH_X86, UC_MODE_16)
+        mu.mem_map(0, 0x100000)
+        mu.mem_write(TSR * 16, image)
+        self.hdr_off = struct.unpack_from("<H", image, 20)[0]
+        self.ring = struct.unpack_from("<H", image, 16)[0]
+        at = image.find(bytes.fromhex("fb66406689c25589e5"))
+        self.assertGreater(at, 0)
+        mu.mem_write(VEC_SCRIPT_RAND * 4, struct.pack("<HH", at, TSR))
+        mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
+        data = (GAME_DS + 0x3781 - 0x4356) * 16
+        mu.mem_write(data + 0x192, b"\x01")  # the running script's slot: 1, at 2116
+        mu.mem_write(data + 0x295 + 2, struct.pack("<H", 2116))
+        mu.mem_write(GAME_DS * 16 + 0x1356, struct.pack("<HH", 0, self.COUNTS))
+        mu.mem_write(self.COUNTS * 16 + 21 * 2, struct.pack("<3H", 4, 3, 2))  # junk, hay, wardrobe
+
+    def test_recorded(self):
+        mu = self.mu
+        mu.mem_write(SS * 16 + 0x7FC, struct.pack("<I", 0x7000))  # rand(), pushed
+        mu.mem_write(CALLER * 16 + 0x600, bytes((0xCD, VEC_SCRIPT_RAND)))
+        for name, value in dict(cs=CALLER, ds=GAME_DS, ss=SS, esp=0x7FC, ebp=BP, eflags=IF | 2, eax=10,
+                                ebx=0x2222, ecx=0x3333, edx=0x4444, esi=0x1111, edi=0x5555, es=0x6666).items():
+            mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+        mu.emu_start(CALLER * 16 + 0x600, CALLER * 16 + 0x602)
+        self.assertEqual([mu.reg_read(x) for x in (r.UC_X86_REG_SP, r.UC_X86_REG_EAX, r.UC_X86_REG_EDX, r.UC_X86_REG_BX,
+                                                   r.UC_X86_REG_CX, r.UC_X86_REG_SI, r.UC_X86_REG_DI, r.UC_X86_REG_BP,
+                                                   r.UC_X86_REG_DS, r.UC_X86_REG_ES)],
+                         [0x7FC, 11, 11, 0x2222, 0x3333, 0x1111, 0x5555, BP, GAME_DS, 0x6666])
+        seq, _, nent = struct.unpack("<HHH", mu.mem_read(TSR * 16 + self.hdr_off + 8, 6))
+        e = Entry.parse(bytes(mu.mem_read(TSR * 16 + self.ring + ((seq - 1) % nent) * Entry.SIZE, Entry.SIZE)))
+        self.assertEqual((e.kind, e.raw & 0xFF, e.raw >> 8 & 0xFF, e.extra), (5, 0x7000 * 11 >> 15, 10, 2116))
+        self.assertEqual((e.arg(2), e.arg(4), e.arg(6)), (4, 3, 2))
+        self.assertEqual((e.ip, e.cs), (0x602, CALLER))  # (the code after the INT)
+
+
+@unittest.skipIf(Uc is None, "unicorn is not installed")
+class ItemSaveTests(unittest.TestCase):
+    """The acid's and corroding touch's item checks (PROBE_ITEM_*): the number a d20 needs, the
+    game's or (RULE_ITEM_SAVES) the easier of it and AD&D's, and each check recorded."""
+    ITEMS, TYPES = 0xA000, 0xB000
+    RULES = 170
+    # item: (type, material, plus, power)
+    GEAR = {4: (6, 5, 0, 0), 5: (57, 4, 0, 0), 6: (79, 5, 1, 89), 7: (81, 1, 0, 0), 8: (63, 4, 1, 0),
+            9: (17, 3, 0, 0), 10: (90, 0x40, 2, 0)}
+
+    def setUp(self):
+        image = load_image()
+        self.mu = mu = Uc(UC_ARCH_X86, UC_MODE_16)
+        mu.mem_map(0, 0x100000)
+        mu.mem_write(TSR * 16, image)
+        self.hdr_off = struct.unpack_from("<H", image, 20)[0]
+        self.ring = struct.unpack_from("<H", image, 16)[0]
+        for vec, head in ((VEC_ITEM_WEAPON, "5650535157ba08002b56fe"), (VEC_ITEM_ARMOUR, "5650535157ba0a002b56fe"),
+                          (VEC_ITEM_SKIP, "5589e5836606bf")):
+            at = image.find(bytes.fromhex(head))
+            self.assertGreater(at, 0, head)
+            mu.mem_write(vec * 4, struct.pack("<HH", at, TSR))
+        mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
+        mu.mem_write(GAME_DS * 16 + 0x165D, struct.pack("<HH", 0, self.ITEMS))
+        mu.mem_write(GAME_DS * 16 + 0x1669, struct.pack("<HH", 0, self.TYPES))
+        for item, (typ, material, plus, power) in self.GEAR.items():
+            rec = bytearray(21)
+            struct.pack_into("<H", rec, 0x0A, typ)
+            rec[0x0F], rec[0x14] = power & 0xFF, plus & 0xFF
+            mu.mem_write(self.ITEMS * 16 + item * 21, bytes(rec))
+            mu.mem_write(self.TYPES * 16 + typ * 0x14 + 8, bytes([material]))
+        # the routine's frame: the saved BP (its caller's, the special attack's: 187 on target 3
+        # from 44), its argument (the target); the list's entry 2 holds the item
+        mu.mem_write(SS * 16 + BP, struct.pack("<HHHH", PARENT_BP, 0, 0, 3))
+        mu.mem_write(SS * 16 + PARENT_BP, struct.pack("<HHHHHHHH", 0, 0, 0, 3, 44, 0, 0, 187))
+        self.at = 0x600
+
+    def rules(self, value):
+        self.mu.mem_write(TSR * 16 + load_image().find(HDR_SIG) + self.RULES, struct.pack("<H", value))
+
+    def run_int(self, vec, item, word, roll, armour):
+        """INT VEC with the list's entry 2 the item, [BP-2] WORD (the plus or the power), AX the
+        d20: DX, ZF and the entry recorded (None if none)."""
+        mu = self.mu
+        list_at = BP - (0x31E if armour else 0x320) + 2 * 0x0A
+        mu.mem_write(SS * 16 + list_at, struct.pack("<H", item))
+        mu.mem_write(SS * 16 + BP - 2, struct.pack("<h", word))
+        seq_at = TSR * 16 + self.hdr_off + 8
+        before = struct.unpack("<H", mu.mem_read(seq_at, 2))[0]
+        self.at += 0x20
+        mu.mem_write(CALLER * 16 + self.at, bytes((0xCD, vec)))
+        for name, value in dict(cs=CALLER, ds=GAME_DS, ss=SS, esp=0x800, ebp=BP, eflags=IF | 2, eax=roll,
+                                esi=2, ebx=0x2222, ecx=0x3333, edx=0x4444, edi=0x5555, es=0x6666).items():
+            mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+        mu.emu_start(CALLER * 16 + self.at, CALLER * 16 + self.at + 2)
+        self.assertEqual([mu.reg_read(x) for x in (r.UC_X86_REG_SP, r.UC_X86_REG_AX, r.UC_X86_REG_BX,
+                                                   r.UC_X86_REG_CX, r.UC_X86_REG_SI, r.UC_X86_REG_DI,
+                                                   r.UC_X86_REG_BP, r.UC_X86_REG_DS, r.UC_X86_REG_ES)],
+                         [0x800, roll, 0x2222, 0x3333, 2, 0x5555, BP, GAME_DS, 0x6666])
+        seq, widx, nent = struct.unpack("<HHH", mu.mem_read(seq_at, 6))
+        entry = None
+        if seq != before:
+            entry = Entry.parse(bytes(mu.mem_read(TSR * 16 + self.ring + ((seq - 1) % nent) * Entry.SIZE,
+                                                  Entry.SIZE)))
+        dx = struct.unpack("<h", struct.pack("<H", mu.reg_read(r.UC_X86_REG_DX)))[0]
+        return dx, bool(mu.reg_read(r.UC_X86_REG_EFLAGS) & 0x40), entry
+
+    def weapon(self, item, roll=10):
+        return self.run_int(VEC_ITEM_WEAPON, item, self.GEAR[item][2], roll, False)
+
+    def armour(self, item, roll=10):
+        return self.run_int(VEC_ITEM_ARMOUR, item, self.GEAR[item][3], roll, True)
+
+    def test_weapons_the_games(self):
+        self.rules(0)
+        for item, want in ((7, 8), (8, 7), (9, 8)):
+            dx, _, e = self.weapon(item, 12)
+            self.assertEqual(dx, want, item)
+            self.assertEqual((e.kind, e.raw, e.extra, e.arg(6), e.parent_arg(0x0E)), (4, 12 | want << 8, item, 3, 187))
+
+    def test_weapons_the_easier(self):
+        """Bone (11) and metal +1 (12) keep the game's 8 and 7; obsidian gets AD&D's 5."""
+        self.rules(2048)
+        self.assertEqual([self.weapon(item)[0] for item in (7, 8, 9)], [8, 7, 5])
+
+    def test_armour_the_games(self):
+        """No magical power: destroyed without a roll (ZF set, recorded with no d20); with one,
+        10 less it (Drake Armor's 89: never)."""
+        self.rules(0)
+        for item in (4, 5, 10):
+            dx, zf, e = self.run_int(VEC_ITEM_SKIP, item, 0, 0x1234, True)
+            self.assertTrue(zf, item)
+            self.assertEqual((e.kind, e.raw & 0xFF, e.extra), (4, 0, 0x8000 | item))
+        dx, zf, e = self.run_int(VEC_ITEM_SKIP, 6, 89, 0x1234, True)
+        self.assertEqual((zf, e), (False, None))
+        self.assertEqual(self.armour(6)[0], 10 - 89)
+
+    def test_armour_the_easier(self):
+        """Leather 10, metal 13, cloth +2 10; Drake Armor keeps the game's (never)."""
+        self.rules(2048)
+        for item in (4, 5, 6, 10):
+            dx, zf, e = self.run_int(VEC_ITEM_SKIP, item, self.GEAR[item][3], 0x1234, True)
+            self.assertEqual((zf, e), (False, None), item)
+        self.assertEqual([self.armour(item)[0] for item in (4, 5, 6, 10)], [10, 13, 10 - 89, 10])
+        dx, _, e = self.armour(5, 14)
+        self.assertEqual((e.raw, e.extra), (14 | 13 << 8, 0x8000 | 5))
 
 
 @unittest.skipIf(Uc is None, "unicorn not installed")
@@ -992,3 +1309,120 @@ class TypesTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+@unittest.skipIf(Uc is None, "unicorn is not installed")
+class SavePageTests(unittest.TestCase):
+    """PROBE_SAVE_PAGE (PgUp, PgDn) and PROBE_SAVE_CLICK (PAGE 1, PAGE 2) in the save/load window's
+    event routine: the page's letter in the game's two save names, the window's own routines run
+    (here each a RETF, counted), and the routine going on where it should."""
+    DS, OV = 0x9000, 0xA000  # the game's DS; the window's overlay segment (DSUN.EXE 74300h)
+    SAVE = DS + 0x3BA7 - 0x4356
+    KEY_AT, CLICK_AT = 0x601, 0x89F  # (where the patches are, in the overlay: 74901h, 74B9Fh)
+    DONE, KEY_END, CLICK_END, ENTER = 0x721, 0xAEC, 0xAE5, 0x968  # 74A21h, 74DECh, 74DE5h, 74C68h
+    STUBS = {"scan": (OV, 0xE2), "row": (OV, 0xB36), "pick": (OV, 0xBCD),
+             "button": (DS + 0x2A1D - 0x4356, 0x71A), "window": (DS + 0x25EC - 0x4356, 0x618)}
+
+    def setUp(self):
+        import re
+        from dscompanion.gamepatch import VEC_SAVE_CLICK, VEC_SAVE_PAGE
+        image = load_image()
+        self.mu = mu = Uc(UC_ARCH_X86, UC_MODE_16)
+        mu.mem_map(0, 0x100000)
+        mu.mem_write(TSR * 16, image)
+        mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
+        # the two handlers: "push bp / mov bp,sp / sti / pushad / push es", then sp_done's value
+        starts = {struct.unpack_from("<H", image, m.end() + 2)[0]: m.start()
+                  for m in re.finditer(re.escape(bytes.fromhex("5589e5fb6660062ec706")), image)}
+        mu.mem_write(VEC_SAVE_PAGE * 4, struct.pack("<HH", starts[0x74A21 - 0x74903], TSR))
+        mu.mem_write(VEC_SAVE_CLICK * 4, struct.pack("<HH", starts[(0x74A21 - 0x74BA1) & 0xFFFF], TSR))
+        mu.mem_write(self.OV * 16 + self.KEY_AT, bytes((0xCD, VEC_SAVE_PAGE, 0x90)))
+        mu.mem_write(self.OV * 16 + self.CLICK_AT, bytes((0xCD, VEC_SAVE_CLICK, 0x90)))
+        self.calls = {}
+        for name, (seg, off) in self.STUBS.items():
+            mu.mem_write(seg * 16 + off, b"\xcb")  # RETF
+            mu.hook_add(UC_HOOK_CODE, lambda *_, n=name: self.calls.__setitem__(n, self.calls.get(n, 0) + 1),
+                        begin=seg * 16 + off, end=seg * 16 + off)
+        mu.mem_write(self.DS * 16 + 0x1DCF, b"SAVE??.SAV\0SAVE%.2d.SAV\0")
+        mu.mem_write(self.SAVE * 16 + 0x4E4, struct.pack("<HIH", 3, 0x12345678, 0))  # row 3, saving
+
+    def page(self):
+        return bytes(self.mu.mem_read(self.DS * 16 + 0x1DCF + 3, 1)) + bytes(self.mu.mem_read(self.DS * 16 + 0x1DDA + 3, 1))
+
+    def run_at(self, at, word, value):
+        """The event routine (its BP+WORD holding VALUE) at the patch AT: where it goes on, and SI."""
+        mu = self.mu
+        self.calls.clear()
+        mu.mem_write(SS * 16 + BP + word, struct.pack("<H", value))
+        for name, v in dict(cs=self.OV, ds=self.DS, ss=SS, esp=0x800, ebp=BP, eflags=IF | 2, esi=0x4321,
+                            edi=1, es=0x4444).items():
+            mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), v)
+        ends = (self.DONE, self.KEY_END, self.CLICK_END, self.ENTER)
+        mu.hook_add(UC_HOOK_CODE, lambda m, *_: m.emu_stop() if m.reg_read(r.UC_X86_REG_CS) == self.OV
+                    and m.reg_read(r.UC_X86_REG_IP) in ends else None)
+        mu.emu_start(self.OV * 16 + at, 0, count=20000)
+        self.assertEqual([mu.reg_read(x) for x in (r.UC_X86_REG_SP, r.UC_X86_REG_DI, r.UC_X86_REG_ES)],
+                         [0x800, 1, 0x4444])
+        return mu.reg_read(r.UC_X86_REG_IP), mu.reg_read(r.UC_X86_REG_SI)
+
+    def test_keys(self):
+        self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x5100), (self.DONE, 0x4321))  # PgDn
+        self.assertEqual(self.page(), b"BB")
+        self.assertEqual(self.calls, {"scan": 1, "row": 10, "button": 2, "pick": 1, "window": 1})
+        self.run_at(self.KEY_AT, 0x12, 0x5100)
+        self.run_at(self.KEY_AT, 0x12, 0x5100)
+        self.assertEqual(self.page(), b"DD")
+        self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x5100), (self.KEY_END, 0x4321))  # (the last page)
+        self.assertEqual((self.page(), self.calls), (b"DD", {}))
+        self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x49E0), (self.DONE, 0x4321))  # PgUp, the grey key
+        self.assertEqual(self.page(), b"CC")
+        self.run_at(self.KEY_AT, 0x12, 0x4900)
+        self.run_at(self.KEY_AT, 0x12, 0x4900)
+        self.assertEqual(self.page(), b"EE")
+        self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x4900), (self.KEY_END, 0x4321))  # (the first page)
+        self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x1E61), (self.KEY_END, 0x4321))  # another key
+        self.assertEqual((self.page(), self.calls), (b"EE", {}))
+
+    def test_buttons(self):
+        for button, page in ((0x818, b"DD"), (0x816, b"BB"), (0x817, b"CC"), (0x815, b"EE")):
+            self.assertEqual(self.run_at(self.CLICK_AT, 8, button), (self.DONE, 0))  # (the routine returns 0)
+            self.assertEqual(self.page(), page)
+        self.assertEqual(self.run_at(self.CLICK_AT, 8, 0x815), (self.CLICK_END, 0x4321))  # (the page shown)
+        self.assertEqual(self.run_at(self.CLICK_AT, 8, 0x819), (self.CLICK_END, 0x4321))  # another button
+        self.assertEqual((self.page(), self.calls), (b"EE", {}))
+
+    def test_loading_a_page_with_no_saves(self):
+        self.mu.mem_write(self.SAVE * 16 + 0x4EA, struct.pack("<H", 1))  # the load window; no saves found
+        self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x5100), (self.KEY_END, 0x4321))
+        self.assertEqual(self.page(), b"EE")  # (back)
+        self.assertEqual(self.calls, {"scan": 4})  # (pages 2, 3 and 4 looked at)
+        # a button's page is shown even with none, its first row chosen (SAVE_LABEL greys LOAD)
+        self.assertEqual(self.run_at(self.CLICK_AT, 8, 0x817), (self.DONE, 0))
+        self.assertEqual(self.page(), b"CC")
+        self.assertEqual(self.calls, {"scan": 1, "row": 10, "button": 2, "pick": 1, "window": 1})
+        self.assertEqual(struct.unpack("<H", self.mu.mem_read(self.SAVE * 16 + 0x4E4, 2))[0], 0)
+
+    def test_enter(self):
+        """Enter (out of the window's key table) goes on to LOAD or SAVE, as the table took it, but
+        not in the load window on a row with no save (the game would start a new game)."""
+        mu = self.mu
+        self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x1C0D), (self.ENTER, 0x4321))  # (saving)
+        mu.mem_write(self.SAVE * 16 + 0x4EA, struct.pack("<H", 1))  # loading, row 3
+        self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x1C0D), (self.KEY_END, 0x4321))  # (no save there)
+        mu.mem_write(self.SAVE * 16 + 2 + 3 * 0x7D, b"SAVE04.SAV\0")
+        self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x1C0D), (self.ENTER, 0x4321))
+        self.assertEqual(self.calls, {})
+
+    def test_loading_passes_a_page_with_no_saves(self):
+        """PgDn in the load window: page 2 has none, page 3 a save in its third row."""
+        mu = self.mu
+        mu.mem_write(self.SAVE * 16 + 0x4EA, struct.pack("<H", 1))
+        rows = self.SAVE * 16 + 2 + 2 * 0x7D
+        scan = self.STUBS["scan"]
+        # the folder search: a save in the third row when the page's letter is C
+        mu.hook_add(UC_HOOK_CODE, lambda m, *_: m.mem_write(rows, b"x" if bytes(m.mem_read(self.DS * 16 + 0x1DD2, 1)) == b"C"
+                                                             else b"\0"),
+                    begin=scan[0] * 16 + scan[1], end=scan[0] * 16 + scan[1])
+        self.assertEqual(self.run_at(self.KEY_AT, 0x12, 0x5100), (self.DONE, 0x4321))
+        self.assertEqual(self.page(), b"CC")
+        self.assertEqual(struct.unpack("<H", mu.mem_read(self.SAVE * 16 + 0x4E4, 2))[0], 2)  # (chosen: that row)

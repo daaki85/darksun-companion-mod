@@ -4,8 +4,9 @@ can be: what is worn on the body recolours the character's own picture, what is 
 on it.
 
   * Weapons and shields: in a fight in the hands (each pose's grip set by hand); walking, a shield
-    on the arm and a one-handed weapon worn at the belt like a scabbard; a bow and quiver on the
-    back, a sling or chatkcha at the hip: drawn, in their material's colours.
+    on the arm (from the side, on the far arm held forward of the chest) and a one-handed weapon
+    worn at the belt like a scabbard; a bow and quiver on the back, a sling or chatkcha at the hip:
+    drawn, in their material's colours (Kreenfang's and Shadowseeker's blades in their icons').
   * Body armour (chest, arms, legs), boots and belts: the character's own clothing, feet or waist
     recoloured toward the material, shade for shade.
   * Helms: a circlet at the brow, blended into the hair under it.
@@ -26,13 +27,16 @@ Rows = sp.Rows
 # Materials (the item type's +8h, low nibble, as game.MATERIALS): (outline, body, light)
 MATERIAL_COLOURS = {
     0: (207, 205, 206),  # wood: dark faded brown
-    1: (194, 214, 215),  # bone: weathered grey
+    1: (206, 62, 63),  # bone: weathered ivory
     2: (210, 212, 213),  # stone: grey
     3: (24, 18, 26),  # obsidian: near-black, its edges a lighter grey (to show on dark clothes)
     4: (22, 25, 27),  # metal: dull blue-grey iron
     5: (207, 205, 194),  # leather
 }
 FLAME = (248, 241, 242)  # the Flame Blade: the fire colours the game cycles
+# The companion's named weapons (icons.which), their blades in their icons' colours: Kreenfang's two
+# in the fire colours, Shadowseeker's in night steel (dark blue-greys no region changes)
+BLADE_COLOURS: Dict[str, Tuple[int, int, int]] = {"Kreenfang": FLAME, "Shadowseeker": (17, 18, 21)}
 
 # Shapes, by item type (the game's item type numbers)
 DAGGER, SWORD, CLUB, MACE, AXE, GREAT_AXE, POLEARM, GYTHKA, CAHULAKS, STAFF, SHIELD, SLING, BOW, \
@@ -51,6 +55,8 @@ WEAPON_SHAPES: Dict[int, str] = {
     0: SLING, 64: SLING, 1: BOW, 69: BOW, 48: CHATKCHA,
 }
 FLAME_BLADE = 29
+# Which steps of a shape (_shape) are its blade
+BLADE_STEPS = {GYTHKA: lambda step: abs(step) >= 6, SWORD: lambda step: step >= 1, DAGGER: lambda step: step >= 1}
 TWO_HANDED = frozenset((GREAT_AXE, POLEARM, GYTHKA, STAFF, BOW))
 
 # Each pose's grip, by hand: the angle the weapon points (degrees, 0 to the right of the picture,
@@ -160,9 +166,10 @@ def _shape(shape: str) -> List[Tuple[int, List[Tuple[int, int]]]]:
 
 
 def draw_weapon(rows: Rows, body: Rows, hand: sp.Point, angle: float, shape: str, colours: Tuple[int, int, int],
-                behind: bool, scale: float = 1.0) -> None:
+                behind: bool, scale: float = 1.0, blade: Optional[Tuple[int, int, int]] = None) -> None:
     """SHAPE drawn on ROWS (BODY: the picture without it, for what is in front) from HAND, pointing
-    at ANGLE, SCALE times its length."""
+    at ANGLE, SCALE times its length; its blade (BLADE_STEPS) in BLADE's colours, if given."""
+    on_blade = BLADE_STEPS.get(shape, lambda step: False)
     dx, dy = math.cos(math.radians(angle)) * scale, math.sin(math.radians(angle)) * scale
     across = (-dy, dx)
     hx, hy = hand
@@ -173,7 +180,7 @@ def draw_weapon(rows: Rows, body: Rows, hand: sp.Point, angle: float, shape: str
             for sub in ((0.0, 0.5) if scale > 1 else (0.0,)):  # (no gaps in a longer one)
                 x = hx + dx * (step + sub) + across[0] * offset
                 y = hy + dy * (step + sub) + across[1] * offset
-                _put(rows, x, y, colours[colour], behind, body)
+                _put(rows, x, y, (blade if blade and on_blade(step) else colours)[colour], behind, body)
 
 
 def draw_hilt(rows: Rows, body: Rows, at: sp.Point, angle: float, colours: Tuple[int, int, int], behind: bool) -> None:
@@ -264,22 +271,43 @@ def fight_shield(rows: Rows, model: int, frame: int, parts: sp.Parts,
     return (run[0] if left else run[1]), y + 2, True
 
 
+SIDE_FAR = "side, far arm"  # (draw_shield: walking from the side, on the arm beyond the body)
+
+
+def side_shield(rows: Rows, parts: sp.Parts) -> Optional[sp.Point]:
+    """Walking from the side, where the shield is: on the far arm, which the body hides, so at the
+    front of the chest (facing right: its right edge), where its near half shows past the body."""
+    if not parts.shoulders or parts.waist is None:
+        return None
+    sy, sa, sb = parts.shoulders
+    y = (sy + parts.waist) // 2 + 1
+    run = _torso_run(rows, y, (sa + sb) / 2, sa, sb)
+    if not run:
+        return None
+    return run[1] + 2, y + 2  # (held forward of the chest; as a hand is given: the shield's middle two rows above)
+
+
 def draw_shield(rows: Rows, body: Rows, hand: sp.Point, facing: Optional[str], colours: Tuple[int, int, int],
                 behind: bool, scale: float = 1.0) -> None:
     """A round shield on the forearm (about 7 by 9 pixels on a human): its face, rim and boss from
-    the front, its strapped back from behind, edge on from the side."""
+    the front, its strapped back from behind, edge on from the side; on the far arm from the side
+    (SIDE_FAR), turned partly toward us, behind the body with its front half showing."""
     outline, fill, light = colours
     hx, hy = hand
     rx, ry = 3.4 * scale, 4.4 * scale
     cx, cy = hx, hy - 2 * scale  # (on the forearm, above the hand)
     if facing == sp.SIDE:
         rx = 1.2 * scale
+    elif facing == SIDE_FAR:
+        rx = 3.0 * scale
     for dy in range(-int(ry) - 1, int(ry) + 2):
         for dx in range(-int(rx) - 1, int(rx) + 2):
             d = (dx / rx) ** 2 + (dy / ry) ** 2
             if d > 1.0:
                 continue
             edge = d > 0.6 if facing != sp.SIDE else abs(dx) >= rx - 0.6
+            if facing == SIDE_FAR:
+                edge = d > 0.55
             if edge:
                 c = outline
             elif facing == sp.FRONT and abs(dx) <= 0 and abs(dy) <= 0:
@@ -674,10 +702,11 @@ def draw_belt(rows: Rows, parts: sp.Parts, item_type: int, pad: int) -> None:
         rows[parts.waist + pad][int(round(middle)) + pad] = BUCKLE
 
 
-def armed(rows: Rows, model: int, frame: int, combat: bool, weapons: Dict[str, Tuple[int, int]],
+def armed(rows: Rows, model: int, frame: int, combat: bool, weapons: Dict[str, Tuple],
           pad: int = 10, armour: Tuple[int, ...] = (),
           cloak: Optional[Tuple[sp.Parts, Dict[sp.Point, int]]] = None) -> Rows:
-    """One frame of MODEL with WEAPONS ({"right"/"left": (item type, material)}: in the hands in a
+    """One frame of MODEL with WEAPONS ({"right"/"left": (item type, material[, name in
+    BLADE_COLOURS])}: in the hands in a
     fight, walking worn at the belt (two-handed ones carried upright);
     "missile": the bow, sling or chatkcha carried, "ammo": arrows, on the back or at the hip),
     padded by PAD, in ARMOUR (item types: under all the rest). Nothing in the hands in the bow
@@ -731,14 +760,16 @@ def armed(rows: Rows, model: int, frame: int, combat: bool, weapons: Dict[str, T
     for hand in ("left", "right"):  # (the right drawn last, over the left)
         if hand not in weapons:
             continue
-        item_type, material = weapons[hand]
+        item_type, material = weapons[hand][:2]
+        blade = BLADE_COLOURS.get(weapons[hand][2]) if len(weapons[hand]) > 2 else None
         shape = WEAPON_SHAPES.get(item_type)
-        if hand not in hands and not (shape == SHIELD and pose and hand == "left"):
+        side = shape == SHIELD and not combat and parts.facing == sp.SIDE  # (placed by side_shield)
+        if hand not in hands and not (shape == SHIELD and pose and hand == "left") and not side:
             continue
         g = grip(model, frame, combat, hand)
         if g is None and pose:
             g = (pose[1] if hand == "right" else pose[2], False)
-        if shape == SHIELD and pose and hand == "left":
+        if shape == SHIELD and (pose and hand == "left" or side):
             g = g or (0, False)  # (placed by fight_shield, whichever hand was found)
         if shape is None or g is None or shape in (SLING, BOW, CHATKCHA):
             continue
@@ -752,7 +783,12 @@ def armed(rows: Rows, model: int, frame: int, combat: bool, weapons: Dict[str, T
             hx, hy = _hip(out, parts, hx, pad)
             draw_hilt(out, body, (hx + pad, hy + pad), g[0], colours, g[1])
             scale = SHEATHED_SCALE * MODEL_SCALE.get(model, 1.0)
-        if shape == SHIELD:
+            blade = None  # (in its scabbard)
+        if shape == SHIELD and not combat and parts.facing == sp.SIDE:
+            spot = side_shield(rows, parts)
+            if spot is not None:
+                draw_shield(out, body, (spot[0] + pad, spot[1] + pad), SIDE_FAR, colours, True, MODEL_SCALE.get(model, 1.0))
+        elif shape == SHIELD:
             behind = g[1] or parts.facing == sp.BACK  # (from behind: held in front of the body)
             if pose and hand == "left":
                 spot = fight_shield(rows, model, frame, parts, hands.get("right"))
@@ -762,7 +798,7 @@ def armed(rows: Rows, model: int, frame: int, combat: bool, weapons: Dict[str, T
                 behind = behind or hidden
             draw_shield(out, body, (hx + pad, hy + pad), parts.facing, colours, behind, MODEL_SCALE.get(model, 1.0))
         else:
-            draw_weapon(out, body, (hx + pad, hy + pad), g[0], shape, colours, g[1], scale)
+            draw_weapon(out, body, (hx + pad, hy + pad), g[0], shape, colours, g[1], scale, blade)
     return out
 
 

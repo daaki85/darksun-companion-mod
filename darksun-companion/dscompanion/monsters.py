@@ -50,8 +50,31 @@ PROPERTY_TEXT = {
 # its hits cast one of the monsters' powers on the target as well
 SPECIAL_ATTACKS = {
     2: "2d6 cold", 3: "paralysis", 4: "2d6 acid", 13: "poison (10 damage)", 14: "poison (30 damage)",
-    15: "deadly poison", 16: "20 acid", 25: "disease (1 hit in 10)", 24: "a special touch",
+    15: "deadly poison", 16: "20 acid, which can eat a worn piece of armour", 25: "disease (1 hit in 10)",
+    24: "a corroding touch, which can eat a worn piece of armour and the weapon held",
 }
+# a creature's alignment (its sheet's byte 1Ah), in two letters for the Look box and in words
+ALIGNMENTS = {1: ("LG", "lawful good"), 2: ("LN", "lawful neutral"), 3: ("LE", "lawful evil"),
+              4: ("NG", "neutral good"), 5: ("TN", "true neutral"), 6: ("NE", "neutral evil"),
+              7: ("CG", "chaotic good"), 8: ("CN", "chaotic neutral"), 9: ("CE", "chaotic evil")}
+SHEET_ALIGNMENT = 0x1A
+LOOK_WIDTH = 15  # the characters a Look box line has room for (NEEDS +2 WEAPON)
+# ... and in pixels: the game's font (RESOURCE.GFF's FONT 100) is 6 wide but for these
+LOOK_PIXELS = 86
+LOOK_SIDE = "\x01"  # (DSCLOG: the line goes on LEVEL's row, to its right, LOOK_SIDE_X = 60 on)
+SIDE_PIXELS = 33  # ... where up to the box's edge
+FONT_WIDTHS = {**{c: 4 for c in " !*+,.:;Ij"}, **{c: 5 for c in "?fhknrstu"}, **{c: 2 for c in "il"},
+               **{c: 7 for c in "$^|"}}
+
+
+def look_pixels(text: str) -> int:
+    """How wide TEXT is in the game's font."""
+    return sum(FONT_WIDTHS.get(c, 6) for c in text)
+
+
+def look_fit(*forms: str) -> str:
+    """The first of FORMS (the fullest first) that fits a Look box line, else the last."""
+    return next((f for f in forms if look_pixels(f) <= LOOK_PIXELS), forms[-1])
 # the short forms for the game's small Look box
 SHORT_KINDS = {"poison": "POISON", "fire": "FIRE", "cold": "COLD", "electricity": "ELEC", "acid": "ACID",
                "draining": "DRAIN", "psionic attacks": "PSI", "death spells": "DEATH"}
@@ -215,7 +238,17 @@ def monster_lines(gd, tables: MonsterTables, creature: int, ac: Optional[int]) -
     undead = sheet[0x18] == UNDEAD_RACE
     d = tables.defences(kind, undead)
     ac_text = str(ac) if ac is not None else str(struct.unpack_from("b", sheet, 0x27)[0])
-    short = [f"HP {hp}/{max_hp} AC {ac_text}", f"THAC0 {thac0}" + (f" MR {mr}" if mr else "")]
+    alignment = ALIGNMENTS.get(sheet[SHEET_ALIGNMENT])
+    # magic resistance beside the game's LEVEL; the alignment after THAC0 where it fits (the
+    # description always has it); a line squeezed when it would run past the box's edge
+    second = f"THAC0 {thac0}"
+    if alignment and look_pixels(f"{second} AL {alignment[0]}") <= LOOK_PIXELS:
+        second += f" AL {alignment[0]}"
+    first = look_fit(f"HP {hp}/{max_hp} AC {ac_text}", f"HP{hp}/{max_hp} AC{ac_text}")
+    short = [first, second]
+    if mr:
+        side = f"MR {mr}" if look_pixels(f"MR {mr}") <= SIDE_PIXELS else f"MR{mr}"
+        short.insert(0, LOOK_SIDE + side)
     line = short_line(d)
     if line:
         short.append(line)
@@ -223,6 +256,6 @@ def monster_lines(gd, tables: MonsterTables, creature: int, ac: Optional[int]) -
     head = f"{gd.creature_name(creature)}: HP {hp}/{max_hp}, AC {ac_text}, THAC0 {thac0}"
     if attacks:  # monsters' sheets leave it 0: their attacks come from elsewhere
         head += f", {per_round} attack{'s' if attacks != 2 else ''} a round"
-    full = [head + (f", magic resistance {mr}%" if mr else "") + "."]
+    full = [head + (f", magic resistance {mr}%" if mr else "") + (f", {alignment[1]}" if alignment else "") + "."]
     full += describe(d)
     return short, full

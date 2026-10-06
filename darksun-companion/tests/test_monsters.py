@@ -78,7 +78,7 @@ class TablesTests(unittest.TestCase):
         data[M.CLASS_PERCENTS_OFF + 11 * M.CLASS_SIZE:M.CLASS_PERCENTS_OFF + 11 * M.CLASS_SIZE + 2] = bytes([0, 100])
         tables = M.MonsterTables(lambda addr, n: bytes(data[:n]), 0)
         d = tables.defences(3, False)
-        self.assertEqual((d.weapon_plus, d.special), (1, ["a special touch"]))
+        self.assertEqual((d.weapon_plus, d.special), (1, ["a corroding touch, which can eat a worn piece of armour and the weapon held"]))
         self.assertEqual(tables.defences(99, False).weapon_plus, 0)
 
 
@@ -96,6 +96,17 @@ class ReasonTests(unittest.TestCase):
         self.assertEqual(M.weapon_reason(d(weapons_half=True)), "non-magical weapons do half")
         self.assertIsNone(M.weapon_reason(d()))
 
+
+class LookWidthTests(unittest.TestCase):
+    """The Look box's lines, measured in the game font's widths (86 pixels fit: seen in the game)."""
+
+    def test_widths(self):
+        self.assertEqual(M.look_pixels("NEEDS +2 WEAPON"), 84)
+        self.assertEqual(M.look_pixels("THAC0 17 AL LE"), 78)
+
+    def test_a_long_line_is_squeezed(self):
+        self.assertEqual(M.look_fit("HP 18/18 AC 3", "HP18/18 AC3"), "HP 18/18 AC 3")
+        self.assertEqual(M.look_fit("HP 120/120 AC -2", "HP120/120 AC-2"), "HP120/120 AC-2")
 
 if __name__ == "__main__":
     unittest.main()

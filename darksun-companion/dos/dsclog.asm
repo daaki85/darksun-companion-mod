@@ -64,6 +64,14 @@ VEC_REDRAW equ 0xDE        ; PROBE_REDRAW
 VEC_REDRAW_ALL equ 0xDD    ; PROBE_REDRAW_ALL
 VEC_SCROLL equ 0xDC        ; PROBE_SCROLL
 VEC_HIT    equ 0xDB        ; PROBE_HIT
+VEC_ITEM_BOX equ 0xDA      ; PROBE_ITEM_BOX
+VEC_BELT equ 0xD9          ; PROBE_BELT
+VEC_SAVE_PAGE equ 0xD8     ; PROBE_SAVE_PAGE
+VEC_SAVE_CLICK equ 0xD7    ; PROBE_SAVE_CLICK
+VEC_ITEM_WEAPON equ 0xD6   ; PROBE_ITEM_WEAPON
+VEC_ITEM_SKIP equ 0xD5     ; PROBE_ITEM_SKIP
+VEC_ITEM_ARMOUR equ 0xD4   ; PROBE_ITEM_ARMOUR
+VEC_SCRIPT_RAND equ 0xD3   ; PROBE_SCRIPT_RAND
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 128         ; entries in the ring
@@ -92,7 +100,7 @@ section image follows=mz vstart=0
 
 ; ---- header, found by the companion via SIG (16-byte aligned) ----
 hdr:
-sig      db 'DSCLOGvV'          ; +0
+sig      db 'DSCLOGvY'          ; +0
 seq      dw 0                   ; +8   entries written so far (wraps at 65536)
 widx     dw 0                   ; +10  ring slot the next entry goes to
 nent     dw NENT                ; +12
@@ -214,6 +222,14 @@ hit_target dw 0xFFFF            ; +256 the enemy chosen (the companion sets it; 
 attack_seq dw 0                 ; +258 Enter pressed on it (counted)
 main_ticks dw 0                 ; +260 the map's main loop run (counted: not while a talk, menu or
                                 ;      shop is open)
+xp_who     dw 0xFFFF            ; +262 the companion sets the party member to be given XP_AMOUNT
+                                ;      with PICK_TEXT (GIVE_XP: the game's own routine, and the
+                                ;      quest's sound; FFFFh: none), DSCLOG sets it back once given
+xp_amount  dw 0                 ; +264
+skills_on  dw 0                 ; +266 the companion sets SKILLS_STEALTH to have an item's box name a
+                                ;      cloak's and boots' bonus to hiding and moving silently
+                                ;      (PROBE_ITEM_BOX), SKILLS_BELT for a worn belt's to picking
+                                ;      pockets and opening locks (PROBE_BELT, and its box's line)
 
 ; TEXT BUFFER: what the game sends to its dialogue window, as records of
 ;   byte 0FEh, byte kind (the dialogue window's: 0 = a reply to choose, the
@@ -1160,6 +1176,7 @@ probe_pick:
         push word [ss:bx + 34]
         push bp
         mov bp, sp
+        call give_xp
         call pick_show
         pop bp
         pop ax
@@ -1193,6 +1210,33 @@ pick_show:
 
 PICK_SIZE equ 240
 pick_text times PICK_SIZE db 0
+
+; GIVE_XP: the XP the companion asked for with PICK_TEXT (XP_WHO, XP_AMOUNT), given by the routine
+; the game's scripts give one person XP with (GPL 21h; it sees to a level gained), and the sound
+; of a quest done that they play with it ("... receives N experience points!" is in PICK_TEXT);
+; DS = the game's. Called in the frame PROBE_PICK and PROBE_USE_ITEM make for the overlay manager.
+XP_SEG    equ 0x4251            ; (DSUN.EXE segments, less the load segment) an overlay's entry:
+XP_OFF    equ 0x005C            ;   (who, how many)
+give_xp:
+        cmp word [cs:xp_who], 0xFFFF
+        je .ret
+        mov ax, ds
+        sub ax, DGROUP_SEG - XP_SEG
+        mov [cs:xp_call + 2], ax
+        push word [cs:xp_amount]
+        push word [cs:xp_who]
+        call far [cs:xp_call]
+        add sp, 4
+        mov ax, ds
+        sub ax, DGROUP_SEG - DROP_SEG
+        mov [cs:sound_call + 2], ax
+        push word QUEST_SOUND
+        call far [cs:sound_call]
+        add sp, 2
+        mov word [cs:xp_who], 0xFFFF
+.ret:   ret
+
+xp_call dw XP_OFF, 0
 drop_call dw DROP_OFF, 0
 sound_call dw SOUND_OFF, 0
 
@@ -1288,6 +1332,7 @@ probe_use_item:
         push word [ss:bx + 34]
         push bp
         mov bp, sp
+        call give_xp
         mov word [cs:show_text], pick_text
         call show_window
         pop bp
@@ -1446,6 +1491,7 @@ probe_win:
         mov eax, [ss:di + 6]    ; its window
         or eax, eax
         jz .done
+        call save_label         ; (the save/load window: which saves it shows)
         cmp eax, [cs:use_win]
         jne .done               ; not a USE screen PROBE_USE has drawn on
         cmp eax, [0x11A4]
@@ -1475,6 +1521,292 @@ probe_win:
         iret
 
 use_win dd 0                    ; the USE screen's window, as PROBE_USE last saw it
+
+; PROBE_SAVE_PAGE: INT VEC_SAVE_PAGE replaces "jmp <the end>" (3 bytes: INT + NOP; DSUN.EXE 74901h),
+; where the save/load window's event routine (74 8CAh; BP its frame) leaves a key it has no use
+; for. The window shows ten saves, on four pages: the game's own (SAVE01.SAV to SAVE10.SAV), then
+; SAVB, SAVC and SAVD01.SAV to 10.SAV. PgDn shows the next page, PgUp the one before; the PAGE 1
+; to PAGE 4 buttons theirs (PROBE_SAVE_CLICK). The page is one letter of the game's two save
+; names, the folder search's ("SAVE??.SAV") and the name a save is written to ("SAVE%.2d.SAV"):
+; loading takes the name the search found. (The other pages' names don't match the game's
+; search, so the game without the Ledger never sees them: its list has room for ten, and a
+; SAVE11.SAV would run past it.) For the new page, the window's own routines (in its overlay, at
+; CS: nothing they call is an overlay, so it stays put) search the folder again and draw the
+; rows, the selected row stays (in the load window, the first save: PgUp and PgDn pass by pages
+; with none; a button's page with none is shown, its first row chosen, and SAVE_LABEL greys
+; LOAD while the row chosen has no save; Enter, which the game's key table no longer has, comes
+; here too and goes on to LOAD only on a row with a save), and the window is drawn again (SAVE_LABEL greys the
+; page's button); then on as the routine goes on after Up or Down.
+SP_IGNORE  equ 0x74DEC - 0x74903 ; (DSUN.EXE, from the way back: the NOP after the INT) the routine's end
+SP_DONE    equ 0x74A21 - 0x74903 ; ... after Up or Down: the screen updated, then the end
+SP_KEY     equ 0x12             ; the key, at the routine's BP+12h
+SP_SCAN    equ 0x743E2 - 0x74300 ; the overlay's routines (offsets in its segment): search the folder,
+SP_ROW     equ 0x74E36 - 0x74300 ;   draw a row,
+SP_PICK    equ 0x74ECD - 0x74300 ;   show a row as chosen (and its description below)
+SAVE_SEG   equ 0x3BA7 - 0x4356  ; the window's data (DS-relative): the saves, 7Dh bytes each from +2
+SAVE_SIZE  equ 0x7D             ;   (+2 the file's name, +52h the description), +4E4h the chosen
+SAVE_CHOSEN equ 0x4E4           ;   row, +4E6h the window, +4EAh 1: the load window
+SAVE_WIN   equ 0x4E6
+SAVE_LOADING equ 0x4EA
+BTN_SEG    equ 0x2A1D - 0x4356  ; (resident) a button's state: (window, id, state)
+BTN_OFF    equ 0x71A
+WIN_SEG    equ 0x25EC - 0x4356  ; (resident) bring a window to the front and draw it (PROBE_WIN's)
+WIN_OFF    equ 0x618
+NAME_FIND  equ 0x1DCF + 3       ; DS: "SAVE??.SAV": the letter that is the page
+NAME_SAVE  equ 0x1DDA + 3       ; DS: "SAVE%.2d.SAV"
+KEY_ENTER  equ 0x1C0D           ; (taken out of the window's key table: gamepatch.py's save_enter)
+SP_ENTER   equ 0x74C68 - 0x74903 ; ... where the window's routine takes it: LOAD (or SAVE)
+KEY_PGUP   equ 0x4900
+KEY_PGDN   equ 0x5100
+ROW_ID     equ 0x80B            ; the rows' buttons: 80Bh on
+LOAD_ID    equ 0x809            ; LOAD (in the save window, SAVE)
+probe_save_page:
+        push bp
+        mov bp, sp              ; BP+2 the way back, BP+4 its segment
+        sti
+        pushad
+        push es
+        mov word [cs:sp_done], SP_DONE
+        mov word [cs:sp_ignore], SP_IGNORE
+        mov byte [cs:sp_zero], 0
+        mov si, [bp]            ; the routine's BP
+        mov ax, [ss:si + SP_KEY]
+        cmp al, 0xE0
+        jne .scan
+        xor al, al              ; (the grey keys': as the number pad's)
+.scan:  cmp ax, KEY_ENTER
+        jne .pages
+        call sp_es              ; Enter: LOAD, as the game's own, but not on a row with no save
+        cmp word [es:SAVE_LOADING], 0
+        je .enter
+        imul bx, [es:SAVE_CHOSEN], SAVE_SIZE
+        cmp byte [es:bx + 2], 0
+        je sp_skip
+.enter: add word [bp + 2], SP_ENTER
+        pop es
+        popad
+        pop bp
+        iret
+.pages: mov dl, -1              ; (the page before)
+        cmp ax, KEY_PGUP
+        je .step
+        mov dl, 1               ; (the next)
+        cmp ax, KEY_PGDN
+        jne sp_skip
+.step:  mov [cs:sp_step], dl
+        call sp_now
+        add al, dl
+        mov bl, al
+        jmp sp_want
+
+; PROBE_SAVE_CLICK: INT VEC_SAVE_CLICK replaces "jmp <the end>" (3 bytes: INT + NOP; DSUN.EXE
+; 74B9Fh), where the window's event routine leaves a click on a button it doesn't know: PAGE 1 to
+; PAGE 4 (savepages.py) show that page (then the routine's end returns 0, as for the game's own
+; buttons).
+SC_DONE    equ 0x74A21 - 0x74BA1 ; (DSUN.EXE, from the way back) the screen updated, then the end
+SC_IGNORE  equ 0x74DE5 - 0x74BA1 ; the end for the game's buttons
+SC_ID      equ 8                ; the button, at the routine's BP+8
+PAGE1_ID   equ 0x815            ; (PAGE 1 to PAGE 4: 815h to 818h)
+PAGES      equ 4
+probe_save_click:
+        push bp
+        mov bp, sp
+        sti
+        pushad
+        push es
+        mov word [cs:sp_done], SC_DONE
+        mov word [cs:sp_ignore], SC_IGNORE
+        mov byte [cs:sp_zero], 1
+        mov si, [bp]
+        mov ax, [ss:si + SC_ID]
+        sub ax, PAGE1_ID
+        cmp ax, PAGES
+        jae sp_skip
+        mov bl, al
+        mov byte [cs:sp_step], 0  ; (that page or none)
+
+sp_want:                        ; BL the page wanted (0 to 3), SP_STEP: where to look on from it
+        cmp bl, PAGES           ;   if the load window has no saves on it (-1, 1; 0: nowhere)
+        jae sp_skip             ; (no page before the first, or after the last)
+        call sp_now
+        cmp bl, al
+        je sp_skip              ; (on that page already)
+        mov [cs:sp_target], bl
+        mov al, [NAME_FIND]
+        mov [cs:sp_was], al     ; the page now, if no page wanted has anything to load
+        mov ax, [bp + 4]
+        mov [cs:sp_call + 2], ax
+        call sp_es
+        mov di, [es:SAVE_CHOSEN]
+.try:   movzx bx, byte [cs:sp_target]
+        mov bl, [cs:sp_letters + bx]
+        call sp_page
+        cmp word [es:SAVE_LOADING], 0
+        je .rows
+        xor di, di              ; loading: the first save on the page
+.first: imul bx, di, SAVE_SIZE
+        cmp byte [es:bx + 2], 0
+        jne .rows
+        inc di
+        cmp di, 10
+        jb .first
+        mov al, [cs:sp_step]    ; none: the next page that way, if there is one
+        add [cs:sp_target], al
+        xor di, di              ; (a button's page: shown empty, its first row chosen)
+        or al, al
+        jz .rows
+        cmp byte [cs:sp_target], PAGES
+        jb .try
+.none:  mov bl, [cs:sp_was]     ; none at all: back to the page there was
+        call sp_page
+        jmp sp_skip
+.rows:  xor cx, cx
+.row:   push cx
+        push cx
+        mov word [cs:sp_call], SP_ROW
+        call far [cs:sp_call]
+        add sp, 2
+        pop cx
+        inc cx
+        cmp cx, 10
+        jb .row
+        call sp_es
+        push word 5             ; the row chosen before: as the others
+        mov ax, [es:SAVE_CHOSEN]
+        call sp_button
+        mov [es:SAVE_CHOSEN], di
+        push word 4             ; ... and the one chosen now
+        mov ax, di
+        call sp_button
+        push di
+        mov word [cs:sp_call], SP_PICK
+        call far [cs:sp_call]
+        add sp, 2
+        call sp_es
+        push dword [es:SAVE_WIN]
+        mov ax, ds
+        add ax, WIN_SEG
+        mov [cs:sp_call + 2], ax
+        mov word [cs:sp_call], WIN_OFF
+        call far [cs:sp_call]
+        add sp, 4
+        mov ax, [cs:sp_done]
+        add [bp + 2], ax
+        pop es
+        popad
+        cmp byte [cs:sp_zero], 0
+        je .back
+        xor si, si              ; (a click: the routine returns 0, as for its own buttons)
+.back:  pop bp
+        iret
+sp_skip:
+        mov ax, [cs:sp_ignore]
+        add [bp + 2], ax
+        pop es
+        popad
+        pop bp
+        iret
+
+sp_now:                         ; AL the page shown (0 to 3: the game's names' letter in SP_LETTERS)
+        push bx
+        mov al, [NAME_FIND]
+        xor bx, bx
+.find:  cmp al, [cs:sp_letters + bx]
+        je .found
+        inc bx
+        cmp bx, PAGES
+        jb .find
+        xor bx, bx              ; (not one of them: as the first)
+.found: mov al, bl
+        pop bx
+        ret
+
+sp_page:                        ; BL the page's letter: the names, then the folder searched again
+        mov [NAME_FIND], bl     ;   (ES the window's data again after)
+        mov [NAME_SAVE], bl
+        push word 10
+        mov word [cs:sp_call], SP_SCAN
+        call far [cs:sp_call]
+        add sp, 2
+sp_es:  mov ax, ds              ; ES: the window's data (the game's routines keep neither BX nor ES)
+        add ax, SAVE_SEG
+        mov es, ax
+        ret
+
+sp_button:                      ; AX a row, the state pushed (taken off): its button's state
+        add ax, ROW_ID
+sp_button_id:                   ; (AX the button)
+        push bp
+        mov bp, sp
+        push word [bp + 4]      ; the state
+        movsx eax, ax
+        push eax
+        push dword [es:SAVE_WIN]
+        mov ax, ds
+        add ax, BTN_SEG
+        mov [cs:sp_btn + 2], ax
+        call far [cs:sp_btn]
+        add sp, 10
+        call sp_es
+        pop bp
+        ret 2
+
+sp_btn  dw BTN_OFF, 0           ; the game's routine for a button's state
+sp_call dd 0
+sp_was  db 0
+sp_letters db 'EBCD'            ; the pages' letters (SAVE??.SAV, SAVB, SAVC, SAVD)
+sp_target db 0
+sp_step   db 0
+sp_done   dw 0                  ; where the event routine goes on: after the page changes,
+sp_ignore dw 0                  ;   or not (from the way back)
+sp_zero   db 0                  ; 1: a click (the routine to return 0)
+
+; SAVE_LABEL: (PROBE_WIN; EAX the window drawn, DS the game's) on the save/load window, the
+; button of the page shown (PAGE 1 to PAGE 4, savepages.py) out of use: so it shows which; and in
+; the load window, LOAD out of use while the row chosen has no save (an empty page's).
+save_label:
+        pushad
+        push es
+        cmp byte [cs:sl_busy], 0
+        jne .out                ; (setting a button's state may draw the window again)
+        mov bx, ds
+        add bx, SAVE_SEG
+        mov es, bx
+        cmp eax, [es:SAVE_WIN]
+        jne .out
+        mov byte [cs:sl_busy], 1
+        call sp_now
+        mov [cs:sl_page], al
+        xor si, si
+.button:
+        xor cx, cx              ; (states: 1 out of use, 0 in use)
+        mov ax, si
+        cmp al, [cs:sl_page]
+        jne .state
+        inc cx
+.state: push cx
+        lea ax, [si + PAGE1_ID]
+        call sp_button_id
+        inc si
+        cmp si, PAGES
+        jb .button
+        cmp word [es:SAVE_LOADING], 0
+        je .done
+        imul bx, [es:SAVE_CHOSEN], SAVE_SIZE
+        xor cx, cx
+        cmp byte [es:bx + 2], 0
+        jne .load
+        inc cx                  ; (no save there)
+.load:  push cx
+        mov ax, LOAD_ID
+        call sp_button_id
+.done:  mov byte [cs:sl_busy], 0
+.out:   pop es
+        popad
+        ret
+
+sl_busy    db 0
+sl_page    db 0
 
 use_draw:                       ; the selected character's slots in the USE screen's panel
         mov ax, ds
@@ -1533,6 +1865,8 @@ use_draw:                       ; the selected character's slots in the USE scre
 LOOK_PATCH equ 0x5FCDA          ; DSUN.EXE offsets
 LOOK_DRAW  equ 0x5FCB8          ; "lcall 0090h:0A40h" operand: the text routine
 LOOK_ROWS  equ 4                ; the box's status rows: y = (row + 2) * 7 + 10h
+LOOK_SIDE  equ 1                ; a line starting with this goes on LEVEL's row (row -1), to its right
+LOOK_SIDE_X equ 60              ;   at this x (past LEVEL: 10)
 probe_look:
         sti
         pushad
@@ -1570,11 +1904,17 @@ probe_look:
         mov eax, [bp + 6]       ; the box's window
         mov [cs:l_win], eax
         mov di, look_text
-.line:  cmp word [cs:l_row], LOOK_ROWS
+.line:  mov byte [cs:l_side], 0
+        cmp byte [cs:di], LOOK_SIDE
+        jne .rows
+        inc di
+        mov byte [cs:l_side], 1
+        jmp .take
+.rows:  cmp word [cs:l_row], LOOK_ROWS
         jae .full
         cmp byte [cs:di], 0
         je .full
-        mov bx, l_line          ; the next line, up to "|", into L_LINE
+.take:  mov bx, l_line          ; the next line, up to "|", into L_LINE
 .copy:  mov al, [cs:di]
         cmp al, '|'
         je .cut
@@ -1592,19 +1932,26 @@ probe_look:
         inc di
 .draw:  push di
         mov ax, [cs:l_row]
-        add ax, 2
+        mov cx, 6
+        cmp byte [cs:l_side], 0
+        je .at
+        mov ax, -1              ; (LEVEL's row, above the status rows, to its right)
+        mov cx, LOOK_SIDE_X
+.at:    add ax, 2
         imul ax, ax, 7
         add ax, 0x10
         push word 0x11          ; as the box prints LEVEL
         push word 0x1F
         push ax                 ; y
-        push word 6             ; x
+        push cx                 ; x
         push cs
         push word l_line
         push dword [cs:l_win]
         call far [cs:l_draw]
         add sp, 16
         pop di
+        cmp byte [cs:l_side], 0
+        jne .line               ; (beside LEVEL: no row of its own)
         inc word [cs:l_row]
         jmp .line
 .full:  cmp byte [cs:look_full], 0
@@ -1868,15 +2215,74 @@ ITEM_TYPES equ 0x1669           ; DS: far pointer to the item types (14h bytes e
 WS_MELEE   equ 0xFFFE           ; WS_TYPE: any melee weapon
 
 ; PROBE_RING_AC: INT VEC_RING_AC replaces "mov al,es:[bx+0Fh] / cbw" (5 bytes: INT + 3 NOPs)
-; in the AC function, where ES:BX is a worn item's type and CX its number; bit 80h of AX
-; says the type counts for AC (the plus less the type's AC). Does that, counting rings too.
+; in the AC function, where ES:BX is a worn item's type, CX its number, DX the item and DI the
+; creature's thing; bit 80h of AX says the type counts for AC (the plus less the type's AC).
+; Does that, counting rings too. With RULE_PROTECTION, AD&D's: a ring of protection betters
+; AC only without magical armour, and of two rings only the better (the left hand's if they're
+; equal); a cloak of protection (the second of TYPES) counts only without magical or metal
+; armour and without a shield (PROT_SCAN).
 probe_ring_ac:
         mov al, [es:bx+0x0F]
         cbw
         cmp cx, RING_TYPE
-        jne .helm
+        jne .cloak
         or al, 0x80
+        test word [cs:rules], RULE_PROTECTION
+        jz .done
+        call prot_here
+        jc .done
+        test byte [cs:p_flags], P_MAGIC_ARMOUR
+        jnz .off
+        push ax
+        push bx
+        push es
+        les bx, [ITEMS]
+        mov ax, dx
+        imul ax, ax, 0x15
+        add bx, ax
+        mov al, [es:bx+0x11]    ; the slot this ring is worn in
+        mov ah, [cs:p_ring]
+        cmp al, FINGER
+        je .first
+        cmp [cs:p_ring2], ah    ; (the other hand's) counts if better than the left's
+        jmp .which
+.first: cmp ah, [cs:p_ring2]    ; the left hand's counts unless the other is better
+.which: pop es
+        pop bx
+        pop ax
+        jg .done                ; (the better: counts)
+        je .tie
+        jmp .off
+.tie:   push ax                 ; equal: the left hand's
+        push bx
+        push es
+        les bx, [ITEMS]
+        mov ax, dx
+        imul ax, ax, 0x15
+        add bx, ax
+        cmp byte [es:bx+0x11], FINGER
+        pop es
+        pop bx
+        pop ax
+        je .done
+.off:   and al, 0x7F
+.done:  iret
+.cloak: push ax
+        mov ax, [cs:types_first]
+        or ax, ax
+        jz .other
+        inc ax
+        cmp cx, ax
+        jne .other
+        pop ax
+        test word [cs:rules], RULE_PROTECTION
+        jz .done
+        call prot_here
+        jc .done
+        test byte [cs:p_flags], P_MAGIC_ARMOUR | P_METAL_ARMOUR | P_SHIELD
+        jnz .off
         iret
+.other: pop ax
 .helm:  cmp cx, HELM_LEATHER    ; a helm: AC 1 with RULE_HELMS (the game's are all 0), 0 without
         je .is
         cmp cx, HELM_METAL
@@ -1920,6 +2326,8 @@ probe_ring_save:
 
 ring_plus:                      ; DS = the game's, AX = the things table's segment, DI = a
         mov [cs:r_things], ax   ; creature's thing: SI += the pluses of the rings it wears
+        test word [cs:rules], RULE_PROTECTION
+        jnz .rules
         mov es, ax
         mov bx, di
         imul bx, bx, 3
@@ -1935,7 +2343,7 @@ ring_plus:                      ; DS = the game's, AX = the things table's segme
         mov word [cs:ws_slot], FINGER2
         call worn_scan
         add si, [cs:ws_plus]
-        mov ax, [cs:types_first]  ; and a cloak of protection's (the second of TYPES), worn
+.cloak: mov ax, [cs:types_first]  ; and a cloak of protection's (the second of TYPES), worn
         or ax, ax
         jz .done
         inc ax
@@ -1945,6 +2353,356 @@ ring_plus:                      ; DS = the game's, AX = the things table's segme
         call worn_scan
         add si, [cs:ws_plus]
 .done:  ret
+.rules: call prot_scan          ; RULE_PROTECTION: the better ring only, whatever the armour;
+        jc .done                ; the cloak only without magical or metal armour or a shield
+        mov al, [cs:p_ring]
+        cmp al, [cs:p_ring2]
+        jge .ring
+        mov al, [cs:p_ring2]
+.ring:  cbw
+        add si, ax
+        test byte [cs:p_flags], P_MAGIC_ARMOUR | P_METAL_ARMOUR | P_SHIELD
+        jnz .done
+        mov es, [cs:r_things]
+        mov bx, di
+        imul bx, bx, 3
+        mov ax, [es:bx+THINGS+1]
+        mov [cs:r_who], ax
+        jmp .cloak
+
+; PROT_HERE: (called from PROBE_RING_AC, its INT's return address at SP+2) PROT_SCAN for the
+; AC routine's creature DI, the things table's segment being in its "mov ax,<segment>" A8h
+; bytes on (DSUN.EXE 58F66h).
+prot_here:
+        push bp
+        mov bp, sp
+        push es
+        push bx
+        les bx, [bp+4]
+        mov bx, [es:bx+0xA8]
+        mov [cs:r_things], bx
+        pop bx
+        pop es
+        pop bp
+        ; (on into PROT_SCAN)
+
+; PROT_SCAN: what creature thing DI wears (DS = the game's, R_THINGS the things table's
+; segment) that the protection rules weigh: P_FLAGS (P_MAGIC_ARMOUR: a worn armour piece,
+; chest, arm, leg or helm, with a plus; P_METAL_ARMOUR: one of metal; P_SHIELD: a shield in a hand),
+; P_RING and P_RING2 (the plus of the ring on each hand's finger, 0 for none or less). CF set
+; if DI isn't a creature. Keeps every register.
+prot_scan:
+        pushad
+        push es
+        mov es, [cs:r_things]
+        mov bx, di
+        imul bx, bx, 3
+        cmp byte [es:bx+THINGS], 2
+        jne .not
+        mov ax, [es:bx+THINGS+1]
+        imul ax, ax, 0x3A
+        mov [cs:r_creature], ax
+        mov byte [cs:p_flags], 0
+        mov word [cs:p_ring], 0         ; (and P_RING2)
+        mov cx, 8                       ; its item lists, each a thing: +8, +0Ah, +0Ch
+.list:  les bx, [CREATURES]
+        add bx, [cs:r_creature]
+        add bx, cx
+        mov dx, [es:bx]
+        cmp dx, NO_THING
+        jae .next
+        mov es, [cs:r_things]
+        mov bx, dx
+        imul bx, bx, 3
+        cmp byte [es:bx+THINGS], 1
+        jne .next                       ; not an item
+        mov dx, [es:bx+THINGS+1]
+        mov byte [cs:r_left], 100
+.item:  cmp dx, NO_THING
+        jae .next
+        les bx, [ITEMS]
+        mov ax, dx
+        imul ax, ax, 0x15
+        add bx, ax
+        mov dx, [es:bx+4]               ; (the next)
+        mov si, [es:bx+0x0A]            ; the type
+        mov al, [es:bx+0x11]            ; the slot
+        mov ah, [es:bx+0x14]            ; the plus
+        cmp si, RING_TYPE
+        jne .type
+        cmp ah, 0
+        jle .on
+        cmp al, FINGER
+        jne .ring2
+        mov [cs:p_ring], ah
+        jmp .on
+.ring2: cmp al, FINGER2
+        jne .on
+        mov [cs:p_ring2], ah
+        jmp .on
+.type:  les bx, [ITEM_TYPES]
+        imul si, si, 0x14
+        add bx, si
+        test byte [es:bx], 4            ; a shield (the flag the game's AC reads for one)
+        jz .body
+        cmp al, HAND_RIGHT
+        je .shield
+        cmp al, HAND_LEFT
+        jne .on
+.shield: or byte [cs:p_flags], P_SHIELD
+        jmp .on
+.body:  cmp al, ARM_SLOT                ; armour: worn on the arms, legs, head or chest, and
+        je .armour                      ; counting for AC
+        cmp al, LEG_SLOT
+        je .armour
+        cmp al, HEAD_SLOT
+        je .armour
+        cmp al, CHEST_SLOT
+        jne .on
+.armour: test byte [es:bx+0x0F], 0x80
+        jz .on
+        cmp ah, 0
+        jle .metal
+        or byte [cs:p_flags], P_MAGIC_ARMOUR
+.metal: mov al, [es:bx+8]               ; its material (no material: 40h with 0)
+        and al, 0x4F
+        cmp al, MATERIAL_METAL
+        jne .on
+        or byte [cs:p_flags], P_METAL_ARMOUR
+.on:    dec byte [cs:r_left]
+        jnz .item
+.next:  add cx, 2
+        cmp cx, 0x0E
+        jb .list
+        clc
+        jmp .out
+.not:   stc
+.out:   pop es
+        popad
+        ret
+
+; PROBE_SCRIPT_RAND: INT VEC_SCRIPT_RAND replaces "inc eax / mov edx,eax" (5 bytes: INT + 3 NOPs;
+; DSUN.EXE B300h) in the scripts' random command (0 to N, each as likely: rand() * (N + 1) /
+; 32768), EAX its N, the rand() on the stack under the INT's return. Does the two instructions
+; and records the command (kind KIND_SCRIPT): AL the result, AH N (its low byte), EXTRA where
+; the script is (the running script's position, past the command's number: what dscompanion's
+; searches.py knows the junk, haystack and wardrobe searches by), and the frame's BP+2, +4 and
+; +6 the searches' counts (the scripts' variables 135,21 to 23: junk and hay finds, wardrobe
+; searches; words in the table DS:1356h points to).
+KIND_SCRIPT equ 5
+SCRIPT_DATA equ 0x3781 - 0x4356 ; (DS-relative) the interpreter's: +192h the running script's slot,
+SCRIPT_SLOT equ 0x192           ;   +295h each slot's position (words)
+SCRIPT_POS equ 0x295
+SCRIPT_COUNTS equ 0x1356        ; DS: far pointer to the scripts' variables 135 (words)
+SEARCH_FIRST equ 21             ; (junk, hay, wardrobe: 21 to 23)
+probe_script_rand:
+        sti
+        inc eax
+        mov edx, eax
+        push bp
+        mov bp, sp              ; BP+2 the INT's return, BP+8 the rand() pushed
+        pushad
+        push es
+        movsx ebx, word [bp + 8]
+        imul ebx, eax
+        sar ebx, 15             ; (the game's: / 32768, the product never negative)
+        mov ax, dx
+        dec ax
+        mov ah, al              ; N
+        mov al, bl              ; the result
+        mov bx, ds
+        add bx, SCRIPT_DATA
+        mov es, bx
+        movsx bx, byte [es:SCRIPT_SLOT]
+        add bx, bx
+        mov cx, [es:bx + SCRIPT_POS]
+        mov [cs:extra], cx
+        les bx, [SCRIPT_COUNTS]
+        push word [es:bx + (SEARCH_FIRST + 2) * 2]
+        push word [es:bx + (SEARCH_FIRST + 1) * 2]
+        push word [es:bx + SEARCH_FIRST * 2]
+        push bp
+        mov bp, sp              ; BP+2, +4, +6: the counts
+        mov word [cs:kind], KIND_SCRIPT
+        lea si, [bp + 38]       ; (SS:SI+6: the INT's return address, past ES, PUSHAD's and BP)
+        call record
+        pop bp
+        add sp, 6
+        pop es
+        popad
+        pop bp
+        iret
+
+; ITEM SAVES. The game's acid and corroding touch (its special attacks 178, 186 and 187, the
+; Rampager's and the Babau's hits, after a failed save) can destroy an item (DSUN.EXE 7AA5Ah,
+; the first melee weapon held; 7ABC4h, the first worn arm, leg or chest piece that fails):
+; a weapon on a d20 under 8 less its plus; armour with no magical power (the item's +0Fh, as
+; the game's weapon breaking reads it) at once, without a roll, else on a d20 under 10 less
+; that byte. With RULE_ITEM_SAVES the item needs the lower (the easier) of the game's number
+; and AD&D's save against acid for its material (the DMG's table: wood 8, bone 11, metal 13,
+; leather 10, cloth 12; glass's 5 for stone and obsidian), less its plus, and 1 less again
+; for a magical power. Each check is recorded (kind KIND_ITEM: the d20 in the low byte, the
+; number needed in the high, 0 for none rolled; EXTRA the item, 8000h for armour).
+KIND_ITEM equ 4
+ITEM_ARMOUR equ 0x8000
+
+; PROBE_ITEM_WEAPON: INT VEC_ITEM_WEAPON replaces "mov dx,8 / sub dx,[bp-2]" (6 bytes: INT + 4
+; NOPs; DSUN.EXE 7AABCh), AX the d20, [BP-2] the weapon's plus, SI its entry in the list at
+; BP-324h (the item at BP-320h + SI*0Ah). DX: the number needed (a roll under it corrodes).
+probe_item_weapon:
+        push si
+        push ax
+        push bx
+        push cx
+        push di
+        mov dx, 8
+        sub dx, [bp-2]
+        mov di, si
+        imul di, di, 0x0A
+        mov bx, [bp+di-0x320]
+        test word [cs:rules], RULE_ITEM_SAVES
+        jz .log
+        call adnd_needed
+        cmp cx, dx
+        jge .log
+        mov dx, cx
+.log:   xor cx, cx                      ; (a weapon)
+        jmp item_record
+
+; PROBE_ITEM_SKIP: INT VEC_ITEM_SKIP replaces "cmp word [bp-2],0" (4 bytes: INT + 2 NOPs;
+; 7AC45h) before the game's "jz <destroyed>": [BP-2] the armour's magical power, SI its entry
+; in the list at BP-322h (the item at BP-31Eh + SI*0Ah). ZF as the game's (destroyed without a
+; roll, recorded so), or with RULE_ITEM_SAVES clear: it rolls.
+probe_item_skip:
+        push bp
+        mov bp, sp
+        and word [bp+6], ~0x40          ; (the flags IRET takes back)
+        pop bp
+        test word [cs:rules], RULE_ITEM_SAVES
+        jnz .roll
+        cmp word [bp-2], 0
+        jne .roll
+        push bp
+        mov bp, sp
+        or word [bp+6], 0x40
+        pop bp
+        push si
+        push ax
+        push bx
+        push cx
+        push di
+        mov di, si
+        imul di, di, 0x0A
+        mov bx, [bp+di-0x31E]
+        xor ax, ax                      ; no roll
+        mov dx, 21                      ; (any d20 is under it)
+        mov cx, ITEM_ARMOUR
+        jmp item_record
+.roll:  iret
+
+; PROBE_ITEM_ARMOUR: INT VEC_ITEM_ARMOUR replaces "mov dx,0Ah / sub dx,[bp-2]" (6 bytes: INT
+; + 4 NOPs; 7AC59h), AX the d20, [BP-2] the armour's magical power, SI as for PROBE_ITEM_SKIP.
+; DX: the number needed.
+probe_item_armour:
+        push si
+        push ax
+        push bx
+        push cx
+        push di
+        mov dx, 10
+        sub dx, [bp-2]
+        cmp word [bp-2], 0
+        jne .game
+        mov dx, 21                      ; (no power: the game's, destroyed whatever the roll)
+.game:  mov di, si
+        imul di, di, 0x0A
+        mov bx, [bp+di-0x31E]
+        test word [cs:rules], RULE_ITEM_SAVES
+        jz .log
+        call adnd_needed
+        cmp cx, dx
+        jge .log
+        mov dx, cx
+.log:   mov cx, ITEM_ARMOUR
+        ; (on into ITEM_RECORD)
+
+; ITEM_RECORD: (jumped to with SI, AX, BX, CX, DI pushed, in that order, on the INT's return
+; address) records the check: AL the d20 (0: none), DL the number needed, BX the item, CX
+; ITEM_ARMOUR or 0; then IRETs with those registers back and DX as given.
+item_record:
+        or cx, bx
+        mov [cs:extra], cx
+        mov ah, dl
+        mov si, sp
+        add si, 4                       ; (SS:SI+6: the INT's return address)
+        mov word [cs:kind], KIND_ITEM
+        call record
+        pop di
+        pop cx
+        pop bx
+        pop ax
+        pop si
+        iret
+
+; ADND_NEEDED: CX = AD&D's save against acid for item BX (DS the game's): its material's
+; number, less its plus, less 1 for a magical power. Keeps every other register.
+adnd_needed:
+        push ax
+        push bx
+        push di
+        push es
+        mov di, bx
+        les bx, [ITEMS]
+        imul ax, di, 0x15
+        add bx, ax
+        mov al, [es:bx+0x14]            ; its plus
+        cbw
+        mov cx, ax
+        cmp byte [es:bx+0x0F], 0
+        je .type
+        inc cx                          ; a magical power: one plus more
+.type:  mov ax, [es:bx+0x0A]
+        les bx, [ITEM_TYPES]
+        imul ax, ax, 0x14
+        add bx, ax
+        mov al, [es:bx+8]               ; its material (40h with 0: none, cloth)
+        mov ah, al
+        and al, 0x0F
+        test ah, 0x40
+        jz .known
+        or al, al
+        jnz .known
+        mov al, MATERIAL_CLOTH
+.known: cmp al, MATERIAL_CLOTH
+        jbe .look
+        mov al, MATERIAL_METAL          ; (no other is used)
+.look:  xor ah, ah
+        mov bx, ax
+        mov al, [cs:acid_saves+bx]
+        sub ax, cx
+        mov cx, ax
+        pop es
+        pop di
+        pop bx
+        pop ax
+        ret
+
+MATERIAL_CLOTH equ 6
+acid_saves db 8, 11, 5, 5, 13, 10, 12   ; wood, bone, stone, obsidian, metal, leather; cloth
+
+P_MAGIC_ARMOUR equ 1
+P_METAL_ARMOUR equ 2
+P_SHIELD       equ 4
+ARM_SLOT       equ 0                    ; the item slots of armour (the game's: arm, legs,
+LEG_SLOT       equ 6                    ; head, chest)
+HEAD_SLOT      equ 7
+CHEST_SLOT     equ 9
+HAND_RIGHT     equ 3
+HAND_LEFT      equ 10
+MATERIAL_METAL equ 4
+p_flags    db 0
+p_ring     db 0
+p_ring2    db 0
 
 ; The items creature AX (DS = the game's, R_THINGS the things table's segment) wears in slot
 ; WS_SLOT, of type WS_TYPE (0FFFFh: any): WS_COUNT of them, their positive pluses adding up to
@@ -2032,6 +2790,8 @@ RULE_STEALTH equ 64             ; (the companion rolls the hiding and moving sil
 RULE_LEVEL_10 equ 128          ; class levels go up to 10, not 9
 RULE_THIEF_TABLE equ 256        ; thief skills from AD&D's table and Dark Sun's DEX adjustments
 RULE_HALF_GIANT equ 512         ; half-giants wield two-handed weapons in one hand
+RULE_PROTECTION equ 1024        ; AD&D's rings and cloaks of protection (PROBE_RING_AC, RING_PLUS)
+RULE_ITEM_SAVES equ 2048        ; items save against acid as in AD&D where better (PROBE_ITEM_*)
 FOOT       equ 13               ; the item's slot byte while worn on the feet
 THINGS_SEG equ 0x3972 - 0x4356  ; the things table's segment, relative to DS
 
@@ -2735,7 +3495,11 @@ extra_names:
         times NAME_SIZE - 14 db 0
         db "Ring/Protection"            ; (Pehtucl's ring: the arena's is the first; their icons differ)
         times NAME_SIZE - 15 db 0
-        times (NAMES_EXTRA - 5) * NAME_SIZE db 0
+        db "Shadowseeker"               ; (Kurzak's Short Sword made +1: MAGIC_ARMS)
+        times NAME_SIZE - 12 db 0
+        db "Kreenfang"                  ; (the arena's Bone Gythka made +1)
+        times NAME_SIZE - 9 db 0
+        times (NAMES_EXTRA - 7) * NAME_SIZE db 0
 
 ; STEALTH (RULE_STEALTH): a thief who starts a turn with no enemy next to them may hide in
 ; shadows and move silently up to someone; the companion rolls both and, when both succeed,
@@ -2808,6 +3572,7 @@ l_row   dw 0
 l_draw  dd 0
 l_win   dd 0
 l_line  times L_LINE_SIZE db 0
+l_side  db 0                    ; the line being drawn goes beside LEVEL (LOOK_SIDE)
 look_pending db 0
 look_text times LOOK_SIZE db 0
 look_full times LOOK_FULL_SIZE db 0
@@ -3190,7 +3955,7 @@ shadow_of:
 .row:   mov al, [es:si]
         inc si
         cmp al, 0xFF
-        je .no
+        je .drawn
         xor ah, ah
         mov [cs:f_y], ax
 .run:   mov ax, [es:si]                 ; a run: x (8000h: the row's last), its pixels, its data
@@ -3216,6 +3981,9 @@ shadow_of:
 .next:  test byte [cs:r_x + 1], 0x80
         jz .run
         jmp .row
+.drawn: push es                         ; (its runs: drawn)
+        call spans_flush
+        pop es
 .no:    ret
 
 ; the shadow of the current run, AX rows up from the feet
@@ -3252,7 +4020,10 @@ cast_run:
         call darken
         ret
 
-; darken DX..DI on row BX (screen), within the clip
+; darken DX..DI on row BX (screen), within the clip: noted (SPANS), and drawn with the figure's
+; others a plane at a time (SPANS_FLUSH: the VGA's registers set once a plane, not once a run; a
+; figure's runs never overlap, so the order makes no difference)
+SPANS_MOST equ 256
 darken: cmp bx, [cs:clip_y0]
         jl .out
         cmp bx, [cs:clip_y1]
@@ -3265,24 +4036,35 @@ darken: cmp bx, [cs:clip_y0]
         mov di, [cs:clip_x1]
 .span:  cmp dx, di
         jg .out
-        mov [cs:s_first], dx            ; (before MUL, which takes DX)
-        mov [cs:s_last], di
-        ; darken DX..DI on row BX, a plane at a time
-        mov ax, bx
+        cmp word [cs:n_spans], SPANS_MOST
+        jb .room
+        push dx
+        push di
+        push bx
+        call spans_flush                ; (full: those so far drawn first)
+        pop bx
+        pop di
+        pop dx
+.room:  push dx
+        mov ax, bx                      ; the row's place in the page
         sub ax, [cs:v_y0]
         mul word [cs:v_row]
         sub ax, [cs:v_x0]
-        mov [cs:row_at], ax
+        pop dx
+        mov bx, [cs:n_spans]
+        imul bx, bx, 6
+        mov [cs:spans + bx], ax
+        mov [cs:spans + bx + 2], dx
+        mov [cs:spans + bx + 4], di
+        inc word [cs:n_spans]
+.out:   ret
+
+spans_flush:                            ; the noted runs darkened, a plane at a time
+        cmp word [cs:n_spans], 0
+        je .ret
         mov es, [cs:v_seg]
         xor cx, cx                      ; the plane
-.plane: mov ax, cx
-        sub ax, [cs:s_first]
-        and ax, 3
-        add ax, [cs:s_first]            ; the first x on this plane
-        cmp ax, [cs:s_last]
-        jg .nextp
-        push ax
-        mov dx, 0x3C4                   ; write to this plane, read from it
+.plane: mov dx, 0x3C4                   ; write to this plane, read from it
         mov al, 2
         mov ah, 1
         shl ah, cl
@@ -3291,25 +4073,39 @@ darken: cmp bx, [cs:clip_y0]
         mov al, 4
         mov ah, cl
         out dx, ax
-        pop ax
-        mov si, [cs:s_last]
-        sub si, ax
-        shr si, 2
-        inc si                          ; SI: how many
+        xor si, si
+.span:  mov ax, cx
+        sub ax, [cs:spans + si + 2]
+        and ax, 3
+        add ax, [cs:spans + si + 2]     ; the first x on this plane
+        mov dx, [cs:spans + si + 4]
+        sub dx, ax
+        jl .nspan
+        shr dx, 2
+        inc dx                          ; DX: how many
         shr ax, 2
-        add ax, [cs:row_at]
+        add ax, [cs:spans + si]
         mov di, ax
         xor bh, bh
 .pix:   mov bl, [es:di]
         mov bl, [cs:dark + bx]
         mov [es:di], bl
         inc di
-        dec si
+        dec dx
         jnz .pix
-.nextp: inc cx
+.nspan: add si, 6
+        mov ax, [cs:n_spans]
+        imul ax, ax, 6
+        cmp si, ax
+        jb .span
+        inc cx
         cmp cx, 4
         jb .plane
-.out:   ret
+        mov word [cs:n_spans], 0
+.ret:   ret
+
+n_spans dw 0
+spans   times SPANS_MOST * 6 db 0       ; (row's place in the page, first x, last x)
 
 ; the VGA's registers the shadows change, kept and put back
 vga_save:
@@ -4105,12 +4901,66 @@ puff_draw:                              ; the puff at CS:SI
         mov [cs:d_wx], ax
         mov ax, [cs:si + 8]
         mov [cs:d_seed], ax
+        ; (none of it where the floor was drawn: nothing to do)
+        mov ax, [cs:d_wx]
+        sub ax, [cs:cam_x]
+        mov [cs:d_sx], ax               ; its middle on screen
+        mov dx, ax
+        sub dx, [cs:d_rx]
+        cmp dx, [cs:clip_x1]
+        jle .inx
+        ret
+.inx:   add ax, [cs:d_rx]
+        cmp ax, [cs:clip_x0]
+        jge .iny
+        ret
+.iny:   mov ax, [cs:d_wy]
+        sub ax, [cs:cam_y]
+        mov dx, ax
+        sub dx, [cs:d_ry]
+        cmp dx, [cs:clip_y1]
+        jle .iny1
+        ret
+.iny1:  add ax, [cs:d_ry]
+        cmp ax, [cs:clip_y0]
+        jge .cols
+        ret
+.cols:  mov ax, [cs:clip_x0]            ; the columns within the clip
+        sub ax, [cs:d_sx]
+        mov dx, [cs:d_rx]
+        neg dx
+        cmp ax, dx
+        jge .from
+        mov ax, dx
+.from:  mov [cs:d_xfrom], ax
+        mov ax, [cs:clip_x1]
+        sub ax, [cs:d_sx]
+        cmp ax, [cs:d_rx]
+        jle .to
+        mov ax, [cs:d_rx]
+.to:    mov [cs:d_xto], ax
+        mov cx, [cs:d_rx]               ; how far out it is across, (x / rx)^2 of 256, by |x|
+        imul cx, cx
+        xor si, si
+.tab:   mov ax, si
+        imul ax, ax
+        shl ax, 8
+        xor dx, dx
+        div cx
+        mov bx, si
+        shl bx, 1
+        mov [cs:d_extab + bx], ax
+        inc si
+        cmp si, [cs:d_rx]
+        jbe .tab
         mov ax, [cs:d_ry]
         neg ax
         mov [cs:d_yy], ax
+        push bp
 .row:   mov ax, [cs:d_yy]
         cmp ax, [cs:d_ry]
         jle .inrow
+        pop bp
         ret
 .inrow: mov bx, [cs:d_wy]
         add bx, ax
@@ -4133,62 +4983,61 @@ puff_draw:                              ; the puff at CS:SI
         xor dx, dx
         div cx
         mov [cs:d_ey], ax
-        mov ax, [cs:d_rx]
-        neg ax
-        mov [cs:d_xx], ax
-.col:   mov ax, [cs:d_xx]
-        cmp ax, [cs:d_rx]
-        jg .nrow
-        imul ax, ax                     ; and across
-        shl ax, 8
-        mov cx, [cs:d_rx]
-        imul cx, cx
-        xor dx, dx
-        div cx
+        mov word [cs:d_xmax], -1        ; (the widest |x| inside, on this row)
+        xor si, si                      ; for each |x| on this row: how thick (0: outside), and
+.thr:   mov bx, si                      ;   whether in the core
+        shl bx, 1
+        mov ax, [cs:d_extab + bx]       ; and across
         add ax, [cs:d_ey]
+        mov bx, si
+        shl bx, 1
+        mov word [cs:d_thrcore + bx], 0
         cmp ax, 256
-        ja .ncol
-        mov [cs:d_e], ax
-        mov bx, [cs:d_wx]
-        add bx, [cs:d_xx]
-        mov [cs:d_wcol], bx
-        sub bx, [cs:cam_x]
-        cmp bx, [cs:clip_x0]
-        jl .ncol
-        cmp bx, [cs:clip_x1]
-        jg .ncol
-        mov ax, [cs:d_e]                ; how thick it is here: thinner toward the edge
-        imul ax, ax, 154
+        ja .nthr
+        mov [cs:d_xmax], si
+        cmp ax, [cs:d_core]
+        setb byte [cs:d_thrcore + bx + 1]
+        imul ax, ax, 154                ; thinner toward the edge
         shr ax, 8
         neg ax
         add ax, 256
         mul word [cs:d_dens]
         shr ax, 8
-        mov [cs:d_thr], ax
-        mov ax, [cs:d_wcol]             ; the pattern, fixed to the map
-        imul ax, ax, 0x9E5
-        mov dx, [cs:d_wrow]
-        imul dx, dx, 0x3B1
-        xor ax, dx
-        add ax, [cs:d_seed]
+        mov [cs:d_thrcore + bx], al
+.nthr:  inc si
+        cmp si, [cs:d_rx]
+        jbe .thr
+        mov ax, [cs:d_xmax]             ; the row's columns: within the clip and the ellipse
+        or ax, ax
+        js .nrow
+        mov dx, [cs:d_xto]
+        cmp dx, ax
+        jle .rto
         mov dx, ax
-        shr dx, 7
-        xor ax, dx
-        imul ax, ax, 0x2C5
-        shr ax, 4
-        and ax, 0xFF
-        cmp ax, [cs:d_thr]
-        jae .ncol
-        call dust_px
-.ncol:  inc word [cs:d_xx]
-        jmp .col
-.nrow:  inc word [cs:d_yy]
-        jmp .row
-
-dust_px:                                ; lighten screen x BX on the row at ROW_AT (twice in the core)
-        mov cx, bx
-        and cx, 3
-        mov dx, 0x3C4
+.rto:   mov [cs:d_rto], dx
+        neg ax
+        mov dx, [cs:d_xfrom]
+        cmp dx, ax
+        jge .rfrom
+        mov dx, ax
+.rfrom: mov [cs:d_rfrom], dx
+        cmp dx, [cs:d_rto]
+        jg .nrow
+        mov ax, [cs:d_wrow]             ; the pattern, fixed to the map: the row's part
+        imul ax, ax, 0x3B1
+        mov [cs:d_rowhash], ax
+        mov es, [cs:v_seg]
+        mov word [cs:d_plane], 0        ; a plane at a time (the VGA's registers set once for each)
+.plane: mov ax, [cs:d_sx]
+        add ax, [cs:d_rfrom]
+        mov si, [cs:d_plane]
+        sub si, ax
+        and si, 3
+        add si, [cs:d_rfrom]            ; SI: the first column on this plane
+        cmp si, [cs:d_rto]
+        jg .nplane
+        mov cx, [cs:d_plane]
+        mov dx, 0x3C4                   ; write to this plane, read from it
         mov al, 2
         mov ah, 1
         shl ah, cl
@@ -4197,25 +5046,53 @@ dust_px:                                ; lighten screen x BX on the row at ROW_
         mov al, 4
         mov ah, cl
         out dx, ax
-        shr bx, 2
-        add bx, [cs:row_at]
-        mov es, [cs:v_seg]
-        xor ax, ax
-        mov al, [es:bx]
-        mov di, ax
-        mov al, [cs:light + di]
+        mov di, [cs:d_wx]               ; DI: the column's part of the pattern
+        add di, si
+        imul di, di, 0x9E5
+        mov bp, [cs:d_sx]               ; BP: where it is in the page
+        add bp, si
+        shr bp, 2
+        add bp, [cs:row_at]
+.px:    mov bx, si
+        or bx, bx
+        jns .abs
+        neg bx
+.abs:   shl bx, 1
+        mov cx, [cs:d_thrcore + bx]     ; CL: how thick, CH: whether in the core
+        mov ax, di
+        xor ax, [cs:d_rowhash]
+        add ax, [cs:d_seed]
+        mov dx, ax
+        shr dx, 7
+        xor ax, dx
+        imul ax, ax, 0x2C5
+        shr ax, 4
+        cmp al, cl
+        jae .npx
+        xor bh, bh                      ; lightened (twice in the core)
+        mov bl, [es:bp]
+        mov al, [cs:light + bx]
         or al, al
-        jz .ret
-        mov cx, [cs:d_e]
-        cmp cx, [cs:d_core]
-        jae .put
-        mov di, ax
-        mov ah, [cs:light + di]
+        jz .npx
+        or ch, ch
+        jz .put
+        mov bl, al
+        mov ah, [cs:light + bx]
         or ah, ah
         jz .put
         mov al, ah
-.put:   mov [es:bx], al
-.ret:   ret
+.put:   mov [es:bp], al
+.npx:   add si, 4
+        add di, 4 * 0x9E5
+        inc bp
+        cmp si, [cs:d_rto]
+        jle .px
+.nplane:
+        inc word [cs:d_plane]
+        cmp word [cs:d_plane], 4
+        jb .plane
+.nrow:  inc word [cs:d_yy]
+        jmp .row
 
 dust_dens  db 255, 255, 255, 255, 247, 238, 229, 219, 209, 198, 187, 174, 161, 147, 132, 114, 93, 66   ; how thick, by age (of 256)
 dust_core  db 140, 132, 125, 117, 109, 101, 93, 86, 78, 70, 62, 54, 46, 39, 31, 23, 15, 7   ; the core (twice as light), by age
@@ -4243,10 +5120,18 @@ d_seed     dw 0
 d_yy       dw 0
 d_xx       dw 0
 d_wrow     dw 0
-d_wcol     dw 0
 d_ey       dw 0
-d_e        dw 0
-d_thr      dw 0
+d_sx       dw 0
+d_xfrom    dw 0
+d_xto      dw 0
+d_plane    dw 0
+d_extab    times 12 dw 0         ; (x / rx)^2 of 256, by |x| (rx at most 11)
+d_thrcore  times 12 dw 0         ; on the row being drawn, by |x|: how thick (0: outside), and
+                                ;   (high byte) whether in the core
+d_xmax     dw 0
+d_rfrom    dw 0
+d_rto      dw 0
+d_rowhash  dw 0
 t_thing    dw 0
 t_x        dw 0
 t_y        dw 0
@@ -4559,6 +5444,125 @@ probe_hit:
         sub sp, 0x10
         jmp far [cs:h_resume]
 
+; PROBE_ITEM_BOX: INT VEC_ITEM_BOX replaces "push 0" (2 bytes) at the end of the routine that fills
+; an item's box (right-click an item: its picture, price, name, damage, HEAVY, AC BONUS; DSUN.EXE
+; 8C1A1h), its lines drawn (SI: the item's type, DI: the row after them, but for AC BONUS's).
+; With SKILLS_ON's bits, a cloak's or boots' bonus to hiding in shadows or moving silently (the
+; Ledger's rule: stealth.py), or a belt's to picking pockets and opening locks (PROBE_BELT), in the
+; next row, with the routine's own text routine, as it draws AC BONUS; then the push, as the code
+; would have.
+IB_DRAW   equ 0x8C19A - 0x8C1A3 ; (DSUN.EXE) the text routine's far address in the call before,
+                                ;   less the way back
+TYPES_PTR equ 0x1669            ; DS: far pointer to the item types, 20 bytes each
+TYPE_WORN equ 9                 ; in one: where it is worn (8: as a cloak, 4: on the feet, 2: as a belt)
+SKILLS_STEALTH equ 1            ; (SKILLS_ON's bits)
+SKILLS_BELT equ 2
+TYPE_ARMOUR equ 0x0F            ; ... 80h: armour (AC BONUS drawn)
+probe_item_box:
+        pushad
+        push es
+        cmp word [cs:skills_on], 0
+        je .push
+        cmp si, 0x270F
+        jae .push
+        les bx, [TYPES_PTR]             ; (DS: the game's)
+        imul ax, si, 20
+        add bx, ax
+        mov al, [es:bx + TYPE_WORN]
+        mov cl, SKILLS_STEALTH
+        mov dx, ib_hide
+        cmp al, 8
+        je .want
+        mov dx, ib_quiet
+        cmp al, 4
+        je .want
+        mov cl, SKILLS_BELT
+        mov dx, ib_belt
+        cmp al, 2
+        jne .push
+.want:  test [cs:skills_on], cl
+        jz .push
+        mov ax, di                      ; the row: after AC BONUS's, if the box drew it
+        test byte [es:bx + TYPE_ARMOUR], 0x80
+        jz .row
+        add ax, 7
+.row:   mov si, sp
+        mov bx, [ss:si + 34]            ; the way back (after ES and the PUSHAD)
+        mov es, [ss:si + 36]
+        mov ecx, [es:bx + IB_DRAW]
+        mov [cs:ib_draw], ecx
+        push dword 0x00960081           ; (as the box draws its lines)
+        push ax                         ; y
+        push word [bp - 0x0C]           ; x
+        push cs
+        push dx
+        push dword [bp + 8]             ; the box's window
+        call far [cs:ib_draw]
+        add sp, 16
+.push:  pop es
+        popad
+        sub sp, 2                       ; the PUSH 0: the interrupt's frame moved down a word
+        push bp
+        mov bp, sp
+        push ax
+        mov ax, [bp + 4]
+        mov [bp + 2], ax                ; IP
+        mov ax, [bp + 6]
+        mov [bp + 4], ax                ; CS
+        mov ax, [bp + 8]
+        mov [bp + 6], ax                ; flags
+        mov word [bp + 8], 0            ; the word pushed
+        pop ax
+        pop bp
+        iret
+
+ib_draw    dd 0
+ib_hide    db 'Hide +10', 0     ; (the skills' short names, as the inventory screen's thief rows
+ib_quiet   db 'Move +10', 0     ;   have them: HIDE, MOVE, PICK, LOCK; mixed case, as item names)
+ib_belt    db 'Pick +5, Lock +5', 0
+
+; PROBE_BELT: INT VEC_BELT replaces "mov ax,si" (2 bytes) at the end of the game's thief skill
+; routine (DSUN.EXE 803B2h: SI the chance, armour and effects counted; DI the thief's object; the
+; game's [BP+8] the skill, a dword). With SKILLS_BELT, a thief wearing a belt (the waist slot)
+; gets BELT_BONUS more to pick pockets (0) and open locks (1), as the Ledger counts it
+; (game.py's thief_skills_now); then AX = the chance, as the code would have.
+WAIST      equ 5                ; the item's slot byte while worn as a belt
+BELT_BONUS equ 5
+COMBATANT_CREATURE equ 0xC37    ; in the things table: an object's creature (3 bytes an object)
+probe_belt:
+        sti
+        test byte [cs:skills_on], SKILLS_BELT
+        jz .chance
+        cmp word [bp + 0x0A], 0
+        jne .chance
+        cmp word [bp + 8], 1
+        ja .chance
+        push bx
+        push cx
+        push dx
+        push es
+        mov ax, ds
+        add ax, THINGS_SEG
+        mov [cs:r_things], ax
+        mov es, ax
+        imul bx, di, 3
+        mov ax, [es:bx + COMBATANT_CREATURE]
+        mov word [cs:ws_slot], WAIST
+        mov word [cs:ws_type], 0xFFFF
+        call worn_scan
+        pop es
+        pop dx
+        pop cx
+        pop bx
+        mov ax, si
+        cmp word [cs:ws_count], 0
+        je .out
+        add ax, BELT_BONUS
+        iret
+.chance:
+        mov ax, si
+.out:   iret
+
 old16      dd 0
 t_click    db 0
 hit_forced db 0
@@ -4617,8 +5621,6 @@ f_bottom   dw 0
 f_y        dw 0
 r_x        dw 0
 row_at     dw 0
-s_first    dw 0
-s_last     dw 0
 best_d     dd 0
 diffs      times 3 db 0
 lit_sum    dw 0
@@ -4639,7 +5641,7 @@ install:                        ; DS = ES = PSP, CS = the image
         push cs
         pop ds
         mov si, all_vectors     ; the vectors must be free
-        mov cx, 42
+        mov cx, all_vectors_end - all_vectors
 .check:
         lodsb
         mov ah, 35h
@@ -4781,6 +5783,30 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_HIT
         mov dx, probe_hit
         int 21h
+        mov ax, 2500h + VEC_ITEM_BOX
+        mov dx, probe_item_box
+        int 21h
+        mov ax, 2500h + VEC_BELT
+        mov dx, probe_belt
+        int 21h
+        mov ax, 2500h + VEC_SAVE_PAGE
+        mov dx, probe_save_page
+        int 21h
+        mov ax, 2500h + VEC_SAVE_CLICK
+        mov dx, probe_save_click
+        int 21h
+        mov ax, 2500h + VEC_ITEM_WEAPON
+        mov dx, probe_item_weapon
+        int 21h
+        mov ax, 2500h + VEC_ITEM_SKIP
+        mov dx, probe_item_skip
+        int 21h
+        mov ax, 2500h + VEC_ITEM_ARMOUR
+        mov dx, probe_item_armour
+        int 21h
+        mov ax, 2500h + VEC_SCRIPT_RAND
+        mov dx, probe_script_rand
+        int 21h
         mov ax, 3516h           ; the keyboard's (TARGETING)
         int 21h
         mov [old16], bx
@@ -4821,8 +5847,9 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or DBh-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
-all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT
+busy    db 'DSCLOG: interrupts 60h-65h or D3h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND
+all_vectors_end:
 
         align 16, db 0
 image_len equ $ - $$

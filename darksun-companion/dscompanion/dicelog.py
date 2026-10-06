@@ -24,14 +24,14 @@ from collections import Counter, deque
 from dataclasses import dataclass
 from typing import Callable, Deque, Dict, List, NamedTuple, Optional, Tuple
 
-from . import bonescale, dust, game, rings, targeting, icons, kalzith, monsters, names, npcitems, pickpocket, ring, scrolling, semyon, shadows, sprites, stealth, tools, vulture
+from . import arms, bonescale, dust, game, rings, targeting, icons, kalzith, monsters, names, npcitems, pickpocket, ring, scrolling, searches, semyon, shadows, sprites, stealth, tools, vulture
 from .game import (CONVENTIONAL_AND_UPPER, CREATURE_ABILITIES, CREATURE_SIDE, CREATURE_THAC0, EFFECT_NAMES,
                    EFFECT_RULES, MATERIAL_TO_HIT, MATERIALS, SAVE_NAMES, STR_DAMAGE, GameData)
 from .guestmem import GuestMemory
 from .textlog import KIND_MESSAGE, KIND_PORTRAIT, KIND_TEXT, Dialogue, DialogueEntry, TextBuffer
 from .tracker import PartyTracker
 
-HDR_SIG = b"DSCLOGvV"
+HDR_SIG = b"DSCLOGvY"
 # DSCLOG's header: the in-game turn summaries (see PROBE_TURN in dos/dsclog.asm)
 TSR_TURN_SEQ, TSR_REPLY_SEQ, TSR_POPUPS, TSR_MSG_OFF, TSR_ENDED, TSR_HDR_OFF = 138, 140, 142, 144, 146, 20
 MSG_SIZE = 900
@@ -51,6 +51,9 @@ BIOS_TIMER = 0x46C
 # ... and the rule changes it makes to the game (the Options tab)
 TSR_RULES = 170
 TSR_MAIN_TICKS = 260  # the map's main loop run (counted)
+TSR_XP_WHO, TSR_XP_AMOUNT = 262, 264  # a party member to be given XP with the pick's text (FFFFh: none)
+TSR_SKILLS_ON = 266  # bits: item boxes name a cloak's and boots' bonus to hiding and moving silently;
+SKILLS_STEALTH, SKILLS_BELT = 1, 2  # a worn belt adds to picking pockets and opening locks (and its box says)
 TSR_PICK_SEQ, TSR_PICK_REPLY, TSR_PICK_OFF, TSR_PICK_ON, PICK_SIZE = 172, 174, 176, 178, 240
 PICK_TOOLS, PICK_KEY = 1, 2  # (TSR_PICK_ON: the thieving tools on someone; P in a conversation too)
 TSR_USE_SEQ, TSR_USE_REPLY, TSR_USE_WHO, TSR_USE_TAKEN, TSR_USE_ITEM = 180, 182, 184, 186, 188
@@ -152,6 +155,9 @@ RANDOM_NAME_RETURNS = (bytes.fromhex("83c40448eb11"), bytes.fromhex("83c40405630
                        bytes.fromhex("83c40405c700eb"))
 
 KIND_ROLL, KIND_SAVE, KIND_AC = 0, 1, 2
+KIND_ITEM = 4  # DSCLOG's item save against acid (PROBE_ITEM_*): raw = d20 | needed << 8
+ITEM_ARMOUR = 0x8000  # (in the entry's extra, with the item)
+KIND_SCRIPT = 5  # DSCLOG's scripts' random command (PROBE_SCRIPT_RAND): raw = result | N << 8
 # How much each turn's pop-up in the game says (the Options' turn_popups_level)
 POPUP_DETAIL, POPUP_SHORT, POPUP_MINIMAL = "detail", "short", "minimal"
 POPUP_LEVELS = (POPUP_MINIMAL, POPUP_SHORT, POPUP_DETAIL)
@@ -309,6 +315,7 @@ class DiceLog:
         self.missed = 0
         self.game: Optional[GameData] = None
         self.last_ac: Dict[int, int] = {}  # creature index -> the AC the game last computed for it
+        self._ac_whose: Dict[int, str] = {}  # ... and the name of the creature it was then
         self.ac_detail: Dict[int, AcDetail] = {}  # creature index -> how that AC was made up
         self._dice: Dict[Tuple[int, int, int, int], List[int]] = {}
         self._pending: List[PendingDice] = []
@@ -335,6 +342,7 @@ class DiceLog:
         self._shadows = shadows.Shadows()
         self.show_dust = True  # dust raised by walkers on sand and dirt (dust.py)
         self.pens_gear = True  # the slave pens' gear for Kurzak, Legcrusher, Pehtucl, the bone scale set
+        self.magic_arms = True  # the arena's dead body's gythka and Kurzak's short sword +1 (arms.py)
         self.vulture_on = True  # the cooked vulture quest (vulture.py)
         self.stealth_gear = True  # a worn cloak's and boots' bonuses to hiding (stealth.py)
         self._dust = dust.Dust()
@@ -544,6 +552,13 @@ class DiceLog:
         base = self.tsr_hdr - struct.unpack("<H", self.guest.read(self.tsr_hdr + TSR_HDR_OFF, 2))[0]
         self.guest.write(base + offset, text.encode("cp437", "replace")[:PICK_SIZE - 1] + b"\0")
 
+    def _write_xp(self, result: Optional["pickpocket.Attempt"]) -> None:
+        """The XP that came with what was lifted (Kurzak's Short Sword), for DSCLOG to give with
+        the game's own routine as it shows the text; none otherwise."""
+        who, xp = (result.xp_to, result.xp) if result is not None and result.xp_to is not None else (0xFFFF, 0)
+        self.guest.write(self.tsr_hdr + TSR_XP_AMOUNT, struct.pack("<H", xp))
+        self.guest.write(self.tsr_hdr + TSR_XP_WHO, struct.pack("<H", who))
+
     def _answer_use(self) -> List[str]:
         """An item was used on something on the map: if it was the thieving tools on someone,
         try their pockets; if the cooked vulture, see what comes of it (vulture.py); and have
@@ -576,6 +591,7 @@ class DiceLog:
         except (struct.error, IndexError, ValueError):
             result, taken = None, False
         self._write_pick_text(result.text if result else "")
+        self._write_xp(result)
         self.guest.write(self.tsr_hdr + TSR_USE_TAKEN, struct.pack("<H", int(taken)))
         self.guest.write(self.tsr_hdr + TSR_USE_REPLY, seq)
         if not result:
@@ -599,6 +615,7 @@ class DiceLog:
         offset = struct.unpack("<H", self.guest.read(self.tsr_hdr + TSR_PICK_OFF, 2))[0]
         base = self.tsr_hdr - struct.unpack("<H", self.guest.read(self.tsr_hdr + TSR_HDR_OFF, 2))[0]
         self.guest.write(base + offset, text.encode("cp437", "replace")[:PICK_SIZE - 1] + b"\0")
+        self._write_xp(result)
         self.guest.write(self.tsr_hdr + TSR_PICK_REPLY, seq)
         if not result:
             return []
@@ -625,6 +642,7 @@ class DiceLog:
         self.scroll_map = bool(settings.get("scroll_map", True))
         self.show_dust = bool(settings.get("dust", True))
         self.pens_gear = bool(settings.get("pens_gear", True))
+        self.magic_arms = bool(settings.get("magic_arms", True))
         self.vulture_on = bool(settings.get("vulture", True))
         self.stealth_gear = bool(settings.get("stealth_gear", True))
         self.ring_mode = rings.mode(settings)
@@ -639,10 +657,15 @@ class DiceLog:
         save is the game's own table, written here."""
         self.rules = rules
         game.RULES_IN_FORCE = rules
+        game.BELT_IN_FORCE = self.stealth_gear
         if self.game is not None:
             self.game.rules = rules
+            self.game.belt = self.stealth_gear
         if self.tsr_hdr is not None:
             self.guest.write(self.tsr_hdr + TSR_RULES, struct.pack("<H", rules))
+            skills = (SKILLS_STEALTH if rules & game.RULE_STEALTH and self.stealth_gear else 0) \
+                | (SKILLS_BELT if self.stealth_gear else 0)  # (the hiding rule's cloak and boots; the belt's own)
+            self.guest.write(self.tsr_hdr + TSR_SKILLS_ON, struct.pack("<H", skills))
             table = self.game.ds * 16 + game.SAVE_KINDS if self.game is not None else None
             # (only over the game's own table: kind 5 is petrification/polymorph or, so far, the spell save)
             if table is not None and struct.unpack("<5H", self.guest.read(table, 10)) == game.KIND_TO_SAVE[:5] \
@@ -652,6 +675,14 @@ class DiceLog:
             if self.game is not None:
                 self.game.set_cats_grace(bool(rules & game.RULE_CATS_GRACE))
                 self.game.set_dodge(bool(rules & game.RULE_NO_DOUBLE))
+
+    def monster_ac(self, index: int) -> Optional[int]:
+        """The AC the game last computed for creature INDEX, if it was this creature's: a fight
+        soon after another (no gap in the game's time to tell them apart) hands the earlier
+        one's creature records to new monsters."""
+        if index not in self.last_ac or self._ac_whose.get(index) != self.game.creature_name(index):
+            return None
+        return self.last_ac[index]
 
     def _answer_look(self) -> List[str]:
         """DSCLOG asks about a creature the player looks at in a fight: give the Look box its
@@ -669,7 +700,7 @@ class DiceLog:
         if index is not None and index >= game.PARTY_SIZE:
             try:
                 tables = monsters.MonsterTables(self.guest.read, self.game.load_seg)
-                short, full = monsters.monster_lines(self.game, tables, index, self.last_ac.get(index))
+                short, full = monsters.monster_lines(self.game, tables, index, self.monster_ac(index))
             except (struct.error, IndexError, ValueError):
                 short, full = [], []
         base = self.tsr_hdr - struct.unpack("<H", self.guest.read(self.tsr_hdr + TSR_HDR_OFF, 2))[0]
@@ -1013,6 +1044,12 @@ class DiceLog:
                 out += self._bone_watch.check(self.game, self.tools_given, self._recent)  # (one vanished)
                 npcitems.reprice(self.game)  # (those given before they had a magic item's price)
                 self._tools_new += sorted(self.tools_given - before)
+            if self.magic_arms and npcitems.types_ready(self.game, self.tsr_hdr):
+                before = set(self.tools_given)
+                out += arms.upgrade(self.game, self.tools_given)  # the gythka and the short sword +1
+                self._tools_new += sorted(self.tools_given - before)
+            if self.stealth_gear:
+                stealth.reprice(self.game)  # (cloaks and boots: they help a thief hide and move silently)
             kalzith.stock(self.game, bool(self.rules & game.RULE_CATS_GRACE))  # (once a game, by its flag)
             semyon.watch(self.game)  # (killed: never put in the pens)
             if self.vulture_on:
@@ -1424,7 +1461,7 @@ class DiceLog:
             index = self.game.combatant_creature(combatant)
             rec = self.game.creature(index) if index is not None else b""
             if len(rec) > game.CREATURE_STATUS and struct.unpack_from("<h", rec, 0)[0] > 0 \
-                    and rec[game.CREATURE_STATUS] == game.STATUS_OKAY:
+                    and rec[game.CREATURE_STATUS] in game.STATUS_ABLE:
                 return combatant
         return None
 
@@ -1560,6 +1597,10 @@ class DiceLog:
             return self._save(e)
         if e.kind == KIND_AC:
             return self._ac(e, show_all)
+        if e.kind == KIND_ITEM:
+            return self._item_check(e)
+        if e.kind == KIND_SCRIPT:
+            return self._script_roll(e, show_all)
         code = e.code
         if code.startswith(ATTACK_SITE):
             self._spell_until = 0.0
@@ -1622,6 +1663,7 @@ class DiceLog:
         target_index = g.combatant_creature(target_combatant)
         if target_index is not None:
             self.last_ac[target_index] = ac
+            self._ac_whose[target_index] = g.creature_name(target_index)
         weapon = g.weapon(item, item_type)
         with_what = f" with {g.weapon_name(weapon)} ({weapon.dice()})" if weapon else ""
         target = g.combatant_name(target_combatant)
@@ -1904,6 +1946,55 @@ class DiceLog:
         return f"{text} ({base}{how}: {steps} at caster level {level}{cap})" if counted >= 0 else text
 
     # weapons breaking and levels ------------------------------------------------------
+
+    def _script_roll(self, e: Entry, show_all: bool) -> List[str]:
+        """A script's random command: a junk, haystack or wardrobe search or its damage
+        (searches.py); any other only with "Show unlabelled rolls"."""
+        result, most = e.raw & 0xFF, e.raw >> 8 & 0xFF
+        counts = tuple(e.arg(at) for at in searches.COUNTS_AT)
+        lines = searches.describe(result, most, e.extra, counts)
+        if not lines and show_all:
+            lines = [f"Script roll: 0-{most} = {result} (script position {e.extra})"]
+        return lines
+
+    def _item_check(self, e: Entry) -> List[str]:
+        """An item the acid or corroding touch could destroy, after a failed save (DSCLOG's
+        PROBE_ITEM_*): the d20, the number it needed and whose number that was."""
+        roll, needed = e.raw & 0xFF, struct.unpack("b", bytes([e.raw >> 8 & 0xFF]))[0]
+        item, armour = e.extra & 0x7FFF, bool(e.extra & ITEM_ARMOUR)
+        g = self.game
+        save = g.item_save(item, armour)
+        target, attacker, attack = e.arg(6), e.parent_arg(8), e.parent_arg(0x0E)
+        who = self._name(target) if target is not None else "someone"
+        by = game.ITEM_ATTACKS.get(attack, "acid")
+        source = self._name(attacker) if attacker is not None else ""
+        by = f"{source}'s {by}" if source else by.capitalize()
+        name = save.name if save else ("armour" if armour else "weapon")
+        head = f"  {by} on {who}'s {name}"
+        if not roll:
+            return [f"{head}: no magical power, destroyed without a roll (the game's rule) -> CORRODED"]
+        corroded = roll < needed
+        why = ""
+        if save:
+            own = "destroyed without a roll" if save.own is None else (
+                f"{save.own}" if save.own > 1 else "safe whatever the roll")
+            base = save.adnd + save.plus + (1 if save.power else 0)
+            adnd = f"{base} for {save.material}"
+            if save.plus:
+                adnd += f", {signed(-save.plus)} for its plus"
+            if save.power:
+                adnd += ", -1 for its power"
+            if save.adnd != base:
+                adnd = f"{save.adnd} ({adnd})"
+            if g.rules & game.RULE_ITEM_SAVES:
+                if save.own is not None and needed == save.own and save.own <= save.adnd:
+                    why = f" (the game's; AD&D's: {adnd})"
+                else:
+                    why = f" (AD&D's, {adnd}; the game's: {own})"
+            else:
+                why = " (the game's)"
+        need = f"needs {needed}" if needed > 1 else "safe whatever the roll"
+        return [f"{head}: d20 = {roll}, {need}{why} -> {'CORRODED' if corroded else 'safe'}"]
 
     def _break_check(self, e: Entry, first: bool, show_all: bool) -> List[str]:
         """After an attack the game checks the weapon: non-magical wood, bone, stone and
@@ -2225,6 +2316,7 @@ class DiceLog:
         ac = e.raw if e.raw < 0x8000 else e.raw - 0x10000
         if index is not None:
             self.last_ac[index] = ac
+            self._ac_whose[index] = self.game.creature_name(index)
             sheet, rec = self.game.sheet(index), self.game.creature(index)
             armour = e.local(-6)
             if len(sheet) >= game.SHEET_SIZE and len(rec) >= game.CREATURE_SIZE and armour is not None:

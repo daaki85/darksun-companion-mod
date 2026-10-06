@@ -8,6 +8,24 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dscompanion import palette
 
+try:
+    import tkinter as tk
+    from dscompanion import theme
+except ImportError:  # (a Python without tkinter)
+    tk = None
+
+
+def _root():
+    """A hidden window, or None without tkinter or a display."""
+    if tk is None:
+        return None
+    try:
+        root = tk.Tk()
+    except tk.TclError:
+        return None
+    root.withdraw()
+    return root
+
 
 class ContrastTests(unittest.TestCase):
     def test_contrast_formula(self):
@@ -24,6 +42,40 @@ class ContrastTests(unittest.TestCase):
         for rock in palette.ROCK:
             self.assertGreaterEqual(palette.contrast(palette.AMBER, rock), 4.5, rock)
             self.assertGreaterEqual(palette.contrast(palette.SAND, rock), 4.5, rock)
+
+
+class SectionTests(unittest.TestCase):
+    """The Options tab's sections that open and close."""
+
+    def setUp(self):
+        self.root = _root()
+        if self.root is None:
+            self.skipTest("no tkinter or no display")
+        theme.apply(self.root)
+        self.addCleanup(self.root.destroy)
+
+    def test_opens_and_closes(self):
+        seen = []
+        part = theme.Section(self.root, "Rule changes", on_toggle=seen.append)
+        part.pack()
+        self.assertFalse(part.is_open)
+        self.assertEqual(part.header.cget("text"), "\u25b8  Rule changes")
+        self.assertFalse(part.body.winfo_manager())
+        part.header.invoke()
+        self.assertTrue(part.is_open)
+        self.assertEqual(part.header.cget("text"), "\u25be  Rule changes")
+        self.assertEqual(part.body.winfo_manager(), "pack")
+        self.root.deiconify()  # (keys go to a shown window's focus)
+        part.header.focus_force()
+        self.root.update()
+        part.header.event_generate("<Return>")
+        self.assertFalse(part.is_open)
+        self.assertEqual(seen, [True, False])
+
+    def test_starts_open(self):
+        part = theme.Section(self.root, "Dice log", open_=True)
+        self.assertTrue(part.is_open)
+        self.assertEqual(part.body.winfo_manager(), "pack")
 
 
 if __name__ == "__main__":

@@ -126,7 +126,7 @@ class Pictures:
         """A spare picture's size: room for any model's."""
         return max(capacity(self.own(m + combat), combat) for m in sp.MODELS if ("BMP ", m + combat) in self.chunks)
 
-    def build(self, obj: int, combat: bool, gear: Dict[str, Tuple[int, int]], armour: Tuple[int, ...],
+    def build(self, obj: int, combat: bool, gear: Dict[str, Tuple[int, ...]], armour: Tuple[int, ...],
               model: Optional[int] = None) -> bytes:
         """The object's walking (or COMBAT) picture in this outfit (a spare (SPARES): MODEL's)."""
         model = self.model(obj) if model is None else model
@@ -186,9 +186,11 @@ def new_room(chunks, new: Dict[Tuple[str, int], bytes]) -> Dict[Tuple[str, int],
     return out
 
 
-def worn(gd: GameData, member: int) -> Tuple[Dict[str, Tuple[int, int]], Tuple[int, ...]]:
-    """What a party member wears, as spritegear takes it: ({place: (item type, material)}, armour)."""
-    gear: Dict[str, Tuple[int, int]] = {}
+def worn(gd: GameData, member: int) -> Tuple[Dict[str, Tuple[int, ...]], Tuple[int, ...]]:
+    """What a party member wears, as spritegear takes it: ({place: (item type, material[, name])},
+    armour), the name for one of the companion's weapons spritegear colours as its icon."""
+    from .icons import which
+    gear: Dict[str, Tuple[int, ...]] = {}
     armour: List[int] = []
     for _, item, typ in gd._worn(member):
         slot = item[game.ITEM_SLOT]
@@ -200,7 +202,8 @@ def worn(gd: GameData, member: int) -> Tuple[Dict[str, Tuple[int, int]], Tuple[i
         if name in ARMOUR_SLOTS:
             armour.append(kind)
         elif name in HANDS:
-            gear[HANDS[name]] = (kind, material)
+            special = which(bytes(item))
+            gear[HANDS[name]] = (kind, material, special) if special in sg.BLADE_COLOURS else (kind, material)
     return gear, tuple(sorted(armour))
 
 

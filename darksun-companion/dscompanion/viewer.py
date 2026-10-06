@@ -282,8 +282,19 @@ class Viewer:
         tabs.add(area, text="Options", underline=0)
         options = area.inner
         settings = launch.load_settings()
-        log = ttk.LabelFrame(options, text="Dice log", padding=6)
-        log.pack(fill="x")
+        self.sections: Dict[str, theme.Section] = {}
+        opened = settings.get("options_open", [])
+        opened = opened if isinstance(opened, list) else []
+
+        def section(key: str, title: str) -> ttk.Frame:
+            """A section that opens and closes (closed until opened; remembered)."""
+            part = theme.Section(options, title, open_=key in opened,
+                                 on_toggle=lambda _open: self._sections_changed())
+            part.pack(fill="x", pady=(8 if self.sections else 0, 0))
+            self.sections[key] = part
+            return part.body
+
+        log = section("dice_log", "Dice log")
         self.show_all = tk.BooleanVar(value=False)
         ttk.Checkbutton(log, text="Show unlabelled rolls", variable=self.show_all).pack(anchor="w")
         # the indented lines under a roll (what a THAC0 or save was made of); hiding them leaves
@@ -292,8 +303,7 @@ class Viewer:
         ttk.Checkbutton(log, text="Show details (the sums behind each roll)", variable=self.show_details,
                         command=lambda: self.dice_text.tag_configure("detail", elide=not self.show_details.get())
                         ).pack(anchor="w", pady=(4, 0))
-        in_game = ttk.LabelFrame(options, text="In the game (when started with the dice log)", padding=6)
-        in_game.pack(fill="x", pady=(8, 0))
+        in_game = section("in_game", "In the game (when started with the dice log)")
         # long lines wrap to the window (as with larger text) instead of running out of it
         options.bind("<Configure>", lambda e: [ttk.Style().configure(
             kind, wraplength=max(200, e.width - 60)) for kind in ("TCheckbutton", "TRadiobutton")], add="+")
@@ -311,38 +321,44 @@ class Viewer:
         self.monster_info = tk.BooleanVar(value=bool(settings.get("monster_info", True)))
         ttk.Checkbutton(in_game, text="Describe monsters when you Look at them in a fight (defences, then a window)",
                         variable=self.monster_info, command=self._popups_changed).pack(anchor="w", pady=(4, 0))
-        rules = ttk.LabelFrame(options, text="Rule changes (in games started with the dice log)", padding=6)
-        rules.pack(fill="x", pady=(8, 0))
+        rules = section("rules", "Rule changes (in games started with the dice log)")
         # one switch for each of game.RULE_SETTINGS
         self.rule_vars: Dict[str, tk.BooleanVar] = {}
+        self.stealth_gear = tk.BooleanVar(value=settings.get("stealth_gear", True) is not False)
+        # (in the order the README's Rule changes has them: the ones that change most first)
         for n, (key, text) in enumerate((
-                ("helm_ac", "Helms give AC 1 (the game's helms give none)"),
-                ("boots_move", "Boots give 1 more move in a fight"),
-                ("two_weapons", "Two weapons: -2 main hand, -4 off hand, DEX reaction adjustment added "
-                                "(no better than 0; rangers none)"),
-                ("half_giant_hands", "Half-giants wield two-handed weapons in one hand (a shield or a light "
-                                     "weapon in the other; two heavy weapons still can't be held)"),
                 ("spell_save", "Spells are saved against with the spell save (the game uses "
                                "petrification/polymorph)"),
                 ("no_doubled_save", "Saves against fire, cold and electricity: DEX defensive adjustment "
                                     "instead of a doubled d20"),
-                ("cats_grace", "Cat's Grace in Flaming Sphere's place (DEX + 1d6, at most 24, like Strength)"),
-                ("level_10", "Class levels go up to 10 (the game stops at 9; no spells past 5th level are needed)"),
+                ("two_weapons", "Two weapons: -2 main hand, -4 off hand, DEX reaction adjustment added "
+                                "(no better than 0; rangers none)"),
                 ("thief_table", "Thief skills from AD&D's table by level, with Dark Sun's race and DEX adjustments "
                                 "(the game adds 4 a level to a base of its own, and DEX by a formula)"),
                 ("stealth", "Thieves hide in shadows and move silently to backstab, rangers to attack from behind "
-                            "(no enemy beside them; thieves half the chance in daylight, rangers indoors)"))):
+                            "(no enemy beside them; thieves half the chance in daylight, rangers indoors)"),
+                ("level_10", "Class levels go up to 10 (the game stops at 9; no spells past 5th level are needed)"),
+                ("item_saves", "Items save against acid as in AD&D, by material, a plus helping, where that's "
+                               "better than the game's (which destroys armour without a magical power outright)"),
+                ("protection_rules", "Rings and cloaks of protection as in AD&D: only the better of two rings "
+                                     "counts, a ring gives no AC with magical armour, and a cloak does nothing "
+                                     "with magical or metal armour or a shield"),
+                ("half_giant_hands", "Half-giants wield two-handed weapons in one hand (a shield or a light "
+                                     "weapon in the other; two heavy weapons still can't be held)"),
+                ("cats_grace", "Cat's Grace in Flaming Sphere's place (DEX + 1d6, at most 24, like Strength)"),
+                ("helm_ac", "Helms give AC 1 (the game's helms give none)"),
+                ("boots_move", "Boots give movement in a fight (1 more move each round)"))):
             self.rule_vars[key] = tk.BooleanVar(value=bool(settings.get(key, True)))
             ttk.Checkbutton(rules, text=text, variable=self.rule_vars[key],
                             command=self._popups_changed).pack(anchor="w", pady=(4 if n else 0, 0))
-        self.stealth_gear = tk.BooleanVar(value=settings.get("stealth_gear", True) is not False)
-        ttk.Checkbutton(rules, text="... a worn cloak adds 10 to hiding, worn boots 10 to moving silently",
-                        variable=self.stealth_gear, command=self._popups_changed).pack(anchor="w", padx=(20, 0))
+            if key == "stealth":  # (under it: what worn gear adds)
+                ttk.Checkbutton(rules, text="... a worn cloak adds 10 to hiding, worn boots 10 to moving silently; "
+                                            "a worn belt adds 5 to picking pockets and opening locks (hiding or not)",
+                                variable=self.stealth_gear, command=self._popups_changed).pack(anchor="w", padx=(20, 0))
 
         # the companion's own content: people, a quest and items in the game, and thief play. Some
         # are written into the game's files when it is started; what a save already has stays
-        new = ttk.LabelFrame(options, text="New content", padding=6)
-        new.pack(fill="x", pady=(8, 0))
+        new = section("new_content", "New content")
         ttk.Label(new, text="Kalzith, Semyon and the vulture: from the next time you start the game. "
                   "What a saved game already has (people met, items given) stays in it.",
                   wraplength=460).pack(anchor="w")
@@ -354,7 +370,9 @@ class Viewer:
                 ("semyon", "Semyon in the slave pens after he leaves the arena, and breaking out with Scar"),
                 ("vulture", "The cooked vulture: Dinos cooks it for the party (XP and a full rest)"),
                 ("pens_gear", "Gear for Kurzak, Legcrusher and Pehtucl, and the rest of the bone scale "
-                              "armour with a Bone Helm")):
+                              "armour with a Bone Helm"),
+                ("magic_arms", "The 2 handed Bone Gythka on the arena's dead body and Kurzak's Short Sword are +1 magic "
+                               "weapons")):
             self.content_vars[key] = tk.BooleanVar(value=settings.get(key, True) is not False)
             ttk.Checkbutton(new, text=text, variable=self.content_vars[key],
                             command=self._popups_changed).pack(anchor="w", pady=(4, 0))
@@ -372,8 +390,7 @@ class Viewer:
         ttk.Button(new, text="Give thieving tools now", command=self.give_tools).pack(anchor="w", pady=(8, 0))
 
         # how the game looks
-        looks = ttk.LabelFrame(options, text="On the screen (in the game)", padding=6)
-        looks.pack(fill="x", pady=(8, 0))
+        looks = section("on_screen", "On the screen (in the game)")
         self.show_gear = tk.BooleanVar(value=bool(settings.get("show_gear", True)))
         ttk.Checkbutton(looks, text="Show what the party wears on their figures (weapons, armour, helms, "
                         "cloaks, boots, belts)", variable=self.show_gear,
@@ -393,8 +410,7 @@ class Viewer:
                             command=self._popups_changed).pack(anchor="w", padx=(20, 0))
 
         # the mouse and keys in the game
-        controls = ttk.LabelFrame(options, text="Controls (in the game)", padding=6)
-        controls.pack(fill="x", pady=(8, 0))
+        controls = section("controls", "Controls (in the game)")
         self.use_targeting = tk.BooleanVar(value=bool(settings.get("targeting", True)))
         ttk.Checkbutton(controls, text="In a fight, Tab (Shift+Tab back) chooses an enemy, its ring brighter, and "
                         "Enter attacks it, even behind someone", variable=self.use_targeting,
@@ -413,16 +429,23 @@ class Viewer:
                         variable=self.effects_kept, command=self._popups_changed).pack(anchor="w", pady=(4, 0))
 
         # the game's speed (DOSBox's CPU)
-        pace = ttk.LabelFrame(options, text="Game speed (from the next time you start the game)", padding=6)
-        pace.pack(fill="x", pady=(8, 0))
+        pace = section("speed", "Game speed (from the next time you start the game)")
         speed = settings.get("cycles", launch.DEFAULT_SPEED)
+        speed = launch.SPEEDS[-1] if speed == launch.FASTEST_BEFORE else speed
         self.game_speed = tk.StringVar(value=str(speed if speed in launch.SPEEDS or speed == launch.GOG_SPEED
                                                  else launch.DEFAULT_SPEED))
         for value, text in ((launch.GOG_SPEED, "GOG's own (walking can be choppy with shadows and dust)"),
                             ("20000", "Faster: smooth walking with shadows and dust (the default)"),
-                            ("30000", "Fastest: smoother still, quicker animations (needs a faster PC)")):
+                            ("35000", "Fastest: the whole party in view walks as fast as the leader alone "
+                                      "(needs a faster PC)")):
             ttk.Radiobutton(pace, text=text, value=value, variable=self.game_speed,
                             command=self._speed_chosen).pack(anchor="w")
+
+    def _sections_changed(self) -> None:
+        """Remember which of the Options tab's sections are open."""
+        settings = launch.load_settings()
+        settings["options_open"] = [key for key, part in self.sections.items() if part.is_open]
+        launch.save_settings(settings)
 
     def give_tools(self) -> None:
         """A set of thieving tools for each thief in the party without one, right away (they
@@ -752,6 +775,7 @@ class Viewer:
                 self.dice.scroll_map = self.scroll_map.get()
                 self.dice.scroll_right = self.scroll_right.get()
                 self.dice.pens_gear = self.content_vars["pens_gear"].get()
+                self.dice.magic_arms = self.content_vars["magic_arms"].get()
                 self.dice.vulture_on = self.content_vars["vulture"].get()
                 self.dice.stealth_gear = self.stealth_gear.get()
                 self.dice.load_picked(launch.pickpocketed())
@@ -872,6 +896,7 @@ class Viewer:
             self.dice.scroll_map = self.scroll_map.get()
             self.dice.scroll_right = self.scroll_right.get()
             self.dice.pens_gear = self.content_vars["pens_gear"].get()
+            self.dice.magic_arms = self.content_vars["magic_arms"].get()
             self.dice.vulture_on = self.content_vars["vulture"].get()
             self.dice.stealth_gear = self.stealth_gear.get()
             self.dice.set_rules(self._rules())
