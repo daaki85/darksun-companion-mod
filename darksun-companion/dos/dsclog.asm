@@ -3690,21 +3690,13 @@ lv_title  db 'PICK A WEAPON SPECIALTY,', 0
 ; the Effects screen's routine that puts the selected character's effects in their cells (7EDFAh,
 ; run when the screen opens and when another character is picked; [BP-4] the cells it has used).
 ; With weapon specialization, and the lower panel free (the game puts effects there only past 21),
-; the character's weapon kinds are drawn there: a heading for the skill (weaponpages.HEADINGS),
-; then a row a kind (weaponpages.PICK_FIRST's pictures), each as the routine draws an effect's
-; icon (100:4A4h loads it, 580:D9h draws it, 1A8:8Ch lets it go; their addresses as fixed up in
-; the routine's own calls). Then the pops, from under the interrupt frame.
+; the character's weapon kinds are listed there, in the game's text as the USE screen's spell slots
+; are (C_DRAW_LINE, at the same place): a line for the skill, then a line a kind. Then the pops,
+; from under the interrupt frame.
 EF_SEL_SEG   equ 0x7EE07 - 0x7F140  ; ("mov ax,348h": the selected character's number's segment,
-EF_SELECTED  equ 0x25B              ;   at +25Bh there; and the calls, less the address after the INT)
-EF_LOAD_CALL equ 0x7F08D - 0x7F140
-EF_DRAW_CALL equ 0x7F110 - 0x7F140
-EF_FREE_CALL equ 0x7F11C - 0x7F140
+EF_SELECTED  equ 0x25B              ;   at +25Bh there; less the address after the INT)
 EF_CELLS     equ 21                 ; (the upper panel's)
-EF_X         equ 150                ; (the lower panel, in the window)
-EF_Y         equ 108
-EF_PITCH     equ 8
 EF_LINES     equ 5
-EF_HEADING   equ 0x871              ; (weaponpages.HEADINGS: specialized, master, grand master, expert)
 probe_ef_rows:
         sti
         pushad
@@ -3715,14 +3707,16 @@ probe_ef_rows:
         jg .pops
         mov bx, sp
         les di, [ss:bx + 34]    ; the code after the INT
-        mov eax, [es:di + EF_LOAD_CALL]
-        mov [cs:ef_load], eax
-        mov eax, [es:di + EF_DRAW_CALL]
-        mov [cs:ef_draw_call], eax
-        mov eax, [es:di + EF_FREE_CALL]
-        mov [cs:ef_free], eax
         mov es, [es:di + EF_SEL_SEG]
         mov ax, [es:EF_SELECTED]
+        cmp ax, LV_PARTY
+        jae .pops
+        mov dx, ds
+        add dx, USE_TEXT_SEG
+        mov [cs:c_draw + 2], dx
+        mov word [cs:c_draw], USE_TEXT_OFF
+        mov edx, [PK_WINDOW]
+        mov [cs:c_winptr], edx
         call ef_draw
 .pops:  pop es
         popad
@@ -3745,12 +3739,12 @@ probe_ef_rows:
         pop bp
         iret
 
-; the kinds of party member AX (DS the game's): a heading where the skill changes, then the kind
+; the kinds of party member AX (DS the game's): the skill's line where it changes, then the kind's
 ef_draw:
         les bx, [LV_SHEETS]
         imul ax, ax, 0x47
         add bx, ax
-        mov word [cs:ef_y], EF_Y
+        mov word [cs:ef_y], USE_FIRST_Y
         mov byte [cs:ef_last], 0xFF
         xor di, di
 .slot:  movzx si, byte [es:bx + di + SPEC_SLOTS]
@@ -3763,70 +3757,68 @@ ef_draw:
         call spec_of_sheet
         mov al, 3
         cmp dl, SPEC_EXPERT
-        je .heading
+        je .skill
         cmp dl, SPEC_SPECIAL
         jb .next                ; (a warrior class not back yet: none)
         mov al, dl
         sub al, SPEC_SPECIAL
-.heading:
-        cmp al, [cs:ef_last]
-        je .row
+.skill: cmp al, [cs:ef_last]
+        je .kind
         mov [cs:ef_last], al
-        movzx ax, al
-        add ax, EF_HEADING
-        call ef_picture
-.row:   mov ax, [cs:ef_kind]
-        add ax, PICK_FIRST
-        call ef_picture
+        movzx si, al
+        shl si, 1
+        mov si, [cs:si + ef_skills]
+        call ef_line
+.kind:  mov si, [cs:ef_kind]
+        shl si, 1
+        mov si, [cs:si + ef_kinds]
+        call ef_line
 .next:  inc di
         cmp di, SPEC_COUNT
         jb .slot
         ret
 
-; ICON AX drawn in the Effects window's lower panel, on the next line (DS the game's)
-ef_picture:
+; CS:SI on the panel's next line (all registers kept: the game's text routine changes ES)
+ef_line:
         pusha
         push es
-        cmp word [cs:ef_y], EF_Y + (EF_LINES - 1) * EF_PITCH
+        cmp word [cs:ef_y], USE_FIRST_Y + (EF_LINES - 1) * USE_STEP
         ja .out
-        mov dword [cs:ef_pic], 0
+        push word [cs:ef_y]
+        push word USE_X
         push cs
-        push word ef_pic
-        movzx eax, ax
-        push eax
-        push dword 0x4E4F4349   ; 'ICON'
-        call far [cs:ef_load]
-        add sp, 12
-        cmp dword [cs:ef_pic], 0
-        je .out
-        push word 0
-        push dword [cs:ef_pic]
-        push word 0
-        les bx, [PK_WINDOW]
-        mov ax, [cs:ef_y]
-        add ax, [es:bx + 0x98]
-        push ax
-        mov ax, EF_X
-        add ax, [es:bx + 0x96]
-        push ax
-        push word 1
-        call far [cs:ef_draw_call]
-        add sp, 14
-        push dword [cs:ef_pic]
-        call far [cs:ef_free]
-        add sp, 4
-.out:   add word [cs:ef_y], EF_PITCH
+        push si
+        call c_draw_line
+.out:   add word [cs:ef_y], USE_STEP
         pop es
         popa
         ret
 
-ef_load      dd 0
-ef_draw_call dd 0
-ef_free      dd 0
-ef_pic       dd 0
 ef_y         dw 0
 ef_kind      dw 0
 ef_last      db 0
+ef_skills    dw .s0, .s1, .s2, .s3
+.s0     db 'SPECIALIZED IN', 0
+.s1     db 'MASTER OF', 0
+.s2     db 'GRAND MASTER OF', 0
+.s3     db 'EXPERT IN', 0
+ef_kinds     dw .k0, .k1, .k2, .k3, .k4, .k5, .k6, .k7, .k8, .k9, .k10, .k11, .k12, .k13, .k14, .k15
+.k0     db '  LONG SWORD', 0
+.k1     db '  CLUB', 0
+.k2     db '  DAGGER', 0
+.k3     db '  SHORT SWORD', 0
+.k4     db '  MACE', 0
+.k5     db '  AXE', 0
+.k6     db '  GREAT AXE', 0
+.k7     db '  PICK', 0
+.k8     db '  QUARTERSTAFF', 0
+.k9     db '  POLEARM', 0
+.k10    db '  GYTHKA', 0
+.k11    db '  CAHULAKS', 0
+.k12    db '  CHATKCHA', 0
+.k13    db '  BOW', 0
+.k14    db '  SLING', 0
+.k15    db '  STAFF SLING', 0
 
 ; By class as the creation screen numbers it (0-8): the sheet's number (the first of four, by
 ; sphere), 1 if a sphere is added (2 for a ranger, whose flag is one), the class's flag
