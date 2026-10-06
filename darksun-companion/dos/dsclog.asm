@@ -87,6 +87,7 @@ VEC_WP_SPHERE_WIN equ 0xC7 ; PROBE_WP_SPHERE_WIN
 VEC_WP_DISC_CLICK equ 0xC6 ; PROBE_WP_DISC_CLICK
 VEC_WP_SPHERE_CLICK equ 0xC5 ; PROBE_WP_SPHERE_CLICK
 VEC_WP_SHOWN equ 0xC4      ; PROBE_WP_SHOWN
+VEC_WP_CLASS equ 0xC3      ; PROBE_WP_CLASS
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 128         ; entries in the ring
@@ -2694,7 +2695,7 @@ RESTRICT_TYPE equ 0x14          ; (the item type record's size)
 NO_MATERIAL equ 0xFF            ; (CU_MAT: none)
 LEATHER equ 5
 THIEF_BIT equ 0x400
-PSI_KINDS equ 0x701E            ; bits by kind: dagger, short sword, mace, club, chatkcha, bow, sling
+PSI_KINDS equ 0x701E            ; bits by kind: club, dagger, short sword, mace, chatkcha, bow, sling
 SPHERE_EARTH equ 0x1D           ; bits by material: stone, obsidian, metal, wood
 SPHERE_FIRE equ 0x08            ; obsidian
 SPHERE_WATER equ 0x03           ; bone, wood
@@ -2876,7 +2877,7 @@ sphere_allows:
         jnz .mat
         test byte [cs:cu_flags], 0x12
         jnz .yes
-        cmp byte [cs:cu_kind], 1        ; (a dagger)
+        cmp byte [cs:cu_kind], 2        ; (a dagger)
         je .yes
         jmp .no
 .mat:   mov ah, SPHERE_EARTH
@@ -3135,6 +3136,22 @@ probe_wp_sphere_win:
         pop bp
         iret
 
+; WP_GLADIATOR: ZF clear if the sheet being made (ES:BX) is a gladiator's (two kinds to choose).
+; All registers kept.
+wp_gladiator:
+        cmp byte [es:bx + 0x21], CR_GLADIATOR
+        je .yes
+        cmp byte [es:bx + 0x22], CR_GLADIATOR
+        je .yes
+        cmp byte [es:bx + 0x23], CR_GLADIATOR
+        je .yes
+        cmp al, al              ; (ZF set)
+        ret
+.yes:   push ax
+        or al, 1                ; (ZF clear)
+        pop ax
+        ret
+
 ; WP_CLASSES: AL 1 if the sheet being made has a fighter, gladiator or ranger class, AH 1 if a
 ; cleric, druid or ranger one (a sphere). Others kept.
 wp_classes:
@@ -3206,6 +3223,74 @@ probe_wp_shown:
         pop bp
 .ret:   cmp ax, 8
         retf 2
+
+; PROBE_WP_CLASS: INT replaces "mov cx,1" (3 bytes: INT + NOP; 66406h) at the start of the routine
+; that runs after each click on a class (it puts DONE in or out of use): the disciplines' window
+; up is opened again if it is the other one for the class now (WEAPON SPEC or VIEW SPHERES); a
+; weapon page up is marked again for the class now (a gladiator's two), or, for one with no
+; weapon to choose, goes back to the disciplines.
+probe_wp_class:
+        mov cx, 1
+        test word [cs:rules], RULE_SPECIALIZE
+        jz .ret
+        push ax
+        push bx
+        push es
+        mov ax, [WP_DISC]       ; the disciplines up: the right window for the class now?
+        or ax, [WP_DISC + 2]
+        jz .page
+        call wp_classes
+        mov bx, WP_DISC_ID
+        or al, al
+        jz .want
+        or ah, ah
+        jnz .want
+        mov bx, WP_WDISC_ID
+.want:  mov [cs:wp_button], bx
+        les bx, [WP_DISC]
+        mov ax, [es:bx + 8]
+        cmp ax, [cs:wp_button]
+        je .out
+        sti
+        pushad
+        push es
+        push word 0x7F8         ; (its marks kept, as 640E4h keeps them)
+        push word 0x7F6
+        push dword [WP_DISC]
+        call wp_marked
+        add sp, 8
+        mov [WP_DISC_MASK], ax
+        mov ax, ds              ; and the game opens it again (641B9h), as for the class now
+        add ax, WP_STUB
+        mov [cs:wp_far + 2], ax
+        mov word [cs:wp_far], WP_TO_DISC
+        call far [cs:wp_far]
+        jmp .done
+.page:  mov ax, [WP_SPHERE]     ; a weapon page up: the window's id (+8)
+        or ax, [WP_SPHERE + 2]
+        jz .out
+        les bx, [WP_SPHERE]
+        mov ax, [es:bx + 8]
+        sub ax, WP_PAGE_ID
+        cmp ax, WP_PAGES
+        jae .out
+        mov [cs:wp_page], al
+        sti
+        pushad
+        push es
+        call wp_classes
+        or al, al
+        jz .back
+        call wp_marks
+        jmp .done
+.back:  mov ax, WP_BACK
+        call wp_page_button
+.done:  pop es
+        popad
+.out:   pop es
+        pop bx
+        pop ax
+.ret:   iret
 
 probe_wp_disc_click:
         push bp
@@ -3391,24 +3476,40 @@ wp_marked:
         pop bp
         ret
 
-; WP_MARKS: the page's rows, the kind marked (the creation sheet's; none yet: the long sword,
-; put in) chosen and the rest not, as 63FEEh marks the spheres.
+; WP_MARKS: the page's rows, the kinds marked (the creation sheet's: a gladiator's two, anyone
+; else's one; none yet: the long sword, and a gladiator's club, put in) chosen and the rest not,
+; as 63FEEh marks the spheres.
 wp_marks:
         push es
         push bx
         les bx, [WP_CREATION]
         cmp byte [es:bx + SPEC_SLOTS], 0
+        jne .first
+        mov byte [es:bx + SPEC_SLOTS], 1        ; (the long sword)
+.first: mov word [es:bx + SPEC_SLOTS + 2], 0
+        call wp_gladiator
+        jz .one
+        cmp byte [es:bx + SPEC_SLOTS + 1], 0
         jne .marked
-        mov byte [es:bx + SPEC_SLOTS], 1
+        mov al, 2                               ; (the club; or the long sword, if the club is first)
+        cmp byte [es:bx + SPEC_SLOTS], al
+        jne .second
+        dec al
+.second:
+        mov [es:bx + SPEC_SLOTS + 1], al
+        jmp .marked
+.one:   mov byte [es:bx + SPEC_SLOTS + 1], 0
 .marked:
-        mov al, [es:bx + SPEC_SLOTS]
-        mov [cs:wp_kind], al
+        mov ax, [es:bx + SPEC_SLOTS]
+        mov [cs:wp_kind], ax
         movzx bx, byte [cs:wp_page]
         shl bx, 2               ; (four to a page)
         mov cx, 4
 .row:   inc bx                  ; (the kind + 1)
         lea ax, [bx + WP_ROW - 1]
         cmp bl, [cs:wp_kind]
+        je .chosen
+        cmp bl, [cs:wp_kind + 1]
         je .chosen
         push 3
         call wp_button_op
@@ -3481,9 +3582,21 @@ wp_page_button:
         jae .ret
         inc ax
         les bx, [WP_CREATION]
-        mov [es:bx + SPEC_SLOTS], al
-        mov byte [es:bx + SPEC_SLOTS + 1], 0
-        mov word [es:bx + SPEC_SLOTS + 2], 0
+        call wp_gladiator
+        jz .only
+        cmp al, [es:bx + SPEC_SLOTS]            ; a gladiator's: a new kind in place of the older
+        je .ret
+        cmp al, [es:bx + SPEC_SLOTS + 1]
+        je .ret
+        cmp byte [es:bx + SPEC_SLOTS + 1], 0    ; (the second not chosen yet)
+        jne .shift
+        mov [es:bx + SPEC_SLOTS + 1], al
+        jmp wp_marks
+.shift: mov ah, al
+        mov al, [es:bx + SPEC_SLOTS + 1]
+        mov [es:bx + SPEC_SLOTS], ax
+        jmp wp_marks
+.only:  mov [es:bx + SPEC_SLOTS], al
         jmp wp_marks
 .more:  mov byte [cs:wp_from], 2
         mov al, [cs:wp_page]
@@ -3510,7 +3623,7 @@ wp_titles  db 'WEAPONS 1 OF 4', 0, 0
            db 'WEAPONS 4 OF 4', 0, 0
 wp_page    db 0
 wp_from    db 0
-wp_kind    db 0
+wp_kind    db 0, 0
 wp_button  dw 0
 wp_ret_file dw 0
 wp_end_file dw 0
@@ -3617,10 +3730,10 @@ spec_of_sheet:
 ; By item type (the game's 115, then the companion's own: 115 its short sword), the weapon kind
 ; + 1 (dscompanion/specialize.py's KIND_OF_TYPE; 0 none)
 KIND_TYPES equ 128
-kind_of_type  db 16, 14, 7, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 5, 10, 4, 12, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0
-              db 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 11, 1, 4, 1, 13, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1
-              db 15, 0, 0, 0, 0, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 1, 0, 0, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0
-              db 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 8, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+kind_of_type  db 16, 14, 7, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 2, 10, 5, 12, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0
+              db 0, 3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 11, 1, 5, 1, 13, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1
+              db 15, 0, 0, 0, 0, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 1, 0, 0, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0
+              db 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 8, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 ; PROBE_XP_NEXT: INT VEC_XP_NEXT replaces "push 10F4h" (3 bytes: INT + NOP; DSUN.EXE 67DBEh) in
 ; View Character's line "EXP:10301 (16000)", where the game adds ")" (DS:10F4h) after the XP the
@@ -7187,6 +7300,9 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_WP_SHOWN
         mov dx, probe_wp_shown
         int 21h
+        mov ax, 2500h + VEC_WP_CLASS
+        mov dx, probe_wp_class
+        int 21h
         mov ax, 3516h           ; the keyboard's (TARGETING)
         int 21h
         mov [old16], bx
@@ -7227,8 +7343,8 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or C4h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
-all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN
+busy    db 'DSCLOG: interrupts 60h-65h or C3h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS
 all_vectors_end:
 
         align 16, db 0

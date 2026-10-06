@@ -8,16 +8,16 @@ by its dice, weight and name; the spell-made weapons (Flame Blade, Shillelagh, S
 Hammer), the gloves and the broken weapon are none.
 
 The kinds come in the order of the character creation panel's four weapon pages, four to a
-page, long sword first: the default, marked when Fighter, Gladiator or Ranger is chosen, as
-the game marks the first psionic discipline and clerical sphere.
+page, long sword first: the default, as the game marks the first psionic discipline and
+clerical sphere; a gladiator's two at creation are the long sword and the club, the first two.
 """
 
 from typing import Dict, Optional
 
 from . import game
 
-KINDS = ("long sword", "dagger", "short sword", "mace",
-         "club", "axe", "great axe", "pick",
+KINDS = ("long sword", "club", "dagger", "short sword",
+         "mace", "axe", "great axe", "pick",
          "quarterstaff", "polearm", "gythka", "cahulaks",
          "chatkcha", "bow", "sling", "staff sling")
 PAGE_SIZE = 4
