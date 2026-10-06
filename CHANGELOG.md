@@ -7,6 +7,9 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
 ## Pull request #17 (in review)
 
 **Changed**
+- **Kalzith's scrolls at the game's prices:** 3,000 to 12,000 ceramic (they
+  were 100 to 500): the game's own price for a scroll of the same spell, else
+  its price for the spell's level. Scrolls already stocked are repriced.
 - **A monster's alignment in the Look box:** `THAC0 17 AL TN`, the alignment
   in two letters; the description in the dialogue window and the dice log's
   `Look:` line name it in words. Magic resistance moves beside the game's
@@ -36,6 +39,10 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
   ones keep their prices.
 
 **Added**
+- **Searching junk, hay and wardrobes in the dice log:** each search's roll
+  (0-14 for junk, 0-10 for hay and wardrobes), what it found, and how far the
+  count of finds (or of wardrobe searches) has got; a rat's bite or a falling
+  pot shows its damage roll. DSCLOG records the scripts' random command.
 - **More saves:** 40 instead of the game's 10, on four pages of ten in the
   save and load window: PAGE 1 to PAGE 4 buttons under EXIT (the page shown
   greyed), and PgDn and PgUp for the next page and the one before (in the load
@@ -96,16 +103,9 @@ Release **1.0.0** is pull requests #1 to #13; its notes are in
   row clicked counted from the top of the list, not of what was shown, so with
   the list scrolled down another character was deleted. The patched game adds
   how far the list is scrolled, as ADD does.
-- **Kalzith's scrolls at the game's prices:** 3,000 to 12,000 ceramic (they
-  were 100 to 500): the game's own price for a scroll of the same spell, else
-  its price for the spell's level. Scrolls already stocked are repriced.
 - **Kalzith's and Semyon's questions are asked once a talk:** a reply that
   doesn't end the talk leaves the list once chosen, as the game's own people's
   do, and is back the next time you talk to them (Kalzith's shop stays).
-- **Searching junk, hay and wardrobes in the dice log:** each search's roll
-  (0-14 for junk, 0-10 for hay and wardrobes), what it found, and how far the
-  count of finds (or of wardrobe searches) has got; a rat's bite or a falling
-  pot shows its damage roll. DSCLOG records the scripts' random command.
 - **The load window shows an empty page:** PAGE 2 to PAGE 4 did nothing in the
   load window when that page had no saves. Now the page is shown, with LOAD
   greyed and Enter doing nothing until a page with saves is chosen (the game

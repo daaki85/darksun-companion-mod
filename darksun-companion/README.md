@@ -113,6 +113,10 @@ records; this ledger keeps the ones the game doesn't show you.
   (That Fireball save is the game's own rule; with the
   [rule changes](#rule-changes) on, as they are by default, it would be the
   spell save, with DEX's dodging adjustment instead of the doubled d20.)
+
+  Besides attacks and spells, it labels thief skill, trap and ability checks,
+  the character creation rolls, an item's check against acid, and searches of
+  junk piles, haystacks and wardrobes (see [The dice log](#the-dice-log)).
 - **Dialogue:** what characters say, the replies you're offered and the one
   you picked, kept in a tab you can scroll back through.
 - **Spells:** a tab listing what every spell and psionic power really does,
@@ -170,8 +174,8 @@ records; this ledger keeps the ones the game doesn't show you.
   wielder see the invisible; lifting Shadowseeker from Kurzak is worth 200 XP,
   and Alagorn tells the story of each (see
   [Kreenfang and Shadowseeker](#kreenfang-and-shadowseeker)).
-- **Kalzith, a defiler in the slave pens,** who sells spell scrolls to a party
-  that treats him well (see [Kalzith](#kalzith)).
+- **Kalzith, a defiler in the slave pens,** who sells spell scrolls, at the
+  game's own prices, to a party that treats him well (see [Kalzith](#kalzith)).
 - **Semyon back in the slave pens,** as he promises when he leaves the arena,
   and breaking out with the party and Scar if he is beside them (see
   [Semyon](#semyon)).
@@ -207,9 +211,11 @@ records; this ledger keeps the ones the game doesn't show you.
 - **More characters:** 29 saved characters instead of the game's 19, made
   with CREATE CHARACTERS and kept in the ADD window's roster (see
   [More characters](#more-characters)).
-- **The roster's DELETE fixed:** the game's own DELETE removed the wrong
+- **Two of the game's own bugs fixed:** DELETE in the roster removed the wrong
   character when the roster was scrolled down (the one in the same row
-  counted from the top of the list); now it removes the one chosen.
+  counted from the top of the list), and a character not yet played (New)
+  counted as not Okay, so a new thief's skills showed 0 (see
+  [More characters](#more-characters)).
 - **Game speed:** DOSBox is given more of the computer, for smoother walking
   with the whole party in view (see [Game speed](#game-speed)).
 - **Crash reports:** if DOSBox crashes or the game stops with an error, what
@@ -401,8 +407,8 @@ party pane has two tabs:
   View Character screen. It shows the figure for their race and sex (the one
   on the character creation screen, read from your install) and their name.
   Then HP and PSP as the game shows them (PSP in blue). Then their condition
-  (the game's Okay, Stunned, Out Cold, Dying, Dead, Animated, Petrified or
-  Gone, followed by any spells and effects on them, with the rounds or charges
+  (the game's New, for a character not yet played, Okay, Stunned, Out Cold,
+  Dying, Dead, Animated, Petrified or Gone, followed by any spells and effects on them, with the rounds or charges
   each has left: `Blur (22 rounds)`, `Stoneskin (5 charges)`; from the game's own
   clock and timers). Then the character
   sheet: scores, sex, race and alignment, classes and levels, experience,
@@ -967,7 +973,7 @@ backstab: it has to be melee.
 | Long Sword | bone | 1d8 | 20 | yes |
 | Long Sword | obsidian | 1d8 | 30 | yes |
 | Long Sword | metal | 1d8 | 40 | yes (the limit) |
-| Short Sword ([Kurzak's](#the-slave-pens-gear), the Ledger's own) | metal | 1d6 | 30 | yes |
+| Short Sword ([Kurzak's](#the-slave-pens-gear), the Ledger's own; Shadowseeker, +1) | metal | 1d6 | 30 | yes |
 | Club | wood | 1d6 | 30 | yes |
 | Quarterstaff | wood | 1d6 | 40 | yes |
 | Dark Flame (+2) | obsidian | 1d8 | 40 | yes |
@@ -1057,7 +1063,9 @@ From the game's damage code (DSUN.EXE); none of this is in the manual:
   ground (fogs, clouds, walls, Web, Grease); not held by Grease, Web,
   Entangle, Solid Fog or Quicksand; and hits that also cast one of the
   monsters' powers on the target: 2d6 cold, 2d6 or 20 acid, paralysis,
-  poison of 10 or 30 damage, a deadly Poison, disease on 1 hit in 10.
+  poison of 10 or 30 damage, a deadly Poison, disease on 1 hit in 10. The 20
+  acid (the Rampager's) and a corroding touch (the Babau's) can also destroy a
+  worn item (see [Items saving against acid](#items-saving-against-acid)).
 - Undead (race 9 on the character sheet) take nothing from poison and
   draining, and mind-affecting spells, charms and holds don't work on them.
 
@@ -1142,8 +1150,10 @@ Every roll in the game goes through one function, Borland C++'s `rand()`.
    destroy an item hit by acid or a corroding touch `INT D6h`, `INT D5h` and
    `INT D4h` (for [items saving against acid](#items-saving-against-acid)), and in the scripts'
    random command `INT D3h` (for [searching junk, hay and wardrobes](#searching-junk-hay-and-wardrobes)). The
-   copy keeps 29 characters rather than 19 and deletes the one chosen in the
-   roster (see [more characters](#more-characters)), and also allocates a bigger buffer for the game's scripts (11,776 bytes
+   copy keeps 29 characters rather than 19, deletes the one chosen in the
+   roster and counts a New character as Okay (see
+   [more characters](#more-characters)), lets Enter load only a save that is
+   there (see [more saves](#more-saves)), and also allocates a bigger buffer for the game's scripts (11,776 bytes
    rather than 10,000, for
    [Dinos and the Trustee](#dinos-and-the-trustee-on-kalzith-and-semyon)), and
    looks for its data files in the current folder rather than next to itself. The helper also hooks DOS's `INT 21h`, to
@@ -1173,17 +1183,18 @@ Because the replacement produces identical numbers, the game plays exactly as
 it would without it, apart from what you choose on the Options tab (the
 Ring +1, picking pockets, the [rule changes](#rule-changes)), the Ledger's
 other additions (the slave pens' gear, the cooked vulture, Kalzith, Semyon,
-what the party wears, shadows, dust, rings, Tab and Enter, scrolling) and one
-fix that is
-always in the patched copy: no equipment penalty on thief skills (see
-[Thief skills](#thief-skills)).
+what the party wears, shadows, dust, rings, Tab and Enter, scrolling) and the
+fixes always in the patched copy: no equipment penalty on thief skills (see
+[Thief skills](#thief-skills)), the roster's DELETE and New characters counting
+as Okay (see [More characters](#more-characters)).
 
 Limitations:
 - Only the GOG release (`DSUN.EXE` of 611,408 bytes) is supported. With
   another version the launcher starts the game without the dice log and says
   why.
-- Outside combat, the thief skill, trap and ability checks and the character
-  creation rolls are labelled; other rolls there (for example treasure or
+- Outside combat, the thief skill, trap and ability checks, the character
+  creation rolls and searching junk, hay and wardrobes are labelled; other
+  rolls there (for example treasure or
   random encounters) show up only with **Show unlabelled rolls**, as raw
   numbers.
 - A save-file load from the main menu is recognised, so the spells already
@@ -1857,8 +1868,8 @@ round's movement, Move x 10 (`INT FBh`).
 ## New content
 
 People, a quest and items the Ledger adds to the game. Each can be switched off on
-the Options tab's **New content** group; Kalzith, Semyon and the vulture from the
-next time the game is started.
+the Options tab's **New content** group; Kalzith, Semyon, the vulture and
+Alagorn's stories from the next time the game is started.
 
 ### The Ring +1
 
@@ -2188,14 +2199,16 @@ Talk button). His conversation is the game's kind, just him speaking:
 
   These are the game's own prices: its scroll of the same spell where it has
   one (Blur, Lightning Bolt and Haste), else its price for the spell's level
-  (3,000 a level). Scrolls he stocked in a game before this build are repriced
-  when the Ledger next looks at the game.
+  (3,000 a level). Scrolls he stocked with an earlier version, at 100 to 500,
+  are repriced when the Ledger next sees the game.
 
   Cat's Grace is there only with its rule on (see
   [Rule changes](#rule-changes)). A preserver learns a scroll's spell as from
   any of the game's (right-click it in the inventory, click its spell), by the
   game's own rules: a spell of a level the preserver can cast. He remembers a
-  friend ("Back again? Keep your voice down.").
+  friend ("Back again? Keep your voice down."). As with the game's own people,
+  a question goes from his list once asked, until the next time you talk to
+  him; the shop stays.
 - **During the escape**, with the alarm sounding (the game's own alarm, which
   the pens' other slaves also answer to), he has only a line for the party,
   by how he stands with them, and no talk: to a friend, "That's the alarm. So
@@ -2277,8 +2290,7 @@ him up in the arena (he was asking about the Veiled Alliance), passes on what he
 has heard (who carries keys), reminds the party where he hid his gem (the grain
 pots), and talks about the Alliance's plans, in his own voice from the arena.
 As with the game's own people, each question goes from the list once asked,
-and comes back the next time you talk to him (Kalzith's do the same; his shop
-stays).
+and comes back the next time you talk to him.
 
 How: in the Ledger's copy of `GPLDATA.GFF`, the command that takes him off the
 map when he walks out after the fight (script 5 at 2400, run only from there)
@@ -2599,7 +2611,7 @@ Enter doing nothing) until you go to a page with a save. (The game itself
 never lets you choose an empty row to load; loading one would start a new
 game.)
 
-![The load window on page 1: the game's ten saves, and the PAGE 1 (greyed) to PAGE 4 buttons under LOAD and EXIT](docs/save-pages.png)
+![The load window on page 1 (left): the game's ten saves, and the PAGE 1 (greyed) to PAGE 4 buttons under LOAD and EXIT; and on an empty page 2 (right), with LOAD greyed](docs/save-pages.png)
 
 Page 1 is the game's own saves, `SAVE01.SAV` to `SAVE10.SAV` in the game
 folder; pages 2 to 4 are `SAVB01.SAV` to `SAVB10.SAV`, `SAVC..` and `SAVD..`,
@@ -2805,6 +2817,7 @@ types 20-byte ones (`DS:0x1669`, 115 of them, from GPLDATA.GFF):
 | item | `+0x08` | a container's contents (an object number), as in a Dead Body |
 | item | `+0x0a` | its type |
 | item | `+0x11` | where it's worn: 0-13 the game's slots (arm, ammo, missile, right hand, finger, waist, legs, head, neck, chest, left hand, finger, cloak, foot), 14-25 a backpack cell |
+| item | `+0x0f` | a spell it carries, one past the spell's number (0: none): readied, the game casts a helpful one on the wearer; the acid's check reads it as the item's "magical power" |
 | item | `+0x12` | its name (an entry of the game's name table, 25 bytes each) |
 | item | `+0x14` | its plus |
 | type | `+0x04` | weight, in tenths of a pound |

@@ -26,8 +26,9 @@ can be switched off on its Options tab.
 ### In the Ledger's window
 
 - **The rolls behind the scenes:** attacks, damage, saving throws, magic
-  resistance, initiative, thief skills, character creation and level-up HP, with
-  each bonus named.
+  resistance, initiative, thief skills, character creation and level-up HP,
+  items' checks against acid, and searching junk, hay and wardrobes, with each
+  bonus named.
 - **A party viewer:** THAC0 with each weapon, saves as they stand now, AC and
   what makes it up, spell slots, thief skills, equipment and active effects.
 - **Dialogue and spells tabs:** a scrollable record of every conversation, and
@@ -90,7 +91,8 @@ can be switched off on its Options tab.
 - **A mini-quest:** the cooked vulture, at last good for something (Dinos
   cooks it for the party, to the game's own quest-done sound).
 - **A new person in the slave pens:** Kalzith, a defiler slave who, treated
-  with respect, sells arcane spell scrolls that a preserver can learn from.
+  with respect, sells arcane spell scrolls that a preserver can learn from, at
+  the game's own prices.
 - **Semyon kept his word:** after he leaves the arena through the entrance to
   the pens, he is in the pens to talk to, as the game promised and never did;
   and if he is still beside the party when they break out with Scar, he breaks
@@ -124,9 +126,10 @@ can be switched off on its Options tab.
 
 - **More saves:** 40 instead of the game's 10, on four pages of the save and
   load window (PAGE 1 to PAGE 4 buttons, or PgUp and PgDn).
-- **More characters:** 29 saved characters instead of the game's 19, and
-  the game's DELETE in the roster fixed: it removed the wrong character when
-  the list was scrolled down.
+- **More characters:** 29 saved characters instead of the game's 19.
+- **Two of the game's own bugs fixed:** DELETE in the roster removed the wrong
+  character when the list was scrolled down, and a new character's thief skills
+  showed 0 until the game started.
 - **Game speed:** DOSBox is given more of the computer (20,000 cycles by
   default, on its faster dynamic core), for smoother walking with the whole
   party in view; GOG's own speed and a faster one can be chosen. At the
@@ -171,36 +174,41 @@ double-click, with the options as last set.)
 
 In [pull request #17](https://github.com/daaki85/darksun-companion-mod/pull/17)
 (in review):
-- **Kreenfang and Shadowseeker:** two named magic weapons, Shadowseeker
-  letting its wielder see the invisible; 200 XP for lifting it from Kurzak;
-  Alagorn tells of both.
-- **Cloaks, boots and belts:** their item boxes say what they give a thief,
-  a worn belt helps pick pockets and open locks, and plain ones cost 24.
-- **Faster walking:** shadows and dust drawn much more cheaply; at the fastest
-  game speed, the whole party walks as fast as the leader alone.
-- **Items saving against acid** (a rule change): an item the Rampager's acid
-  or the Babau's touch could destroy saves by its material as in AD&D, a plus
-  helping, where that's better than the game's; and the dice log shows every
-  such check.
-- **Rings and cloaks of protection as in AD&D** (a rule change): two rings
-  don't add up, a ring gives no AC with magical armour, and a cloak does
-  nothing with magical or metal armour or a shield.
-- **Searching junk, hay and wardrobes** in the dice log: each search's roll,
-  what it found and how close the party is to finding everything there is.
-- **More saves:** 40, on four pages of the save and load window; in the load
-  window an empty page can be shown too, with LOAD greyed.
-- **More characters:** 29 saved characters instead of 19, made with CREATE
-  CHARACTERS and kept in the ADD window's roster.
-- **A bug of the game's own fixed:** DELETE in the character roster removed
-  the wrong character when the list was scrolled down; now it removes the one
-  chosen. And a New character (one not yet played) counts as Okay, so a new
-  thief's skills no longer show as 0 before the game starts.
-- **Gear on the figures:** a shield shows from the side; Kreenfang's and
-  Shadowseeker's blades in their icons' colours; bone weapons ivory.
-- **Options tab:** its sections open and close, and the rule changes come with
-  the ones that change play most first.
-- **The Look box:** a monster's alignment, and its magic resistance beside its
-  level.
+- **New content:**
+  - **Kreenfang and Shadowseeker,** two named magic weapons, Shadowseeker
+    letting its wielder see the invisible; 200 XP for lifting it from Kurzak;
+    Alagorn tells of both.
+  - **Cloaks, boots and belts:** their item boxes say what they give a thief,
+    a worn belt helps pick pockets and open locks, and plain ones cost 24.
+  - **Kalzith's scrolls** at the game's own prices (3,000 to 12,000), and
+    Kalzith's and Semyon's questions gone from the list once asked, as the
+    game's own people's are.
+- **Rule changes:**
+  - **Items saving against acid:** an item the Rampager's acid or the Babau's
+    touch could destroy saves by its material as in AD&D, a plus helping, where
+    that's better than the game's.
+  - **Rings and cloaks of protection as in AD&D:** two rings don't add up, a
+    ring gives no AC with magical armour, and a cloak does nothing with magical
+    or metal armour or a shield.
+- **Dice log:** each item's check against acid, and each search of a junk
+  pile, haystack or wardrobe: the roll, what it found and how close the party
+  is to finding everything there is.
+- **Saves and characters:**
+  - **40 saves,** on four pages of the save and load window; in the load
+    window an empty page can be shown too, with LOAD greyed.
+  - **29 saved characters** instead of 19.
+  - **Two of the game's own bugs fixed:** DELETE in the roster removed the
+    wrong character when the list was scrolled down; and a new character (one
+    not yet played) counted as not Okay, so a new thief's skills showed 0.
+- **On the screen and in the game:**
+  - **Faster walking:** shadows and dust drawn much more cheaply; at the
+    fastest game speed, the whole party walks as fast as the leader alone.
+  - **Gear on the figures:** a shield shows from the side; Kreenfang's and
+    Shadowseeker's blades in their icons' colours; bone weapons ivory.
+  - **The Look box:** a monster's alignment, and its magic resistance beside
+    its level.
+- **The Ledger:** the Options tab's sections open and close, and the rule
+  changes come with the ones that change play most first.
 
 In [pull request #16](https://github.com/daaki85/darksun-companion-mod/pull/16)
 (merged): Semyon breaks out with Scar, the game speed setting, switches for
