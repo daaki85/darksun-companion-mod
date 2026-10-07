@@ -555,10 +555,12 @@ object's record, then its items, each a child or the next of the one before,
 with its type and name as attributes) has the new items after its own, so the
 game makes them where it makes the object. Kreenfang is the arena's dead
 body's (object 1204) own gythka made +1 and renamed, its name attribute with
-it. One Castle Guard and one
-Undermountain miner have an object of their own (2560, 2561: copies of their
-kind's, their record renumbered), their entity in the Ledger's copies of
-`RGN1C.GFF` and `RGN1E.GFF` pointing to it. (People of a kind share an
+it. One Castle Guard, one Undermountain miner and one Magera (Drakejaw's) have
+an object of their own (2560, 2561, 2562: copies of their kind's, their record
+renumbered), their entity in the Ledger's copies of `RGN1C.GFF`, `RGN1E.GFF`
+and `RGN08.GFF` pointing to it. The Elven Leader's Gythka +2 is his own
+Gythka +1 (in his pack, object 124, and the item object 2534 his script gives)
+made +2. (People of a kind share an
 object, so every Tari, Renegade and Wild Mul carries theirs; the caravan's
 buried chest is an object the dig's script makes, and has the Boots of
 Elvenkind in it.) The Elven Leader's script (46, in
@@ -592,10 +594,12 @@ doesn't have: don't load a save that has them without the dice log.
 
 Alagorn's new menu lines are in the Ledger's copy of his scripts
 (`dscompanion/alagorn.py`); he knows an item by its picture.
-- Script 212 with every story would overflow the script buffer, as the
-  [Trustee's](#what-dinos-and-the-trustee-say-about-them) once did, so its clothes are told by a copy of it (script 220),
-  and its rings and other items by another (221). His talk (script 211) calls
-  each part by its offset in 212, so only the called script's number changes.
+- Scripts 212 and 213 with every story would overflow the script buffer, as
+  the [Trustee's](#what-dinos-and-the-trustee-say-about-them) once did, so
+  212's clothes are told by a copy of it (script 220), its rings and other
+  items by another (221), and 213's weapons by a copy of 213 (222). His talk
+  (script 211) calls each part by its offset in its script, so only the
+  called script's number changes.
 - The added "none carried" check replays the game's own tests with their own
   jump targets: skipping one leaves the game's if/else nesting one level
   short.

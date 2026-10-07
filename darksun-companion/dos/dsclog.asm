@@ -6040,7 +6040,13 @@ extra_names:
         times NAME_SIZE - 15 db 0
         db "Inixhide"                   ; (Legcrusher's Leather Chest Armor +1: dscompanion/npcitems.py)
         times NAME_SIZE - 8 db 0
-        times (NAMES_EXTRA - 23) * NAME_SIZE db 0
+        db "Drakejaw"                   ; (the magic axes of dscompanion/worldgear.py: a bone axe +1,
+        times NAME_SIZE - 8 db 0
+        db "Glasshewer"                 ; an obsidian axe +2,
+        times NAME_SIZE - 10 db 0
+        db "Headsman"                   ; a metal great axe +2)
+        times NAME_SIZE - 8 db 0
+        times (NAMES_EXTRA - 26) * NAME_SIZE db 0
 
 ; STEALTH (RULE_STEALTH): a thief who starts a turn with no enemy next to them may hide in
 ; shadows and move silently up to someone; the companion rolls both and, when both succeed,

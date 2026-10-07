@@ -20,7 +20,7 @@
   on Balkazar's body. The chest puts Resist Fire on its wearer while worn, the helm Cloak of
   Bravery; the arms and legs are plain.
 - The Cloak and Boots of Elvenkind (DSCLOG's types, the game's Cloak's and Boots', for thieves and
-  rangers; their stealth: stealth.py): the cloak the Elven Leader's gift with his Gythka +1 (his
+  rangers; their stealth: stealth.py): the cloak the Elven Leader's gift with his Gythka (+2: his
   script gives it: elvenleader.py), the boots in the buried chest of Kel's caravan, with the
   Cahulaks +1.
 - The Flame Blade, an obsidian long sword +1 (fire clerics can wield it) whose blade burns what it
@@ -28,6 +28,9 @@
   as a weapon's spells are, at caster level 0: 2d6 of fire to the one hit, a save for half (AD&D's
   flame blade: 1d6 of fire; the game's Produce Fire, 1d6, sets the ground alight and burns friends
   standing there): in the pack of the Hot Springs' Templar (the one with the Drake Shield).
+- The magic axes: Drakejaw, a bone axe +1, on one of the Magera guarding the wagon's prisoners;
+  Glasshewer, an obsidian axe +2, on the elven slavers' Templar; Headsman, a metal great axe +2,
+  in the arena Announcer's stash. And the Elven Leader's Gythka +1 made +2.
 - Bracers of defense (DSCLOG's BRACERS type, worn on the arms: their plus counts for AC while neither
   armour nor a helm is worn), now that a preserver can't cast in armour: on four
   of the game's wizards, better the later they're met.
@@ -35,8 +38,8 @@
 All of them are in the game's data (dataitems.py): the launcher writes them into their people's
 and chests' objects in its copy of SEGOBJEX.GFF, by the Options tab's switches, so a new game
 has them where the game makes those people and chests. People of a kind who share an object
-(the Tari, Renegades, Wild Muls) each carry the item; one Castle Guard and one Undermountain miner
-have an object of their own for theirs (a copy of their kind's, and their region's entity
+(the Tari, Renegades, Wild Muls) each carry the item; one Castle Guard, one Undermountain miner
+and one Magera have an object of their own for theirs (a copy of their kind's, and their region's entity
 pointing to it, in the Ledger's copy of that region's file).
 """
 
@@ -70,6 +73,16 @@ CLUB_1 = ((18, GUTTERKNOT, 0x10000 - 2494, PLUS_VALUE), 1)  # a club +1
 PICK_1 = ((112, DEEPBITER, 0x10000 - 2496, PLUS_VALUE), 1)  # a stone pick +1
 STAFF_SLING_1 = ((0, WINDLASH, 0x10000 - 2498, SLING_VALUE), 1)  # a staff sling +1
 SHORT_SWORD_2 = ((game.METAL_SHORT_SWORD_TYPE, GREENBRIGHT, 0x10000 - 2500, 2 * PLUS_VALUE), 2)  # a metal short sword +2
+# the magic axes: a bone axe +1 (a water cleric's), an obsidian axe +2 (a fire or earth cleric's),
+# a metal great axe +2
+DRAKEJAW, GLASSHEWER, HEADSMAN = 0x159, 0x15A, 0x15B
+NAMES.update({DRAKEJAW: b"Drakejaw", GLASSHEWER: b"Glasshewer", HEADSMAN: b"Headsman"})
+BONE_AXE_1 = ((game.BONE_AXE_TYPE, DRAKEJAW, 0x10000 - 2554, PLUS_VALUE), 1)
+OBSIDIAN_AXE_2 = ((game.OBSIDIAN_AXE_TYPE, GLASSHEWER, 0x10000 - 2556, 2 * PLUS_VALUE), 2)
+GREAT_AXE_2 = ((game.METAL_GREAT_AXE_TYPE, HEADSMAN, 0x10000 - 2558, 2 * PLUS_VALUE), 2)
+# the Elven Leader's Gythka +1 (in his pack, object 124; and the item his script gives, a new one of
+# object 2534) a Gythka +2
+ELVEN_LEADER, ELVEN_GYTHKA = 124, 2534
 
 BRACERS_NAME = 0x149  # the name entry DSCLOG adds ("Bracers/Defense")
 ARROWBANE, SUNKING_CROWN = 0x14E, 0x14F  # and the circlet's and crown's
@@ -226,7 +239,41 @@ MAGIC: Tuple[Gift, ...] = (
     Gift("Buried chest", (ELVEN_BOOTS,), (CARAVAN_CHEST,), 0x1A),
     # the Flame Blade on the Hot Springs' Templar
     Gift("Templar", (FLAME_BLADE,), (34,), 0x23),
+    # the axes: Drakejaw on one of the Magera guarding the wagon's prisoners (five of them there, with
+    # four more elsewhere, share an object), Glasshewer on the elven slavers' Templar (with his Chain
+    # Arm Armor), Headsman in the arena Announcer's stash
+    Gift("Magera", (weapon(*BONE_AXE_1),), (71,), 0x08, clone=(122, 2562)),
+    Gift("Templar", (weapon(*OBSIDIAN_AXE_2),), (131,), 0x14),
+    Gift("Announcer", (weapon(*GREAT_AXE_2),), (91,)),
 )
+
+
+def gythka_2(rec: bytes) -> bytes:
+    out = bytearray(rec)
+    out[game.ITEM_PLUS] = 2
+    struct.pack_into("<H", out, weaponchoice.ITEM_VALUE, 2 * PLUS_VALUE)
+    return bytes(out)
+
+
+def is_gythka_1(rec: bytes) -> bool:
+    return len(rec) >= game.ITEM_SIZE and struct.unpack_from("<H", rec, game.ITEM_TYPE)[0] == game.GYTHKA_TYPE \
+        and rec[game.ITEM_PLUS] == 1
+
+
+def gythka_chunks(chunks, out: Dict[Tuple[str, int], bytes]) -> Dict[Tuple[str, int], bytes]:
+    """The Elven Leader's Gythka +1 made +2: the one he carries, and his script's (object
+    ELVEN_GYTHKA's own record, an item)."""
+    changed: Dict[Tuple[str, int], bytes] = {}
+    key = ("RDFF", ELVEN_LEADER)
+    if key in chunks:
+        changed[key] = dataitems.with_item_changed(out.get(key, chunks[key]), is_gythka_1, gythka_2)
+    key = ("RDFF", ELVEN_GYTHKA)
+    if key in chunks:
+        recs, end = dataitems.records(out.get(key, chunks[key]))
+        if recs and recs[0].kind == dataitems.ITEM and is_gythka_1(recs[0].data):
+            recs[0] = recs[0]._replace(data=gythka_2(recs[0].data))
+            changed[key] = dataitems.chunk(recs, end)
+    return {k: v for k, v in changed.items() if v != chunks[k]}
 ELVEN_CLOAK_OBJECT = 2546  # (its picture's object: the item the Elven Leader's script makes)
 # the header numbers of the Ledger's own item types: the game's item they're made from
 BASE_TYPES = {game.SHORT_SWORD_TYPE: 63, game.CLOAK_TYPE: 65, game.BONE_HELM_TYPE: 5, game.BONE_SHORT_SWORD_TYPE: 81,
@@ -294,6 +341,7 @@ def data_chunks(chunks, on: Dict[str, bool]) -> Dict[Tuple[str, int], bytes]:
         return {}
     if on.get("world_magic", True) is not False:
         out[("RDFF", ELVEN_CLOAK_OBJECT)] = dataitems.item_object(ELVEN_CLOAK, header_numbers(chunks).get(65, 0))
+        out.update(gythka_chunks(chunks, out))
         from . import tome  # (the Tome of Understanding, Father Garyn's gift: garyn.py)
         try:
             out.update(tome.object_chunks(chunks, header_numbers(chunks).get(tome.SCROLL_TYPE, 0)))

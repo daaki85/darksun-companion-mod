@@ -144,6 +144,46 @@ class WorldGearTests(unittest.TestCase):
         templar = next(g for g in worldgear.MAGIC if item in g.items)
         self.assertEqual((templar.region, templar.name, templar.objects), (0x23, "Templar", (34,)))
 
+    def test_axes(self):
+        """The magic axes: a bone axe +1 (Drakejaw) on one of the Magera guarding the wagon's
+        prisoners (an object of his own), an obsidian axe +2 (Glasshewer) on the elven slavers'
+        Templar, a metal great axe +2 (Headsman) in the arena Announcer's stash; each named and
+        priced 20,800 a plus."""
+        cases = ((worldgear.BONE_AXE_1, game.BONE_AXE_TYPE, 1, "Drakejaw", "Magera", (71,), 0x08),
+                 (worldgear.OBSIDIAN_AXE_2, game.OBSIDIAN_AXE_TYPE, 2, "Glasshewer", "Templar", (131,), 0x14),
+                 (worldgear.GREAT_AXE_2, game.METAL_GREAT_AXE_TYPE, 2, "Headsman", "Announcer", (91,), None))
+        for spec, type_, plus, name, holder, objects, region in cases:
+            item = worldgear.weapon(*spec)
+            self.assertEqual((struct.unpack_from("<H", item, game.ITEM_TYPE)[0], item[game.ITEM_PLUS]), (type_, plus))
+            self.assertEqual(struct.unpack_from("<H", item, 6)[0], plus * worldgear.PLUS_VALUE)
+            self.assertEqual(icons.which(item), name)
+            self.assertEqual(names.NAMES[struct.unpack_from("<H", item, game.ITEM_NAME)[0]], name.encode())
+            g = next(g for g in worldgear.MAGIC if item in g.items)
+            self.assertEqual((g.name, g.objects, g.region), (holder, objects, region))
+        self.assertEqual(gift("Magera").clone, (122, 2562))
+        # (the plain axes still the plain ones)
+        self.assertEqual(icons.which(worldgear.weapon(worldgear.BONE_AXE)), "Bone Axe")
+        self.assertEqual(icons.which(worldgear.weapon(worldgear.OBSIDIAN_AXE)), "Obsidian Axe")
+
+    def test_elven_gythka_2(self):
+        """The Elven Leader's Gythka +1 a Gythka +2, in his pack and his script's object (an item),
+        priced as two pluses; once."""
+        from dscompanion import dataitems as d
+        gythka = bytearray(ITEM)
+        struct.pack_into("<H", gythka, game.ITEM_TYPE, game.GYTHKA_TYPE)
+        gythka[game.ITEM_PLUS] = 1
+        gythka = bytes(gythka)
+        chunks = {("RDFF", worldgear.ELVEN_LEADER): rdff(GUARD, [ITEM, gythka]),
+                  ("RDFF", worldgear.ELVEN_GYTHKA): rdff(gythka)}
+        out = worldgear.gythka_chunks(chunks, {})
+        pack = d.items_of(out[("RDFF", worldgear.ELVEN_LEADER)])
+        self.assertEqual([(r[game.ITEM_PLUS], struct.unpack_from("<H", r, 6)[0]) for r in pack],
+                         [(0, 45), (2, 2 * worldgear.PLUS_VALUE)])
+        recs, _ = d.records(out[("RDFF", worldgear.ELVEN_GYTHKA)])
+        self.assertEqual(recs[0].data[game.ITEM_PLUS], 2)
+        self.assertEqual(worldgear.gythka_chunks({k: out[k] for k in chunks}, {}), {})  # (not twice)
+        self.assertNotEqual(icons.which(pack[1]), "Kreenfang")  # (Kreenfang is the gythka +1)
+
     def test_bracers_not_armour(self):
         """The bracers' type (as DSCLOG has it) isn't armour to the class rules; arm armour is."""
         bracers = npcitems.TYPES[game.BRACERS_TYPE - game.GAME_TYPES]
@@ -241,7 +281,7 @@ class DataTests(unittest.TestCase):
             self.assertTrue(g.objects, g.name)
             if g.clone:
                 self.assertGreater(g.clone[1], 2551)
-        self.assertEqual(worldgear.regions(worldgear.GIFTS + worldgear.MAGIC), [0x1C, 0x1E])
+        self.assertEqual(worldgear.regions(worldgear.GIFTS + worldgear.MAGIC), [0x08, 0x1C, 0x1E])
 
 
 if __name__ == "__main__":

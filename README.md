@@ -71,6 +71,17 @@ double-click, with the options as last set.)
 
 ## What's new
 
+In pull request #23 (in progress):
+- **Three magic axes:** **Drakejaw**, a bone axe +1, on a Magera guarding the
+  wagon's prisoners; **Glasshewer**, an obsidian axe +2, on the elven slavers'
+  Templar; and **Headsman**, a metal great axe +2, in the arena Announcer's
+  stash. Alagorn tells the story of each.
+- **The Elven Leader's Gythka is now +2.**
+
+In [pull request #22](https://github.com/daaki85/darksun-companion-mod/pull/22)
+(merged 2026-10-07): Cermak, of the game's own party, specializes in the long
+sword and the axe.
+
 In [pull request #21](https://github.com/daaki85/darksun-companion-mod/pull/21)
 (merged 2026-10-07):
 - **No manual check:** the dragon's question, the game's copy protection, is
