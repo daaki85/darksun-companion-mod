@@ -8,6 +8,7 @@ records; this ledger keeps the ones the game doesn't show you.
 
 - [What it does](#what-it-does)
 - [Requirements](#requirements)
+  - [Suggested system requirements](#suggested-system-requirements)
 - [Running it (Windows)](#running-it-windows)
   - [One-time setup](#one-time-setup)
   - [Every time you play](#every-time-you-play)
@@ -58,11 +59,12 @@ records; this ledger keeps the ones the game doesn't show you.
   - [The game's own party](#the-games-own-party)
 - [New content](#new-content)
   - [New items](#new-items)
-  - [Every magic item](#every-magic-item)
-  - [Every mundane weapon](#every-mundane-weapon)
   - [New people](#new-people)
   - [Picking pockets](#picking-pockets)
   - [The cooked vulture](#the-cooked-vulture)
+- [Item tables](#item-tables)
+  - [Every magic item](#every-magic-item)
+  - [Every mundane weapon](#every-mundane-weapon)
 - [On the screen](#on-the-screen)
   - [What the party wears](#what-the-party-wears)
   - [Shadows](#shadows)
@@ -74,7 +76,6 @@ records; this ledger keeps the ones the game doesn't show you.
   - [More saves](#more-saves)
   - [More characters](#more-characters)
 - [Game speed](#game-speed)
-  - [Suggested system requirements](#suggested-system-requirements)
 - [Accessibility](#accessibility)
 - [Practising without the game](#practising-without-the-game)
 - [Development](DEVELOPMENT.md)
@@ -128,6 +129,24 @@ in the game's own colours, sampled from it; no game artwork is copied.
   read from 32-bit Python.
 - Linux works too if you can read other processes' memory (root, or
   `kernel.yama.ptrace_scope=0`).
+
+### Suggested system requirements
+
+DOSBox runs the whole game on one processor core, so what counts is the speed
+of a single core, not how many there are. By [game speed](#game-speed)
+setting (suggestions, not tested limits):
+
+| Game speed | Processor (one core's speed) | Memory |
+|---|---|---|
+| GOG's own | anything that runs GOG's release | 2 GB |
+| Faster (20,000 cycles, the default) | a dual-core from about 2010 on, 2 GHz or more (Intel Core i3 or AMD Phenom II) | 4 GB |
+| Fastest (35,000 cycles) | a processor from about 2015 on, 3 GHz or more (Intel Core i5 or AMD Ryzen) | 4 GB |
+
+The Ledger itself (Python and its window) needs about 100 MB of memory and
+little processor time. A screen of 1920×1080 or more shows the game's window
+at **Triple** size beside the Ledger's; on a smaller one choose **Double**.
+If the computer can't keep up, the sound crackles or stutters and the game
+slows instead of speeding up: choose the next setting down.
 
 ## Running it (Windows)
 
@@ -532,8 +551,6 @@ DEX 15`), as do the THAC0 lines on the Characters tab and the inventory
 screen.
 
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#two-weapons-adds-penalties).
-
-(More in [Two weapons](#two-weapons).)
 
 ### Spells and effects
 
@@ -2008,204 +2025,6 @@ of the Wardens.
 
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#new-items).
 
-### Every magic item
-
-All the magic items in a game with the Ledger's new content on: the game's own,
-read from its data (each item type's slot and material, each item's plus and
-power, and who carries it), and the Ledger's, in **bold**. In **Where**, "—"
-means the item isn't placed with anyone in the data: the game's scripts hand it
-out (a reward, a gift or a find).
-
-**Weapons**, by material, then kind:
-
-| Icon | Material | Kind | Item | Bonus / power | Where |
-|---|---|---|---|---|---|
-| ![](docs/items/swiftbite.png) | Bone | long sword | Swiftbite | +2 | — |
-| ![](docs/items/draketooth.png) | Bone | long sword | Draketooth | +1, strength | — |
-| ![](docs/items/hornblade.png) | Bone | long sword | Hornblade | +1 | Kalinin's reward |
-| ![](docs/items/stillwater.png) | Bone | short sword | **Stillwater** | +1; a psionicist can wield it | the chest Chaya gives as her apology |
-| ![](docs/items/gythka-plus3.png) | Bone | gythka | Gythka +3 | +3 | — |
-| ![](docs/items/gythka-plus2.png) | Bone | gythka | **Gythka +2** | +2 (the game's +1) | the Elven Leader's gift |
-| ![](docs/items/kreenfang.png) | Bone | gythka | **Kreenfang** | +1 | the arena's dead body |
-| ![](docs/items/drakejaw.png) | Bone | axe | **Drakejaw** | +1 | a Magera guarding the wagon's prisoners |
-| ![](docs/items/mace-plus2.png) | Bone | mace | Mace +2 | +2 | a chest |
-| ![](docs/items/polearm-plus1.png) | Bone | polearm | Polearm +1 | +1 | — |
-| ![](docs/items/thornwall.png) | Bone | polearm | **Thornwall** | +1 | the slave pens' weapon rack |
-| ![](docs/items/cahulaks-plus1.png) | Bone | cahulaks | Cahulaks +1 | +1, Cause Light Wounds | the caravan's buried chest |
-| ![](docs/items/dragonsbane.png) | Metal | long sword | Dragonsbane | +4 | — |
-| ![](docs/items/els-drinker.png) | Metal | long sword | El's Drinker | +2, Vampiric Touch | — |
-| ![](docs/items/greenbright.png) | Metal | short sword | **Greenbright** | +2 | Arant |
-| ![](docs/items/shadowseeker.png) | Metal | short sword | **Shadowseeker** | +1, Detect Invisibility | Kurzak |
-| ![](docs/items/dags-dagger.png) | Metal | dagger | Dag's Dagger | +3, extra damage | Dagolar |
-| ![](docs/items/galefang.png) | Metal | dagger | **Galefang** | +2; an air cleric can wield it | the Rogue Shaman |
-| ![](docs/items/soulcrusher.png) | Metal | axe | Soulcrusher | +1 | Kel |
-| ![](docs/items/axe-plus1.png) | Metal | axe | Axe +1 | +1 | — |
-| ![](docs/items/headsman.png) | Metal | great axe | **Headsman** | +2 | the arena Announcer's stash |
-| ![](docs/items/linebreaker.png) | Metal | polearm | **Linebreaker** | +2 | the Troop Leader |
-| ![](docs/items/dark-flame.png) | Obsidian | long sword | Dark Flame | +2, Burning Hands | the Lower Castle's chest |
-| ![](docs/items/bloodwrath.png) | Obsidian | long sword | Bloodwrath | +1 | Pehtucl, the pens' templar |
-| ![](docs/items/flame-blade.png) | Obsidian | long sword | **Flame Blade** | +1, Focus Heat | the Hot Springs' Templar |
-| ![](docs/items/mindshard.png) | Obsidian | short sword | **Mindshard** | +1; a psionicist can wield it | Maris |
-| ![](docs/items/terror-blade.png) | Obsidian | dagger | Terror Blade | +2, poison | — |
-| ![](docs/items/blackmace.png) | Obsidian | mace | Blackmace | +1, Shocking Grasp | the Shadow King |
-| ![](docs/items/glasshewer.png) | Obsidian | axe | **Glasshewer** | +2 | the elven slavers' Templar |
-| ![](docs/items/quarterstaff-plus2.png) | Wooden | quarterstaff | Quarterstaff +2 | +2 | Maris |
-| ![](docs/items/balks-staff.png) | Wooden | quarterstaff | Balk's Staff | +1, Slow | Balkazar |
-| ![](docs/items/parting-staff.png) | Wooden | quarterstaff | Parting Staff | +1 | — |
-| ![](docs/items/gutterknot.png) | Wooden | club | **Gutterknot** | +1 | Churrr |
-| ![](docs/items/deepbiter.png) | Stone | pick | **Deepbiter** | +1 | an Undermountain miner |
-| ![](docs/items/great-axe-plus3.png) | none | great axe | Great Axe +3 | +3 | the Army Commander |
-
-**Missile weapons and ammunition:**
-
-| Icon | Material | Kind | Item | Bonus / power | Where |
-|---|---|---|---|---|---|
-| ![](docs/items/bow-plus2.png) | Wooden | bow | Bow +2 | +2 | a chest |
-| ![](docs/items/phrains-bow.png) | Wooden | bow | Phrain's Bow | +1, Acid Arrow | — |
-| ![](docs/items/sling-plus2.png) | Leather | sling | Sling +2 | +2 | Chaya and her apology chest; a chest |
-| ![](docs/items/sling-plus1.png) | Leather | sling | Sling +1 | +1 | a chest |
-| ![](docs/items/windlash.png) | Leather | staff sling | **Windlash** | +1 | sold by the Bowyer |
-| ![](docs/items/chatkcha-plus1.png) | Obsidian | chatkcha | Chatkcha +1 | +1, Produce Fire | the Guardian |
-| ![](docs/items/arrows-plus3.png) | Wooden | arrows | Arrows +3, +2, +1 | | chests; Kel and the Elven Leader (+1) |
-
-**By kind**, for [weapon specialization](#weapon-specialization):
-
-| Kind | Magic weapons |
-|---|---|
-| Long sword | Dragonsbane +4, Swiftbite +2, El's Drinker +2, Dark Flame +2, Draketooth +1, Hornblade +1, Bloodwrath +1, **Flame Blade** +1 |
-| Short sword | **Greenbright** +2, **Shadowseeker** +1, **Mindshard** +1, **Stillwater** +1 |
-| Dagger | Dag's Dagger +3, Terror Blade +2, **Galefang** +2 |
-| Axe | **Glasshewer** +2, **Drakejaw** +1, Soulcrusher +1, Axe +1 |
-| Great axe | Great Axe +3, **Headsman** +2 |
-| Gythka | Gythka +3, **Gythka +2**, **Kreenfang** +1 |
-| Polearm | **Linebreaker** +2, Polearm +1, **Thornwall** +1 |
-| Mace | Mace +2, Blackmace +1 |
-| Quarterstaff | Quarterstaff +2, Balk's Staff +1, Parting Staff +1 |
-| Sling | Sling +2, Sling +1 |
-| Club, pick, cahulaks | **Gutterknot** +1, **Deepbiter** +1, Cahulaks +1 |
-| Bow, staff sling, chatkcha | Bow +2, Phrain's Bow +1, **Windlash** +1, Chatkcha +1 |
-
-**Body armour:**
-
-| Icon | Material | Item | Bonus / power | Where |
-|---|---|---|---|---|
-| ![](docs/items/shimmer-armor.png) | Leather | Shimmer Armor | +3, Free Action | Dakaren |
-| ![](docs/items/drake-armor.png) | Leather | Drake Armor | +1, Resist Cold | the Wyvern Master |
-| ![](docs/items/inixhide.png) | Leather | **Inixhide** | +1 | Legcrusher |
-| ![](docs/items/wardens-chest.png) | Metal | **Warden's Chest** | plate +1, Resist Fire | Balkazar |
-| ![](docs/items/silk-armor.png) | none | Silk Armor | +2 | — |
-
-**Arm and leg armour:**
-
-| Icon | Slot | Material | Item | Bonus | Where |
-|---|---|---|---|---|---|
-| ![](docs/items/tanelyvs-arm-armor.png) | Arms | Metal | Tanelyv's Armor | chain +2 | — |
-| ![](docs/items/wardens-arms.png) | Arms | Metal | **Warden's Arms** | plate +1 | the Lower Castle's chest |
-| ![](docs/items/greys-scale-arms.png) | Arms | Metal | Grey's Scale | no plus (AC 3 with the Ledger) | Arant |
-| ![](docs/items/tanelyvs-leg-armor.png) | Legs | Metal | Tanelyv's Armor | chain +2 | — |
-| ![](docs/items/wardens-legs.png) | Legs | Metal | **Warden's Legs** | plate +1 | the Gemfields' chest |
-| ![](docs/items/greys-scale-legs.png) | Legs | Metal | Grey's Scale | no plus (AC 3 with the Ledger) | Arant |
-
-Tanelyv's Armor also has a chest piece, with no plus.
-
-**Head:**
-
-| Icon | Material | Item | Power | Where |
-|---|---|---|---|---|
-| ![](docs/items/helm-of-might.png) | Leather | Helm of Might | strength | — |
-| ![](docs/items/leather-helm.png) | Leather | Leather helm +1 | | a chest |
-| ![](docs/items/helm-of-contemplation.png) | Metal | Helm of Contemplation | a shield of thought against psionic attacks | the Warren Chief |
-| ![](docs/items/wardens-helm.png) | Metal | **Warden's Helm** | +1, Cloak of Bravery | Dagolar |
-| ![](docs/items/arrowbane.png) | none (not armour) | **Arrowbane** | Protection from Normal Missiles | sold by Kel |
-| ![](docs/items/sunking-crown.png) | none (not armour) | **Sunking Crown** | Protection from Evil | Keldar |
-
-**Shields and gloves** (worn in a hand, in this game):
-
-| Icon | Material | Item | Bonus / power | Where |
-|---|---|---|---|---|
-| ![](docs/items/els-shield.png) | Leather | El's Shield | +2 | — |
-| ![](docs/items/drake-shield.png) | Leather | Drake Shield | +1, Resist Fire | the Hot Springs' Templar |
-| ![](docs/items/chameleon-gloves.png) | Leather | Chameleon Gloves | blind whoever they touch | Mikquetzl |
-| ![](docs/items/quicksilver-gauntlets.png) | none | Quicksilver Gauntlets | graft a one-handed weapon to the hand | — |
-
-**Other worn items:**
-
-| Icon | Slot | Item | Power | Where |
-|---|---|---|---|---|
-| ![](docs/items/bracers-of-defense.png) | Arms | **Bracers of Defense** | AC 6, 5, 4 or 2 with no armour | Mikquetzl, Wyrmias, Balkazar, Dagolar |
-| ![](docs/items/belt-of-might.png) | Waist | Belt of Might | strength | — |
-| ![](docs/items/serpent-boots.png) | Feet | Serpent Boots | Displacement | a chest |
-| ![](docs/items/boots-of-elvenkind.png) | Feet | **Boots of Elvenkind** | move silently | the caravan's buried chest |
-| ![](docs/items/living-cloak.png) | Cloak | Living Cloak | Inertial Barrier | Dagolar |
-| ![](docs/items/cloak-of-protection-plus1.png) | Cloak | **Cloak of Protection +1** | +1 AC and saves | Pehtucl |
-| ![](docs/items/cloak-of-elvenkind.png) | Cloak | **Cloak of Elvenkind** | hide in shadows | the Elven Leader's gift |
-| ![](docs/items/silver-necklace.png) | Neck | Silver Necklace | Biofeedback | — |
-| ![](docs/items/obsidian-necklace.png) | Neck | Obsidian Necklace | Disintegrate | the Troop Leader |
-| ![](docs/items/iron-necklace.png) | Neck | Iron Necklace | Fireball | the Hermit |
-| ![](docs/items/golden-torque.png) | Neck | Golden Torque | takes on its maker's morals | — |
-| ![](docs/items/light-of-dawn.png) | Finger | Light of Dawn | Dismissal | on the ground, in Balkazar's region |
-| ![](docs/items/steadfast-ring.png) | Finger | Ring of Steadfastness | Constitution | — |
-| ![](docs/items/ring-of-insight.png) | Finger | Ring of Insight | Wisdom | — |
-| ![](docs/items/els-ring.png) | Finger | El's Ring | Dexterity | on the ground |
-| ![](docs/items/storm-ring.png) | Finger | Storm Ring | Ice Storm | a chest |
-| ![](docs/items/wind-ring.png) | Finger | Wind Ring | Protection from Normal Missiles | the Wyvern Master |
-| ![](docs/items/ring-of-protection-plus1.png) ![](docs/items/pehtucls-ring-of-protection-plus1.png) | Finger | **Ring of Protection +1** (two) | +1 AC and saves | the arena's Tied-up Prisoner; Pehtucl |
-
-**Held, or used from the pack:**
-
-| Icon | Item | Power | Where |
-|---|---|---|---|
-| ![](docs/items/orb-of-knowledge.png) | Orb of Knowledge (held) | watch the one it's tuned to | — |
-| ![](docs/items/dagolars-wand.png) | Dagolar's Wand | Control Body | Dagolar |
-| ![](docs/items/wand-of-missiles.png) | Wand of Missiles | Magic Missile | a chest |
-| ![](docs/items/derths-wand.png) | Derth's Wand | Lightning Bolt | — |
-| ![](docs/items/wildwynd-wand.png) | Wildwynd Wand | Confusion | — |
-| ![](docs/items/llods-rod.png) | Llod's Rod | travel between the obelisks | the Visionary |
-| ![](docs/items/tome-of-understanding.png) | **Tome of Understanding** | +1 WIS when read | Father Garyn's gift |
-| ![](docs/items/apple.png) ![](docs/items/scroll.png) ![](docs/items/kalzith-scroll.png) | Magic fruit (14 kinds), spell scrolls (18), psionic scrolls (11), **Kalzith's six scrolls** | used once | many places |
-
-### Every mundane weapon
-
-Every plain weapon in a game with the new items, the game's and the Ledger's,
-by kind and material: who sells it and who carries it (by the names the game
-gives them; many are of a kind, such as every Renegade or Tari). The **Weapon
-Merchant** and the **Bowyer** are in Teaquetzl, **Jark** and **Kel** in Kel's
-caravan. The game's plain stone pick is only ever a
-[starting weapon](#weapon-specialization); Deepbiter is its magic one.
-
-| Icon | Kind | Material | Sold by | Carried by, or found in |
-|---|---|---|---|---|
-| ![](docs/items/bone-long-sword.png) | long sword | bone | Jark, Weapon Merchant | Ranger, Templar, Chaero, Castle Guard, Arant's Guard, Warrior, Dagolar Guard, Caravan Guard, Guard, Lt. Kwerin, Slaver Guard, Messenger, Visitor, Renegade, Silt Runner |
-| ![](docs/items/metal-long-sword.png) | long sword | metal | Weapon Merchant | Uskuye, Elven Leader, Elite Guard, Village Hero, a chest in the warrens |
-| ![](docs/items/obsidian-long-sword.png) | long sword | obsidian | Jark, Weapon Merchant | Wyvern Master, Arant, Keldar, Kurzak, Guard, Chaya, Uskuye, Scar, Arena Guard, Caravan Master, Chahl, Mayor of Gedron, Merzol, Drajian Guard, Council Member, Templar |
-| ![](docs/items/club.png) | club | wood | Weapon Merchant | Warren Chief, Churrr, Tari, Skull Guardian, Worshipper, Low Warren Thug, Gladiator, Wild Mul, Guard, Legcrusher, a dead body in the arena, a chest, a weapon rack |
-| ![](docs/items/bone-dagger.png) | dagger | bone | Jark, Weapon Merchant | Defiler |
-| ![](docs/items/metal-dagger.png) | dagger | metal | — | Tobrian |
-| ![](docs/items/obsidian-dagger.png) | dagger | obsidian | — | Defiler, Notaku |
-| ![](docs/items/stone-dagger.png) | dagger | stone | Jark, Weapon Merchant | Balkazar, Dagolar, Wyrmias, Hermit, Tobrian, Villager, Linara, Maris, a chest in Dagolar's tunnels |
-| ![](docs/items/bone-short-sword.png) | short sword | bone | Jark, Weapon Merchant | Renegade |
-| ![](docs/items/short-sword.png) | short sword | metal | Weapon Merchant | — |
-| ![](docs/items/obsidian-short-sword.png) | short sword | obsidian | Jark, Weapon Merchant | Chaero |
-| ![](docs/items/bone-mace.png) | mace | bone | Jark, Weapon Merchant | Wyvern Master, Krikor, Templar, a chest, a chest in Dagolar's tunnels |
-| ![](docs/items/metal-mace.png) | mace | metal | — | Templar |
-| ![](docs/items/obsidian-mace.png) | mace | obsidian | Jark, Weapon Merchant | Tari |
-| ![](docs/items/bone-axe.png) | axe | bone | Jark, Weapon Merchant | Wild Mul |
-| ![](docs/items/metal-axe.png) | axe | metal | — | Slaver Guard, Uzoma, a weapon rack in the Lower Castle, a weapon rack, a weapon rack in the slave pens |
-| ![](docs/items/obsidian-axe.png) | axe | obsidian | Weapon Merchant | Merzol |
-| ![](docs/items/bone-great-axe.png) | great axe | bone | Jark, Weapon Merchant | Wild Mul |
-| ![](docs/items/metal-great-axe.png) | great axe | metal | Weapon Merchant | — |
-| ![](docs/items/obsidian-great-axe.png) | great axe | obsidian | Jark, Weapon Merchant | — |
-| ![](docs/items/metal-pick.png) | pick | metal | Weapon Merchant | — |
-| ![](docs/items/quarterstaff.png) | quarterstaff | wood | Jark, Weapon Merchant | Mikquetzl, Troop Leader, Dakaren, Dagolar, Wyrmias, Hermit, Father Garyn, Notaku, a weapon rack in the Lower Castle, a skeleton in the Undermountain, a chest, a weapon rack in the slave pens |
-| ![](docs/items/bone-polearm.png) | polearm | bone | Weapon Merchant | a weapon rack in the Lower Castle, a weapon rack in the slave pens |
-| ![](docs/items/metal-polearm.png) | polearm | metal | — | Castle Guard |
-| ![](docs/items/gythka.png) | gythka | bone | Jark, Weapon Merchant | Guardian |
-| ![](docs/items/cahulaks.png) | cahulaks | bone | Weapon Merchant | — |
-| ![](docs/items/chatkcha.png) | chatkcha | obsidian | Jark, Bowyer | — |
-| ![](docs/items/bow.png) | bow | wood | Jark, Kel, Bowyer | Wyvern Master, Ranger, Arant, Castle Guard, Guard, Arant's Guard, Arena Guard, Caravan Guard, Slaver Guard, Elven Leader, Uzoma, Drajian Guard, Army Commander, Elite Guard, Village Hero, a chest in the Upper Castle, a chest, a chest in Dagolar's tunnels |
-| ![](docs/items/sling.png) | sling | leather | Bowyer | Mehtar, Renegade, Silt Runner, a chest in the slave pens, a bag in the slave pens |
-| ![](docs/items/staff-sling.png) | staff sling | leather | Jark, Bowyer | — |
-
 ### New people
 
 Two people of the slave pens, in new games: those that reach the pens with the
@@ -2423,6 +2242,209 @@ used on one of them from the inventory, it's too tough to be worth the chewing.)
 
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#the-cooked-vulture).
 
+## Item tables
+
+Every magic item and every mundane weapon in a game with the
+[new items](#new-items), the game's and the Ledger's, with their icons.
+
+### Every magic item
+
+All the magic items in a game with the Ledger's new content on: the game's own,
+read from its data (each item type's slot and material, each item's plus and
+power, and who carries it), and the Ledger's, in **bold**. In **Where**, "—"
+means the item isn't placed with anyone in the data: the game's scripts hand it
+out (a reward, a gift or a find).
+
+**Weapons**, by material, then kind:
+
+| Icon | Material | Kind | Item | Bonus / power | Where |
+|---|---|---|---|---|---|
+| ![](docs/items/swiftbite.png) | Bone | long sword | Swiftbite | +2 | — |
+| ![](docs/items/draketooth.png) | Bone | long sword | Draketooth | +1, strength | — |
+| ![](docs/items/hornblade.png) | Bone | long sword | Hornblade | +1 | Kalinin's reward |
+| ![](docs/items/stillwater.png) | Bone | short sword | **Stillwater** | +1; a psionicist can wield it | the chest Chaya gives as her apology |
+| ![](docs/items/gythka-plus3.png) | Bone | gythka | Gythka +3 | +3 | — |
+| ![](docs/items/gythka-plus2.png) | Bone | gythka | **Gythka +2** | +2 (the game's +1) | the Elven Leader's gift |
+| ![](docs/items/kreenfang.png) | Bone | gythka | **Kreenfang** | +1 | the arena's dead body |
+| ![](docs/items/drakejaw.png) | Bone | axe | **Drakejaw** | +1 | a Magera guarding the wagon's prisoners |
+| ![](docs/items/mace-plus2.png) | Bone | mace | Mace +2 | +2 | a chest |
+| ![](docs/items/polearm-plus1.png) | Bone | polearm | Polearm +1 | +1 | — |
+| ![](docs/items/thornwall.png) | Bone | polearm | **Thornwall** | +1 | the slave pens' weapon rack |
+| ![](docs/items/cahulaks-plus1.png) | Bone | cahulaks | Cahulaks +1 | +1, Cause Light Wounds | the caravan's buried chest |
+| ![](docs/items/dragonsbane.png) | Metal | long sword | Dragonsbane | +4 | — |
+| ![](docs/items/els-drinker.png) | Metal | long sword | El's Drinker | +2, Vampiric Touch | — |
+| ![](docs/items/greenbright.png) | Metal | short sword | **Greenbright** | +2 | Arant |
+| ![](docs/items/shadowseeker.png) | Metal | short sword | **Shadowseeker** | +1, Detect Invisibility | Kurzak |
+| ![](docs/items/dags-dagger.png) | Metal | dagger | Dag's Dagger | +3, extra damage | Dagolar |
+| ![](docs/items/galefang.png) | Metal | dagger | **Galefang** | +2; an air cleric can wield it | the Rogue Shaman |
+| ![](docs/items/soulcrusher.png) | Metal | axe | Soulcrusher | +1 | Kel |
+| ![](docs/items/axe-plus1.png) | Metal | axe | Axe +1 | +1 | — |
+| ![](docs/items/headsman.png) | Metal | great axe | **Headsman** | +2 | the arena Announcer's stash |
+| ![](docs/items/linebreaker.png) | Metal | polearm | **Linebreaker** | +2 | the Troop Leader |
+| ![](docs/items/dark-flame.png) | Obsidian | long sword | Dark Flame | +2, Burning Hands | the Lower Castle's chest |
+| ![](docs/items/bloodwrath.png) | Obsidian | long sword | Bloodwrath | +1 | Pehtucl, the pens' templar |
+| ![](docs/items/flame-blade.png) | Obsidian | long sword | **Flame Blade** | +1, Focus Heat | the Hot Springs' Templar |
+| ![](docs/items/mindshard.png) | Obsidian | short sword | **Mindshard** | +1; a psionicist can wield it | Maris |
+| ![](docs/items/terror-blade.png) | Obsidian | dagger | Terror Blade | +2, poison | — |
+| ![](docs/items/blackmace.png) | Obsidian | mace | Blackmace | +1, Shocking Grasp | the Shadow King |
+| ![](docs/items/glasshewer.png) | Obsidian | axe | **Glasshewer** | +2 | the elven slavers' Templar |
+| ![](docs/items/quarterstaff-plus2.png) | Wooden | quarterstaff | Quarterstaff +2 | +2 | Maris |
+| ![](docs/items/balks-staff.png) | Wooden | quarterstaff | Balk's Staff | +1, Slow | Balkazar |
+| ![](docs/items/parting-staff.png) | Wooden | quarterstaff | Parting Staff | +1 | — |
+| ![](docs/items/gutterknot.png) | Wooden | club | **Gutterknot** | +1 | Churrr |
+| ![](docs/items/deepbiter.png) | Stone | pick | **Deepbiter** | +1 | an Undermountain miner |
+| ![](docs/items/great-axe-plus3.png) | none | great axe | Great Axe +3 | +3 | the Army Commander |
+
+**Missile weapons and ammunition:**
+
+| Icon | Material | Kind | Item | Bonus / power | Where |
+|---|---|---|---|---|---|
+| ![](docs/items/bow-plus2.png) | Wooden | bow | Bow +2 | +2 | a chest |
+| ![](docs/items/phrains-bow.png) | Wooden | bow | Phrain's Bow | +1, Acid Arrow | — |
+| ![](docs/items/sling-plus2.png) | Leather | sling | Sling +2 | +2 | Chaya and her apology chest; a chest |
+| ![](docs/items/sling-plus1.png) | Leather | sling | Sling +1 | +1 | a chest |
+| ![](docs/items/windlash.png) | Leather | staff sling | **Windlash** | +1 | sold by the Bowyer |
+| ![](docs/items/chatkcha-plus1.png) | Obsidian | chatkcha | Chatkcha +1 | +1, Produce Fire | the Guardian |
+| ![](docs/items/arrows-plus3.png) | Wooden | arrows | Arrows +3, +2, +1 | | chests; Kel and the Elven Leader (+1) |
+
+**By kind**, for [weapon specialization](#weapon-specialization):
+
+| Kind | Magic weapons |
+|---|---|
+| Long sword | Dragonsbane +4, Swiftbite +2, El's Drinker +2, Dark Flame +2, Draketooth +1, Hornblade +1, Bloodwrath +1, **Flame Blade** +1 |
+| Short sword | **Greenbright** +2, **Shadowseeker** +1, **Mindshard** +1, **Stillwater** +1 |
+| Dagger | Dag's Dagger +3, Terror Blade +2, **Galefang** +2 |
+| Axe | **Glasshewer** +2, **Drakejaw** +1, Soulcrusher +1, Axe +1 |
+| Great axe | Great Axe +3, **Headsman** +2 |
+| Gythka | Gythka +3, **Gythka +2**, **Kreenfang** +1 |
+| Polearm | **Linebreaker** +2, Polearm +1, **Thornwall** +1 |
+| Mace | Mace +2, Blackmace +1 |
+| Quarterstaff | Quarterstaff +2, Balk's Staff +1, Parting Staff +1 |
+| Sling | Sling +2, Sling +1 |
+| Club, pick, cahulaks | **Gutterknot** +1, **Deepbiter** +1, Cahulaks +1 |
+| Bow, staff sling, chatkcha | Bow +2, Phrain's Bow +1, **Windlash** +1, Chatkcha +1 |
+
+**Body armour:**
+
+| Icon | Material | Item | Bonus / power | Where |
+|---|---|---|---|---|
+| ![](docs/items/shimmer-armor.png) | Leather | Shimmer Armor | +3, Free Action | Dakaren |
+| ![](docs/items/drake-armor.png) | Leather | Drake Armor | +1, Resist Cold | the Wyvern Master |
+| ![](docs/items/inixhide.png) | Leather | **Inixhide** | +1 | Legcrusher |
+| ![](docs/items/wardens-chest.png) | Metal | **Warden's Chest** | plate +1, Resist Fire | Balkazar |
+| ![](docs/items/silk-armor.png) | none | Silk Armor | +2 | — |
+
+**Arm and leg armour:**
+
+| Icon | Slot | Material | Item | Bonus | Where |
+|---|---|---|---|---|---|
+| ![](docs/items/tanelyvs-arm-armor.png) | Arms | Metal | Tanelyv's Armor | chain +2 | — |
+| ![](docs/items/wardens-arms.png) | Arms | Metal | **Warden's Arms** | plate +1 | the Lower Castle's chest |
+| ![](docs/items/greys-scale-arms.png) | Arms | Metal | Grey's Scale | no plus (AC 3 with the Ledger) | Arant |
+| ![](docs/items/tanelyvs-leg-armor.png) | Legs | Metal | Tanelyv's Armor | chain +2 | — |
+| ![](docs/items/wardens-legs.png) | Legs | Metal | **Warden's Legs** | plate +1 | the Gemfields' chest |
+| ![](docs/items/greys-scale-legs.png) | Legs | Metal | Grey's Scale | no plus (AC 3 with the Ledger) | Arant |
+
+Tanelyv's Armor also has a chest piece, with no plus.
+
+**Head:**
+
+| Icon | Material | Item | Power | Where |
+|---|---|---|---|---|
+| ![](docs/items/helm-of-might.png) | Leather | Helm of Might | strength | — |
+| ![](docs/items/leather-helm.png) | Leather | Leather helm +1 | | a chest |
+| ![](docs/items/helm-of-contemplation.png) | Metal | Helm of Contemplation | a shield of thought against psionic attacks | the Warren Chief |
+| ![](docs/items/wardens-helm.png) | Metal | **Warden's Helm** | +1, Cloak of Bravery | Dagolar |
+| ![](docs/items/arrowbane.png) | none (not armour) | **Arrowbane** | Protection from Normal Missiles | sold by Kel |
+| ![](docs/items/sunking-crown.png) | none (not armour) | **Sunking Crown** | Protection from Evil | Keldar |
+
+**Shields and gloves** (worn in a hand, in this game):
+
+| Icon | Material | Item | Bonus / power | Where |
+|---|---|---|---|---|
+| ![](docs/items/els-shield.png) | Leather | El's Shield | +2 | — |
+| ![](docs/items/drake-shield.png) | Leather | Drake Shield | +1, Resist Fire | the Hot Springs' Templar |
+| ![](docs/items/chameleon-gloves.png) | Leather | Chameleon Gloves | blind whoever they touch | Mikquetzl |
+| ![](docs/items/quicksilver-gauntlets.png) | none | Quicksilver Gauntlets | graft a one-handed weapon to the hand | — |
+
+**Other worn items:**
+
+| Icon | Slot | Item | Power | Where |
+|---|---|---|---|---|
+| ![](docs/items/bracers-of-defense.png) | Arms | **Bracers of Defense** | AC 6, 5, 4 or 2 with no armour | Mikquetzl, Wyrmias, Balkazar, Dagolar |
+| ![](docs/items/belt-of-might.png) | Waist | Belt of Might | strength | — |
+| ![](docs/items/serpent-boots.png) | Feet | Serpent Boots | Displacement | a chest |
+| ![](docs/items/boots-of-elvenkind.png) | Feet | **Boots of Elvenkind** | move silently | the caravan's buried chest |
+| ![](docs/items/living-cloak.png) | Cloak | Living Cloak | Inertial Barrier | Dagolar |
+| ![](docs/items/cloak-of-protection-plus1.png) | Cloak | **Cloak of Protection +1** | +1 AC and saves | Pehtucl |
+| ![](docs/items/cloak-of-elvenkind.png) | Cloak | **Cloak of Elvenkind** | hide in shadows | the Elven Leader's gift |
+| ![](docs/items/silver-necklace.png) | Neck | Silver Necklace | Biofeedback | — |
+| ![](docs/items/obsidian-necklace.png) | Neck | Obsidian Necklace | Disintegrate | the Troop Leader |
+| ![](docs/items/iron-necklace.png) | Neck | Iron Necklace | Fireball | the Hermit |
+| ![](docs/items/golden-torque.png) | Neck | Golden Torque | takes on its maker's morals | — |
+| ![](docs/items/light-of-dawn.png) | Finger | Light of Dawn | Dismissal | on the ground, in Balkazar's region |
+| ![](docs/items/steadfast-ring.png) | Finger | Ring of Steadfastness | Constitution | — |
+| ![](docs/items/ring-of-insight.png) | Finger | Ring of Insight | Wisdom | — |
+| ![](docs/items/els-ring.png) | Finger | El's Ring | Dexterity | on the ground |
+| ![](docs/items/storm-ring.png) | Finger | Storm Ring | Ice Storm | a chest |
+| ![](docs/items/wind-ring.png) | Finger | Wind Ring | Protection from Normal Missiles | the Wyvern Master |
+| ![](docs/items/ring-of-protection-plus1.png) ![](docs/items/pehtucls-ring-of-protection-plus1.png) | Finger | **Ring of Protection +1** (two) | +1 AC and saves | the arena's Tied-up Prisoner; Pehtucl |
+
+**Held, or used from the pack:**
+
+| Icon | Item | Power | Where |
+|---|---|---|---|
+| ![](docs/items/orb-of-knowledge.png) | Orb of Knowledge (held) | watch the one it's tuned to | — |
+| ![](docs/items/dagolars-wand.png) | Dagolar's Wand | Control Body | Dagolar |
+| ![](docs/items/wand-of-missiles.png) | Wand of Missiles | Magic Missile | a chest |
+| ![](docs/items/derths-wand.png) | Derth's Wand | Lightning Bolt | — |
+| ![](docs/items/wildwynd-wand.png) | Wildwynd Wand | Confusion | — |
+| ![](docs/items/llods-rod.png) | Llod's Rod | travel between the obelisks | the Visionary |
+| ![](docs/items/tome-of-understanding.png) | **Tome of Understanding** | +1 WIS when read | Father Garyn's gift |
+| ![](docs/items/apple.png) ![](docs/items/scroll.png) ![](docs/items/kalzith-scroll.png) | Magic fruit (14 kinds), spell scrolls (18), psionic scrolls (11), **Kalzith's six scrolls** | used once | many places |
+
+### Every mundane weapon
+
+Every plain weapon in a game with the new items, the game's and the Ledger's,
+by kind and material: who sells it and who carries it (by the names the game
+gives them; many are of a kind, such as every Renegade or Tari). The **Weapon
+Merchant** and the **Bowyer** are in Teaquetzl, **Jark** and **Kel** in Kel's
+caravan. The game's plain stone pick is only ever a
+[starting weapon](#weapon-specialization); Deepbiter is its magic one.
+
+| Icon | Kind | Material | Sold by | Carried by, or found in |
+|---|---|---|---|---|
+| ![](docs/items/bone-long-sword.png) | long sword | bone | Jark, Weapon Merchant | Ranger, Templar, Chaero, Castle Guard, Arant's Guard, Warrior, Dagolar Guard, Caravan Guard, Guard, Lt. Kwerin, Slaver Guard, Messenger, Visitor, Renegade, Silt Runner |
+| ![](docs/items/metal-long-sword.png) | long sword | metal | Weapon Merchant | Uskuye, Elven Leader, Elite Guard, Village Hero, a chest in the warrens |
+| ![](docs/items/obsidian-long-sword.png) | long sword | obsidian | Jark, Weapon Merchant | Wyvern Master, Arant, Keldar, Kurzak, Guard, Chaya, Uskuye, Scar, Arena Guard, Caravan Master, Chahl, Mayor of Gedron, Merzol, Drajian Guard, Council Member, Templar |
+| ![](docs/items/club.png) | club | wood | Weapon Merchant | Warren Chief, Churrr, Tari, Skull Guardian, Worshipper, Low Warren Thug, Gladiator, Wild Mul, Guard, Legcrusher, a dead body in the arena, a chest, a weapon rack |
+| ![](docs/items/bone-dagger.png) | dagger | bone | Jark, Weapon Merchant | Defiler |
+| ![](docs/items/metal-dagger.png) | dagger | metal | — | Tobrian |
+| ![](docs/items/obsidian-dagger.png) | dagger | obsidian | — | Defiler, Notaku |
+| ![](docs/items/stone-dagger.png) | dagger | stone | Jark, Weapon Merchant | Balkazar, Dagolar, Wyrmias, Hermit, Tobrian, Villager, Linara, Maris, a chest in Dagolar's tunnels |
+| ![](docs/items/bone-short-sword.png) | short sword | bone | Jark, Weapon Merchant | Renegade |
+| ![](docs/items/short-sword.png) | short sword | metal | Weapon Merchant | — |
+| ![](docs/items/obsidian-short-sword.png) | short sword | obsidian | Jark, Weapon Merchant | Chaero |
+| ![](docs/items/bone-mace.png) | mace | bone | Jark, Weapon Merchant | Wyvern Master, Krikor, Templar, a chest, a chest in Dagolar's tunnels |
+| ![](docs/items/metal-mace.png) | mace | metal | — | Templar |
+| ![](docs/items/obsidian-mace.png) | mace | obsidian | Jark, Weapon Merchant | Tari |
+| ![](docs/items/bone-axe.png) | axe | bone | Jark, Weapon Merchant | Wild Mul |
+| ![](docs/items/metal-axe.png) | axe | metal | — | Slaver Guard, Uzoma, a weapon rack in the Lower Castle, a weapon rack, a weapon rack in the slave pens |
+| ![](docs/items/obsidian-axe.png) | axe | obsidian | Weapon Merchant | Merzol |
+| ![](docs/items/bone-great-axe.png) | great axe | bone | Jark, Weapon Merchant | Wild Mul |
+| ![](docs/items/metal-great-axe.png) | great axe | metal | Weapon Merchant | — |
+| ![](docs/items/obsidian-great-axe.png) | great axe | obsidian | Jark, Weapon Merchant | — |
+| ![](docs/items/metal-pick.png) | pick | metal | Weapon Merchant | — |
+| ![](docs/items/quarterstaff.png) | quarterstaff | wood | Jark, Weapon Merchant | Mikquetzl, Troop Leader, Dakaren, Dagolar, Wyrmias, Hermit, Father Garyn, Notaku, a weapon rack in the Lower Castle, a skeleton in the Undermountain, a chest, a weapon rack in the slave pens |
+| ![](docs/items/bone-polearm.png) | polearm | bone | Weapon Merchant | a weapon rack in the Lower Castle, a weapon rack in the slave pens |
+| ![](docs/items/metal-polearm.png) | polearm | metal | — | Castle Guard |
+| ![](docs/items/gythka.png) | gythka | bone | Jark, Weapon Merchant | Guardian |
+| ![](docs/items/cahulaks.png) | cahulaks | bone | Weapon Merchant | — |
+| ![](docs/items/chatkcha.png) | chatkcha | obsidian | Jark, Bowyer | — |
+| ![](docs/items/bow.png) | bow | wood | Jark, Kel, Bowyer | Wyvern Master, Ranger, Arant, Castle Guard, Guard, Arant's Guard, Arena Guard, Caravan Guard, Slaver Guard, Elven Leader, Uzoma, Drajian Guard, Army Commander, Elite Guard, Village Hero, a chest in the Upper Castle, a chest, a chest in Dagolar's tunnels |
+| ![](docs/items/sling.png) | sling | leather | Bowyer | Mehtar, Renegade, Silt Runner, a chest in the slave pens, a bag in the slave pens |
+| ![](docs/items/staff-sling.png) | staff sling | leather | Jark, Bowyer | — |
+
 ## On the screen
 
 What the Ledger draws on the game's map. Each is switched on the Options tab's
@@ -2616,23 +2638,8 @@ their outfit, with only the room gear needs round the figure while walking (6
 pixels at the sides, 2 above; 10 in a fight): the game draws a walking figure's
 whole picture at every step (see [What the party wears](#what-the-party-wears)).
 
-### Suggested system requirements
-
-DOSBox runs the whole game on one processor core, so what counts is the speed
-of a single core, not how many there are. These are suggestions, not tested
-limits:
-
-| Game speed | Processor (one core's speed) | Memory |
-|---|---|---|
-| GOG's own | anything that runs GOG's release | 2 GB |
-| Faster (20,000 cycles, the default) | a dual-core from about 2010 on, 2 GHz or more (Intel Core i3 or AMD Phenom II) | 4 GB |
-| Fastest (35,000 cycles) | a processor from about 2015 on, 3 GHz or more (Intel Core i5 or AMD Ryzen) | 4 GB |
-
-The Ledger itself (Python and its window) needs about 100 MB of memory and
-little processor time. A screen of 1920×1080 or more shows the game's window
-at **Triple** size beside the Ledger's; on a smaller one choose **Double**.
-If the computer can't keep up, the sound crackles or stutters and the game
-slows instead of speeding up: choose the next setting down.
+What each setting asks of the computer: [Suggested system
+requirements](#suggested-system-requirements).
 
 ## Accessibility
 
