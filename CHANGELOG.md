@@ -6,7 +6,7 @@ Release **1.1.0** is pull requests #14 to #18; its notes are in
 requests #1 to #13; its notes are in
 [`release-notes/v1.0.0.md`](release-notes/v1.0.0.md).
 
-## Pull request #20 ([in review](https://github.com/daaki85/darksun-companion-mod/pull/20))
+## Pull request #20 ([merged 2026-10-07](https://github.com/daaki85/darksun-companion-mod/pull/20))
 
 **Added**
 - **The new plain weapons in the world** (a new content switch, on by default):

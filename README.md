@@ -179,12 +179,20 @@ double-click, with the options as last set.)
 ## What's new
 
 In [pull request #20](https://github.com/daaki85/darksun-companion-mod/pull/20)
-(in review):
+(merged):
 - **Four new rule changes:** weapon specialization (chosen on the
   creation screen's new WEAPON SPEC pages, a gladiator's later picks in the
   game's own level-up pop-up, and listed on the Effects screen), class
   restrictions for multiclass characters, multiclass hit points as in
   AD&D, and hit dice rolled twice with the better kept.
+- **New weapons in the world:** bone and obsidian short swords and axes, an
+  obsidian mace, and metal short swords, daggers, maces, great axes, picks
+  and polearms, sold by the Weapon Merchant and Jark and carried by people
+  across Athas.
+- **Bracers of defense** (AC 6 to AC 2) on four wizards, now that a
+  preserver can't cast in armour, and **magic weapons of the kinds the game
+  has none of:** a Club +1, a Pick +1, a Staff Sling +1 and a Short Sword +2.
+- **Prices as the game's own** for the Ledger's magic items.
 - **The dice log's character creation** gives only the character the die
   stops on, checked against the screen.
 
