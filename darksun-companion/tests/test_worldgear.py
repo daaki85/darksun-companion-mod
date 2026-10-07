@@ -43,14 +43,14 @@ class WorldGearTests(unittest.TestCase):
         from dscompanion import tools
         sold = [icons.which(r) for r in gift("Weapon Merchant").items]
         self.assertEqual(sold, ["Bone Short Sword", "Obsidian Short Sword", "Bone Axe", "Obsidian Axe", "Obsidian Mace",
-                                "Short Sword", "Bone Great Axe", "Obsidian Great Axe", "Metal Great Axe", "Metal Pick"])
+                                "Short Sword", "Bone Great Axe", "Obsidian Great Axe", "Metal Great Axe", "Metal Pick", "Bone Dagger"])
         self.assertEqual([icons.which(r) for r in gift("Wild Mul").items], ["Bone Axe", "Bone Great Axe"])
-        defiler = gift("Defiler")  # (a body to leave: an obsidian dagger, the game's own)
-        self.assertEqual((defiler.objects, [struct.unpack_from("<H", r, game.ITEM_TYPE)[0] for r in defiler.items]),
-                         ((258, 296), [17]))
+        defilers = [(g.objects, [icons.which(r) or struct.unpack_from("<H", r, game.ITEM_TYPE)[0] for r in g.items])
+                    for g in worldgear.GIFTS if g.name == "Defiler"]  # (a body to leave: a dagger each)
+        self.assertEqual(defilers, [((258,), [17]), ((296,), ["Bone Dagger"])])
         self.assertEqual([icons.which(r) for r in gift("Jark").items],
                          ["Bone Short Sword", "Obsidian Short Sword", "Bone Axe", "Obsidian Mace", "Bone Great Axe",
-                          "Obsidian Great Axe"])
+                          "Obsidian Great Axe", "Bone Dagger"])
         kel = [g for g in worldgear.GIFTS if g.name == "Kel"][0]
         self.assertEqual(len(kel.items), 2)
         self.assertTrue(all(tools.is_tools(r) and struct.unpack_from("<H", r, 6)[0] == 30 for r in kel.items))

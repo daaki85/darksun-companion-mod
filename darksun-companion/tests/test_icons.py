@@ -155,7 +155,8 @@ class WhichTests(unittest.TestCase):
                             (game.OBSIDIAN_SHORT_SWORD_TYPE, "Obsidian Short Sword"),
                             (game.OBSIDIAN_AXE_TYPE, "Obsidian Axe"), (icons.GREAT_AXE_TYPE, "Great Axe"),
                             (game.BONE_GREAT_AXE_TYPE, "Bone Great Axe"),
-                            (game.OBSIDIAN_GREAT_AXE_TYPE, "Obsidian Great Axe")):
+                            (game.OBSIDIAN_GREAT_AXE_TYPE, "Obsidian Great Axe"),
+                            (game.BONE_DAGGER_TYPE, "Bone Dagger")):
             struct.pack_into("<H", rec, game.ITEM_TYPE, type_)
             self.assertEqual(icons.which(bytes(rec)), name)
         struct.pack_into("<H", rec, game.ITEM_TYPE, icons.GREAT_AXE_TYPE)
@@ -174,6 +175,7 @@ class WhichTests(unittest.TestCase):
         self.assertEqual(pictures[game.BONE_GREAT_AXE_TYPE], icons.PICTURES["Bone Great Axe"])
         others = {t: p for kind in weaponchoice.OTHERS.values() for t, _, p, _ in kind}
         self.assertEqual(others[game.OBSIDIAN_GREAT_AXE_TYPE], icons.PICTURES["Obsidian Great Axe"])
+        self.assertEqual(others[game.BONE_DAGGER_TYPE], icons.PICTURES["Bone Dagger"])
 
     def test_plain_without_the_copy(self):
         for name, number, _, _, _ in icons.ICONS:

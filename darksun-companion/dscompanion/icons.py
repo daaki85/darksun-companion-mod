@@ -126,6 +126,7 @@ LIGHT_TO_METAL = {210: 209, 211: 210, 212: 160, 213: 161, 214: 213, 215: 215}
 TEAL_TO_METAL = {70: 160, 71: 161, 72: 215}
 TEAL_TO_BONE = {70: 206, 71: 61, 72: 152}
 TEAL_TO_OBSIDIAN = {70: 208, 71: 210, 72: 212}
+DAGGER_BONE = {208: 60, 209: 61, 210: 152, 211: 146, 213: 152, 215: 152}
 GOLD = (64, 65, 45)
 
 
@@ -282,6 +283,8 @@ ICONS: Tuple[Tuple[str, int, int, int, Callable[[Rows], Rows]], ...] = (
     # its teal head in the bone long sword's whites and the obsidian long sword's greys
     ("Bone Great Axe", 0xFC06, 2574, 2575, lambda r: recolour(r, {1: 58, 2: 59, **TEAL_TO_BONE})),
     ("Obsidian Great Axe", 0xFC06, 2576, 2577, lambda r: recolour(r, {1: 58, 2: 59, **TEAL_TO_OBSIDIAN})),
+    # the bone Dagger (weaponchoice.py): the obsidian Dagger's, its blade in the bone weapons' whites
+    ("Bone Dagger", 0xFB60, 2578, 2579, lambda r: recolour(r, DAGGER_BONE)),
     # the game's own Sling +1 (in a chest, object 1068) names a picture, object 2644, that its data
     # hasn't: blank in a shop or a pack. The Sling's, every other pixel of its strap in the fire colours
     ("Sling +1", 0xFC09, 2644, 2645, lambda r: glow(r, lambda p, x, y: 137 <= p <= 140 and (x + y) % 2 == 0, FIRE)),
@@ -551,6 +554,8 @@ def which(rec: bytes) -> Optional[str]:
         return "Glasshewer" if plus == 2 else "Obsidian Axe"
     if kind == GREAT_AXE_TYPE and plus == 0:
         return "Great Axe"
+    if kind == game.BONE_DAGGER_TYPE and plus == 0:
+        return "Bone Dagger"
     if kind == game.BONE_GREAT_AXE_TYPE and plus == 0:
         return "Bone Great Axe"
     if kind == game.OBSIDIAN_GREAT_AXE_TYPE and plus == 0:

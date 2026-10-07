@@ -277,7 +277,7 @@ class FinishNewTests(unittest.TestCase):
         right, left = game.WEAPON_HANDS
         self.give(weaponchoice.START_TYPE, weaponchoice.START_NAME, right)
         self.give(36, 0x40, left)  # (a shield)
-        for t in range(game.GAME_TYPES + 24):  # (every class may use every type, as far as the game's lists go)
+        for t in range(game.GAME_TYPES + 25):  # (every class may use every type, as far as the game's lists go)
             self.mem[self.TYPES + t * game.ITEM_TYPE_SIZE + 0x10:self.TYPES + t * game.ITEM_TYPE_SIZE + 0x12] = b"\xff\xff"
         great_axe = weaponchoice.PLAIN[specialize.KINDS.index("great axe")][0]
         self.mem[self.TYPES + great_axe * game.ITEM_TYPE_SIZE + 0x0F] = weaponchoice.TWO_HANDED

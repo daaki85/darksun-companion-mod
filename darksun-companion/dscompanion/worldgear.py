@@ -63,6 +63,7 @@ OBSIDIAN_MACE = weaponchoice.OTHERS[KIND("mace")][0]
 METAL_SHORT_SWORD = (game.METAL_SHORT_SWORD_TYPE, 0x144, 0x10000 - 2427, 300)  # (the metal long sword: 500)
 METAL_DAGGER = (game.METAL_DAGGER_TYPE, 0x10, 0x10000 - 2504, 50)
 METAL_MACE = (game.METAL_MACE_TYPE, 0x13, 0x10000 - 2506, 200)
+BONE_DAGGER = weaponchoice.OTHERS[KIND("dagger")][1]
 BONE_GREAT_AXE = weaponchoice.PLAIN[KIND("great axe")]
 OBSIDIAN_GREAT_AXE = weaponchoice.OTHERS[KIND("great axe")][0]
 METAL_GREAT_AXE = weaponchoice.OTHERS[KIND("great axe")][1]  # (300)
@@ -221,11 +222,11 @@ PLAIN = (BONE_SHORT_SWORD, OBSIDIAN_SHORT_SWORD, BONE_AXE, OBSIDIAN_AXE, OBSIDIA
 GIFTS: Tuple[Gift, ...] = (
     # (the great axes in every material, a warrior's starting one being bone, and bone breaks:
     # bone ones on every Wild Mul too. The game's shop shows a seller's first 34 items: Kalzith,
-    # given 42, showed 34 and none of the 8 oldest; these sellers have 28, 30 and 20)
+    # given 42, showed 34 and none of the 8 oldest; these sellers have 29, 31 and 20)
     Gift("Weapon Merchant", tuple(weapon(w) for w in PLAIN + (METAL_SHORT_SWORD, BONE_GREAT_AXE, OBSIDIAN_GREAT_AXE,
-                                                              METAL_GREAT_AXE, METAL_PICK)), (285,), 0x0B),
+                                                              METAL_GREAT_AXE, METAL_PICK, BONE_DAGGER)), (285,), 0x0B),
     Gift("Jark", tuple(weapon(w) for w in (BONE_SHORT_SWORD, OBSIDIAN_SHORT_SWORD, BONE_AXE, OBSIDIAN_MACE,
-                                           BONE_GREAT_AXE, OBSIDIAN_GREAT_AXE)), (106,), 0x1A),
+                                           BONE_GREAT_AXE, OBSIDIAN_GREAT_AXE, BONE_DAGGER)), (106,), 0x1A),
     # Thieves' Tools, a pair, from Kel (the caravan's merchant of everything else), for a thief who
     # has lost theirs
     Gift("Kel", 2 * (TOOLS,), (107,), 0x1A),
@@ -234,9 +235,10 @@ GIFTS: Tuple[Gift, ...] = (
     Gift("Tari", (weapon(OBSIDIAN_MACE),), (60, 243), 0x28),  # the warrens' Tari, every one
     Gift("Renegade", (weapon(BONE_SHORT_SWORD),), (289,)),  # (every one)
     Gift("Wild Mul", (weapon(BONE_AXE), weapon(BONE_GREAT_AXE)), (290,)),
-    # the defilers (both kinds, made by scripts) carried nothing, so left no body: an obsidian
-    # dagger each (the game's plain one)
-    Gift("Defiler", (weapon(weaponchoice.PLAIN[KIND("dagger")]),), (258, 296)),
+    # the defilers (both kinds, made by scripts) carried nothing, so left no body: a dagger each,
+    # one kind obsidian (the game's plain one), the other bone
+    Gift("Defiler", (weapon(weaponchoice.PLAIN[KIND("dagger")]),), (258,)),
+    Gift("Defiler", (weapon(BONE_DAGGER),), (296,)),
     # the metal ones, on people who fight with the like
     Gift("Tobrian", (weapon(METAL_DAGGER),), (104,), 0x1A),  # (a stone dagger)
     Gift("Templar", (weapon(METAL_MACE),), (131,), 0x14),  # the slavers' camp's (a bone mace)
@@ -325,7 +327,8 @@ BASE_TYPES = {game.SHORT_SWORD_TYPE: 63, game.CLOAK_TYPE: 65, game.BONE_HELM_TYP
               game.METAL_MACE_TYPE: 20, game.METAL_GREAT_AXE_TYPE: 2, game.METAL_PICK_TYPE: 112,
               game.METAL_POLEARM_TYPE: 19, game.CIRCLET_TYPE: 36, game.CROWN_TYPE: 36, game.PLATE_CHEST_TYPE: 57,
               game.PLATE_ARMS_TYPE: 58, game.PLATE_LEGS_TYPE: 59, game.ELVEN_CLOAK_TYPE: 65, game.ELVEN_BOOTS_TYPE: 68,
-              game.AIR_DAGGER_TYPE: 33, game.BONE_GREAT_AXE_TYPE: 2, game.OBSIDIAN_GREAT_AXE_TYPE: 2}
+              game.AIR_DAGGER_TYPE: 33, game.BONE_GREAT_AXE_TYPE: 2, game.OBSIDIAN_GREAT_AXE_TYPE: 2,
+              game.BONE_DAGGER_TYPE: 17}
 
 
 def header_numbers(chunks) -> Dict[int, int]:

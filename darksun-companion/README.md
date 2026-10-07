@@ -1468,7 +1468,7 @@ character may use, in any material. The rest stay greyed:
 | …with air cleric (missile weapons, and the dagger that can be thrown) | dagger, chatkcha, bow, sling, staff sling | an obsidian dagger |
 | …with earth cleric (stone, obsidian, metal, wood) | long sword, club, dagger, short sword, mace, axe, great axe, pick, quarterstaff, polearm, chatkcha, bow (the polearm in the Ledger's metal) | an obsidian long sword |
 | …with fire cleric (obsidian) | long sword, dagger, short sword, mace, axe, great axe, chatkcha | an obsidian long sword |
-| …with water cleric (bone, wood) | long sword, club, short sword, mace, axe, great axe, quarterstaff, polearm, gythka, cahulaks, bow | the game's bone long sword |
+| …with water cleric (bone, wood) | long sword, club, dagger, short sword, mace, axe, great axe, quarterstaff, polearm, gythka, cahulaks, bow | the game's bone long sword |
 
 (The starting weapon is for the kind marked first; the next table has the
 rest.)
@@ -1484,7 +1484,7 @@ weapon specialization chosen, in place of the bone long sword`):
 |---|---|---|
 | long sword | the game's bone long sword | obsidian (fire, earth) |
 | club, quarterstaff, bow | wooden (a bow with 20 arrows) | |
-| dagger, chatkcha | obsidian | |
+| dagger, chatkcha | obsidian | a dagger: bone, the Ledger's (water) |
 | short sword | bone, the Ledger's (the game's only short sword is Kurzak's) | obsidian (fire, earth) |
 | mace, polearm, gythka, cahulaks | bone | a mace: obsidian, the game's plain Mace type (its only one is Blackmace) with a picture of the Ledger's; a polearm: metal, the Ledger's (earth) |
 | axe | bone, the Ledger's (the game's only axe is metal) | obsidian (fire, earth) |
@@ -1688,7 +1688,7 @@ less the item's plus, and 1 less again for a magical power:
 | Bone or metal Long Sword | 65% | 65% (the game's: needs 8) |
 | Shadowseeker (metal, +1) | 70% | 70% (the game's: needs 7) |
 | Obsidian Dagger | 65% | 80% (needs 5) |
-| The Ledger's plain bone weapons (Short Sword, Axe, Great Axe) | 65% | 65% (the game's: needs 8) |
+| The Ledger's plain bone weapons (Dagger, Short Sword, Axe, Great Axe) | 65% | 65% (the game's: needs 8) |
 | The Ledger's plain obsidian weapons (Short Sword, Axe, Mace, Great Axe) | 65% | 80% (needs 5) |
 | The Ledger's plain metal weapons (Short Sword, Dagger, Mace, Great Axe, Pick, Polearm) | 65% | 65% (the game's: needs 8) |
 | Kreenfang, Drakejaw, Stillwater, Thornwall (bone, +1) | 70% | 70% (the game's: needs 7) |
@@ -1885,6 +1885,7 @@ metal axe, and no plain metal weapons at all; the Ledger adds them:
 | **Metal Mace** | carried by the **Templar** of the elven slavers' camp | the game's mace, in metal |
 | **Bone Great Axe** | a warrior's starting great axe; sold by the Weapon Merchant and Jark; carried by every **Wild Mul** | 1d10, two-handed; lighter than metal (and breaks as bone does) |
 | **Obsidian Great Axe** | a fire or earth cleric's starting great axe; sold by the Weapon Merchant and Jark | 1d10, two-handed |
+| **Bone Dagger** | a water cleric's starting dagger; sold by the Weapon Merchant and Jark; carried by one of the game's two kinds of **Defiler** (the other carries the game's obsidian Dagger, so a dead defiler leaves a body to search) | 1d4: the only dagger a water cleric can use |
 | **Metal Great Axe** | sold by the Weapon Merchant | the game's great axe, in metal |
 | **Metal Pick** | sold by the Weapon Merchant | the game's pick, in metal |
 | **Metal Polearm** | carried by one of the six **Castle Guards** of the Upper Castle; an earth cleric's starting polearm | the game's polearm, in metal |
@@ -2163,6 +2164,7 @@ game's stone pick is only a starting weapon (Deepbiter is its magic one).
 | long sword | metal | Weapon Merchant | Uskuye, Elven Leader, Elite Guard, Village Hero, a chest in the warrens |
 | long sword | obsidian | Jark, Weapon Merchant | Wyvern Master, Arant, Keldar, Kurzak, Guard, Chaya, Uskuye, Scar, Arena Guard, Caravan Master, Chahl, Mayor of Gedron, Merzol, Drajian Guard, Council Member, Templar |
 | club | wood | Weapon Merchant | Warren Chief, Churrr, Tari, Skull Guardian, Worshipper, Low Warren Thug, Gladiator, Wild Mul, Guard, Legcrusher, a dead body in the arena, a chest, a weapon rack |
+| dagger | bone | Jark, Weapon Merchant | Defiler |
 | dagger | metal | — | Tobrian |
 | dagger | obsidian | — | Defiler, Notaku |
 | dagger | stone | Jark, Weapon Merchant | Balkazar, Dagolar, Wyrmias, Hermit, Tobrian, Villager, Linara, Maris, a chest in Dagolar's tunnels |

@@ -15,9 +15,14 @@ Released pull requests are summarised in a line or two each; the release notes
   every Wild Mul carries a bone one.
 - **Thieves' Tools from Kel:** two sets in his stock, for a thief who has lost
   theirs.
-- **Defilers leave a body:** every defiler (both of the game's kinds, made by
-  its scripts) carries an obsidian dagger, so the game leaves a body to search
-  when one dies (it leaves none for someone who carried nothing).
+- **A bone dagger,** with an icon of its own: the only dagger a water cleric
+  can use, so water clerics' warriors (a water cleric/psionicist among them)
+  can choose the dagger, and start with this one. Sold by the Weapon Merchant
+  and Jark.
+- **Defilers leave a body:** each of the game's two kinds of defiler (made by
+  its scripts) carries a dagger, one obsidian and one bone, so the game leaves
+  a body to search when one dies (it leaves none for someone who carried
+  nothing).
 
 **Fixed**
 - **The game's Sling +1** (in a chest) showed a blank icon: its picture was

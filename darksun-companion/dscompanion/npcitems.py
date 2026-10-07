@@ -70,6 +70,9 @@ TYPES = (  # as DSCLOG's EXTRA_TYPES has them
     # fire and water clerics)
     bytes.fromhex("010010003200fa00010501010a01004068160002"),
     bytes.fromhex("010010004600fa00030501010a0100406e160002"),
+    # a bone dagger (weaponchoice.py, worldgear.py): the obsidian Dagger's (17), of bone, for water
+    # clerics and not fire ones (the game's daggers are for neither)
+    bytes.fromhex("010020000a00fa000105010104010000fa1f0000"),
 )
 TSR_TYPES_OFF, TSR_TYPES_COUNT, TSR_TYPES_FIRST, TSR_TYPES_PTR = 208, 210, 212, 214
 
