@@ -5,6 +5,16 @@ Released pull requests are summarised in a line or two each; the release notes
 ([1.1.0](release-notes/v1.1.0.md): #14 to #18; [1.0.0](release-notes/v1.0.0.md):
 #1 to #13) and the pull requests themselves have the detail.
 
+## Pull request #27 (in progress)
+
+**Changed**
+- **No bow to choose for a ranger** at creation or a level gained: every
+  ranger has expertise with the bow already.
+
+**Documentation**
+- Where a ranger's bow expertise and missile weapons' rates show, and the
+  Options tab's weapon specialization box, mention them.
+
 ## Pull request #26 ([merged 2026-10-07](https://github.com/daaki85/darksun-companion-mod/pull/26))
 
 **Changed**

@@ -3392,7 +3392,8 @@ wp_allowed:
 
 ; KINDS_ALLOWED: AX the kinds (bit 0 the long sword) the character whose sheet is at ES:BX can
 ; choose: those with an item type (KIND_OF_TYPE) the game's class lists and CLASS_FORBIDS let it
-; use (a fire cleric's long sword the obsidian one, not the plain bone one).
+; use (a fire cleric's long sword the obsidian one, not the plain bone one); not the bow for a
+; ranger (its class flags, +12h: 200h), who has expertise with it already.
 ; DS = the game's. Others kept.
 kinds_allowed:
         push cx
@@ -3424,7 +3425,10 @@ kinds_allowed:
 .no:    inc dx
         cmp dx, KIND_TYPES
         jb .type
-        mov ax, di
+        test word [es:bx + 0x12], 0x200
+        jz .all                 ; (a ranger)
+        btr di, BOW_KIND - 1
+.all:   mov ax, di
         pop di
         pop si
         pop dx

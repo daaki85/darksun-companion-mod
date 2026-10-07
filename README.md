@@ -71,10 +71,8 @@ double-click, with the options as last set.)
 
 ## What's new
 
-In pull request #26 (merged 2026-10-07): **missile specialists shoot faster.** A
-fighter or gladiator specialized in the bow, sling, staff sling or chatkcha
-shoots faster: a bow 3 arrows a round, 4 from 7th level, a grand master one
-more. Every ranger now has expertise with the bow, at the same rate.
+In pull request #27 (in progress): a ranger no longer has the bow to choose at
+creation, since every ranger has expertise with the bow already.
 
 Earlier changes, pull request by pull request, are in
 [`CHANGELOG.md`](CHANGELOG.md). Releases have notes of their own:

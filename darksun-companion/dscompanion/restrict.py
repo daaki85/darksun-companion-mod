@@ -152,6 +152,8 @@ def allowed_kinds(sheet: bytes, type_record) -> List[int]:
     """The weapon kinds a character can choose: those with an item type of the game's (any
     material: a fire cleric's long sword the obsidian one) that it can use (a fighter/psionicist,
     say, only the psionicist's). TYPE_RECORD(type) gives an item type's record. DSCLOG's
-    KINDS_ALLOWED."""
+    KINDS_ALLOWED. Not the bow for a ranger: it has expertise with the bow already."""
+    ranger = int.from_bytes(sheet[game.SHEET_FLAGS:game.SHEET_FLAGS + 2], "little") & 0x200
     return [kind for kind, name in enumerate(specialize.KINDS)
-            if any(usable(sheet, t, type_record(t)) for t in specialize._TYPES[name])]
+            if not (ranger and name == "bow")
+            and any(usable(sheet, t, type_record(t)) for t in specialize._TYPES[name])]
