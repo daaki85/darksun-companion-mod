@@ -43,7 +43,7 @@ class DefaultPartyTests(unittest.TestCase):
                          bytes((kinds.index("long sword") + 1, kinds.index("gythka") + 1, 0, 0)))
         self.assertEqual(dp.kinds_bytes(dp.PARTY["K'ratchek"]), bytes((kinds.index("chatkcha") + 1, 0, 0, 0)))
         self.assertEqual(dp.kinds_bytes(dp.PARTY["Cermak"]),
-                         bytes((kinds.index("long sword") + 1, kinds.index("club") + 1, 0, 0)))
+                         bytes((kinds.index("long sword") + 1, kinds.index("axe") + 1, 0, 0)))
         self.assertEqual(dp.kinds_bytes(dp.PARTY["Cilla"]), bytes(4))
 
     def ready(self, rules, done=None, new=True):

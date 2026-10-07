@@ -11,7 +11,7 @@ starts. Each is known by name, race and classes together.
   bone gythka, in the same hand: a two-handed weapon beside a one-handed one (the long sword
   weighs 20, the gythka 120: one heavy weapon, as the game allows). K'ratchek (a fighter,
   druid and psionicist) the chatkcha, the one weapon she has. Cermak (a gladiator who became a
-  preserver) the long sword and the club, his once his gladiator levels count again.
+  preserver) the long sword and the axe, his once his gladiator levels count again.
 - With class restrictions: Cilla (a preserver, druid and thief) can't wear armour (the druid's
   rule), so her leather armour is taken away and she knows Armor, the first wizard spell (0),
   the one Old One-Eye's scroll in the fields teaches.
@@ -27,7 +27,7 @@ KNOWN_SPELLS_PTR = 0x132A  # DS: far pointer to the party's known spells, a byte
 KNOWN_STRIDE = game.SPELL_COUNT + 1
 ARMOR = 0  # the spell
 CLUB_TYPE = 18
-KIND = {k: specialize.KINDS.index(k) for k in ("long sword", "club", "gythka", "chatkcha")}
+KIND = {k: specialize.KINDS.index(k) for k in ("long sword", "axe", "gythka", "chatkcha")}
 
 
 class Member(NamedTuple):
@@ -39,7 +39,7 @@ class Member(NamedTuple):
 PARTY: Dict[str, Member] = {
     "Gerakis": Member(5, (10, 0, 0), ("long sword", "gythka")),  # half-giant gladiator
     "K'ratchek": Member(8, (9, 7, 12), ("chatkcha",)),  # thri-kreen fighter, druid (fire), psionicist
-    "Cermak": Member(1, (11, 10, 0), ("long sword", "club")),  # human preserver, once a gladiator
+    "Cermak": Member(1, (11, 10, 0), ("long sword", "axe")),  # human preserver, once a gladiator
     "Cilla": Member(3, (11, 6, 17), ()),  # elf preserver, druid (earth), thief
 }
 
