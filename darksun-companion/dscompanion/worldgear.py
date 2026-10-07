@@ -41,10 +41,13 @@ METAL_POLEARM = weaponchoice.OTHERS[KIND("polearm")][0]  # (250)
 # the Obsidian Bloodwrath +1 (20,800, as its Hornblade +1 and Gythka +1), 20,800 a plus; a missile
 # weapon far less, as its Sling +1 (2,800; the Chatkcha +1 1,800, the Sling +2 3,500)
 PLUS_VALUE, SLING_VALUE = 20800, 2800
-CLUB_1 = ((18, 0x11, 0x10000 - 2494, PLUS_VALUE), 1)
-PICK_1 = ((112, 0xAD, 0x10000 - 2496, PLUS_VALUE), 1)
-STAFF_SLING_1 = ((0, 0x01, 0x10000 - 2498, SLING_VALUE), 1)
-SHORT_SWORD_2 = ((game.METAL_SHORT_SWORD_TYPE, 0x144, 0x10000 - 2500, 2 * PLUS_VALUE), 2)
+# each with a name of its own (DSCLOG's names; Alagorn tells their stories, alagorn.py)
+GUTTERKNOT, DEEPBITER, WINDLASH, GREENBRIGHT = 0x14A, 0x14B, 0x14C, 0x14D
+NAMES = {GUTTERKNOT: b"Gutterknot", DEEPBITER: b"Deepbiter", WINDLASH: b"Windlash", GREENBRIGHT: b"Greenbright"}
+CLUB_1 = ((18, GUTTERKNOT, 0x10000 - 2494, PLUS_VALUE), 1)  # a club +1
+PICK_1 = ((112, DEEPBITER, 0x10000 - 2496, PLUS_VALUE), 1)  # a stone pick +1
+STAFF_SLING_1 = ((0, WINDLASH, 0x10000 - 2498, SLING_VALUE), 1)  # a staff sling +1
+SHORT_SWORD_2 = ((game.METAL_SHORT_SWORD_TYPE, GREENBRIGHT, 0x10000 - 2500, 2 * PLUS_VALUE), 2)  # a metal short sword +2
 
 BRACERS_NAME = 0x149  # the name entry DSCLOG adds ("Bracers/Defense")
 BRACERS_PICTURE = 0x10000 - 2502
@@ -101,7 +104,7 @@ MAGIC: Tuple[Gift, ...] = (
     Gift(0x0B, "Bowyer", (weapon(*STAFF_SLING_1),)),
     Gift(0x1E, "Undermt Folk", (weapon(*PICK_1),)),  # (the Undermountain's miners: the first met)
     Gift(0x28, "Churrr", (weapon(*CLUB_1),)),  # (the warrens' fighter, with his club)
-    Gift(None, "Elite Guard", (weapon(*SHORT_SWORD_2),)),
+    Gift(0x04, "Arant", (weapon(*SHORT_SWORD_2),)),  # (the gladiators' captor, Silt Sea Summoning)
     # bracers of defense on the wizards, worn where nothing else is (Mikquetzl's arm armour stays)
     Gift(0x28, "Mikquetzl", (bracers(6),), slot=ARM),
     Gift(0x03, "Wyrmias", (bracers(5),), slot=ARM),

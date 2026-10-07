@@ -1,4 +1,5 @@
-"""Alagorn tells of Kreenfang and Shadowseeker (arms.py).
+"""Alagorn tells of the Ledger's magic weapons: Kreenfang and Shadowseeker (arms.py), Gutterknot,
+Deepbiter, Windlash and Greenbright (worldgear.py).
 
 Alagorn, the wizard wandering the Painted Badlands, identifies magic items from menus by kind
 (script 213): magic swords, magic weapons, fruit and wands. Each kind's part sees which of the
@@ -6,15 +7,16 @@ items he knows the party carries (a local for each, from a query on the item's p
 Bloodwrath's is -1576), says there are none, or shows a menu of those, one reply each; a reply's
 story clears its local, and when none is left the menu's loop ends.
 
-With the Ledger, Shadowseeker joins the swords and Kreenfang the weapons, by their pictures of
-their own (icons.py: without the icons' copy he doesn't know them). As pensasks.py does, nothing
+With the Ledger, Shadowseeker and Greenbright join the swords, and Kreenfang, Gutterknot, Deepbiter
+and Windlash the weapons, by their pictures of their own (icons.py: without the icons' copy he
+doesn't know them), each only with its content switch on. As pensasks.py does, nothing
 of the game's script moves: commands of it become jumps (64h) to code put after the script's end,
 which jumps back:
 
-- each kind's first test for none carried: the new item's local set too, and none of them all
+- each kind's first test for none carried: the new items' locals set too, and none of them all
   carried goes on to "no magic swords" / "no magic weapons", any to the menu's part;
-- the kind's menu: a copy with the new item's reply after the game's last;
-- each of the kind's stories' test for none left: the new item counted too.
+- the kind's menu: a copy with the new items' replies after the game's last;
+- each of the kind's stories' test for none left: the new items counted too.
 
 The new stories are subroutines, as the game's replies are.
 """
@@ -30,25 +32,66 @@ LOCAL_READ, LOCAL_SET = 0x8E, 14
 QUERY, PARTY, HAS_PICTURE = 0x33, 32766, 72  # a query on the party's items: picture equal
 DONE = 15  # the menu loop's local (1: leave it)
 SET, SAY = 0x16, 0x4F
+NOTHING = "  Nothing"  # each menu's last reply, leaving it
 
 
 class Kind:
-    def __init__(self, first_reply: str, none_text: str, item: str, text: str):
-        self.first_reply, self.none_text, self.item, self.text = first_reply, none_text, item, text
+    def __init__(self, first_reply: str, none_text: str, items: Tuple[Tuple[str, str], ...]):
+        self.first_reply, self.none_text, self.items = first_reply, none_text, items
 
 
-KINDS = (
-    Kind("  Darkflame", "It's too bad that you have no magic swords I know about. ", "Shadowseeker",
-         "Shadowseeker! The head guards of the Draj slave pens have passed it down, one to the "
-         "next. With it in hand, no slave could hide from them: not in the pens' shadows, not "
-         "behind an illusion, not even made invisible by a friend's magic. Many an escape ended "
-         "at its point. Better that it is in your hands now."),
-    Kind("  Balkazar's Staff", "I don't see any magic weapons that I know anything about. ", "Kreenfang",
-         "Kreenfang! The tohr-kreen say a gythka's blades are grown, not carved, and a clutch's "
-         "elder blessed this one before the hunt. It strikes truer and deeper than any common "
-         "gythka. A kreen does not part with such a weapon while it lives; whoever carried it "
-         "into the arena died with it in hand."),
-)
+SWORDS, WEAPONS = ("  Darkflame", "It's too bad that you have no magic swords I know about. "), \
+    ("  Balkazar's Staff", "I don't see any magic weapons that I know anything about. ")
+# (item, story): the slave pens' two (arms.py)
+ARMS = {
+    SWORDS: (("Shadowseeker",
+              "Shadowseeker! The head guards of the Draj slave pens have passed it down, one to the "
+              "next. With it in hand, no slave could hide from them: not in the pens' shadows, not "
+              "behind an illusion, not even made invisible by a friend's magic. Many an escape ended "
+              "at its point. Better that it is in your hands now."),),
+    WEAPONS: (("Kreenfang",
+               "Kreenfang! The tohr-kreen say a gythka's blades are grown, not carved, and a clutch's "
+               "elder blessed this one before the hunt. It strikes truer and deeper than any common "
+               "gythka. A kreen does not part with such a weapon while it lives; whoever carried it "
+               "into the arena died with it in hand."),),
+}
+# ... and the world's (worldgear.py)
+MAGIC = {
+    SWORDS: (("Greenbright",
+              "Greenbright! True iron, forged in the Green Age, when Athas still had forests and "
+              "smiths who knew more than how to knap stone. It was a long sword once; a thousand "
+              "years of sharpening have worn it short, and the old enchantment only grew keener "
+              "for it. Arant took it from a gladiator who would not kneel. He never fought fair "
+              "again, and never needed to."),),
+    WEAPONS: (("Gutterknot",
+               "Gutterknot! A knot of agafari root, the hardest wood under the sun, with the stub "
+               "of an iron spike driven through it. Every boss of the Draj low warrens has beaten "
+               "his way up with it and held it until someone beat him down with it in turn. The "
+               "warrens say whoever holds it can't be made to kneel. Churrr believed that."),
+              ("Deepbiter",
+               "Deepbiter! A dwarf of the Undermountain made it his focus: to dig to the root of "
+               "the world. He cut its head from a vein of stone no other pick could mark and sang "
+               "into it every day of his life. It breaks rock as other picks break earth, and "
+               "bone more easily still. His kin kept it after he died, still digging."),
+              ("Windlash",
+               "Windlash! The desert elves make their staff slings to run and hunt with at once. "
+               "This one was made for a chieftain's son, its cords braided with his own hair, and "
+               "a wind spirit's blessing sung over it. Its stones fly farther and strike harder "
+               "than any other's. How a village bowyer came by it, I'd rather not ask."),),
+}
+
+
+def kinds(arms: bool = True, magic: bool = True) -> Tuple[Kind, ...]:
+    """Each kind with the new items of the switches on."""
+    out = []
+    for kind in (SWORDS, WEAPONS):
+        items = (ARMS[kind] if arms else ()) + (MAGIC[kind] if magic else ())
+        if items:
+            out.append(Kind(kind[0], kind[1], items))
+    return tuple(out)
+
+
+KINDS = kinds()
 
 
 def _picture(name: str) -> int:
@@ -97,7 +140,7 @@ def _story_end(ops, start: int) -> int:
 
 def with_items(script: bytes, field_types: bytes, kinds=KINDS) -> bytes:
     """SCRIPT (the game's) with each kind's new item (unchanged if it isn't as expected)."""
-    if any(gpl.encode_expr(("str", f"  {kind.item}")) in script for kind in kinds):
+    if any(gpl.encode_expr(("str", f"  {item}")) in script for kind in kinds for item, _ in kind.items):
         return script  # (done already: the commands made jumps no longer decode)
     ops = gpl.decode(script, field_types)
     at_index = {op.at: i for i, op in enumerate(ops)}
@@ -120,34 +163,40 @@ def with_items(script: bytes, field_types: bytes, kinds=KINDS) -> bytes:
         first_test = i + 1 + len(queries)
         if not queries or ops[first_test].code != TEST:
             return script
-        mine = max(n for n, _ in queries) + 1
-        if mine >= DONE:
+        first = max(n for n, _ in queries) + 1
+        mine = list(range(first, first + len(kind.items)))
+        if mine[-1] >= DONE:
             return script
-        all_of = [n for n, _ in queries] + [mine]
+        all_of = [n for n, _ in queries] + mine
         # ... after "none carried" (a return), the part going on to the menu
         go_on = none + 1
         while go_on < len(ops) and ops[go_on].code != SAY:
             go_on += 1
         entry = f"entry {k}"
         s.label(entry)
-        s.op(SET, ("op", gpl.Op(0, QUERY, [("n", PARTY), 77, 80, [(HAS_PICTURE, 4, ("n", _picture(kind.item)))]])),
-             ("var", LOCAL_SET, mine))
+        for (item, _), n in zip(kind.items, mine):
+            s.op(SET, ("op", gpl.Op(0, QUERY, [("n", PARTY), 77, 80, [(HAS_PICTURE, 4, ("n", _picture(item)))]])),
+                 ("var", LOCAL_SET, n))
         s.op(TEST, _zero(all_of))
         s.op(0x3E, ("n", ops[go_on].at))  # (any carried: on to the menu)
         s.op(GOTO, ("n", ops[none].at))
         jumps.append((ops[first_test].at, entry))
 
-        # the menu: the game's replies, then the new one
+        # the menu: the game's replies, then the new ones
         menu = ops[menu_i].args[0]
-        story = f"story {k}"
-        s.sub(story, lambda kind=kind, mine=mine, all_of=all_of: (
-            s.say(kind.text), s.set(mine, 0),
-            s.when(_zero(all_of), lambda: s.set(DONE, 1))))
+        replies = list(menu["replies"])
+        # (before the game's "Nothing", which leaves: it stays last)
+        at = next((r for r, reply in enumerate(replies) if reply["text"] == ("str", NOTHING)), len(replies))
+        for j, ((item, text), n) in enumerate(zip(kind.items, mine)):
+            story = f"story {k} {j}"
+            s.sub(story, lambda text=text, n=n, all_of=all_of: (
+                s.say(text), s.set(n, 0),
+                s.when(_zero(all_of), lambda: s.set(DONE, 1))))
+            replies.insert(at + j, {"text": ("str", f"  {item}"), "goto": ("label", story),
+                                    "if": ("var", LOCAL_READ, n), "before": [], "after": []})
         copy = f"menu {k}"
         s.label(copy)
-        s.op(MENU, dict(menu, replies=list(menu["replies"]) + [
-            {"text": ("str", f"  {kind.item}"), "goto": ("label", story),
-             "if": ("var", LOCAL_READ, mine), "before": [], "after": []}]))
+        s.op(MENU, dict(menu, replies=replies))
         s.op(GOTO, ("n", ops[menu_i + 1].at))
         jumps.append((ops[menu_i].at, copy))
 
@@ -163,7 +212,7 @@ def with_items(script: bytes, field_types: bytes, kinds=KINDS) -> bytes:
                     continue
                 left = f"left {k} {r}"
                 s.label(left)
-                s.op(TEST, _zero(names + [mine]))
+                s.op(TEST, _zero(names + mine))
                 s.op(0x3E, ops[t + 1].args[0])  # (some left: past the end of the loop's flag)
                 s.op(GOTO, ("n", ops[t + 2].at))
                 jumps.append((ops[t].at, left))
@@ -177,10 +226,12 @@ def with_items(script: bytes, field_types: bytes, kinds=KINDS) -> bytes:
     return bytes(out)
 
 
-def script_chunks(chunks, field_types: bytes) -> Dict[Tuple[str, int], bytes]:
-    """For the Ledger's copy of GPLDATA: Alagorn's talk with Kreenfang and Shadowseeker."""
+def script_chunks(chunks, field_types: bytes, arms: bool = True, magic: bool = True) -> Dict[Tuple[str, int], bytes]:
+    """For the Ledger's copy of GPLDATA: Alagorn's talk with the magic weapons of the switches on
+    (ARMS: Kreenfang and Shadowseeker; MAGIC: the world's)."""
     key = ("GPL ", SCRIPT)
-    if key not in chunks:
+    chosen = kinds(arms, magic)
+    if key not in chunks or not chosen:
         return {}
-    changed = with_items(chunks[key], field_types)
+    changed = with_items(chunks[key], field_types, chosen)
     return {key: changed} if changed != chunks[key] else {}

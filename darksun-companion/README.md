@@ -1831,17 +1831,17 @@ like its own. The log doesn't say: they're there to be found.
 | **Great Axe** | a warrior's starting great axe | the game's plain Great Axe, with an icon without the +3's green gem |
 | **Metal Short Sword** | sold by the Weapon Merchant | 1d6: Kurzak's, without the plus |
 | **Metal Dagger, Mace, Great Axe, Pick and Polearm** | carried by **Tobrian**, the **Templar** of the slavers' camp, **Uskuye**, **Kwerin** and a **Castle Guard**; an earth cleric's starting great axe or polearm | the game's own weapons, in metal (the game has none plain) |
-| **Club +1** | carried by **Churrr** in the warrens | a magic club (the game has none) |
-| **Pick +1** | carried by one of the **Undermountain folk** (the miners) | a magic stone pick (the game has none) |
-| **Staff Sling +1** | sold by the **Bowyer** | a magic staff sling (the game has none) |
-| **Short Sword +2** | carried by an **Elite Guard** | a magic metal short sword |
+| **Gutterknot** | carried by **Churrr** in the warrens; a thief can lift it (200 XP) | a club +1 (the game has no magic club) |
+| **Deepbiter** | carried by one of the **Undermountain folk** (the miners) | a stone pick +1 (the game has no magic pick) |
+| **Windlash** | sold by the **Bowyer** | a staff sling +1 (the game has no magic staff sling) |
+| **Greenbright** | carried by **Arant**, who holds the captured gladiators | a metal short sword +2 |
 | **Bracers of Defense** | **Mikquetzl** (AC 6, in his pack), **Wyrmias** (AC 5), **Balkazar** (AC 4), **Dagolar** (AC 2, the one carrying Dag's Dagger) | AC for those wearing no armour: [bracers of defense](#bracers-of-defense) |
 
 **Prices** follow the game's own:
 - magic melee weapons 20,800 for each plus, as its Obsidian Bloodwrath +1
-  (Kreenfang 20,800, the Short Sword +2 41,600; Shadowseeker 22,000, as it
+  (Kreenfang 20,800, Greenbright 41,600; Shadowseeker 22,000, as it
   also sees the invisible);
-- the Staff Sling +1 2,800, as its Sling +1 (it prices magic missile weapons
+- Windlash 2,800, as its Sling +1 (it prices magic missile weapons
   low);
 - the plain metal weapons 50 to 300 (its metal long sword is 500);
 - bracers of defense 5,000 for each point of AC (20,000 to 40,000);
@@ -1856,8 +1856,8 @@ like its own. The log doesn't say: they're there to be found.
   without it Kurzak's is a plain Short Sword, 1d6) each have their own box;
 - every thief's tools come with picking pockets.
 
-A thief can lift Pehtucl's ring and Shadowseeker (200 XP for the sword), not
-what's worn on the body. With [AD&D's rules for rings and cloaks of
+A thief can lift Pehtucl's ring, Shadowseeker and Gutterknot (200 XP for each
+weapon), not what's worn on the body. With [AD&D's rules for rings and cloaks of
 protection](#rings-and-cloaks-of-protection) on, two rings give +1 together
 and neither ring nor cloak gives AC over magical armour.
 
@@ -1865,7 +1865,7 @@ and neither ring nor cloak gives AC over magical armour.
 
 ![Backpack cells in the game: the bone and obsidian Short Swords, the bone and obsidian Axes, the obsidian Mace and a plain Great Axe](docs/new-weapons.png)
 
-![Backpack cells in the game: the Club +1, the Pick +1, the Staff Sling +1, the Short Sword +2, a plain metal Short Sword and Bracers of Defense](docs/magic-items.png)
+![Backpack cells in the game: Gutterknot, Deepbiter, Windlash, Greenbright, a plain metal Short Sword and Bracers of Defense](docs/magic-items.png)
 
 ![Backpack cells in the game: the metal Dagger, Mace, Great Axe, Pick and Polearm](docs/metal-weapons.png)
 
@@ -1878,7 +1878,7 @@ bone and obsidian long swords' with the shorter blade, the axes the Axe's head
 in bone or obsidian shades, the obsidian mace Blackmace's without its glow,
 and a plain great axe the game's without its green gem, as the game's only one
 is its Great Axe +3; the metal dagger, mace, great axe, pick and polearm the
-plain ones' heads and blades in the metal long sword's light greys and blues; the Club +1, Pick +1, Staff Sling +1 and Short Sword +2
+plain ones' heads and blades in the metal long sword's light greys and blues; Gutterknot, Deepbiter, Windlash and Greenbright
 the plain ones with a few pixels in the fire colours; the bracers drawn, a
 pair of steel cuffs with gold rims and a fire-coloured stud); dropped on the map they look
 like the plain item. The game's names are at most 15 letters (it
@@ -1889,9 +1889,10 @@ full.
 ![Shadowseeker's item box in the game: 22000, Detect Invisibility's icon, "Metal +1 Shadowseeker", 1D6+1](docs/shadowseeker-box.png)
 
 **Alagorn**, the wizard of the Painted Badlands who identifies magic items,
-knows Kreenfang and Shadowseeker when the party carries them, each with a
-story of its own among his magic weapons and swords. (Checked in his script,
-not yet in a game that has reached him.)
+knows the Ledger's magic weapons when the party carries them, each with a story
+of its own: Shadowseeker and Greenbright among his magic swords, Kreenfang,
+Gutterknot, Deepbiter and Windlash among his magic weapons, before his menus'
+"Nothing". (Checked in his script, not yet in a game that has reached him.)
 
 **A piece of the bone scale set that vanishes.** One was seen to vanish from a
 pack with no trace, so the Ledger keeps an eye on the set's three pieces: one
@@ -2070,11 +2071,11 @@ it stands now (effects and a worn belt's 5 counted, as in the thief rows):
   cell): something weighing 10 or less (a bag or arrows are 10, a helm 15, a
   long sword 30) that isn't worn on the body (armour, a belt, boots, a helm, a
   cloak). A dagger, a ring, an amulet, a gem or food can be lifted, and so can
-  Kurzak's short sword, Shadowseeker, whatever its weight: lifting it is worth
-  200 XP to the thief, given by the game's own routine for a quest's XP
+  Kurzak's short sword, Shadowseeker, and Churrr's club, Gutterknot, whatever
+  their weight: lifting either is worth 200 XP to the thief, given by the game's own routine for a quest's XP
   ("Cilla receives 200 experience points!", the quest's sound; split among a
   multi-class thief's classes, as the game's quests are) (see
-  [Kreenfang and Shadowseeker](#new-items)). Keys stay,
+  [New items](#new-items)). Keys stay,
   as scripts may look for them. People outside the party keep all they own in
   their pack, so this goes by what each thing is.
 - **Failure:** a move silently roll. Made, the thief slips away unnoticed;

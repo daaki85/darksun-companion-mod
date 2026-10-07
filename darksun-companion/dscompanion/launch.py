@@ -233,7 +233,8 @@ def prepare_patched_game(game_dir: str, settings: Optional[dict] = None) -> Opti
     with_kalzith = on["kalzith"] and objects_ok
     files = [(kalzith.SCRIPTS_FILE, lambda source, dest: kalzith.write_scripts(
         source, dest, with_kalzith, on["semyon"], on["vulture"], on["arena_ring"],
-        on["magic_arms"] and objects_ok))]  # (Alagorn knows the weapons by their own pictures)
+        on["magic_arms"] and objects_ok, on["world_magic"] and objects_ok))]  # (Alagorn knows the
+    # weapons by their own pictures)
     if with_kalzith:
         files.append((kalzith.REGION_FILE, kalzith.write_region))
     try:

@@ -106,7 +106,7 @@ def recolour(rows: Rows, colours: Dict[int, int]) -> Rows:
 
 
 GREAT_AXE_TYPE = 2
-MAGIC_KINDS = {18: "Club +1", 112: "Pick +1", 0: "Staff Sling +1"}  # (the game's types: none has a plus)
+MAGIC_KINDS = {18: "Gutterknot", 112: "Deepbiter", 0: "Windlash"}  # (the game's types: none has a plus)
 BLADE = range(0xD1, 0xDA)
 # the Axe's metal head, shade for shade (by brightness), in the bone long sword's whites
 AXE_BONE = {208: 129, 209: 132, 210: 132, 211: 200, 212: 146, 213: 146, 214: 148, 215: 152}
@@ -170,10 +170,10 @@ ICONS: Tuple[Tuple[str, int, int, int, Callable[[Rows], Rows]], ...] = (
     # the game's obsidian maces are its Blackmace alone: a plain one, the Mace's head in obsidian
     ("Obsidian Mace", 0xFB5D, 2486, 2487, lambda r: recolour(r, MACE_OBSIDIAN)),
     # magic weapons of kinds the game has none of (worldgear.py): the game's magic look, its fire
-    ("Club +1", 0xFB5F, 2494, 2495, lambda r: glow(r, lambda p, x, y: p >= 140 and p <= 143, FIRE)),
-    ("Pick +1", 0xFB46, 2496, 2497, lambda r: glow(r, lambda p, x, y: p in (209, 210) and (x + y) % 2 == 0, FIRE)),
-    ("Staff Sling +1", 0xFC08, 2498, 2499, lambda r: glow(r, lambda p, x, y: p in (59, 60, 61), FIRE)),
-    ("Short Sword +2", 0xFC0A, 2500, 2501, lambda r: glow(shorter_blade(r), lambda p, x, y: p in BLADE, FIRE)),
+    ("Gutterknot", 0xFB5F, 2494, 2495, lambda r: glow(r, lambda p, x, y: p >= 140 and p <= 143, FIRE)),
+    ("Deepbiter", 0xFB46, 2496, 2497, lambda r: glow(r, lambda p, x, y: p in (209, 210) and (x + y) % 2 == 0, FIRE)),
+    ("Windlash", 0xFC08, 2498, 2499, lambda r: glow(r, lambda p, x, y: p in (59, 60, 61), FIRE)),
+    ("Greenbright", 0xFC0A, 2500, 2501, lambda r: glow(shorter_blade(r), lambda p, x, y: p in BLADE, FIRE)),
     ("Bracers of Defense", 0xFC01, 2502, 2503, bracers_icon),  # (on the map: the leather Arm Armor)
     # metal versions of the plain weapons the game has none of in metal: their heads and blades
     # in the metal long sword's colours
@@ -434,7 +434,7 @@ def which(rec: bytes) -> Optional[str]:
     if kind == game.SHORT_SWORD_TYPE:
         return "Shadowseeker" if plus == 1 else "Short Sword"
     if kind == game.METAL_SHORT_SWORD_TYPE:
-        return "Short Sword +2" if plus == 2 else "Short Sword" if plus == 0 else None
+        return "Greenbright" if plus == 2 else "Short Sword" if plus == 0 else None
     if kind == game.BRACERS_TYPE:
         return "Bracers of Defense"
     if kind in METAL_TYPES and plus == 0:

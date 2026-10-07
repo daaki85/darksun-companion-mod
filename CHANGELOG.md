@@ -6,6 +6,21 @@ Release **1.1.0** is pull requests #14 to #18; its notes are in
 requests #1 to #13; its notes are in
 [`release-notes/v1.0.0.md`](release-notes/v1.0.0.md).
 
+## Pull request #21 ([in review](https://github.com/daaki85/darksun-companion-mod/pull/21))
+
+**Changed**
+- **The magic weapons have names and stories:** the Club +1 is **Gutterknot**,
+  the Pick +1 **Deepbiter**, the Staff Sling +1 **Windlash** and the Short
+  Sword +2 **Greenbright**, each with a story Alagorn tells, among his magic
+  weapons and swords with Kreenfang and Shadowseeker (before his menus'
+  "Nothing"). Greenbright is now on **Arant**, who holds the captured
+  gladiators (the Elite Guards are only in the final fight). A thief can
+  lift Gutterknot from Churrr's pocket, for 200 XP, as Shadowseeker from
+  Kurzak's.
+- **The README's new items** are one item to a row, with the prices and the
+  Options tab's boxes after the table; the ranger's row no longer names a
+  fighter/ranger (the game has none).
+
 ## Pull request #20 ([merged 2026-10-07](https://github.com/daaki85/darksun-companion-mod/pull/20))
 
 **Added**

@@ -191,7 +191,8 @@ In [pull request #20](https://github.com/daaki85/darksun-companion-mod/pull/20)
   across Athas.
 - **Bracers of defense** (AC 6 to AC 2) on four wizards, now that a
   preserver can't cast in armour, and **magic weapons of the kinds the game
-  has none of:** a Club +1, a Pick +1, a Staff Sling +1 and a Short Sword +2.
+  has none of:** Gutterknot, Deepbiter, Windlash and Greenbright, with
+  stories Alagorn tells.
 - **Prices as the game's own** for the Ledger's magic items.
 - **The dice log's character creation** gives only the character the die
   stops on, checked against the screen.

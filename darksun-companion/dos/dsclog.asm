@@ -5858,7 +5858,15 @@ extra_names:
         times NAME_SIZE - 9 db 0
         db "Bracers/Defense"            ; (bracers of defense: BRACERS, dscompanion/worldgear.py)
         times NAME_SIZE - 15 db 0
-        times (NAMES_EXTRA - 8) * NAME_SIZE db 0
+        db "Gutterknot"                 ; (the magic weapons of dscompanion/worldgear.py: a club +1,
+        times NAME_SIZE - 10 db 0
+        db "Deepbiter"                  ; a stone pick +1,
+        times NAME_SIZE - 9 db 0
+        db "Windlash"                   ; a staff sling +1,
+        times NAME_SIZE - 8 db 0
+        db "Greenbright"                ; a metal short sword +2)
+        times NAME_SIZE - 11 db 0
+        times (NAMES_EXTRA - 12) * NAME_SIZE db 0
 
 ; STEALTH (RULE_STEALTH): a thief who starts a turn with no enemy next to them may hide in
 ; shadows and move silently up to someone; the companion rolls both and, when both succeed,

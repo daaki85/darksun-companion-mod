@@ -20,9 +20,9 @@ class WorldGearTests(unittest.TestCase):
                                  (worldgear.BONE_AXE, 0, "Bone Axe"), (worldgear.OBSIDIAN_AXE, 0, "Obsidian Axe"),
                                  (worldgear.OBSIDIAN_MACE, 0, "Obsidian Mace"),
                                  (worldgear.METAL_SHORT_SWORD, 0, "Short Sword"),
-                                 worldgear.CLUB_1 + ("Club +1",), worldgear.PICK_1 + ("Pick +1",),
-                                 worldgear.STAFF_SLING_1 + ("Staff Sling +1",),
-                                 worldgear.SHORT_SWORD_2 + ("Short Sword +2",),
+                                 worldgear.CLUB_1 + ("Gutterknot",), worldgear.PICK_1 + ("Deepbiter",),
+                                 worldgear.STAFF_SLING_1 + ("Windlash",),
+                                 worldgear.SHORT_SWORD_2 + ("Greenbright",),
                                  (worldgear.METAL_DAGGER, 0, "Metal Dagger"), (worldgear.METAL_MACE, 0, "Metal Mace"),
                                  (worldgear.METAL_GREAT_AXE, 0, "Metal Great Axe"),
                                  (worldgear.METAL_PICK, 0, "Metal Pick"), (worldgear.METAL_POLEARM, 0, "Metal Polearm")):
@@ -52,7 +52,7 @@ class WorldGearTests(unittest.TestCase):
 
     def test_churrr(self):
         """The Club +1 is Churrr's own, as loot."""
-        self.assertEqual(icons.which(gift("Churrr").items[0]), "Club +1")
+        self.assertEqual(icons.which(gift("Churrr").items[0]), "Gutterknot")
 
     def test_priced_as_the_game(self):
         """Melee weapons 20,800 a plus, as the game's Obsidian Bloodwrath +1; the staff sling as
