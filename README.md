@@ -72,7 +72,7 @@ double-click, with the options as last set.)
 ## What's new
 
 In [pull request #21](https://github.com/daaki85/darksun-companion-mod/pull/21)
-(in review):
+(merged 2026-10-07):
 - **No manual check:** the dragon's question, the game's copy protection, is
   gone; the game goes on as if it had been answered.
 - **New magic items:** the **Warden's Plate**, plate mail +1 in four pieces
