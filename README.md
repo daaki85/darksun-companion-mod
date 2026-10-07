@@ -9,13 +9,6 @@ can be switched off on its Options tab.
 ## Contents
 
 - [What it does](#what-it-does)
-  - [In the Ledger's window](#in-the-ledgers-window)
-  - [In the game](#in-the-game)
-  - [Rule changes](#rule-changes)
-  - [New content](#new-content)
-  - [On the screen](#on-the-screen)
-  - [Controls](#controls)
-  - [Smoother play, and help when something goes wrong](#smoother-play-and-help-when-something-goes-wrong)
 - [Getting started](#getting-started)
 - [What's new](#whats-new)
 - [Changelog](CHANGELOG.md)
@@ -23,146 +16,38 @@ can be switched off on its Options tab.
 
 ## What it does
 
-### In the Ledger's window
+- **Shows what the game hides.** A window beside the game shows the party as
+  they stand: THAC0 with each weapon, saves, AC and what makes it up, spell
+  slots and thief skills. A dice log lists every roll, what it needed and where
+  each bonus came from. Tabs keep every conversation and what each spell really
+  does. ([The Ledger's window](darksun-companion/README.md#the-ledgers-window),
+  [the dice log](darksun-companion/README.md#the-dice-log))
+- **Shows it in the game too**, in the game's own lettering: THAC0, saves and
+  thief skills on the character screens, spell slots on the USE screen, each
+  turn's rolls in a fight, and what hurts a monster in the Look box.
+  ([In the game](darksun-companion/README.md#in-the-game))
+- **Changes rules, each one switchable:** fifteen of AD&D's, among them weapon
+  specialization, class restrictions, thief skills from AD&D's table, saving
+  throws and levels up to 10.
+  ([Rule changes](darksun-companion/README.md#rule-changes))
+- **Adds to the game:** new weapons, armour and magic items across Athas, with
+  stories Alagorn tells; Kalzith, a defiler slave who sells scrolls; Semyon
+  keeping his word; picking pockets; a use for the cooked vulture.
+  ([New content](darksun-companion/README.md#new-content))
+- **On the screen and at hand:** the party's gear drawn on their figures,
+  shadows and dust on the map, choosing an enemy with Tab, and scrolling with
+  the mouse. ([On the screen](darksun-companion/README.md#on-the-screen),
+  [Controls](darksun-companion/README.md#controls))
+- **Smoother play:** 40 saves and 29 saved characters, a game speed setting,
+  no manual check, two of the game's bugs fixed, and crash reports.
+  ([More saves and characters](darksun-companion/README.md#more-saves-and-characters),
+  [Game speed](darksun-companion/README.md#game-speed))
 
-- **The rolls behind the scenes:** attacks, damage, saving throws, magic
-  resistance, initiative, thief skills, character creation and level-up HP,
-  items' checks against acid, and searching junk, hay and wardrobes, with each
-  bonus named.
-- **A party viewer:** THAC0 with each weapon, saves as they stand now, AC and
-  what makes it up, spell slots, thief skills, equipment and active effects.
-- **Dialogue and spells tabs:** a scrollable record of every conversation, and
-  what each spell and psionic power really does, from the game's own records.
-
-(More in [In the Ledger's window](darksun-companion/README.md#the-ledgers-window).)
-
-### In the game
-
-- **In the game:**
-  - THAC0, saves, thief skills and DEX adjustments on the inventory screen,
-    THAC0 and saves on View Character, and for more than one class, which
-    class levels up next (`(16000 F)`);
-  - spell slots on the USE screen;
-  - each turn's rolls in a pop-up during fights, if you tick it (three levels
-    of detail);
-  - what hurts a monster in the Look box, with its alignment and magic
-    resistance;
-  - a party member's spell no longer ended by a click on the Effects screen.
-
-(More in [In the game](darksun-companion/README.md#in-the-game).)
-
-### Rule changes
-
-- **Optional AD&D rule changes**, all on by default and each one switchable:
-  - weapon specialization: fighters and gladiators specialize in kinds of
-    weapon (chosen on the creation screen, and a gladiator's later ones at a
-    level gained, in the game's own pop-up), fighters go on to mastery and
-    grand mastery, rangers take expertise, and the Effects screen lists them;
-  - class restrictions: each class's limits on armour, shields and weapons
-    hold for a multiclass character too, the strictest winning, and a
-    multiclass preserver casts no spells in armour;
-  - multiclass hit points as in AD&D, each level's die and CON's bonus shared
-    between the classes;
-  - hit dice rolled twice, the better kept, for every character;
-  - spells saved against with the spell save;
-  - DEX on saves against fire, cold and electricity instead of a doubled d20;
-  - two-weapon penalties;
-  - thief skills from AD&D's table, with Dark Sun's race and DEX adjustments;
-  - thieves hiding in shadows and moving silently to backstab, and rangers
-    to attack from behind (a cloak and boots help, and say so in their item
-    boxes), and a worn belt helping a thief pick pockets and open locks;
-  - class levels up to 10 (the game stops at 9);
-  - items saving against acid by material as in AD&D (the game destroys
-    armour without a magical power outright);
-  - rings and cloaks of protection as in AD&D: two rings don't add up, a
-    ring gives no AC with magical armour, and a cloak does nothing with
-    magical or metal armour or a shield;
-  - half-giants wielding two-handed weapons in one hand;
-  - a new spell, Cat's Grace;
-  - helms give AC, and boots movement in a fight ("Boots (Speed+1)").
-
-(More in [Rule changes](darksun-companion/README.md#rule-changes).)
-
-### New content
-
-- **New items:** a Ring of Protection +1 to find in the arena (50 XP for
-  finding it); gear for Kurzak, Legcrusher and Pehtucl in the slave pens (a
-  Cloak and a Ring of Protection +1 among it); the rest of the bone scale
-  armour, with a Bone Helm, where its chest piece lies; bone, obsidian and
-  metal weapons the game lacks, sold and carried across Athas; bracers of
-  defense on four wizards; named magic items with stories Alagorn tells
-  (**Kreenfang**, **Shadowseeker**, **Gutterknot**, **Deepbiter**,
-  **Windlash**, **Greenbright**, the **Flame Blade**, **Arrowbane**, the
-  **Sunking Crown**, the four pieces of the **Warden's Plate**, and the
-  **Cloak and Boots of Elvenkind**); each with an icon of its own. They're
-  written into the game's own data, so a new game makes them where they
-  belong.
-- **Thief play:** Thieves' Tools for every thief, picking anyone's pockets
-  (200 XP for lifting Shadowseeker), and no more thief skill penalty for what
-  a thief holds.
-- **A mini-quest:** the cooked vulture, at last good for something (Dinos
-  cooks it for the party, to the game's own quest-done sound).
-- **A new person in the slave pens:** Kalzith, a defiler slave who, treated
-  with respect, sells arcane spell scrolls that a preserver can learn from, at
-  the game's own prices.
-- **Semyon kept his word:** after he leaves the arena through the entrance to
-  the pens, he is in the pens to talk to, as the game promised and never did;
-  and if he is still beside the party when they break out with Scar, he breaks
-  out with them.
-
-(More in [New content](darksun-companion/README.md#new-content).)
-
-### On the screen
-
-- **What the party wears, on the map:** weapons, shields, bows, armour, helms,
-  cloaks, boots and belts on their figures, walking and fighting, changing as
-  their gear does.
-- **Shadows under every figure:** see-through, cast toward the lower right as
-  the walls' are, in the floor's own colours, with the walls and figures in
-  front standing on them.
-- **Dust** raised behind the feet of anyone walking on sand or dirt.
-
-(More in [On the screen](darksun-companion/README.md#on-the-screen).)
-
-### Controls
-
-- **Scrolling the map with the mouse:** press the wheel and drag the map, or
-  turn the wheel.
-- **Choosing an enemy with Tab:** in a fight Tab chooses an enemy, marked by a
-  red ring (or rings under all of them, or none: an option), and Enter attacks
-  it even behind someone.
-
-(More in [Controls](darksun-companion/README.md#controls).)
-
-### Smoother play, and help when something goes wrong
-
-- **More saves:** 40 instead of the game's 10, on four pages of the save and
-  load window (PAGE 1 to PAGE 4 buttons, or PgUp and PgDn).
-- **More characters:** 29 saved characters instead of the game's 19.
-- **No manual check:** the dragon who asks for a word from the manual when
-  the party first leaves the sewers (the game's copy protection) doesn't come.
-- **Two of the game's own bugs fixed:** DELETE in the roster removed the wrong
-  character when the list was scrolled down, and a new character's thief skills
-  showed 0 until the game started.
-- **Game speed:** DOSBox is given more of the computer (20,000 cycles by
-  default, on its faster dynamic core), for smoother walking with the whole
-  party in view; GOG's own speed and a faster one can be chosen. At the
-  fastest (35,000), the whole party walks as fast as the leader alone.
-- **Crash reports:** if DOSBox crashes or the game stops with an error, the
-  game's message stays on screen and what happened is saved in a file to send.
-
-(More in [No manual check](darksun-companion/README.md#no-manual-check), [More saves](darksun-companion/README.md#more-saves), [More characters](darksun-companion/README.md#more-characters), [Game speed](darksun-companion/README.md#game-speed) and [Crash reports](darksun-companion/README.md#crash-reports).)
-
-The game's own files are never modified. What play writes to the game folder
-is what you'd expect: your saves, which keep the items the Ledger hands out and
-the XP it gives (save pages 2 to 4 are files of their own beside the game's,
-`SAVB`, `SAVC` and `SAVD`), and your characters, in the game's own
-`CHARSAVE.GFF` (numbers 20 to 29 for the extra ten). For the dice log, the
-launcher runs a patched copy of the game that it keeps in its own folder.
-
-**Everything else is in [`darksun-companion/README.md`](darksun-companion/README.md):**
-requirements, how to start it on Windows, every log line explained, each
-addition in detail, and how it works.
+The game's own files are never modified: the Ledger runs a patched copy of the
+game, and copies of its data files, from its own folder. Play writes to the game
+folder only what you'd expect: your saves (pages 2 to 4 as files of their own,
+`SAVB`, `SAVC` and `SAVD`) and your characters (20 to 29 in the game's own
+`CHARSAVE.GFF`).
 
 ## Getting started
 
@@ -191,97 +76,17 @@ In [pull request #21](https://github.com/daaki85/darksun-companion-mod/pull/21)
 - **No manual check:** the dragon's question, the game's copy protection, is
   gone; the game goes on as if it had been answered.
 - **New magic items:** the **Warden's Plate**, plate mail +1 in four pieces
-  across the world (the helm with Cloak of Bravery, the chest with Resist
-  Fire); the **Cloak and Boots of Elvenkind** for thieves and rangers (hiding
-  in shadows on 90-95, moving silently on 95), the cloak given by the Elven
-  Leader with his Gythka +1; and the **Flame Blade**, an obsidian long sword
-  +1 that burns what it hits with Focus Heat, for fire clerics. Alagorn tells
+  across the world; the **Cloak and Boots of Elvenkind** for thieves and
+  rangers, the cloak given by the Elven Leader with his Gythka +1; and the
+  **Flame Blade**, an obsidian long sword +1 for fire clerics. Alagorn tells
   the story of each.
-- **Every new item is in the game's own data,** written into the people's
-  and chests' objects, so a new game makes them where they belong.
-- **Arrowbane** (a circlet) and the **Sunking Crown,** worn on the head and
-  not armour; Grey's Scale's arm and leg armour AC 3; bracers of defense give
-  nothing with a helm on; a new warrior with a staff sling keeps its shield.
+- **Every new item is in the game's own data,** so a new game makes them where
+  they belong.
+- **Arrowbane** and the **Sunking Crown,** worn on the head and not armour;
+  Grey's Scale's arm and leg armour AC 3; bracers of defense give nothing with
+  a helm on.
 
-In [pull request #20](https://github.com/daaki85/darksun-companion-mod/pull/20)
-(merged):
-- **Four new rule changes:** weapon specialization (chosen on the
-  creation screen's new WEAPON SPEC pages, a gladiator's later picks in the
-  game's own level-up pop-up, and listed on the Effects screen), class
-  restrictions for multiclass characters, multiclass hit points as in
-  AD&D, and hit dice rolled twice with the better kept.
-- **New weapons in the world:** bone and obsidian short swords and axes, an
-  obsidian mace, and metal short swords, daggers, maces, great axes, picks
-  and polearms, sold by the Weapon Merchant and Jark and carried by people
-  across Athas.
-- **Bracers of defense** (AC 6 to AC 2) on four wizards, now that a
-  preserver can't cast in armour, and **magic weapons of the kinds the game
-  has none of:** Gutterknot, Deepbiter, Windlash and Greenbright, with
-  stories Alagorn tells.
-- **Prices as the game's own** for the Ledger's magic items.
-- **The dice log's character creation** gives only the character the die
-  stops on, checked against the screen.
-
-In [pull request #19](https://github.com/daaki85/darksun-companion-mod/pull/19)
-(merged):
-- **Which class levels up next, on View Character:** for a character of more
-  than one class, the XP in brackets now names its class,
-  `EXP:87230 (90000 Pr)`: a letter for each class, Pr and Ps for preserver and
-  psionicist, and both when two level up at once (`(20000 Pr/T)`).
-- **Kalzith's prices put right:** Blur 6,000 and Haste 9,000 (were 3,000 and
-  12,000, read from the wrong scrolls in the game's data; now the game's price
-  for each spell's level).
-- **Kalzith sells Shield and Burning Hands** in place of Magic Missile and
-  Color Spray, so none of his scrolls is one you can find elsewhere in the
-  game.
-
-Release **1.1.0** is out: pull requests #14 to #18, below.
-
-In [pull request #17](https://github.com/daaki85/darksun-companion-mod/pull/17)
-(merged):
-- **New content:**
-  - **Kreenfang and Shadowseeker,** two named magic weapons, Shadowseeker
-    letting its wielder see the invisible; 200 XP for lifting it from Kurzak;
-    Alagorn tells of both.
-  - **Cloaks, boots and belts:** their item boxes say what they give a thief,
-    a worn belt helps pick pockets and open locks, and plain ones cost 24.
-  - **Kalzith's scrolls** at the game's own prices (3,000 to 12,000), and
-    Kalzith's and Semyon's questions gone from the list once asked, as the
-    game's own people's are.
-- **Rule changes:**
-  - **Items saving against acid:** an item the Rampager's acid or the Babau's
-    touch could destroy saves by its material as in AD&D, a plus helping, where
-    that's better than the game's.
-  - **Rings and cloaks of protection as in AD&D:** two rings don't add up, a
-    ring gives no AC with magical armour, and a cloak does nothing with magical
-    or metal armour or a shield.
-- **Dice log:** each item's check against acid, and each search of a junk
-  pile, haystack or wardrobe: the roll, what it found and how close the party
-  is to finding everything there is.
-- **Saves and characters:**
-  - **40 saves,** on four pages of the save and load window; in the load
-    window an empty page can be shown too, with LOAD greyed.
-  - **29 saved characters** instead of 19.
-  - **Two of the game's own bugs fixed:** DELETE in the roster removed the
-    wrong character when the list was scrolled down; and a new character (one
-    not yet played) counted as not Okay, so a new thief's skills showed 0.
-- **On the screen and in the game:**
-  - **Faster walking:** shadows and dust drawn much more cheaply; at the
-    fastest game speed, the whole party walks as fast as the leader alone.
-  - **Gear on the figures:** a shield shows from the side; Kreenfang's and
-    Shadowseeker's blades in their icons' colours; bone weapons ivory.
-  - **The Look box:** a monster's alignment, and its magic resistance beside
-    its level.
-- **The Ledger:** the Options tab's sections open and close, and the rule
-  changes come with the ones that change play most first.
-
-In [pull request #16](https://github.com/daaki85/darksun-companion-mod/pull/16)
-(merged): Semyon breaks out with Scar, the game speed setting, switches for
-all the new content, crash reports, a crash in the opening fight fixed, and
-fixes from a review of the code.
-
-Everything that changed, pull request by pull request, is in
-[`CHANGELOG.md`](CHANGELOG.md). Release **1.1.0** is pull requests #14 to #18,
-with notes in [`release-notes/v1.1.0.md`](release-notes/v1.1.0.md); release
-**1.0.0** is pull requests #1 to #13, with notes in
-[`release-notes/v1.0.0.md`](release-notes/v1.0.0.md).
+Earlier changes, pull request by pull request, are in
+[`CHANGELOG.md`](CHANGELOG.md). Releases have notes of their own:
+[1.1.0](release-notes/v1.1.0.md) (pull requests #14 to #18) and
+[1.0.0](release-notes/v1.0.0.md) (#1 to #13).

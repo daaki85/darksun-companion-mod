@@ -14,7 +14,6 @@ records; this ledger keeps the ones the game doesn't show you.
   - [Other ways to start](#other-ways-to-start)
   - [If DOSBox closes by itself](#if-dosbox-closes-by-itself)
   - [Crash reports](#crash-reports)
-  - [From a command prompt](#from-a-command-prompt)
 - [The Ledger's window](#the-ledgers-window)
   - [The Spells tab](#the-spells-tab)
   - [The Dialogue tab](#the-dialogue-tab)
@@ -107,7 +106,7 @@ Templar's Ledger runs beside Dark Sun: Shattered Lands, in DOSBox:
 Nothing in the game folder or your save files is changed, except what play
 writes there: save pages 2 to 4 as files of their own beside the game's,
 characters 20 to 29 in the game's `CHARSAVE.GFF`, and, in a game you save,
-the Ledger's new items (untick their boxes to go without). Some of them the
+the new items (untick their boxes to go without). Some of them the
 original game doesn't know (the item types it lacks, such as the Short Sword,
 the Cloak of Protection, the bracers, plate mail and the Cloak and Boots of
 Elvenkind, and the new item names), so load such a save with the dice log. For the
@@ -208,8 +207,8 @@ the dice log will say the game was started without it.
 **`Play Dark Sun (in-game rolls).bat`**. The dice log runs unseen and stops
 when you close DOSBox. It uses the switches on the Ledger's Options tab as you
 last set them (each turn's rolls, monster descriptions, the Ring +1, picking
-pockets, the rule changes); the slave pens' gear and the cooked vulture work
-there too. If anything goes wrong it says so in a message box and
+pockets, the rule changes); the new items, the new people and the cooked
+vulture are there too. If anything goes wrong it says so in a message box and
 writes the details to `play.log`.
 
 ### If DOSBox closes by itself
@@ -241,22 +240,6 @@ there is no report.
 
 **Checking a save file (no game needed):** drag a `SAVEnn.SAV` file from the
 game folder onto **`Show Save.bat`**.
-
-### From a command prompt
-
-The same things are (`dscompanion` is the program's
-internal name):
-
-```
-python -m dscompanion launch                        # start the game with the dice log, and the viewer
-python -m dscompanion view                          # the viewer only
-python -m dscompanion play                          # the game with the in-game additions, no viewer
-python -m dscompanion dicelog                       # the dice log in the command prompt
-python -m dscompanion save C:\path\to\SAVE01.SAV   # the party stored in a save
-python -m dscompanion processes                     # is DOSBox found?
-```
-
-If more than one DOSBox is running, add `--pid <number>` (from `processes`).
 
 ## The Ledger's window
 
@@ -400,50 +383,6 @@ screenshots here are taken that way).
 
 ![Templar's Ledger during the first arena fight: the Characters tab, and the dice log with Cilla hiding in shadows and moving silently](docs/dicelog.png)
 
-| Line | Meaning |
-|---|---|
-| `Round 2: K'ratchek 32, Cermak 31, Cilla 30, Gerakis 26, Slig 26` | A new round of a fight, numbered from the fight's start, and the order everyone acts in (highest first). The order also stays in view above the log for the whole round, however far the log has scrolled: `Round 2. Now: Cilla (30). Still to act: Gerakis 26, Slig 26. Done: K'ratchek 32, Cermak 31. Down: ...`, and the in-game turn summary ends with who is still to act (or the next round's order). The lines under it (shown with **Show details**) give each score's make-up: `    Gerakis 26 = 20 + 6 (0-9 roll), tie broken by 38 (0-199 roll)` (see Initiative below). If the log was started in the middle of a round, the list has only the rolls it saw. |
-| `Gerakis's turn` | Whose turn it is now, each time the turn passes in a fight. |
-| `X attacks Y with Long Sword +1 (1d8+1): d20 = 14, needs 12+ (45%), hits AC 1, target AC 3 -> HIT` | An attack roll, the weapon and its damage dice. `needs 12+ (45%)` is the d20 this attacker needed against this target (THAC0 − target AC) and the chance of rolling it; `hits on anything but a 1` or `only a 20 hits` when it's out of the ordinary range. `X attacks Y from behind ...` and `X attacks Y BACKSTAB ...` mark attacks from behind and backstabs (see below). "Hits AC" is the lowest AC this roll hits (THAC0 − d20); the target AC is the one the game used, with armour, DEX and spells. A natural 20 always hits and a natural 1 always misses, but a 20 does no extra damage: the game has no critical hits (see below). |
-| `    THAC0 16, +1 Blessed, +6 STR, +1 weapon = 8` | Where the attacker's THAC0 for this attack comes from: STR (melee) or DEX (missiles), spells (Bless, Prayer, Slow, Graft Weapon, the target's Blur), attacking from behind, the weapon's plus, the penalty for non-metal weapons (wooden −3, bone −1, stone and obsidian −2), the two-weapon adjustment (see below), and the difficulty setting for monsters. |
-| `  X hits Y for 14: 1d8 = [6] +8 STR 20` | The damage of that hit: the dice, the weapon's bonus, and the STR bonus the game adds for melee. Damage is at least 1. |
-| `  X hits Y for 51: (1d8 = [5] +12 STR 24) x3 backstab` | A backstab (see below) multiplies the whole damage, STR bonus included. |
-| `Shocking Grasp damage: 1d8 = [5] +10 = 15 (1d8 + 1 for each caster level: 10 at caster level 20, which counts as 10)` | A spell's damage roll, rolled for each target before its saving throw, with the spell's formula from the game's data. Damage stops growing at caster level 10 (Fireball does at most 10d6). Magic Missile, Flame Arrow and Minute Meteors are rolled elsewhere in the game, without the caster's level, so their line says how many steps the dice stand for. |
-| `  Slig takes 15 from Shocking Grasp, now 3/18 HP` | What the spell really did to each creature, after its save, resistances and protections (or the healing it gave). A creature that is Out Cold gets no save and takes the most the dice can do (the game's damage code does that), marked `(Out Cold: the most the dice can do)`. |
-| `    Blur lasts 23 rounds (caster level 20: 1 for each caster level = 20 + 3 from the dice; dice 3d1)` | How long a spell's effect lasts, and how the game worked it out. A round is 60 game seconds. The game often "rolls" dice with one side, which are fixed numbers. |
-| `    Stoneskin has 23 charges (caster level 20: 1 for each caster level = 20 + 3 from the dice; dice 1d4 = [3])` | Effects that last a number of uses rather than a time (Stoneskin's blows, Mirror Image's images, Invisibility's one attack, Poison's rounds): the game stores them as charges, worked out like a duration. |
-| `    Acid on Slig: 2d4 = [3 + 1] = 4 acid damage` / `    Ironskin on Cilla: one charge used` | Acid Arrow's damage each round while the acid lasts; and an effect with charges using one up (Stoneskin or Ironskin stopping a blow, Mirror Image losing an image...). |
-| `Strength: 1d6 = 5 -> Cilla's STR +5 while it lasts (at most 24)` | The amount Strength (or Adrenalin Control) adds. |
-| `Y magic resistance 30% vs Fireball: d100 = 71 -> not resisted` | The magic resistance roll (only shown for targets that have some), counting Mind Bar and Lower Resistance. |
-| `    Dispel Magic on Slig's Blessed: d100 = 60, needs 85 or less (50 + 5 x 7 - 5 x 0 (its caster's level)) -> dispelled` | Dispel Magic tries each effect on its target separately: 50 + 5 for each of the dispeller's levels, less 5 for each of the level the effect was cast at. It can't touch some (Biofeedback, Diseased, Feeblemind, Poisoned, Graft Weapon, No spell use, Stuck, Mind Bar and a few more). |
-| `    Abjure on Y: d20 = 14, needs 12 or more (11 - caster level 5 + its level 6) -> sent away` | Abjure sends a summoned creature away (1000 damage) on a d20 at or over 11 - the caster's level + the creature's. |
-| `    Summoning: 1d3 = 2 picks which of its 3 creatures comes` | Which creature a summoning spell brings. |
-| `Y saves vs Fireball from X (petrification/polymorph): d20 = 6, doubled against fire = 12 +1 Blessed = 13, needs 11 (80% to save) -> saved: half damage, 19 of 38` | A saving throw: which of the target's five saves it uses, the d20, each of the game's modifiers by name (see Saving throws below; anything the log can't account for shows as `other`), and the number it had to reach. With the [rule changes](#rule-changes) off, the game uses petrification/polymorph for almost every spell and doubles the d20 against fire, cold and electricity spells, as here (see Spells and effects); with them on (the default), the line names the spell save and DEX's adjustment instead (`+5 DEX 21 dodging`). A natural 1 always fails and a natural 20 always saves. The chance of saving is worked out for you (`needs 14 (70% to save)`); with the game's doubled d20, Fireball's victims usually save. For a damaging spell the result says what the save left, from that target's damage roll just before it: `saved: half damage, 19 of 38`, `failed: full damage, 38`, or `saved: no damage` for spells such as Chill Touch. The HP line after it shows what the creature really lost, once resistances and protections have had their say. A failed save also lets the spell's effect take hold. Spells left on the ground (Grease, clouds) make creatures save again as they stay in them; those lines have no "from". |
-| `X gives Blessed to Y, Z: +1 to hit, +1 on saves` / `Blessed ends on Y` | A spell or psionic effect starting or ending, with what it does in the game's code where that is known: to-hit, AC and saving throws, movement and attacks, whether the creature can attack or cast, who controls it (see Spells and effects below). `Stuck on Y` (no "gives") is an effect a creature has from a spell on the ground or cast on itself. |
-| `X DEX check: d20 = 9, needs 16 or less (DEX 16) -> success` | An ability check. A natural 20 always fails. |
-| `Cilla tries to open locks: d100 = 35, needs 40 or less -> success` / `    open locks 40 = 18 + 16 thief level 4 + 10 elf...` | A thief skill roll (see Thief skills below), and what its chance is made of. |
-| `    X's Bone Long Sword nearly broke: 0 on 0-7, then 12 on 0-19 (needed 0)` / `... BREAKS` | The weapon check the game makes after an attack sequence whose last attack hit. Only non-magical wood, bone, stone and obsidian weapons can break (and not every kind: clubs and quarterstaffs can't): they break when a 0-7 roll and then a 0-19 roll both come up 0, 1 chance in 160. The line only appears when the first roll comes up 0. |
-| `  Rampager's acid on Gerakis's Leather Chest Armor: d20 = 12, needs 10 (AD&D's, 10 for leather; the game's: destroyed without a roll) -> safe` | An item the Rampager's acid or the Babau's corroding touch could destroy: the d20, the number it needed and whose number that was (see [Items saving against acid](#items-saving-against-acid)). |
-| `Haystack searched: 0-10 = 7, an old, soiled loincloth (the party's 2nd find of 6 in hay)` / `  The rat's bite: 0-4 = 3 damage` | Searching a junk pile, a haystack or a wardrobe: the game's roll, what it found, and how far its count has got (see [Searching junk, hay and wardrobes](#searching-junk-hay-and-wardrobes)); a rat's bite or a falling pot rolls its damage the same way. |
-| `Message: Long Sword is broken !` | The game's own message boxes: broken or corroded weapons and armour, level-ups, "NO PATH FROM HERE" and so on. |
-| `  Slig now 8/18 HP (-10)` / `  Gerakis now 51/54 HP (+1)` | Any combatant's hit points going down or up, with what's left out of their most. The game never shows a monster's HP; this does. The line comes just after the damage that caused it (sometimes after the next roll, when the game is quick). |
-| `  Gerrard regenerates 1 HP (CON 22), now 16/35 HP` | A hit point back by itself: the game gives one now and then to anyone with CON 20 or more (in the game, CON 20 regenerates and 18 or 19 don't). |
-| `  Rampager now 69/72 HP (-3: 3 of the 7 rolled, non-magical weapons do half)` / `  Mastyrial takes none of the 6 damage: crushing weapons can't hurt it` | A weapon hit that took less than its roll, or none at all (no HP lost three seconds on, or by the next round), with the reason when the monster's own defences give one (what weapons hurt it); otherwise "a protection or resistance took it" (Stoneskin, say). |
-| `    X's special effect on Y: d10 = 1, works on a 1 -> it works` | The 1-in-10 extra effect some creatures' hits have (the thri-kreen bite, for one). |
-| `Slig is killed (270 XP)` | A creature dying, with the XP it's worth (from its character sheet). |
-| `XP: Gerakis +67, K'ratchek +22, ... (for Slig 270)` | Experience the party got, and for which kills. The game gives it right after the kill: an equal share to each character, split again between a multi-class character's classes (the sheet counts XP per class, so a three-class thri-kreen shows a third of the share). |
-| `Cilla is now a 3rd level Ranger` / `    max HP 15 -> 21 (+6)` | A level gained, and the new maximum HP. |
-| `    max HP unchanged: the game divides the hit point total by the classes, ...` | A multi-class character gained a level and its most hit points stayed the same: every class level rolls its die, but the game divides the whole total by the number of classes, so a small roll can add only a fraction (it counts at a later level). (With [multiclass hit points](#multiclass-hit-points) each level adds at least 1.) A human who changed class gets none in the new class until its level passes the old class's. |
-| `Cilla's 3rd Ranger level: hit points d10 = 2, raised to 3 for CON 21` | The hit point roll for a new level: the class's die (d8 clerics and druids, d10 fighters, gladiators and rangers, d4 preservers, d6 psionicists and thieves), never less than 2, 3 or 4 with CON 20, 21-22 or 23+, and doubled for half-giants. After level 9 or 10 there's no roll, just a fixed gain (thieves roll at 10th too with [levels up to 10](#rule-changes)). With [the better of two](#hit-dice-the-better-of-two) both rolls show (`d10 = 2 and 7, the better 7`), and with [multiclass hit points](#multiclass-hit-points) the share (`, / 2 classes = 3`). |
-| `Cilla hides in shadows: d100 = 21, needs 27 or less (54, halved in daylight) -> hidden` / `  Cilla moves silently: ...` | A thief's or ranger's hiding and moving silently at the start of their turn (the [stealth rule](#rule-changes)). |
-| `Chosen with Tab: Guard (50 HP) - Enter attacks it` | An enemy chosen with Tab in a fight (see [Choosing an enemy](#choosing-an-enemy-tab-enter-and-the-rings)). |
-| `Dinos cooks the vulture and the party eats with him: ... restored as after a full rest (HP, PSP and spell slots); the game gives each 100 XP` | Dinos asked about the cooked vulture (see [The cooked vulture](#the-cooked-vulture)); the XP itself is on the `XP:` line after it. |
-| `Character creation, STR 17: best of four 4d4 (7, 11, 9, 10) = 11, +4, +1 dwarf = 16, raised to 17 (the Fighter's prime requisite)` | An ability score rolled on the character creation screen (see below). The die rolls a whole character several times while it tumbles; the log gives only the one it stops on, once it stops, each ability checked against the one the screen shows. Rolls that came too fast to record leave the game's number: `Character creation, DEX 19 (its rolls came too fast to record)`, and likewise for hit points. |
-| `Character creation, hit points 15: Fighter d10 per level: 7 + 9; Thief d6 per level: 5 + 1 = 22, / 2 classes = 11, +4 CON 16 = 15` | The new character's hit points: a die for every level of every class, divided by the number of classes, plus CON's bonus (see below). With [the better of two](#hit-dice-the-better-of-two) each die shows both rolls (`10 (the better of 2 and 10)`); with [multiclass hit points](#multiclass-hit-points) each is shared on its own and CON's bonus too (`each / 2 classes (at least 1) = 9, +2 CON 16 shared = 11`). |
-| `Character creation: a name picked at random, 1d33 = 6` | The game picks a new name from its lists when the sex or race changes. |
-| `Dice: 1d8 = [3] = 3` | Dice the log couldn't tie to anything (for example a spell with no saving throw). |
-| `(The Ledger stopped one of its own writes over the game's memory: ...)` | A safety net: the Ledger never writes over the start of memory (the interrupt vectors, the BIOS's and DOS's data) or the first bytes of the game's data, which its C runtime checks ("Null pointer assignment"). Such a write could only come from a pointer the game has left empty for a moment; the line says where in the Ledger it came from. Please report it. |
-
 **Reading it at a glance.** Lines at the left edge are the events: a round
 starting, whose turn it is, attack rolls, saves, spells, kills. Lines indented
 two spaces are their results (damage, HP left); lines indented four spaces are
@@ -458,6 +397,77 @@ in a colour of their own (cyan, magenta, peach and white, by place in the
 party) and every monster and other creature in red, so who acts and who is
 hit can be followed down the log. Every colour has at least 4.5:1 contrast
 with the log's background (WCAG 2.0 AA, as AODA asks).
+
+**Fights**
+
+| Line | Meaning |
+|---|---|
+| `Round 2: K'ratchek 32, Cermak 31, Cilla 30, Gerakis 26, Slig 26` | A new round of a fight, numbered from the fight's start, and the order everyone acts in (highest first). The order also stays in view above the log for the whole round, however far the log has scrolled: `Round 2. Now: Cilla (30). Still to act: Gerakis 26, Slig 26. Done: K'ratchek 32, Cermak 31. Down: ...`, and the in-game turn summary ends with who is still to act (or the next round's order). The lines under it (shown with **Show details**) give each score's make-up: `    Gerakis 26 = 20 + 6 (0-9 roll), tie broken by 38 (0-199 roll)` (see Initiative below). If the log was started in the middle of a round, the list has only the rolls it saw. |
+| `Gerakis's turn` | Whose turn it is now, each time the turn passes in a fight. |
+| `X attacks Y with Long Sword +1 (1d8+1): d20 = 14, needs 12+ (45%), hits AC 1, target AC 3 -> HIT` | An attack roll, the weapon and its damage dice. `needs 12+ (45%)` is the d20 this attacker needed against this target (THAC0 − target AC) and the chance of rolling it; `hits on anything but a 1` or `only a 20 hits` when it's out of the ordinary range. `X attacks Y from behind ...` and `X attacks Y BACKSTAB ...` mark attacks from behind and backstabs (see below). "Hits AC" is the lowest AC this roll hits (THAC0 − d20); the target AC is the one the game used, with armour, DEX and spells. A natural 20 always hits and a natural 1 always misses, but a 20 does no extra damage: the game has no critical hits (see below). |
+| `    THAC0 16, +1 Blessed, +6 STR, +1 weapon = 8` | Where the attacker's THAC0 for this attack comes from: STR (melee) or DEX (missiles), spells (Bless, Prayer, Slow, Graft Weapon, the target's Blur), attacking from behind, the weapon's plus, the penalty for non-metal weapons (wooden −3, bone −1, stone and obsidian −2), the two-weapon adjustment (see below), and the difficulty setting for monsters. |
+| `  X hits Y for 14: 1d8 = [6] +8 STR 20` | The damage of that hit: the dice, the weapon's bonus, and the STR bonus the game adds for melee. Damage is at least 1. |
+| `  X hits Y for 51: (1d8 = [5] +12 STR 24) x3 backstab` | A backstab (see below) multiplies the whole damage, STR bonus included. |
+| `Chosen with Tab: Guard (50 HP) - Enter attacks it` | An enemy chosen with Tab in a fight (see [Choosing an enemy](#choosing-an-enemy-tab-enter-and-the-rings)). |
+
+**Spells, saves and effects**
+
+| Line | Meaning |
+|---|---|
+| `Shocking Grasp damage: 1d8 = [5] +10 = 15 (1d8 + 1 for each caster level: 10 at caster level 20, which counts as 10)` | A spell's damage roll, rolled for each target before its saving throw, with the spell's formula from the game's data. Damage stops growing at caster level 10 (Fireball does at most 10d6). Magic Missile, Flame Arrow and Minute Meteors are rolled elsewhere in the game, without the caster's level, so their line says how many steps the dice stand for. |
+| `  Slig takes 15 from Shocking Grasp, now 3/18 HP` | What the spell really did to each creature, after its save, resistances and protections (or the healing it gave). A creature that is Out Cold gets no save and takes the most the dice can do (the game's damage code does that), marked `(Out Cold: the most the dice can do)`. |
+| `    Blur lasts 23 rounds (caster level 20: 1 for each caster level = 20 + 3 from the dice; dice 3d1)` | How long a spell's effect lasts, and how the game worked it out. A round is 60 game seconds. The game often "rolls" dice with one side, which are fixed numbers. |
+| `    Stoneskin has 23 charges (caster level 20: 1 for each caster level = 20 + 3 from the dice; dice 1d4 = [3])` | Effects that last a number of uses rather than a time (Stoneskin's blows, Mirror Image's images, Invisibility's one attack, Poison's rounds): the game stores them as charges, worked out like a duration. |
+| `    Acid on Slig: 2d4 = [3 + 1] = 4 acid damage` / `    Ironskin on Cilla: one charge used` | Acid Arrow's damage each round while the acid lasts; and an effect with charges using one up (Stoneskin or Ironskin stopping a blow, Mirror Image losing an image...). |
+| `Strength: 1d6 = 5 -> Cilla's STR +5 while it lasts (at most 24)` | The amount Strength (or Adrenalin Control) adds. |
+| `Y magic resistance 30% vs Fireball: d100 = 71 -> not resisted` | The magic resistance roll (only shown for targets that have some), counting Mind Bar and Lower Resistance. |
+| `    Dispel Magic on Slig's Blessed: d100 = 60, needs 85 or less (50 + 5 x 7 - 5 x 0 (its caster's level)) -> dispelled` | Dispel Magic tries each effect on its target separately: 50 + 5 for each of the dispeller's levels, less 5 for each of the level the effect was cast at. It can't touch some (Biofeedback, Diseased, Feeblemind, Poisoned, Graft Weapon, No spell use, Stuck, Mind Bar and a few more). |
+| `    Abjure on Y: d20 = 14, needs 12 or more (11 - caster level 5 + its level 6) -> sent away` | Abjure sends a summoned creature away (1000 damage) on a d20 at or over 11 - the caster's level + the creature's. |
+| `    Summoning: 1d3 = 2 picks which of its 3 creatures comes` | Which creature a summoning spell brings. |
+| `Y saves vs Fireball from X (petrification/polymorph): d20 = 6, doubled against fire = 12 +1 Blessed = 13, needs 11 (80% to save) -> saved: half damage, 19 of 38` | A saving throw: which of the target's five saves it uses, the d20, each of the game's modifiers by name (see Saving throws below; anything the log can't account for shows as `other`), and the number it had to reach. With the [rule changes](#rule-changes) off, the game uses petrification/polymorph for almost every spell and doubles the d20 against fire, cold and electricity spells, as here (see Spells and effects); with them on (the default), the line names the spell save and DEX's adjustment instead (`+5 DEX 21 dodging`). A natural 1 always fails and a natural 20 always saves. The chance of saving is worked out for you (`needs 14 (70% to save)`); with the game's doubled d20, Fireball's victims usually save. For a damaging spell the result says what the save left, from that target's damage roll just before it: `saved: half damage, 19 of 38`, `failed: full damage, 38`, or `saved: no damage` for spells such as Chill Touch. The HP line after it shows what the creature really lost, once resistances and protections have had their say. A failed save also lets the spell's effect take hold. Spells left on the ground (Grease, clouds) make creatures save again as they stay in them; those lines have no "from". |
+| `X gives Blessed to Y, Z: +1 to hit, +1 on saves` / `Blessed ends on Y` | A spell or psionic effect starting or ending, with what it does in the game's code where that is known: to-hit, AC and saving throws, movement and attacks, whether the creature can attack or cast, who controls it (see Spells and effects below). `Stuck on Y` (no "gives") is an effect a creature has from a spell on the ground or cast on itself. |
+
+**Checks, thief skills and searches**
+
+| Line | Meaning |
+|---|---|
+| `X DEX check: d20 = 9, needs 16 or less (DEX 16) -> success` | An ability check. A natural 20 always fails. |
+| `Cilla tries to open locks: d100 = 35, needs 40 or less -> success` / `    open locks 40 = 18 + 16 thief level 4 + 10 elf...` | A thief skill roll (see Thief skills below), and what its chance is made of. |
+| `Cilla hides in shadows: d100 = 21, needs 27 or less (54, halved in daylight) -> hidden` / `  Cilla moves silently: ...` | A thief's or ranger's hiding and moving silently at the start of their turn (the [stealth rule](#rule-changes)). |
+| `    X's special effect on Y: d10 = 1, works on a 1 -> it works` | The 1-in-10 extra effect some creatures' hits have (the thri-kreen bite, for one). |
+| `    X's Bone Long Sword nearly broke: 0 on 0-7, then 12 on 0-19 (needed 0)` / `... BREAKS` | The weapon check the game makes after an attack sequence whose last attack hit. Only non-magical wood, bone, stone and obsidian weapons can break (and not every kind: clubs and quarterstaffs can't): they break when a 0-7 roll and then a 0-19 roll both come up 0, 1 chance in 160. The line only appears when the first roll comes up 0. |
+| `  Rampager's acid on Gerakis's Leather Chest Armor: d20 = 12, needs 10 (AD&D's, 10 for leather; the game's: destroyed without a roll) -> safe` | An item the Rampager's acid or the Babau's corroding touch could destroy: the d20, the number it needed and whose number that was (see [Items saving against acid](#items-saving-against-acid)). |
+| `Haystack searched: 0-10 = 7, an old, soiled loincloth (the party's 2nd find of 6 in hay)` / `  The rat's bite: 0-4 = 3 damage` | Searching a junk pile, a haystack or a wardrobe: the game's roll, what it found, and how far its count has got (see [Searching junk, hay and wardrobes](#searching-junk-hay-and-wardrobes)); a rat's bite or a falling pot rolls its damage the same way. |
+
+**Hit points, kills and levels**
+
+| Line | Meaning |
+|---|---|
+| `  Slig now 8/18 HP (-10)` / `  Gerakis now 51/54 HP (+1)` | Any combatant's hit points going down or up, with what's left out of their most. The game never shows a monster's HP; this does. The line comes just after the damage that caused it (sometimes after the next roll, when the game is quick). |
+| `  Gerrard regenerates 1 HP (CON 22), now 16/35 HP` | A hit point back by itself: the game gives one now and then to anyone with CON 20 or more (in the game, CON 20 regenerates and 18 or 19 don't). |
+| `  Rampager now 69/72 HP (-3: 3 of the 7 rolled, non-magical weapons do half)` / `  Mastyrial takes none of the 6 damage: crushing weapons can't hurt it` | A weapon hit that took less than its roll, or none at all (no HP lost three seconds on, or by the next round), with the reason when the monster's own defences give one (what weapons hurt it); otherwise "a protection or resistance took it" (Stoneskin, say). |
+| `Slig is killed (270 XP)` | A creature dying, with the XP it's worth (from its character sheet). |
+| `XP: Gerakis +67, K'ratchek +22, ... (for Slig 270)` | Experience the party got, and for which kills. The game gives it right after the kill: an equal share to each character, split again between a multi-class character's classes (the sheet counts XP per class, so a three-class thri-kreen shows a third of the share). |
+| `Cilla is now a 3rd level Ranger` / `    max HP 15 -> 21 (+6)` | A level gained, and the new maximum HP. |
+| `    max HP unchanged: the game divides the hit point total by the classes, ...` | A multi-class character gained a level and its most hit points stayed the same: every class level rolls its die, but the game divides the whole total by the number of classes, so a small roll can add only a fraction (it counts at a later level). (With [multiclass hit points](#multiclass-hit-points) each level adds at least 1.) A human who changed class gets none in the new class until its level passes the old class's. |
+| `Cilla's 3rd Ranger level: hit points d10 = 2, raised to 3 for CON 21` | The hit point roll for a new level: the class's die (d8 clerics and druids, d10 fighters, gladiators and rangers, d4 preservers, d6 psionicists and thieves), never less than 2, 3 or 4 with CON 20, 21-22 or 23+, and doubled for half-giants. After level 9 or 10 there's no roll, just a fixed gain (thieves roll at 10th too with [levels up to 10](#rule-changes)). With [the better of two](#hit-dice-the-better-of-two) both rolls show (`d10 = 2 and 7, the better 7`), and with [multiclass hit points](#multiclass-hit-points) the share (`, / 2 classes = 3`). |
+
+**Character creation**
+
+| Line | Meaning |
+|---|---|
+| `Character creation, STR 17: best of four 4d4 (7, 11, 9, 10) = 11, +4, +1 dwarf = 16, raised to 17 (the Fighter's prime requisite)` | An ability score rolled on the character creation screen (see below). The die rolls a whole character several times while it tumbles; the log gives only the one it stops on, once it stops, each ability checked against the one the screen shows. Rolls that came too fast to record leave the game's number: `Character creation, DEX 19 (its rolls came too fast to record)`, and likewise for hit points. |
+| `Character creation, hit points 15: Fighter d10 per level: 7 + 9; Thief d6 per level: 5 + 1 = 22, / 2 classes = 11, +4 CON 16 = 15` | The new character's hit points: a die for every level of every class, divided by the number of classes, plus CON's bonus (see below). With [the better of two](#hit-dice-the-better-of-two) each die shows both rolls (`10 (the better of 2 and 10)`); with [multiclass hit points](#multiclass-hit-points) each is shared on its own and CON's bonus too (`each / 2 classes (at least 1) = 9, +2 CON 16 shared = 11`). |
+| `Character creation: a name picked at random, 1d33 = 6` | The game picks a new name from its lists when the sex or race changes. |
+
+**Everything else**
+
+| Line | Meaning |
+|---|---|
+| `Message: Long Sword is broken !` | The game's own message boxes: broken or corroded weapons and armour, level-ups, "NO PATH FROM HERE" and so on. |
+| `Dinos cooks the vulture and the party eats with him: ... restored as after a full rest (HP, PSP and spell slots); the game gives each 100 XP` | Dinos asked about the cooked vulture (see [The cooked vulture](#the-cooked-vulture)); the XP itself is on the `XP:` line after it. |
+| `Dice: 1d8 = [3] = 3` | Dice the log couldn't tie to anything (for example a spell with no saving throw). |
+| `(The Ledger stopped one of its own writes over the game's memory: ...)` | A safety net: the Ledger never writes over the start of memory (the interrupt vectors, the BIOS's and DOS's data) or the first bytes of the game's data, which its C runtime checks ("Null pointer assignment"). Such a write could only come from a pointer the game has left empty for a moment; the line says where in the Ledger it came from. Please report it. |
 
 The log keeps its newest line in view. Scroll up to read back and it stays
 where you are; scroll to the bottom again and it follows the new lines once
@@ -519,9 +529,7 @@ at DEX 5 or less, is gone. The dice log names it (`-4 two weapons, off hand at
 DEX 15`), as do the THAC0 lines on the Characters tab and the inventory
 screen.
 
-How: the game reads the attacker's DEX adjustment when it works out the
-two-weapon adjustment; the helper takes over from there (`INT FEh`) and gives
-AD&D's for the hand the attack's weapon is in.
+How it works: [DEVELOPMENT.md](DEVELOPMENT.md#two-weapons-adds-penalties).
 
 (More in [Two weapons](#two-weapons).)
 
@@ -1146,9 +1154,7 @@ psionic attacks) keep it, as AD&D has them, and so do three monsters' powers
 marked for petrification/polymorph. The dice log and the Spells tab name the
 save used.
 
-How: the Ledger writes the game's own table that turns a spell's kind of save
-into one of the five (a table of words at DS:1E75h, read afresh for every
-save), and puts it back when the rule is unticked.
+How it works: [DEVELOPMENT.md](DEVELOPMENT.md#spells-saved-against-with-the-spell-save).
 
 (More in [Spells and effects](#spells-and-effects).)
 
@@ -1251,10 +1257,6 @@ does a human, who can only dual-class: the game counts only one of their
 classes there.
 
 ![View Character's experience line for a fighter/thief, (110000 T), and a fighter/preserver/thief, (90000 Pr)](docs/xp-next.png)
-
-How: the game looks up the XP for each class's next level in its tables and
-shows the lowest. Where it adds the closing bracket, the helper (`INT D2h`)
-finds which classes that number belongs to and adds their letters first.
 
 - **THAC0**: the character's THAC0 less STR's to-hit adjustment (DEX's for a
   missile weapon), the weapon's plus (or, for a plain wooden, bone, stone or
@@ -1388,7 +1390,7 @@ first time, the game has a dragon appear and ask for a word from the manual
 word?"), and three wrong answers kill the party. Started from the Ledger, the
 dragon doesn't come: the game goes on as if it had been answered. Always on.
 
-How: [DEVELOPMENT.md](DEVELOPMENT.md#no-manual-check).
+How it works: [DEVELOPMENT.md](DEVELOPMENT.md#no-manual-check).
 
 ## Rule changes
 
@@ -1636,9 +1638,7 @@ View Character stops showing the XP for the next level at 10, as it does at
 at 10 isn't named in the brackets, since it has no next level. Untick it and nobody goes past the level they have: a
 10th-level character stays 10th.
 
-How: the game holds a class level against 9 in two places, where a character
-goes up a level and where View Character shows the XP for the next one; the
-helper (`INT E7h`) holds it against 10 instead while the rule is on.
+How it works: [DEVELOPMENT.md](DEVELOPMENT.md#levels-up-to-10).
 
 ### Items saving against acid
 
@@ -1703,8 +1703,8 @@ How it works: [DEVELOPMENT.md](DEVELOPMENT.md#items-saving-against-acid).
 ### Rings and cloaks of protection
 
 The game has no rings or cloaks of protection; the Ledger adds three (the
-arena's [Ring +1](#new-items), and Pehtucl's ring and cloak, see
-[the slave pens' gear](#new-items)), each +1 to AC and +1 on every
+arena's Ring +1, and Pehtucl's ring and cloak in the slave pens: see
+[New items](#new-items)), each +1 to AC and +1 on every
 saving throw. With **Rings and cloaks of protection as in AD&D** ticked, they
 follow the AD&D rules for them:
 
@@ -1741,9 +1741,7 @@ and Drake Shield +1, about 24,000; AC 2: 40,000, as its magic rings, 30,000-50,0
 The dice log's saving throws name each: `+1 Ring of Protection +1 Cloak of
 Protection`, and its attack lines show the AC that results (`target AC`).
 
-How: where the game's AC routine asks the helper about each worn item
-(`INT F8h`) and where it starts a saving throw's modifiers (`INT F9h`), the
-helper looks at what else the character wears.
+How it works: [DEVELOPMENT.md](DEVELOPMENT.md#bracers-of-defense).
 
 ### Half-giants' two-handed weapons
 
@@ -1823,9 +1821,7 @@ Protection's, the names are in the game's name table, which it reads afresh
 each time it starts and a game is loaded; without the Ledger they're the
 game's own.)
 
-How: the helper sets the helm types' AC as the game's AC routine reads it
-(`INT F8h`, the Ring +1's place), and adds the move where the game sets a
-round's movement, Move x 10 (`INT FBh`).
+How it works: [DEVELOPMENT.md](DEVELOPMENT.md#helms-and-boots).
 
 ## New content
 
@@ -1835,11 +1831,12 @@ Alagorn's stories from the next time the game is started.
 
 ### New items
 
-Items the game never had, or never placed. All but the arena's ring are in
-the game's own data: the launcher writes them into their people's and chests' objects in its copy of the
-game's objects (see [the world's new items](#the-worlds-new-items)), so the game
-makes them with those people and chests. From then on the game keeps and saves
-them like its own. The log doesn't say: they're there to be found.
+Items the game never had, or never placed. All but the arena's ring are written
+into the game's own data each time the Ledger starts the game, so the game
+makes them with their people and chests and then keeps and saves them like its
+own. A changed switch takes effect in regions the party hasn't visited yet;
+start a new game to have them all. The log doesn't say where they are: they're
+there to be found.
 
 | Item | Where | What it does |
 |---|---|---|
@@ -1872,21 +1869,12 @@ them like its own. The log doesn't say: they're there to be found.
 | **Boots of Elvenkind** | the buried chest of Kel's caravan, with the Cahulaks +1 | soft boots: [silent](#hiding-in-shadows-to-backstab), with the hiding rule; thieves and rangers only |
 | **Bracers of Defense** | **Mikquetzl** (AC 6, in his pack), **Wyrmias** (AC 5), **Balkazar** (AC 4), **Dagolar** (AC 2, the one carrying Dag's Dagger) | AC for those wearing no armour: [bracers of defense](#bracers-of-defense) |
 
-**Prices** follow the game's own:
-- magic melee weapons 20,800 for each plus, as its Obsidian Bloodwrath +1
-  (Kreenfang 20,800, Greenbright 41,600; Shadowseeker and the Flame Blade
-  22,000, as each has a spell too);
-- Windlash 2,800, as its Sling +1 (it prices magic missile weapons
-  low);
-- the plain metal weapons 50 to 300 (its metal long sword is 500);
-- bracers of defense 5,000 for each point of AC (20,000 to 40,000);
-- Arrowbane 30,000 and the Sunking Crown 40,000 (its Helm of Might is 30,000,
-  the Helm of Contemplation 35,000);
-- the rings and cloak of protection 15,000 each, Leather Chest Armor +1 6,000;
-- the Cloak of Elvenkind 25,000 and Boots 20,000, as the Serpent Boots
-  (20,000) and Chameleon Gloves (30,000);
-- the Warden's Arms and Legs 27,000 each, as a piece of its Grey's Scale (AC 3
-  too), the Warden's Chest 36,000 and Helm 30,000 (each with a spell).
+**Prices** follow the game's own: magic melee weapons 20,800 a plus (22,000
+with a spell too), Windlash 2,800 (as its Sling +1), plain metal weapons 50 to
+300, bracers 5,000 a point of AC, Arrowbane 30,000, the Sunking Crown 40,000,
+the rings and cloak of protection 15,000, Leather Chest Armor +1 6,000, the
+Cloak of Elvenkind 25,000 and Boots 20,000, the Warden's Arms and Legs 27,000
+each, Chest 36,000 and Helm 30,000.
 
 **The Warden's Plate** is plate mail +1 in four pieces (AC 11 as a set, 12
 with [helms giving AC 1](#helms-and-boots)): metal armour, worn by the classes
@@ -1894,36 +1882,11 @@ that can wear the game's chain (no single-class thieves), and kept from more
 with [class restrictions](#class-restrictions). **Grey's Scale**'s arm and
 leg armour is AC 3 each (the game's is 2).
 
-**On the Options tab**, under New content:
-- **Bone, obsidian and metal short swords...** places the plain weapons;
-- **Bracers of defense on four wizards...** places the bracers, the
-  magic weapons, Arrowbane, the Sunking Crown, the Warden's Plate and the
-  Cloak and Boots of Elvenkind;
-- the arena's ring (**A Ring of Protection +1 on the arena's Tied-up
-  Prisoner**) and Kreenfang and Shadowseeker (**...are +1 magic weapons**:
-  without it Kurzak's is a plain Short Sword, 1d6) each have their own box;
-- every thief's tools come with picking pockets.
-
-#### The world's new items
-
-The new items are in the game's data, written by the launcher each
-time it starts the game, by these switches: a switch changed takes effect from
-the next start, in the regions the party hasn't yet been to (a save keeps the
-regions visited as they were). Start a new game for them all.
-
-- People's items are in their objects (the game makes them carrying them:
-  Kurzak, Legcrusher and Pehtucl in the slave pens too); the
-  chests' in the chests' objects (the caravan's buried chest is one the dig's
-  script makes, with the Boots of Elvenkind in it).
-- People of a kind share an object: every Tari, Renegade and Wild Mul carries
-  theirs. One Castle Guard of six and one Undermountain miner of four have an
-  object of their own for their metal polearm and Deepbiter (a copy of their
-  kind's: the same look, name and fighting), their region's entity pointing to
-  it in the Ledger's copies of `RGN1C.GFF` and `RGN1E.GFF`.
-- Kreenfang is the gythka in the arena's dead body's object (the gythka lying
-  loose in the arena stays plain).
-- The Elven Leader's script gives the Cloak of Elvenkind of its own object,
-  after the Gythka +1, in the Ledger's copy of the scripts.
+**On the Options tab**, under New content: **Bone, obsidian and metal short
+swords...** places the plain weapons; **Bracers of defense on four wizards...**
+the bracers and the named magic items; the arena's ring and Kreenfang and
+Shadowseeker have a box each (without the last, Kurzak's is a plain Short
+Sword); a thief's tools come with picking pockets.
 
 A thief can lift Pehtucl's ring, Shadowseeker and Gutterknot (200 XP for each
 weapon), not what's worn on the body. With [AD&D's rules for rings and cloaks of
@@ -1942,33 +1905,21 @@ and neither ring nor cloak gives AC over magical armour.
 
 ![Inventory cells in the game: the Warden's Chest, Arms, Legs and Helm](docs/wardens-plate.png)
 
-**Icons and names.** Each has an icon of its own on the inventory screen,
-made from the plain item's the way the game makes its magic items' (a few
-pixels in the colours it cycles like fire: Kreenfang's blades, the arena's
-ring, the armour's leather; violet for Pehtucl's ring and the cloak, night
-steel for Shadowseeker's blade, bone shades for the helm; the short swords the
-bone and obsidian long swords' with the shorter blade, the axes the Axe's head
-in bone or obsidian shades, the obsidian mace Blackmace's without its glow,
-and a plain great axe the game's without its green gem, as the game's only one
-is its Great Axe +3; the metal dagger, mace, great axe, pick and polearm the
-plain ones' heads and blades in the metal long sword's light greys and blues; Gutterknot, Deepbiter, Windlash and Greenbright
-the plain ones with a few pixels in the fire colours; the bracers drawn, a
-pair of steel cuffs with gold rims and a fire-coloured stud); dropped on the map they look
-like the plain item. The game's names are at most 15 letters (it
-shortens its own "Helm/Contempltn"), so the rings are **RING/PROTECTION** and
-the cloak **Cloak/Protectn**; the Ledger's screens and the log give them in
-full.
+**Icons and names.** Each has an icon of its own, made from the plain item's
+the way the game makes its magic items' (a few pixels in the colours it cycles
+like fire); dropped on the map they look like the plain item. The game's names
+are at most 15 letters, so the rings are **RING/PROTECTION** and the cloak
+**Cloak/Protectn**; the Ledger's screens and the log give them in full.
 
 ![Shadowseeker's item box in the game: 22000, Detect Invisibility's icon, "Metal +1 Shadowseeker", 1D6+1](docs/shadowseeker-box.png)
 
 **Alagorn**, the wizard of the Painted Badlands who identifies magic items,
-knows the Ledger's magic items when the party carries them, each with a story
+knows the new magic items when the party carries them, each with a story
 of its own: Shadowseeker, Greenbright and the Flame Blade among his magic swords, Kreenfang,
 Gutterknot, Deepbiter and Windlash among his magic weapons, the Warden's Plate's
 four pieces (each a part of Haldren's story, the last of the Wardens) among his
 magic armor, and the Cloak and Boots of Elvenkind among his magic clothes,
-before his menus' "Nothing". (Checked in his scripts, not yet in a game that
-has reached him.)
+before his menus' "Nothing".
 
 ![Dream's pack with the bone scale set: the chest, arm and leg pieces, and the Bone Helm under the pointer with its name](docs/bonescale.png)
 
