@@ -294,6 +294,11 @@ def data_chunks(chunks, on: Dict[str, bool]) -> Dict[Tuple[str, int], bytes]:
         return {}
     if on.get("world_magic", True) is not False:
         out[("RDFF", ELVEN_CLOAK_OBJECT)] = dataitems.item_object(ELVEN_CLOAK, header_numbers(chunks).get(65, 0))
+        from . import tome  # (the Tome of Understanding, Father Garyn's gift: garyn.py)
+        try:
+            out.update(tome.object_chunks(chunks, header_numbers(chunks).get(tome.SCROLL_TYPE, 0)))
+        except KeyError:
+            pass  # (a number of its taken in this copy of the game: no tome)
     return out
 
 

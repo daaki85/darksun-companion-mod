@@ -17,7 +17,7 @@ import subprocess
 import time
 from typing import Dict, List, Optional, Tuple
 
-from . import gamepatch, gff, gpl, icons, kalzith, worldgear
+from . import gamepatch, gff, gpl, icons, kalzith, tome, worldgear
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOS_DIR = os.path.join(HERE, "dos")
@@ -252,8 +252,8 @@ def prepare_patched_game(game_dir: str, settings: Optional[dict] = None) -> Opti
     files = [(kalzith.SCRIPTS_FILE, lambda source, dest: kalzith.write_scripts(
         source, dest, with_kalzith, on["semyon"], on["vulture"], on["arena_ring"],
         on["magic_arms"] and objects_ok, on["world_magic"] and objects_ok,
-        worldgear.ELVEN_CLOAK_OBJECT in new_objects))]  # (Alagorn knows the weapons by their own
-    # pictures; the Elven Leader gives the cloak of its own object)
+        worldgear.ELVEN_CLOAK_OBJECT in new_objects, tome.TOME_OBJECT in new_objects))]  # (Alagorn knows the weapons by their own
+    # pictures; the Elven Leader gives the cloak, and Father Garyn the tome, of its own object)
     if with_kalzith:
         files.append((kalzith.REGION_FILE, kalzith.write_region))
     try:

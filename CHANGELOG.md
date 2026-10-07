@@ -8,6 +8,11 @@ Released pull requests are summarised in a line or two each; the release notes
 ## Pull request #21 ([in review](https://github.com/daaki85/darksun-companion-mod/pull/21))
 
 **Added**
+- **The Tome of Understanding,** Father Garyn's gift when the party brings
+  him the ranike pith: read like a scroll (right-click it, click its icon),
+  it gives the reader a point of WIS for good (at most 25) and is used up.
+  The game's book, with a night-steel cover and an emblem in the fire colours
+  of its magic items.
 - **The game's own party made ready for the rule changes,** for a new
   player who presses START GAME: Gerakis specializes in the long sword and
   the gythka and carries a bone gythka in place of his club, K'ratchek

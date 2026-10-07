@@ -2150,3 +2150,66 @@ class LevelPickTests(unittest.TestCase):
                                (0xCD, VEC_EF_ROWS), dict(esp=0x7F8, esi=5, edi=6), 2)
                 self.assertEqual([mu.reg_read(getattr(r, "UC_X86_REG_" + x)) for x in ("DI", "SI", "SP", "BP")],
                                  [0x1111, 0x2222, 0x7FC, BP])
+
+
+@unittest.skipIf(Uc is None, "unicorn is not installed")
+class TomeTests(unittest.TestCase):
+    """PROBE_TOME (the Tome of Understanding, tome.py), where the game would show its message
+    for a scroll it has no use for: the tome raises its reader's WIS and goes on to the game's
+    using the scroll up (8B7E2h, 2Ch before the INT's way back); at 25 already, the message only
+    (8B810h, past the NOPs); any other scroll, the game's own "push ds / push 3440h"."""
+    SHEETS, CREATURES, WHO = 0x8000, 0x8800, 0x9000
+    INT_AT = 0x600
+
+    def setUp(self):
+        from dscompanion.gamepatch import VEC_TOME
+        from dscompanion import tome
+        self.assertEqual(tome.TOME_SPELL, 0xB0)
+        image = load_image()
+        self.mu = mu = Uc(UC_ARCH_X86, UC_MODE_16)
+        mu.mem_map(0, 0x100000)
+        mu.mem_write(TSR * 16, image)
+        at = image.find(bytes.fromhex("807efdb074"))  # cmp byte [bp-3], TOME_SPELL / je
+        self.assertGreater(at, 0)
+        mu.mem_write(VEC_TOME * 4, struct.pack("<HH", at, TSR))
+        mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
+        mu.mem_write(GAME_DS * 16 + 0x1661, struct.pack("<HH", 0, self.SHEETS))
+        mu.mem_write(GAME_DS * 16 + 0x1665, struct.pack("<HH", 0, self.CREATURES))
+        back = self.INT_AT + 2
+        mu.mem_write(CALLER * 16 + self.INT_AT, bytes((0xCD, VEC_TOME, 0x90, 0x90, 0xF4)))  # (8B810h: hlt)
+        mu.mem_write(CALLER * 16 + back - 0x2C, b"\xf4\xb8" + struct.pack("<H", self.WHO))  # 8B7E2h: hlt; the "mov ax"
+        mu.mem_write(self.WHO * 16 + 0x25B, struct.pack("<H", 1))  # the reader: party member 1
+        mu.mem_write(self.CREATURES * 16 + 0x3A + 0x28, b"Cilla\0")
+
+    def read(self, spell, wis):
+        mu = self.mu
+        mu.mem_write(self.SHEETS * 16 + 0x47 + 0x1F, bytes((wis,)))
+        mu.mem_write(self.CREATURES * 16 + 0x3A + 0x26, bytes((wis,)))
+        mu.mem_write(SS * 16 + BP - 3, bytes((spell,)))
+        mu.mem_write(SS * 16 + BP - 0x54, bytes(0x50))
+        for name, value in dict(cs=CALLER, ds=GAME_DS, ss=SS, esp=0x800, ebp=BP, eflags=IF | 2, eax=0x1111,
+                                esi=0x2222).items():
+            mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+        mu.emu_start(CALLER * 16 + self.INT_AT, 0, count=400)
+        text = bytes(mu.mem_read(SS * 16 + BP - 0x54, 0x50)).split(b"\0")[0]
+        regs = {x: mu.reg_read(getattr(r, "UC_X86_REG_" + x.upper())) for x in ("ip", "sp", "ax", "si", "bp")}
+        return regs, text, mu.mem_read(self.SHEETS * 16 + 0x47 + 0x1F, 1)[0], mu.mem_read(self.CREATURES * 16 + 0x3A + 0x26, 1)[0]
+
+    def test_read(self):
+        regs, text, sheet, creature = self.read(0xB0, 18)
+        self.assertEqual((regs["ip"], regs["sp"], regs["ax"], regs["si"], regs["bp"]),
+                         (self.INT_AT + 2 - 0x2C + 1, 0x800, 0x1111, 0x2222, BP))  # (past the hlt)
+        self.assertEqual((text, sheet, creature), (b"Cilla reads the tome: WIS 19.", 19, 19))
+        self.assertEqual(self.read(0xB0, 8)[1], b"Cilla reads the tome: WIS 9.")
+
+    def test_wise_enough(self):
+        regs, text, sheet, creature = self.read(0xB0, 25)
+        self.assertEqual((regs["ip"], regs["sp"], regs["ax"]), (self.INT_AT + 5, 0x7FC, 0x1111))
+        self.assertEqual(struct.unpack("<HH", self.mu.mem_read(SS * 16 + 0x7FC, 4)), (BP - 0x54, SS))
+        self.assertEqual((text, sheet, creature), (b"Cilla can grow no wiser.", 25, 25))
+
+    def test_other_scrolls(self):
+        regs, text, sheet, _ = self.read(0xAD, 18)
+        self.assertEqual((regs["ip"], regs["sp"], regs["ax"]), (self.INT_AT + 5, 0x7FC, 0x1111))
+        self.assertEqual(struct.unpack("<HH", self.mu.mem_read(SS * 16 + 0x7FC, 4)), (0x3440, GAME_DS))
+        self.assertEqual((text, sheet), (b"", 18))

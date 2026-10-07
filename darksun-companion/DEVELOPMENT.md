@@ -27,7 +27,7 @@ Every roll in the game goes through one function, Borland C++'s `rand()`.
    movement `INT FBh` (for boots), a key the conversation window doesn't know
    `INT FCh` and an item used on the map `INT FDh` (for
    [picking pockets](README.md#picking-pockets)), the two-weapon adjustment `INT FEh`
-   and the doubling of a save's d20 `INT F0h`, Cat's Grace `INT EDh`-`INT EFh` and a hidden thief's attack `INT EAh` and the class level cap `INT E7h` and a thief's hit dice `INT E6h` and `INT E5h` and the thief skills `INT E4h` and two-handed weapons `INT E3h` and Cat's
+   and the doubling of a save's d20 `INT F0h`, Cat's Grace `INT EDh`-`INT EFh` and a hidden thief's attack `INT EAh` and the class level cap `INT E7h` and a thief's hit dice `INT E6h` and `INT E5h` and the thief skills `INT E4h` and two-handed weapons `INT E3h` and the Tome of Understanding `INT B9h` and Cat's
    Grace's description and icon `INT E2h` and `INT E1h` (for
    [rule changes](README.md#rule-changes)), and
    where the game makes room for its name table and reads it in `INT ECh` and
@@ -565,7 +565,19 @@ Elvenkind in it.) The Elven Leader's script (46, in
 the scripts' copy: `elvenleader.py`) gives the Cloak of Elvenkind (object 2546,
 an item object of its own) after the Gythka, as the game's scripts give items
 (command 39h, a new item of the object; 25h on the ground when it can't be
-carried). The short sword, the cloak whose plus counts and the bone helm are
+carried); Father Garyn's (174: `garyn.py`) gives the Tome of Understanding the
+same way, the first time the pith is delivered (flag 625). The tome
+(`dscompanion/tome.py`) is a scroll of the game's kind: object 1446, among the
+game's scrolls' numbers (1400-1499: its object record the first scroll's, as
+only a scroll's kind of object has its box's icon clicked; the picture that
+number had, the icon of two objects, moved to 2552), its spell byte one past
+176. Clicked, the icon has the game's routine (DSUN.EXE 8B690h) teach a scroll
+of those numbers its spell, or a psionic power from 138 to 171; from 172 to 195
+it would show "CANNOT LEARN FROM THIS ITEM" and keep the scroll (from 196 on,
+the icon can't be clicked). There the helper (`INT B9h`) raises the reader's
+WIS, in the sheet and the creature record, writes its message in the game's
+buffer, and goes on as for a power taught: the game uses the tome up and shows
+it. The short sword, the cloak whose plus counts and the bone helm are
 item types the helper adds after the game's 115 each time the game reads its
 table in; the names (Ring of Protection, Thieves' Tools, Short Sword, the
 cloak's, Shadowseeker, Kreenfang, from 322 on) are entries it adds after the

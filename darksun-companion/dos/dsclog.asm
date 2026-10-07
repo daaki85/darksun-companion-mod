@@ -97,6 +97,7 @@ VEC_PK_FILL equ 0xBD       ; PROBE_PK_FILL
 VEC_PK_CLICK equ 0xBC      ; PROBE_PK_CLICK
 VEC_EF_ROWS equ 0xBB       ; PROBE_EF_ROWS
 VEC_HP_BEST equ 0xBA       ; PROBE_HP_BEST
+VEC_TOME equ 0xB9          ; PROBE_TOME
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 128         ; entries in the ring
@@ -5230,6 +5231,125 @@ probe_hp_best:
 hp_first dw 0
 hp_again db 0
 
+; PROBE_TOME: INT VEC_TOME replaces "push ds / push 3440h" (4 bytes: INT + 2 NOPs; DSUN.EXE
+; 8B80Ch) in the routine run when a scroll's icon is clicked in its box, where a scroll of the
+; game's (object 1400-1499) whose spell byte, less one ([BP-3]), is 172 to 195 has the game show
+; its message 3440h ("CANNOT LEARN FROM THIS ITEM") and keep the scroll. The Tome of Understanding (dscompanion/tome.py) is such
+; a scroll, of TOME_SPELL: the one whose scroll it is (the character on show, at 25Bh of the
+; segment the game names in its "mov ax,348h" at 8B7E3h) gains a point of WIS, in the sheet
+; (+1Fh) and the creature record (+26h), at most TOME_MOST, and the game goes on as for a psionic
+; power taught (8B7E2h): it uses the scroll up and shows the message in its buffer at [BP-54h],
+; here "<name> reads the tome: WIS <n>." At TOME_MOST already, only the message ("... can grow no
+; wiser."), shown as the game shows its own (8B810h), and the tome is kept. Any other scroll: the
+; game's message.
+TOME_SPELL   equ 0xB0             ; (172-195: the game lets the icon be clicked for below 196)
+TOME_MOST    equ 25
+TOME_WHO     equ 0x8B7E4 - 0x8B80E   ; (the segment in that "mov ax", less the INT's way back)
+TOME_USE     equ 0x8B7E2 - 0x8B80E
+TOME_SHOW    equ 0x8B810 - 0x8B80E
+probe_tome:
+        cmp byte [bp - 3], TOME_SPELL
+        je .tome
+        pop word [cs:tm_ip]
+        pop word [cs:tm_cs]
+        pop word [cs:tm_fl]
+        push ds
+        push 0x3440
+        jmp .show
+.tome:  pushad
+        push es
+        push fs
+        mov si, sp
+        mov es, [ss:si + 38]            ; (the INT's CS:IP, above FS, ES and PUSHAD's 32 bytes)
+        mov di, [ss:si + 36]
+        mov fs, [es:di + TOME_WHO]
+        mov bx, [fs:0x25B]              ; the reader
+        mov byte [cs:tm_used], 0
+        les di, [0x1661]
+        imul ax, bx, 0x47
+        add di, ax                      ; ES:DI: their sheet
+        lfs si, [0x1665]
+        imul ax, bx, 0x3A
+        add si, ax                      ; FS:SI: their creature record
+        mov al, [es:di + 0x1F]
+        cmp al, TOME_MOST
+        jae .text
+        inc al
+        mov [es:di + 0x1F], al
+        mov byte [cs:tm_used], 1
+        cmp byte [fs:si + 0x26], TOME_MOST
+        jae .text
+        inc byte [fs:si + 0x26]
+.text:  mov [cs:tm_wis], al
+        push ss
+        pop es
+        lea di, [bp - 0x54]             ; ES:DI: the game's message buffer
+        mov cx, 16
+.name:  mov al, [fs:si + 0x28]
+        or al, al
+        jz .named
+        stosb
+        inc si
+        loop .name
+.named: push ds
+        push cs
+        pop ds
+        mov si, tm_reads
+        cmp byte [cs:tm_used], 0
+        jne .copy
+        mov si, tm_wiser
+.copy:  lodsb
+        stosb
+        or al, al
+        jnz .copy
+        pop ds
+        cmp byte [cs:tm_used], 0
+        je .kept
+        dec di                          ; (the number, after "WIS ")
+        mov al, [cs:tm_wis]
+        aam                             ; AH tens, AL ones
+        or ax, 0x3030
+        cmp ah, 0x30
+        je .ones
+        mov [es:di], ah
+        inc di
+.ones:  mov [es:di], al
+        mov word [es:di + 1], '.'
+        mov si, sp
+        add word [ss:si + 36], TOME_USE ; on as for a power taught: the tome used up, the message
+        pop fs
+        pop es
+        popad
+        iret
+.kept:  pop fs
+        pop es
+        popad
+        pop word [cs:tm_ip]
+        pop word [cs:tm_cs]
+        pop word [cs:tm_fl]
+        mov [cs:tm_ax], ax
+        lea ax, [bp - 0x54]
+        push ss
+        push ax
+        mov ax, [cs:tm_ax]
+.show:  push word [cs:tm_fl]
+        push word [cs:tm_cs]
+        mov [cs:tm_ax], ax
+        mov ax, [cs:tm_ip]
+        add ax, TOME_SHOW
+        push ax
+        mov ax, [cs:tm_ax]
+        iret
+
+tm_ip    dw 0
+tm_cs    dw 0
+tm_fl    dw 0
+tm_ax    dw 0
+tm_wis   db 0
+tm_used  db 0
+tm_reads db " reads the tome: WIS ", 0
+tm_wiser db " can grow no wiser.", 0
+
 probe_mc_con:
         call con_share
         add di, ax
@@ -5916,7 +6036,9 @@ extra_names:
         times NAME_SIZE - 15 db 0
         db "Flame Blade"                ; (an obsidian long sword +1, Focus Heat on what it hits)
         times NAME_SIZE - 11 db 0
-        times (NAMES_EXTRA - 21) * NAME_SIZE db 0
+        db "Tome/Understand"            ; (the Tome of Understanding: dscompanion/tome.py)
+        times NAME_SIZE - 15 db 0
+        times (NAMES_EXTRA - 22) * NAME_SIZE db 0
 
 ; STEALTH (RULE_STEALTH): a thief who starts a turn with no enemy next to them may hide in
 ; shadows and move silently up to someone; the companion rolls both and, when both succeed,
@@ -8308,6 +8430,9 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_HP_BEST
         mov dx, probe_hp_best
         int 21h
+        mov ax, 2500h + VEC_TOME
+        mov dx, probe_tome
+        int 21h
         mov ax, 2500h + VEC_EF_ROWS
         mov dx, probe_ef_rows
         int 21h
@@ -8352,7 +8477,7 @@ install:                        ; DS = ES = PSP, CS = the image
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
 busy    db 'DSCLOG: interrupts 60h-65h or BAh-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
-all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS, VEC_LV_PICK, VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK, VEC_EF_ROWS, VEC_HP_BEST
+all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS, VEC_LV_PICK, VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK, VEC_EF_ROWS, VEC_HP_BEST, VEC_TOME
 all_vectors_end:
 
         align 16, db 0

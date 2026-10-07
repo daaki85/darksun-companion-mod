@@ -80,6 +80,8 @@ In [pull request #21](https://github.com/daaki85/darksun-companion-mod/pull/21)
   rangers, the cloak given by the Elven Leader with his Gythka +1; and the
   **Flame Blade**, an obsidian long sword +1 for fire clerics. Alagorn tells
   the story of each.
+- **The Tome of Understanding:** Father Garyn's gift for the ranike pith; read
+  like a scroll, it gives a point of Wisdom for good.
 - **Every new item is in the game's own data,** so a new game makes them where
   they belong.
 - **The game's own party is ready for the rule changes** when you press START

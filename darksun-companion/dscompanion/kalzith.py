@@ -577,7 +577,7 @@ def with_entry(entries: bytes, script: int = SCRIPT) -> bytes:
 
 def script_chunks(gpldata: bytes, kalzith: bool = True, semyon: bool = True,
                   vulture: bool = True, ring: bool = True, arms: bool = True,
-                  magic: bool = True, cloak: bool = False) -> Dict[Tuple[str, int], bytes]:
+                  magic: bool = True, cloak: bool = False, tome: bool = False) -> Dict[Tuple[str, int], bytes]:
     """For the Ledger's copy of GPLDATA: his conversation, and the master script running it (and
     Semyon's, semyon.py; Dinos's and the Trustee's questions, pensasks.py; Alagorn on Kreenfang
     and Shadowseeker, alagorn.py), each part only if switched on (the Options tab's new content)."""
@@ -616,6 +616,9 @@ def script_chunks(gpldata: bytes, kalzith: bool = True, semyon: bool = True,
     if cloak:  # the Elven Leader gives the Cloak of Elvenkind (elvenleader.py; its object in the
         from . import elvenleader  # objects' copy)
         out.update(elvenleader.script_chunks(chunks, field_types))
+    if tome:  # Father Garyn gives the Tome of Understanding (garyn.py; its object in the objects' copy)
+        from . import garyn
+        out.update(garyn.script_chunks(chunks, field_types))
     from . import manualcheck  # no manual check (the dragon's question): always
     out.update(manualcheck.script_chunks(chunks, field_types))
     if ring:  # the XP for finding the arena's ring (ring.py), in the same script as Semyon's exit
@@ -857,10 +860,11 @@ def _write(source: str, dest: str, added) -> None:
 
 
 def write_scripts(source: str, dest: str, kalzith: bool = True, semyon: bool = True, vulture: bool = True,
-                  ring: bool = True, arms: bool = True, magic: bool = True, cloak: bool = False) -> None:
+                  ring: bool = True, arms: bool = True, magic: bool = True, cloak: bool = False,
+                  tome: bool = False) -> None:
     """The game's GPLDATA.GFF (SOURCE, only read) with Kalzith's conversation (and the rest of
     the new content switched on), to DEST."""
-    _write(source, dest, lambda data: script_chunks(data, kalzith, semyon, vulture, ring, arms, magic, cloak))
+    _write(source, dest, lambda data: script_chunks(data, kalzith, semyon, vulture, ring, arms, magic, cloak, tome))
 
 
 def write_region(source: str, dest: str) -> None:

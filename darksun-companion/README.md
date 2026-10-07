@@ -1879,6 +1879,7 @@ there to be found.
 | **Windlash** | sold by the **Bowyer** | a staff sling +1 (the game has no magic staff sling) |
 | **Greenbright** | carried by **Arant**, who holds the captured gladiators | a metal short sword +2 |
 | **Flame Blade** | in the pack of the **Templar** of the Hot Springs (the one with the Drake Shield) | an obsidian long sword +1 (1d8+1) whose blade burns what it hits: the fire clerics' Focus Heat, 2d6 fire damage to the creature hit (a save for half), as the game's Dark Flame casts Burning Hands. Obsidian, so a fire (or earth) cleric can wield it |
+| **Tome of Understanding** | **Father Garyn**'s gift, in Teaquetzl, when the party brings him the ranike pith from Notaku | read as a scroll is (right-click it in the inventory, click its icon): the one whose pack it is in gains a point of WIS for good (at most 25), and the tome is gone. Not in a fight, as no scroll can be read in one |
 | **Arrowbane** | sold by **Kel** | a silver circlet: Protection from Normal Missiles on its wearer while worn (normal arrows, sling stones and chatkchas can't hurt them); worn on the head, not armour |
 | **Sunking Crown** | worn by **Keldar**, the templar of Dagolar's tunnels | a gold crown: Protection from Evil, 10' Radius on its wearer while worn; worn on the head, not armour |
 | **Warden's Helm** | on **Dagolar**'s body (the one carrying Dag's Dagger) | the game's metal helm +1: Cloak of Bravery on its wearer while worn |
@@ -1894,7 +1895,9 @@ with a spell too), Windlash 2,800 (as its Sling +1), plain metal weapons 50 to
 300, bracers 5,000 a point of AC, Arrowbane 30,000, the Sunking Crown 40,000,
 the rings and cloak of protection 15,000, Leather Chest Armor +1 6,000, the
 Cloak of Elvenkind 25,000 and Boots 20,000, the Warden's Arms and Legs 27,000
-each, Chest 36,000 and Helm 30,000.
+each, Chest 36,000 and Helm 30,000, and the Tome of Understanding AD&D's 43,500.
+
+![The Tome of Understanding's box in the game: a night-steel book with a fiery emblem, 43500, Tome/Understand, and the icon to click](docs/tome.png)
 
 **The Warden's Plate** is plate mail +1 in four pieces (AC 11 as a set, 12
 with [helms giving AC 1](#helms-and-boots)): metal armour, worn by the classes
