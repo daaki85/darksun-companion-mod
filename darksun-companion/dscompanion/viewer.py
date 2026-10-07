@@ -329,7 +329,8 @@ class Viewer:
         for n, (key, text) in enumerate((
                 ("weapon_specialization", "Weapon specialization: fighters and gladiators specialize (+1 to hit, +2 "
                                           "damage), fighters on to mastery at 5th level and grand mastery at 9th, "
-                                          "rangers' expertise; warriors without it attack as AD&D's (chosen on the "
+                                          "rangers' expertise (every ranger's with the bow too); specialists "
+                                          "and rangers shoot missiles faster; warriors without it attack as AD&D's (chosen on the "
                                           "creation panel's WEAPON SPEC pages, a gladiator's later ones at "
                                           "a level gained; listed on the Effects screen)"),
                 ("class_restrictions", "Class restrictions on armour, shields and weapons, the strictest class "

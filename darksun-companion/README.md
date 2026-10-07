@@ -1406,7 +1406,7 @@ and [Saving throws](#saving-throws).
 
 | Rule (its box on the Options tab) | What it changes |
 |---|---|
-| [Weapon specialization](#weapon-specialization) | fighters and gladiators specialize in kinds of weapon, fighters on to mastery and grand mastery, rangers take expertise; other weapons at AD&D's plain attack rate |
+| [Weapon specialization](#weapon-specialization) | fighters and gladiators specialize in kinds of weapon, fighters on to mastery and grand mastery, rangers take expertise (and every ranger the bow); specialists and rangers shoot missiles faster; other weapons at AD&D's plain attack rate |
 | [Class restrictions](#class-restrictions) | each class's limits on armour, shields and weapons hold, the strictest winning; a multiclass preserver casts no spells in armour |
 | [Multiclass hit points](#multiclass-hit-points) | each level's die and CON's bonus shared between a character's classes |
 | [Hit dice: the better of two](#hit-dice-the-better-of-two) | each hit die rolled twice, the better kept, for every character |
@@ -1534,9 +1534,12 @@ with picks unmade: they're offered again at the next level).
 kinds under its effects ("SPECIALIZED IN", "MASTER OF", "GRAND MASTER OF",
 "EXPERT IN"); View Character's DAM line counts it; the Characters tab lists
 the kinds (**Weapons: long sword (grand mastery)**) and gives the attacks a
-round with each weapon held (**Attacks: 3/2 a round with Long Sword, 1 with
-Axe**); and the dice log names it on each attack (`+1 specialized`, `+3 grand mastery`,
-`(d10 for d8: grand mastery)`).
+round with each weapon ready, a missile weapon's its own (**Attacks: 3/2 a
+round with Long Sword, 1 with Axe, 3 with Bow**); and the dice log names it on
+each attack (`+1 specialized`, `+3 grand mastery`, `(d10 for d8: grand
+mastery)`). A ranger's expertise with the bow isn't a chosen kind, so neither
+list shows it, but it counts; and View Character, as the game has it, gives a
+character's melee rate whatever weapon is ready.
 
 ![The Effects screen: Daaki, a 9th-level fighter, GRAND MASTER OF LONG SWORD](docs/effects-weapons.png)
 
