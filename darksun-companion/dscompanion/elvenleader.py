@@ -1,8 +1,8 @@
-"""The Elven Leader's gift: the Cloak of Elvenkind with his Gythka +1, given by his own script.
+"""The Elven Leader's gift: the Cloak of Elvenkind with his Gythka (+2: worldgear.py), given by his own script.
 
 After the fight with his men (script 46), he says "You are true warriors! ... I give you a gift
 that I received from a thri-kreen I once knew. Here." and gives the one talking to him the
-Gythka +1 (object 2534: command 39h, a new item of that object to them), or, when they can't
+Gythka (object 2534: command 39h, a new item of that object to them), or, when they can't
 carry it, says so and leaves it on the ground by him (25h). Then a click (the window's "more")
 and the talk goes on.
 

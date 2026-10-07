@@ -60,12 +60,12 @@ RINGS, OTHER = ("  Light of Dawn", "However, you have no magic rings that I know
 OTHER_SCRIPT = 212  # (rings, armour, clothes and other items: Alagorn's other menus)
 SCRIPT_OF = {SWORDS: SCRIPT, WEAPONS: SCRIPT, RINGS: OTHER_SCRIPT, ARMOUR: OTHER_SCRIPT, CLOTHES: OTHER_SCRIPT,
              OTHER: OTHER_SCRIPT}
-# Script 212 with every story would be longer than the scripts' buffer: its clothes, and its rings
-# and other items, are told by copies of it, each with only those (the Ledger's scripts; Kalzith's
-# 218, Semyon's 219). His talk (script 211) calls each part by its place in 212 (14h): the call for
-# those parts names the copy instead, its places the same.
+# Scripts 212 and 213 with every story would be longer than the scripts' buffer: 212's clothes, and
+# its rings and other items, and 213's weapons are told by copies of them, each with only those
+# (the Ledger's scripts; Kalzith's 218, Semyon's 219). His talk (script 211) calls each part by its
+# place in its script (14h): the call for those parts names the copy instead, its places the same.
 TALK = 211
-COPY_OF = {CLOTHES: 220, RINGS: 221, OTHER: 221}
+COPY_OF = {CLOTHES: 220, RINGS: 221, OTHER: 221, WEAPONS: 222}
 CALL, START = 0x14, 0x19
 # (item, story): the slave pens' two (arms.py)
 ARMS = {
@@ -126,7 +126,21 @@ MAGIC = {
                "Windlash! The desert elves make their staff slings to run and hunt with at once. "
                "This one was made for a chieftain's son, its cords braided with his own hair, and "
                "a wind spirit's blessing sung over it. Its stones fly farther and strike harder "
-               "than any other's. How a village bowyer came by it, I'd rather not ask."),),
+               "than any other's. How a village bowyer came by it, I'd rather not ask."),
+              ("Drakejaw",
+               "Drakejaw! Its head was cut from the jaw of a drake, teeth and all, and a druid of "
+               "the wastes sang the drake's hunger back into it. It bites deeper than any common "
+               "axe, and it never dulls. Whoever carried it last had no idea what he held."),
+              ("Glasshewer",
+               "Glasshewer! Its head was knapped from one flawless block of obsidian, black glass "
+               "that holds an edge no stone can match. The templars gave it to their slavers to cut "
+               "down any slave who ran. It strikes truer and deeper than any common axe; the elves "
+               "it was used on would be glad to see it in other hands."),
+              ("Headsman",
+               "Headsman! The arenas once kept their own executioners, and this was the last of "
+               "their axes: true iron, forged in the Green Age, heavy enough to end a fight in one "
+               "stroke. It has passed from champion to champion since. It strikes truer and harder "
+               "than any other great axe."),),
     # the Warden's Plate, a piece of its story each
     ARMOUR: (("Warden's Helm",
               "The Warden's Helm! In the Green Age the Wardens kept the iron roads between the "
@@ -369,12 +383,12 @@ def _entry(script: bytes, field_types: bytes, kind: Kind) -> Optional[int]:
     return ops[start + 1].at if start is not None else None
 
 
-def _called_from(talk: bytes, field_types: bytes, entry: int, number: int) -> Optional[bytes]:
-    """TALK with its call of OTHER_SCRIPT's ENTRY calling NUMBER's (None: no such call)."""
-    old = gpl.encode_op((CALL, [("n", entry), ("n", OTHER_SCRIPT)]))
+def _called_from(talk: bytes, field_types: bytes, entry: int, number: int, source: int = OTHER_SCRIPT) -> Optional[bytes]:
+    """TALK with its call of SOURCE's ENTRY calling NUMBER's (None: no such call)."""
+    old = gpl.encode_op((CALL, [("n", entry), ("n", source)]))
     new = gpl.encode_op((CALL, [("n", entry), ("n", number)]))
     calls = [o.at for o in gpl.decode(talk, field_types)
-             if o.code == CALL and o.args == [("n", entry), ("n", OTHER_SCRIPT)]]
+             if o.code == CALL and o.args == [("n", entry), ("n", source)]]
     if len(calls) != 1 or len(new) != len(old):
         return None
     out = bytearray(talk)
@@ -406,7 +420,7 @@ def script_chunks(chunks, field_types: bytes, arms: bool = True, magic: bool = T
                 talk = out.get(("GPL ", TALK), chunks[("GPL ", TALK)])
                 for kind in chosen:
                     entry = _entry(chunks[key], field_types, kind)
-                    talk = _called_from(talk, field_types, entry, target) if entry is not None and talk else None
+                    talk = _called_from(talk, field_types, entry, target, number) if entry is not None and talk else None
                 if not talk:
                     continue
                 out[("GPL ", TALK)] = talk

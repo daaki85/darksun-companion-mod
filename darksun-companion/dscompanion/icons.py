@@ -257,6 +257,14 @@ ICONS: Tuple[Tuple[str, int, int, int, Callable[[Rows], Rows]], ...] = (
     ("Boots of Elvenkind", 0xFBE5, 2548, 2549, lambda r: recolour(r, BOOTS_TO_ELVEN)),
     # the Flame Blade (worldgear.py): the obsidian long sword's, its blade in the fire colours
     ("Flame Blade", 0xFC0B, 2550, 2551, lambda r: glow(r, lambda p, x, y: p in BLADE or p in (208, 209, 210), FIRE)),
+    # the magic axes (worldgear.py): the bone and obsidian Axes and the metal Great Axe, every other
+    # pixel of their heads in the fire colours
+    ("Drakejaw", 0xFB61, 2554, 2555,
+     lambda r: glow(recolour(r, AXE_BONE), lambda p, x, y: p in AXE_BONE.values() and (x + y) % 2 == 0, FIRE)),
+    ("Glasshewer", 0xFB61, 2556, 2557,
+     lambda r: glow(recolour(r, AXE_OBSIDIAN), lambda p, x, y: 208 <= p <= 212 and (x + y) % 2 == 0, FIRE)),
+    ("Headsman", 0xFC06, 2558, 2559,
+     lambda r: glow(recolour(r, {1: 58, 2: 59, **TEAL_TO_METAL}), lambda p, x, y: 208 <= p <= 215 and (x + y) % 2 == 0, FIRE)),
 )
 PICTURES: Dict[str, int] = {name: 0x10000 - number for name, _, number, _, _ in ICONS}  # an item's +0
 
@@ -512,13 +520,13 @@ def which(rec: bytes) -> Optional[str]:
         return "Bone Helm"
     if kind == game.BONE_SHORT_SWORD_TYPE:
         return "Bone Short Sword"
+    plus = struct.unpack("b", rec[game.ITEM_PLUS:game.ITEM_PLUS + 1])[0]
     if kind == game.BONE_AXE_TYPE:
-        return "Bone Axe"
+        return "Drakejaw" if plus == 1 else "Bone Axe"
     if kind == game.OBSIDIAN_SHORT_SWORD_TYPE:
         return "Obsidian Short Sword"
     if kind == game.OBSIDIAN_AXE_TYPE:
-        return "Obsidian Axe"
-    plus = struct.unpack("b", rec[game.ITEM_PLUS:game.ITEM_PLUS + 1])[0]
+        return "Glasshewer" if plus == 2 else "Obsidian Axe"
     if kind == GREAT_AXE_TYPE and plus == 0:
         return "Great Axe"
     if kind == OBSIDIAN_MACE_TYPE and plus == 0 and struct.unpack_from("<H", rec, game.ITEM_NAME)[0] == MACE_NAME:
@@ -543,6 +551,8 @@ def which(rec: bytes) -> Optional[str]:
         return PLATE_TYPES[kind]
     if kind == METAL_HELM_TYPE and struct.unpack_from("<H", rec, game.ITEM_NAME)[0] == WARDENS_HELM:
         return "Warden's Helm"
+    if kind == game.METAL_GREAT_AXE_TYPE and plus == 2:
+        return "Headsman"
     if kind in METAL_TYPES and plus == 0:
         return METAL_TYPES[kind]
     if plus == 1 and kind in MAGIC_KINDS:

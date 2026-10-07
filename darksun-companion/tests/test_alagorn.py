@@ -122,8 +122,8 @@ class AlagornTests(unittest.TestCase):
         self.assertEqual(alagorn.with_items(self.out, FIELDS), self.out)
 
     def test_the_worlds_too(self):
-        """With the world's magic weapons: Greenbright and the Flame Blade with the swords, Gutterknot, Deepbiter and
-        Windlash with the weapons, each its own local and story, before a "Nothing" reply."""
+        """With the world's magic weapons: Greenbright and the Flame Blade with the swords, Gutterknot, Deepbiter,
+        Windlash and the axes with the weapons, each its own local and story, before a "Nothing" reply."""
         script = alagorns(last=alagorn.NOTHING.strip())
         out = alagorn.with_items(script, FIELDS)
         r = gpl._Reader(out, FIELDS)
@@ -134,21 +134,25 @@ class AlagornTests(unittest.TestCase):
         menus = [[x["text"][1] for x in op.args[0]["replies"]] for op in added if op.code == MENU]
         self.assertEqual(menus, [["  Darkflame", "  Shadowseeker", "  Greenbright", "  Flame Blade", alagorn.NOTHING],
                                  ["  Balkazar's Staff", "  Kreenfang", "  Gutterknot", "  Deepbiter", "  Windlash",
-                                  alagorn.NOTHING]])
+                                  "  Drakejaw", "  Glasshewer", "  Headsman", alagorn.NOTHING]])
         sets = [alagorn._sets(op) for op in added if op.code == SET and op.args[0][0] == "op"]
         self.assertEqual(sets, [(2, alagorn._picture("Shadowseeker")), (3, alagorn._picture("Greenbright")),
                                 (4, alagorn._picture("Flame Blade")),
                                 (2, alagorn._picture("Kreenfang")), (3, alagorn._picture("Gutterknot")),
-                                (4, alagorn._picture("Deepbiter")), (5, alagorn._picture("Windlash"))])
+                                (4, alagorn._picture("Deepbiter")), (5, alagorn._picture("Windlash")),
+                                (6, alagorn._picture("Drakejaw")), (7, alagorn._picture("Glasshewer")),
+                                (8, alagorn._picture("Headsman"))])
         lines = " ".join(gpl.strings(added))
-        for name in ("Greenbright!", "A Flame Blade!", "Gutterknot!", "Deepbiter!", "Windlash!"):
+        for name in ("Greenbright!", "A Flame Blade!", "Gutterknot!", "Deepbiter!", "Windlash!", "Drakejaw!",
+                     "Glasshewer!", "Headsman!"):
             self.assertIn(name, lines)
-        self.assertIn([0, 1, 2, 3, 4, 5], [alagorn._locals(op.args[0]) for op in added if op.code == TEST])
+        self.assertIn([0, 1, 2, 3, 4, 5, 6, 7, 8], [alagorn._locals(op.args[0]) for op in added if op.code == TEST])
 
     def test_switches(self):
         """Only the switches' items; none, no change."""
         self.assertEqual([[i for i, _ in k.items] for k in alagorn.kinds(arms=False, magic=True)],
-                         [["Greenbright", "Flame Blade"], ["Gutterknot", "Deepbiter", "Windlash"]])
+                         [["Greenbright", "Flame Blade"],
+                          ["Gutterknot", "Deepbiter", "Windlash", "Drakejaw", "Glasshewer", "Headsman"]])
         self.assertEqual(alagorn.kinds(arms=False, magic=False), ())
         self.assertEqual(alagorn.script_chunks({("GPL ", alagorn.SCRIPT): self.script}, FIELDS, False, False), {})
 
@@ -233,7 +237,8 @@ class AlagornTests(unittest.TestCase):
                                 "Windlash", "Bracers of Defense", "Arrowbane", "Sunking Crown", "Warden's Helm",
                                 "Warden's Arms", "Warden's Legs", "Warden's Chest", "Cloak of Elvenkind",
                                 "Boots of Elvenkind", "Tome of Understanding", "Ring of Protection +1",
-                                "Pehtucl's Ring of Protection +1", "Cloak of Protection +1", "Inixhide"})
+                                "Pehtucl's Ring of Protection +1", "Cloak of Protection +1", "Inixhide",
+                                "Drakejaw", "Glasshewer", "Headsman"})
         for name in told - {"Tome of Understanding"}:
             self.assertIn(name, icons.PICTURES)
 

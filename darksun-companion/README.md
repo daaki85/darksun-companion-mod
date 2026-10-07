@@ -1878,6 +1878,10 @@ there to be found.
 | **Deepbiter** | carried by one of the **Undermountain folk** (the miners) | a stone pick +1 (the game has no magic pick) |
 | **Windlash** | sold by the **Bowyer** | a staff sling +1 (the game has no magic staff sling) |
 | **Greenbright** | carried by **Arant**, who holds the captured gladiators | a metal short sword +2 |
+| **Drakejaw** | carried by one of the **Magera** guarding the wagon's prisoners | a bone axe +1 (1d8+1): a water cleric can wield it |
+| **Glasshewer** | carried by the **Templar** of the elven slavers' camp (the one with the Chain Arm Armor) | an obsidian axe +2 (1d8+2): a fire or earth cleric can wield it |
+| **Headsman** | in the arena **Announcer**'s stash, with his Stoneskin scroll, rings and gems | a metal great axe +2 |
+| **Gythka +2** | the **Elven Leader**'s gift, after the fight with his men | the game's Gythka +1, made +2 |
 | **Flame Blade** | in the pack of the **Templar** of the Hot Springs (the one with the Drake Shield) | an obsidian long sword +1 (1d8+1) whose blade burns what it hits: the fire clerics' Focus Heat, 2d6 fire damage to the creature hit (a save for half), as the game's Dark Flame casts Burning Hands. Obsidian, so a fire (or earth) cleric can wield it |
 | **Tome of Understanding** | **Father Garyn**'s gift, in Teaquetzl, when the party brings him the ranike pith from Notaku | read as a scroll is (right-click it in the inventory, click its icon): the one whose pack it is in gains a point of WIS for good (at most 25), and the tome is gone. Not in a fight, as no scroll can be read in one |
 | **Arrowbane** | sold by **Kel** | a silver circlet: Protection from Normal Missiles on its wearer while worn (normal arrows, sling stones and chatkchas can't hurt them); worn on the head, not armour |
@@ -1886,12 +1890,12 @@ there to be found.
 | **Warden's Arms** | the Lower Castle's treasure chest, with Dark Flame (behind the wall the Serpent Boots show, where the vrock perch) | plate arm armour +1 (AC 2, +1) |
 | **Warden's Legs** | the Gemfields' chest | plate leg armour +1 (AC 2, +1) |
 | **Warden's Chest** | on **Balkazar**'s body | plate chest armour +1 (AC 3, +1): Resist Fire on its wearer while worn |
-| **Cloak of Elvenkind** | the **Elven Leader**'s gift with his Gythka +1, after the fight with his men: "And take this cloak, woven by my own tribe for our best runners..." (left on the ground by him when it can't be carried, as the Gythka is) | a grey cloak: [all but invisible](#hiding-in-shadows-to-backstab) in a fight, with the hiding rule; thieves and rangers only |
+| **Cloak of Elvenkind** | the **Elven Leader**'s gift with his Gythka +2, after the fight with his men: "And take this cloak, woven by my own tribe for our best runners..." (left on the ground by him when it can't be carried, as the Gythka is) | a grey cloak: [all but invisible](#hiding-in-shadows-to-backstab) in a fight, with the hiding rule; thieves and rangers only |
 | **Boots of Elvenkind** | the buried chest of Kel's caravan, with the Cahulaks +1 | soft boots: [silent](#hiding-in-shadows-to-backstab), with the hiding rule; thieves and rangers only |
 | **Bracers of Defense** | **Mikquetzl** (AC 6, in his pack), **Wyrmias** (AC 5), **Balkazar** (AC 4), **Dagolar** (AC 2, the one carrying Dag's Dagger) | AC for those wearing no armour: [bracers of defense](#bracers-of-defense) |
 
-**Prices** follow the game's own: magic melee weapons 20,800 a plus (22,000
-with a spell too), Windlash 2,800 (as its Sling +1), plain metal weapons 50 to
+**Prices** follow the game's own: magic melee weapons 20,800 a plus (41,600
+for a +2; a +1 with a spell 22,000), Windlash 2,800 (as its Sling +1), plain metal weapons 50 to
 300, bracers 5,000 a point of AC, Arrowbane 30,000, the Sunking Crown 40,000,
 the rings and cloak of protection 15,000, Inixhide 6,000, the
 Cloak of Elvenkind 25,000 and Boots 20,000, the Warden's Arms and Legs 27,000
@@ -1941,7 +1945,8 @@ its own items, the game puts the material first: **Leather Inixhide**,
 ![Shadowseeker's item box in the game: 22000, Detect Invisibility's icon, "Metal +1 Shadowseeker", 1D6+1](docs/shadowseeker-box.png)
 
 **Alagorn**, the wizard of the Painted Badlands who identifies magic items,
-tells the story of every magic item in the table when the party carries it,
+tells the story of every magic item in the table but the plain Gythka +2
+when the party carries it,
 in the menu the game would put it in (swords, weapons, rings, armor, clothes
 or other items), before "Nothing". As with the game's own, one story for each
 kind: the four pairs of bracers share one, and so do both rings of
