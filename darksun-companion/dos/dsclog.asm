@@ -2309,7 +2309,7 @@ probe_ring_ac:
         iret
 .other: pop ax
         push ax                 ; bracers of defense: their plus counts, but not over armour
-        mov ax, cx              ; on the arms, legs or chest (AD&D's; a shield, a helm, rings and
+        mov ax, cx              ; on the arms, legs, head or chest (AD&D's; a shield, rings and
         call bracers_ax         ; cloaks go with them)
         pop ax
         jne .helm
@@ -2501,10 +2501,8 @@ prot_scan:
         jne .on
 .armour: test byte [es:bx+0x0F], 0x80
         jz .on
-        cmp al, HEAD_SLOT
-        je .plus
-        or byte [cs:p_flags], P_ARMOUR  ; (a helm isn't, to bracers)
-.plus:  cmp ah, 0
+        or byte [cs:p_flags], P_ARMOUR  ; (a helm too, to bracers)
+        cmp ah, 0
         jle .metal
         or byte [cs:p_flags], P_MAGIC_ARMOUR
 .metal: mov al, [es:bx+8]               ; its material (no material: 40h with 0)
@@ -4895,7 +4893,7 @@ acid_saves db 8, 11, 5, 5, 13, 10, 12   ; wood, bone, stone, obsidian, metal, le
 P_MAGIC_ARMOUR equ 1
 P_METAL_ARMOUR equ 2
 P_SHIELD       equ 4
-P_ARMOUR       equ 8                    ; any armour on the arms, legs or chest
+P_ARMOUR       equ 8                    ; any armour on the arms, legs, head or chest
 ARM_SLOT       equ 0                    ; the item slots of armour (the game's: arm, legs,
 LEG_SLOT       equ 6                    ; head, chest)
 HEAD_SLOT      equ 7

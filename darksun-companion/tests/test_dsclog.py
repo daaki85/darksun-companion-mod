@@ -671,8 +671,8 @@ class ProtectionRuleTests(RingTests):
 @unittest.skipIf(Uc is None, "unicorn is not installed")
 class BracersTests(ProtectionRuleTests):
     """Bracers of defense (the ninth of DSCLOG's types, worn in the arm armour's slot): their plus
-    counts for AC without armour on the arms, legs or chest, with or without RULE_PROTECTION, and
-    they aren't armour to a ring's or cloak's rule."""
+    counts for AC without armour on the arms, legs, head or chest, with or without RULE_PROTECTION,
+    and they aren't armour to a ring's or cloak's rule."""
     BRACERS = 123
     test_the_better_ring = test_rule_off = test_ring_ac_lost_to_magical_armour = test_cloak = None
 
@@ -688,12 +688,11 @@ class BracersTests(ProtectionRuleTests):
         self.assertTrue(self.counts(4, 102))  # (not magical armour: the ring counts)
 
     def test_lost_to_armour(self):
-        for typ, slot, plus in ((6, 9, 0), (15, 6, 0), (57, 9, 1)):  # leather, bone scale legs, metal +1
-            self.wear(5, typ, slot, plus)
+        for typ, slot, plus in ((6, 9, 0), (15, 6, 0), (57, 9, 1), (89, 7, 0)):  # leather, bone scale
+            self.wear(5, typ, slot, plus)  # legs, metal +1, a helm
             self.assertFalse(self.counts(7, self.BRACERS), (typ, slot))
-        for typ, slot in ((4, 10), (89, 7)):  # a shield, a helm: they stay
-            self.wear(5, typ, slot)
-            self.assertTrue(self.counts(7, self.BRACERS), (typ, slot))
+        self.wear(5, 4, 10)  # a shield: they stay
+        self.assertTrue(self.counts(7, self.BRACERS))
         self.wear(5, 6, 0xFF)  # armour only carried
         self.assertTrue(self.counts(7, self.BRACERS))
 

@@ -8,8 +8,8 @@
   mace, a great axe, a pick, a polearm): one each, on people who fight with the like.
 - Magic weapons of the kinds the game has none of (a club, a pick, a staff sling; a short sword
   but Shadowseeker): one each, priced as the game's magic weapons of the like.
-- Bracers of defense (DSCLOG's BRACERS type, worn on the arms: their plus counts for AC while no
-  armour is worn on the arms, legs or chest), now that a preserver can't cast in armour: on four
+- Bracers of defense (DSCLOG's BRACERS type, worn on the arms: their plus counts for AC while neither
+  armour nor a helm is worn), now that a preserver can't cast in armour: on four
   of the game's wizards, better the later they're met.
 
 Each once a game (the key in the tools_given set, kept in settings), where its owner is, and never

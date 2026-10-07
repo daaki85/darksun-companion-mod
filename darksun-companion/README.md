@@ -1705,8 +1705,8 @@ A preserver can't cast in armour (with [class restrictions](#class-restrictions)
 so the Ledger adds AD&D's bracers of defense ([where](#new-items)). They are
 worn on the arms, in the arm armour's place, and give the AC their name says:
 AC 6 is 4 better than no armour, AC 2 is 8 better. As in AD&D they give nothing
-while armour is worn on the arms, legs or chest (bone, leather or metal,
-magical or not); a shield, a helm, rings and cloaks of protection go with
+while armour is worn: on the arms, legs or chest, or a helm (bone, leather or
+metal, magical or not). A shield and rings and cloaks of protection go with
 them, and they aren't armour to anything else (a preserver casts in them, a
 thief wears them, and a ring or cloak of protection still counts). In the game
 they are **BRACERS/DEFENSE** with their plus: Bracers/Defense +4 is AC 6.

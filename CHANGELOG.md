@@ -17,6 +17,8 @@ requests #1 to #13; its notes are in
   gladiators (the Elite Guards are only in the final fight). A thief can
   lift Gutterknot from Churrr's pocket, for 200 XP, as Shadowseeker from
   Kurzak's.
+- **Bracers of defense give nothing with a helm on**, as with any armour; a
+  shield and rings and cloaks of protection still go with them.
 - **The README's new items** are one item to a row, with the prices and the
   Options tab's boxes after the table; the ranger's row no longer names a
   fighter/ranger (the game has none).
