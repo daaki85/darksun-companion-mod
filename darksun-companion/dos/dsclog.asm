@@ -2593,12 +2593,13 @@ probe_attacks:
         jmp .hit
 
 ; MISSILE_RATE: AX (the attacks a round in halves: the weapon type's, +0Bh, as the game has a
-; missile's) made AD&D's specialist's rate of fire when greater, for skill DL (SPEC_SPECIAL or
-; above: a fighter's or gladiator's chosen kind) with item type SI, the sheet at ES:BX, by the
-; specialist's level (the higher fighter or gladiator level of the classes it has now: 1-6, 7-12,
-; 13 on): a bow 2, 3, 4 a round; a sling 3/2, 2, 5/2; a staff sling or a chatkcha (thrown) 1, 3/2, 2.
+; missile's) made a specialist's rate of fire when greater, for skill DL (SPEC_SPECIAL or above: a
+; fighter's or gladiator's chosen kind) with item type SI, the sheet at ES:BX, by the specialist's
+; level (the higher fighter or gladiator level of the classes it has now: 1-6, 7-12, 13 on): AD&D's
+; for the sling, 3/2, 2, 5/2 a round; the bow, staff sling and chatkcha a step above AD&D's, the bow
+; 3, 4, 5, the staff sling and chatkcha 3/2, 2, 5/2.
 MISSILE_KIND equ 13             ; (the chatkcha's kind + 1; then the bow, the sling, the staff sling)
-missile_halves db 2, 3, 4, 4, 6, 8, 3, 4, 5, 2, 3, 4
+missile_halves db 3, 4, 5, 6, 8, 10, 3, 4, 5, 3, 4, 5
 missile_rate:
         cmp dl, SPEC_SPECIAL
         jb .ret

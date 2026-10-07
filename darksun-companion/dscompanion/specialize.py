@@ -110,9 +110,10 @@ def attacks(halves: int, level: int, missile: bool = False) -> int:
     return halves - 1 if level == PLAIN else halves + 2 if level == GRAND else halves
 
 
-# AD&D's specialist's rate of fire (in halves) by kind, at specialist levels 1-6, 7-12 and 13 on
-# (DSCLOG's MISSILE_RATE): the chatkcha as other thrown weapons
-MISSILE_RATES = {"bow": (4, 6, 8), "sling": (3, 4, 5), "staff sling": (2, 3, 4), "chatkcha": (2, 3, 4)}
+# A specialist's rate of fire (in halves) by kind, at specialist levels 1-6, 7-12 and 13 on
+# (DSCLOG's MISSILE_RATE): AD&D's for the sling; the bow, staff sling and chatkcha (AD&D's other
+# thrown weapons) a step above AD&D's
+MISSILE_RATES = {"bow": (6, 8, 10), "sling": (3, 4, 5), "staff sling": (3, 4, 5), "chatkcha": (3, 4, 5)}
 
 
 def warrior_level(sheet: bytes) -> int:

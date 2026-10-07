@@ -1442,14 +1442,14 @@ keeps the game's rate (a grand master one more).
 
 Missile weapons have a rate of fire of their own in the game, the same for
 everyone (a bow 2 a round, a sling, staff sling or chatkcha 1). A fighter or
-gladiator who has chosen the kind shoots at AD&D's specialist's rate instead,
-by that class's level (from 7th level, the higher one):
+gladiator who has chosen the kind shoots faster, by that class's level (the
+higher of the two for both): AD&D's specialist's rate for the sling, and a step
+above AD&D's for the bow, staff sling and chatkcha:
 
 | Kind | Game (anyone) | Specialist, levels 1–6 | 7–10 |
 |---|---|---|---|
-| bow | 2 | 2 | 3 |
-| sling | 1 | 3/2 | 2 |
-| staff sling, chatkcha | 1 | 1 | 3/2 |
+| bow | 2 | 3 | 4 |
+| sling, staff sling, chatkcha | 1 | 3/2 | 2 |
 
 (A grand master gets no extra shot, and a ranger's expertise keeps the game's
 rate; the Characters tab shows each missile weapon's rate.) Mastery and grand mastery are for a fighter's chosen kind; a

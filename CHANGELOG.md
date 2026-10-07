@@ -9,10 +9,10 @@ Released pull requests are summarised in a line or two each; the release notes
 
 **Changed**
 - **Missile specialists shoot faster:** with weapon specialization, a fighter
-  or gladiator with a chosen bow, sling, staff sling or chatkcha has AD&D's
-  specialist's rate of fire by level: a bow 2 a round, then 3 from 7th level;
-  a sling 3/2, then 2; a staff sling or chatkcha 1, then 3/2. Before, missiles
-  kept the game's rate. The Characters tab shows each missile weapon's rate.
+  or gladiator with a chosen bow, sling, staff sling or chatkcha shoots faster
+  by level: a bow 3 a round, then 4 from 7th level; a sling, staff sling or
+  chatkcha 3/2, then 2 (AD&D's specialist's rate for the sling, a step above
+  it for the others). Before, missiles kept the game's rate. The Characters tab shows each missile weapon's rate.
 
 ## Pull request #25 ([merged 2026-10-07](https://github.com/daaki85/darksun-companion-mod/pull/25))
 
