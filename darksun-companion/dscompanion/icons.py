@@ -110,7 +110,9 @@ BLADE = range(0xD1, 0xDA)
 # the Axe's metal head, shade for shade (by brightness), in the bone long sword's whites
 AXE_BONE = {208: 129, 209: 132, 210: 132, 211: 200, 212: 146, 213: 146, 214: 148, 215: 152}
 # ... and in the obsidian long sword's darker greys (it has 208-213, mostly 208-211)
-AXE_OBSIDIAN = {210: 208, 211: 209, 212: 210, 213: 210, 214: 211, 215: 212}  # a blade's greys, in the bone gythka's and the metal sword's icons
+AXE_OBSIDIAN = {210: 208, 211: 209, 212: 210, 213: 210, 214: 211, 215: 212}
+MACE_OBSIDIAN = {210: 208, 211: 209, 212: 209, 213: 210, 214: 211, 215: 212, 217: 213}
+OBSIDIAN_MACE_TYPE, MACE_NAME = 46, 0x13  # (the Mace's name: Blackmace has its own)  # a blade's greys, in the bone gythka's and the metal sword's icons
 
 # (name, the plain item's picture, the new object's number, its icon's number, the icon made from
 # the plain one's)
@@ -127,11 +129,13 @@ ICONS: Tuple[Tuple[str, int, int, int, Callable[[Rows], Rows]], ...] = (
     ("Shadowseeker", 0xFC0A, 2448, 2449, lambda r: glow(shorter_blade(r), lambda p, x, y: p in BLADE, NIGHT_STEEL)),
     ("Bone Short Sword", 0xFC0C, 2419, 2420, shorter_blade),
     ("Bone Axe", 0xFB61, 2421, 2422, lambda r: recolour(r, AXE_BONE)),
-    ("Obsidian Short Sword", 0xFC0B, 2480, 2481, shorter_blade),
-    ("Obsidian Axe", 0xFB61, 2482, 2483, lambda r: recolour(r, AXE_OBSIDIAN)),
+    ("Obsidian Short Sword", 0xFC0B, 2488, 2489, shorter_blade),
+    ("Obsidian Axe", 0xFB61, 2490, 2491, lambda r: recolour(r, AXE_OBSIDIAN)),
     # the game's only great axe is its Great Axe +3, its green gem (1, 2) the magic: a plain one's
     # has the handle's mauves there
-    ("Great Axe", 0xFC06, 2484, 2485, lambda r: recolour(r, {1: 58, 2: 59})),
+    ("Great Axe", 0xFC06, 2492, 2493, lambda r: recolour(r, {1: 58, 2: 59})),
+    # the game's obsidian maces are its Blackmace alone: a plain one, the Mace's head in obsidian
+    ("Obsidian Mace", 0xFB5D, 2486, 2487, lambda r: recolour(r, MACE_OBSIDIAN)),
 )
 PICTURES: Dict[str, int] = {name: 0x10000 - number for name, _, number, _, _ in ICONS}  # an item's +0
 
@@ -369,6 +373,8 @@ def which(rec: bytes) -> Optional[str]:
     plus = struct.unpack("b", rec[game.ITEM_PLUS:game.ITEM_PLUS + 1])[0]
     if kind == GREAT_AXE_TYPE and plus == 0:
         return "Great Axe"
+    if kind == OBSIDIAN_MACE_TYPE and plus == 0 and struct.unpack_from("<H", rec, game.ITEM_NAME)[0] == MACE_NAME:
+        return "Obsidian Mace"
     if kind == game.SHORT_SWORD_TYPE:
         return "Shadowseeker" if plus == 1 else "Short Sword"
     if kind == game.GYTHKA_TYPE and plus == 1:

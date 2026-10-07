@@ -19,8 +19,9 @@ requests #1 to #13; its notes are in
   use some weapon of, in any material: a fire cleric's obsidian long sword),
   a new warrior starting with a plain weapon of its kind in a material it may
   use (new bone short swords and axes, obsidian ones for fire and earth
-  clerics, as the game has only Kurzak's short sword and a metal axe; a plain
-  great axe pictured without the Great Axe +3's gem; a two-handed weapon puts
+  clerics, as the game has only Kurzak's short sword and a metal axe; an
+  obsidian mace pictured without Blackmace's glow; a plain great axe pictured
+  without the Great Axe +3's gem; a two-handed weapon puts
   the starting shield in the backpack); a
   gladiator's 3rd and 4th (and any warrior's from before the rule) picked at
   a level gained, in the game's own pop-up for a psionicist's new power; the

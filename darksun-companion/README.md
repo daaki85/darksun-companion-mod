@@ -1459,7 +1459,7 @@ weapon specialization chosen, in place of the bone long sword`):
 | club, quarterstaff, bow | wooden (a bow with 20 arrows) | |
 | dagger, chatkcha | obsidian | |
 | short sword | bone, the Ledger's (the game's only short sword is Kurzak's) | obsidian (fire, earth) |
-| mace, polearm, gythka, cahulaks | bone | a mace: an obsidian long sword (the game's obsidian mace is Blackmace alone) |
+| mace, polearm, gythka, cahulaks | bone | a mace: obsidian, the game's plain Mace type (its only one is Blackmace) with a picture of the Ledger's |
 | axe | bone, the Ledger's (the game's only axe is metal) | obsidian (fire, earth) |
 | great axe | the game's, with a picture of the Ledger's (the game's only one is +3: its green gem) | |
 | pick | stone | |
@@ -1812,6 +1812,8 @@ like its own. The log doesn't say: they're there to be found.
 | **Thieves' Tools** | every thief's backpack | [picking pockets](#picking-pockets) |
 | **Six scrolls** | [Kalzith's](#kalzith) shop | spells the game has no scroll of |
 | **Bone and obsidian Short Swords and Axes** | a new warrior's starting weapon, with [weapon specialization](#weapon-specialization) (the obsidian ones a fire or earth cleric's): the game has no short sword but Kurzak's, and only a metal axe | a short sword 1d6, an axe 1d8, of their material |
+| **Obsidian Mace** | a fire or earth cleric's starting mace | 1d6+1, the game's Mace (Blackmace without the +1), with an icon without Blackmace's glow |
+| **Great Axe** | a warrior's starting great axe | the game's plain Great Axe, with an icon without the +3's green gem |
 
 Prices, as magic items: the armour 3,000, the cloak and Pehtucl's ring 5,000
 each, Kreenfang 18,000, Shadowseeker 22,000. A thief can lift Pehtucl's ring and
@@ -1825,14 +1827,17 @@ and neither ring nor cloak gives AC over magical armour.
 
 ![Backpack cells in the game: Kreenfang and Shadowseeker; Leather Chest Armor +1 and the Cloak of Protection +1; Pehtucl's and the arena's Rings of Protection +1; the Bone Helm](docs/icons.png)
 
+![Backpack cells in the game: the bone and obsidian Short Swords, the bone and obsidian Axes, the obsidian Mace and a plain Great Axe](docs/new-weapons.png)
+
 **Icons and names.** Each has an icon of its own on the inventory screen,
 made from the plain item's the way the game makes its magic items' (a few
 pixels in the colours it cycles like fire: Kreenfang's blades, the arena's
 ring, the armour's leather; violet for Pehtucl's ring and the cloak, night
 steel for Shadowseeker's blade, bone shades for the helm; the short swords the
 bone and obsidian long swords' with the shorter blade, the axes the Axe's head
-in bone or obsidian shades, and a plain great axe the game's without its green
-gem, as the game's only one is its Great Axe +3); dropped on the map they look
+in bone or obsidian shades, the obsidian mace Blackmace's without its glow,
+and a plain great axe the game's without its green gem, as the game's only one
+is its Great Axe +3); dropped on the map they look
 like the plain item. The game's names are at most 15 letters (it
 shortens its own "Helm/Contempltn"), so the rings are **RING/PROTECTION** and
 the cloak **Cloak/Protectn**; the Ledger's screens and the log give them in
