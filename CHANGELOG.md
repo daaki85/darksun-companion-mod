@@ -15,8 +15,17 @@ Released pull requests are summarised in a line or two each; the release notes
   every Wild Mul carries a bone one.
 - **Thieves' Tools from Kel:** two sets in his stock, for a thief who has lost
   theirs.
+- **Defilers leave a body:** every defiler (both of the game's kinds, made by
+  its scripts) carries an obsidian dagger, so the game leaves a body to search
+  when one dies (it leaves none for someone who carried nothing).
+
+**Fixed**
+- **The game's Sling +1** (in a chest) showed a blank icon: its picture was
+  missing from the game's data. It has one now, the Sling's with a glow.
 
 **Changed**
+- **No "Give thieving tools now" button:** a thief who loses their tools buys
+  another set from Kel.
 - **Weapons off the allies:** Krikor's bone axe, Uskuye's metal great axe and
   Lt. Kwerin's metal pick are gone; the Weapon Merchant sells the metal great
   axe and pick instead (the bone axe is sold and carried elsewhere).
@@ -28,6 +37,9 @@ Released pull requests are summarised in a line or two each; the release notes
   the 10' Radius one.
 
 **Documentation**
+- **[Every mundane weapon](darksun-companion/README.md#every-mundane-weapon):**
+  every plain weapon by kind and material, who sells it and who carries it.
+- **Items saving against acid:** the table has the Ledger's weapons too.
 - **Mundane items:** the guide's New items has a table of its own for them,
   each with who sells or carries it and where.
 - **[Every magic item](darksun-companion/README.md#every-magic-item):** the

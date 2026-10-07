@@ -59,6 +59,7 @@ records; this ledger keeps the ones the game doesn't show you.
 - [New content](#new-content)
   - [New items](#new-items)
   - [Every magic item](#every-magic-item)
+  - [Every mundane weapon](#every-mundane-weapon)
   - [New people](#new-people)
   - [Picking pockets](#picking-pockets)
   - [The cooked vulture](#the-cooked-vulture)
@@ -285,8 +286,7 @@ sections are open is remembered. The sections:
 - **In the game**: each turn's rolls and how much they say, monster
   descriptions ([In the game](#in-the-game)).
 - **Rule changes** ([Rule changes](#rule-changes)).
-- **New content**, with a button that gives each thief a set of Thieves' Tools
-  now ([New content](#new-content)). The new people, the vulture and Alagorn's
+- **New content** ([New content](#new-content)). The new people, the vulture and Alagorn's
   stories go into the game's copies the next time it is started; what a saved
   game already has stays in it.
 - **On the screen** ([On the screen](#on-the-screen)), **Controls**
@@ -1688,6 +1688,16 @@ less the item's plus, and 1 less again for a magical power:
 | Bone or metal Long Sword | 65% | 65% (the game's: needs 8) |
 | Shadowseeker (metal, +1) | 70% | 70% (the game's: needs 7) |
 | Obsidian Dagger | 65% | 80% (needs 5) |
+| The Ledger's plain bone weapons (Short Sword, Axe, Great Axe) | 65% | 65% (the game's: needs 8) |
+| The Ledger's plain obsidian weapons (Short Sword, Axe, Mace, Great Axe) | 65% | 80% (needs 5) |
+| The Ledger's plain metal weapons (Short Sword, Dagger, Mace, Great Axe, Pick, Polearm) | 65% | 65% (the game's: needs 8) |
+| Kreenfang, Drakejaw, Stillwater, Thornwall (bone, +1) | 70% | 70% (the game's: needs 7) |
+| Mindshard (obsidian, +1) | 70% | 85% (needs 4) |
+| Flame Blade (obsidian, +1, a power) | 70% | 90% (needs 3) |
+| Glasshewer (obsidian, +2) | 75% | 90% (needs 3) |
+| Deepbiter (stone, +1) | 70% | 85% (needs 4) |
+| Gutterknot (wood, +1) | 70% | 70% (the game's: needs 7) |
+| Greenbright, Galefang, Headsman, Linebreaker (metal, +2) | 75% | 75% (the game's: needs 6) |
 
 The dice log shows every check, whichever rule is on:
 
@@ -2137,6 +2147,48 @@ Tanelyv's Armor also has a chest piece, with no plus.
 | **Tome of Understanding** | +1 WIS when read | Father Garyn's gift |
 | Magic fruit (14 kinds), spell scrolls (18), psionic scrolls (11), **Kalzith's six scrolls** | used once | many places |
 
+### Every mundane weapon
+
+Every plain weapon in a game with the new items, the game's and the Ledger's,
+by kind and material: who sells it and who carries it (by the names the game
+gives them; many are of a kind, every Renegade or Tari). The **Weapon
+Merchant** is in Teaquetzl, **Jark** and **Kel** in Kel's caravan, the
+**Bowyer** in Teaquetzl. A starting weapon (see
+[weapon specialization](#weapon-specialization)) is one of these too; the
+game's stone pick is only a starting weapon (Deepbiter is its magic one).
+
+| Kind | Material | Sold by | Carried by, or found in |
+|---|---|---|---|
+| long sword | bone | Jark, Weapon Merchant | Ranger, Templar, Chaero, Castle Guard, Arant's Guard, Warrior, Dagolar Guard, Caravan Guard, Guard, Lt. Kwerin, Slaver Guard, Messenger, Visitor, Renegade, Silt Runner |
+| long sword | metal | Weapon Merchant | Uskuye, Elven Leader, Elite Guard, Village Hero, a chest in the warrens |
+| long sword | obsidian | Jark, Weapon Merchant | Wyvern Master, Arant, Keldar, Kurzak, Guard, Chaya, Uskuye, Scar, Arena Guard, Caravan Master, Chahl, Mayor of Gedron, Merzol, Drajian Guard, Council Member, Templar |
+| club | wood | Weapon Merchant | Warren Chief, Churrr, Tari, Skull Guardian, Worshipper, Low Warren Thug, Gladiator, Wild Mul, Guard, Legcrusher, a dead body in the arena, a chest, a weapon rack |
+| dagger | metal | — | Tobrian |
+| dagger | obsidian | — | Defiler, Notaku |
+| dagger | stone | Jark, Weapon Merchant | Balkazar, Dagolar, Wyrmias, Hermit, Tobrian, Villager, Linara, Maris, a chest in Dagolar's tunnels |
+| short sword | bone | Jark, Weapon Merchant | Renegade |
+| short sword | metal | Weapon Merchant | — |
+| short sword | obsidian | Jark, Weapon Merchant | Chaero |
+| mace | bone | Jark, Weapon Merchant | Wyvern Master, Krikor, Templar, a chest, a chest in Dagolar's tunnels |
+| mace | metal | — | Templar |
+| mace | obsidian | Jark, Weapon Merchant | Tari |
+| axe | bone | Jark, Weapon Merchant | Wild Mul |
+| axe | metal | — | Slaver Guard, Uzoma, a weapon rack in the Lower Castle, a weapon rack, a weapon rack in the slave pens |
+| axe | obsidian | Weapon Merchant | Merzol |
+| great axe | bone | Jark, Weapon Merchant | Wild Mul |
+| great axe | metal | Weapon Merchant | — |
+| great axe | obsidian | Jark, Weapon Merchant | — |
+| pick | metal | Weapon Merchant | — |
+| quarterstaff | wood | Jark, Weapon Merchant | Mikquetzl, Troop Leader, Dakaren, Dagolar, Wyrmias, Hermit, Father Garyn, Notaku, a weapon rack in the Lower Castle, a skeleton in the Undermountain, a chest, a weapon rack in the slave pens |
+| polearm | bone | Weapon Merchant | a weapon rack in the Lower Castle, a weapon rack in the slave pens |
+| polearm | metal | — | Castle Guard |
+| gythka | bone | Jark, Weapon Merchant | Guardian |
+| cahulaks | bone | Weapon Merchant | — |
+| chatkcha | obsidian | Jark, Bowyer | — |
+| bow | wood | Jark, Kel, Bowyer | Wyvern Master, Ranger, Arant, Castle Guard, Guard, Arant's Guard, Arena Guard, Caravan Guard, Slaver Guard, Elven Leader, Uzoma, Drajian Guard, Army Commander, Elite Guard, Village Hero, a chest in the Upper Castle, a chest, a chest in Dagolar's tunnels |
+| sling | leather | Bowyer | Mehtar, Renegade, Silt Runner, a chest in the slave pens, a bag in the slave pens |
+| staff sling | leather | Jark, Bowyer | — |
+
 ### New people
 
 Two people of the slave pens, in new games: those that reach the pens with the
@@ -2281,9 +2333,8 @@ thief as the party's leader (keys 1-4):
 
 - **Thieving tools.** Every thief starts a new game with a set in their
   backpack, in its first free cell (the log says so); a thief who joins later, or one in a game
-  started before this version, gets a set once too. **Give thieving tools
-  now** on the Options tab gives a set at once to each thief in the party
-  without one (lost or sold ones included); in the game, Kel sells two sets. Moving the tools about the inventory
+  started before this version, gets a set once too. A thief who loses or sells
+  theirs can buy another from Kel, who sells two sets. Moving the tools about the inventory
   screen doesn't count as being without: no second set for that. They are called **Thieves'
   Tools**, a name the helper adds to the game's (see
   [New item names](#new-items)). Tools an earlier version gave, called

@@ -282,6 +282,9 @@ ICONS: Tuple[Tuple[str, int, int, int, Callable[[Rows], Rows]], ...] = (
     # its teal head in the bone long sword's whites and the obsidian long sword's greys
     ("Bone Great Axe", 0xFC06, 2574, 2575, lambda r: recolour(r, {1: 58, 2: 59, **TEAL_TO_BONE})),
     ("Obsidian Great Axe", 0xFC06, 2576, 2577, lambda r: recolour(r, {1: 58, 2: 59, **TEAL_TO_OBSIDIAN})),
+    # the game's own Sling +1 (in a chest, object 1068) names a picture, object 2644, that its data
+    # hasn't: blank in a shop or a pack. The Sling's, every other pixel of its strap in the fire colours
+    ("Sling +1", 0xFC09, 2644, 2645, lambda r: glow(r, lambda p, x, y: 137 <= p <= 140 and (x + y) % 2 == 0, FIRE)),
 )
 PICTURES: Dict[str, int] = {name: 0x10000 - number for name, _, number, _, _ in ICONS}  # an item's +0
 

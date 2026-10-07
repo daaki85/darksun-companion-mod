@@ -220,7 +220,8 @@ PLAIN = (BONE_SHORT_SWORD, OBSIDIAN_SHORT_SWORD, BONE_AXE, OBSIDIAN_AXE, OBSIDIA
 # (the objects: the people of each name in the region, as SEGOBJEX and the region's ETAB have them)
 GIFTS: Tuple[Gift, ...] = (
     # (the great axes in every material, a warrior's starting one being bone, and bone breaks:
-    # bone ones on every Wild Mul too)
+    # bone ones on every Wild Mul too. The game's shop shows a seller's first 34 items: Kalzith,
+    # given 42, showed 34 and none of the 8 oldest; these sellers have 28, 30 and 20)
     Gift("Weapon Merchant", tuple(weapon(w) for w in PLAIN + (METAL_SHORT_SWORD, BONE_GREAT_AXE, OBSIDIAN_GREAT_AXE,
                                                               METAL_GREAT_AXE, METAL_PICK)), (285,), 0x0B),
     Gift("Jark", tuple(weapon(w) for w in (BONE_SHORT_SWORD, OBSIDIAN_SHORT_SWORD, BONE_AXE, OBSIDIAN_MACE,
@@ -233,6 +234,9 @@ GIFTS: Tuple[Gift, ...] = (
     Gift("Tari", (weapon(OBSIDIAN_MACE),), (60, 243), 0x28),  # the warrens' Tari, every one
     Gift("Renegade", (weapon(BONE_SHORT_SWORD),), (289,)),  # (every one)
     Gift("Wild Mul", (weapon(BONE_AXE), weapon(BONE_GREAT_AXE)), (290,)),
+    # the defilers (both kinds, made by scripts) carried nothing, so left no body: an obsidian
+    # dagger each (the game's plain one)
+    Gift("Defiler", (weapon(weaponchoice.PLAIN[KIND("dagger")]),), (258, 296)),
     # the metal ones, on people who fight with the like
     Gift("Tobrian", (weapon(METAL_DAGGER),), (104,), 0x1A),  # (a stone dagger)
     Gift("Templar", (weapon(METAL_MACE),), (131,), 0x14),  # the slavers' camp's (a bone mace)

@@ -45,6 +45,9 @@ class WorldGearTests(unittest.TestCase):
         self.assertEqual(sold, ["Bone Short Sword", "Obsidian Short Sword", "Bone Axe", "Obsidian Axe", "Obsidian Mace",
                                 "Short Sword", "Bone Great Axe", "Obsidian Great Axe", "Metal Great Axe", "Metal Pick"])
         self.assertEqual([icons.which(r) for r in gift("Wild Mul").items], ["Bone Axe", "Bone Great Axe"])
+        defiler = gift("Defiler")  # (a body to leave: an obsidian dagger, the game's own)
+        self.assertEqual((defiler.objects, [struct.unpack_from("<H", r, game.ITEM_TYPE)[0] for r in defiler.items]),
+                         ((258, 296), [17]))
         self.assertEqual([icons.which(r) for r in gift("Jark").items],
                          ["Bone Short Sword", "Obsidian Short Sword", "Bone Axe", "Obsidian Mace", "Bone Great Axe",
                           "Obsidian Great Axe"])

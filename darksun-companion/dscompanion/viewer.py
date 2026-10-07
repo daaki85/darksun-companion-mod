@@ -399,7 +399,6 @@ class Viewer:
         self.pick_key = tk.BooleanVar(value=bool(settings.get("pick_key", False)))
         ttk.Checkbutton(new, text="... or the leader, a thief, presses P in a conversation",
                         variable=self.pick_key, command=self._popups_changed).pack(anchor="w", padx=(20, 0))
-        ttk.Button(new, text="Give thieving tools now", command=self.give_tools).pack(anchor="w", pady=(8, 0))
 
         # how the game looks
         looks = section("on_screen", "On the screen (in the game)")
@@ -458,16 +457,6 @@ class Viewer:
         settings = launch.load_settings()
         settings["options_open"] = [key for key, part in self.sections.items() if part.is_open]
         launch.save_settings(settings)
-
-    def give_tools(self) -> None:
-        """A set of thieving tools for each thief in the party without one, right away (they
-        also get one at the start of a new game, or when the Ledger first sees them)."""
-        if self.dice is None or not self.dice.attached:
-            self.status.set("Thieving tools: the game isn't running with the dice log yet.")
-            return
-        lines = self.dice.give_tools_now()
-        self._append_dice(lines)
-        self.status.set(lines[-1] if lines else "")
 
     def _slot_box(self, parent) -> ttk.Combobox:
         box = ttk.Combobox(parent, width=3, state="readonly")

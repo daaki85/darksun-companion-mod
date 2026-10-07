@@ -46,7 +46,6 @@ class NamesTests(unittest.TestCase):
         and no tools: they'd have no name."""
         self.m[HDR + names.TSR_NAMES_PTR:HDR + names.TSR_NAMES_PTR + 4] = bytes(4)
         self.assertFalse(names.update(self.gd, HDR))
-        self.assertEqual(self.log.give_tools_now()[0][:23], "The game's name table h")
 
     def test_borrowed_entries_back(self):
         entry(self.m, 0x95, b"Ring/Protection")
