@@ -1476,7 +1476,7 @@ the kinds its classes allow in light letters, those it can't (or has) greyed,
 the picks left beside **EXIT** (which asks, as for powers, whether to leave
 with picks unmade: they're offered again at the next level).
 
-![The level-up window: PICK A WEAPON SPECIALTY, the dagger and the chatkcha open to a fighter/fire cleric](docs/weapon-picker.png)
+![The level-up window: PICK A WEAPON SPECIALTY, the long sword, dagger, short sword, mace, axe and chatkcha open to a fighter/fire cleric (obsidian ones)](docs/weapon-picker.png)
 
 **Where it shows.** The **Effects** screen lists the selected character's
 kinds under its effects ("SPECIALIZED IN", "MASTER OF", "GRAND MASTER OF",
