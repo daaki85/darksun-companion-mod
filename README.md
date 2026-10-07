@@ -74,8 +74,9 @@ double-click, with the options as last set.)
 In pull request #24 (in progress): **magic weapons for the classes that had
 too few.** **Galefang**, a dagger +2 an air cleric can wield; **Mindshard** and
 **Stillwater**, short swords +1 a psionicist can wield (alone or with a
-cleric); and two polearms, **Linebreaker** +2 and **Thornwall** +1. Alagorn
-tells the story of each.
+cleric); and two polearms, **Linebreaker** +2 and **Thornwall** +1 (on the
+slave pens' weapon rack). Alagorn tells the story of each. And **Drakejaw**,
+from #23, is now really on its Magera.
 
 Earlier changes, pull request by pull request, are in
 [`CHANGELOG.md`](CHANGELOG.md). Releases have notes of their own:
