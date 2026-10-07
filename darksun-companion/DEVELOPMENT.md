@@ -55,7 +55,7 @@ Every roll in the game goes through one function, Borland C++'s `rand()`.
    [Dinos and the Trustee](README.md#what-dinos-and-the-trustee-say-about-them)), and
    looks for its data files in the current folder rather than next to itself. The helper also hooks DOS's `INT 21h`, to
    open the launcher's copies of `SEGOBJEX.GFF`, `RESOURCE.GFF` (see
-   [Item icons](README.md#new-items)), `RGN1C.GFF`, `RGN1E.GFF` (see
+   [Item icons](README.md#new-items)), `RGN1C.GFF`, `RGN1E.GFF`, `RGN08.GFF` (see
    [new items](README.md#new-items)), `GPLDATA.GFF` and `RGN29.GFF` (see
    [Kalzith](README.md#kalzith), [Semyon](README.md#semyon),
    [Dinos and the Trustee](README.md#what-dinos-and-the-trustee-say-about-them) and
@@ -558,7 +558,11 @@ body's (object 1204) own gythka made +1 and renamed, its name attribute with
 it. One Castle Guard, one Undermountain miner and one Magera (Drakejaw's) have
 an object of their own (2560, 2561, 2562: copies of their kind's, their record
 renumbered), their entity in the Ledger's copies of `RGN1C.GFF`, `RGN1E.GFF`
-and `RGN08.GFF` pointing to it. The Elven Leader's Gythka +2 is his own
+and `RGN08.GFF` pointing to it. So does the slave pens' weapon rack (2563: the
+Lower Castle's rack is the same object 1647; a thing's record has its number
+first, a person's at +6), with Thornwall in place of its first bone polearm,
+in Kalzith's copy of `RGN29.GFF` (one copy of the pens: with Kalzith off, the
+rack's alone). The Elven Leader's Gythka +2 is his own
 Gythka +1 (in his pack, object 124, and the item object 2534 his script gives)
 made +2. (People of a kind share an
 object, so every Tari, Renegade and Wild Mul carries theirs; the caravan's
@@ -579,9 +583,11 @@ it would show "CANNOT LEARN FROM THIS ITEM" and keep the scroll (from 196 on,
 the icon can't be clicked). There the helper (`INT B9h`) raises the reader's
 WIS, in the sheet and the creature record, writes its message in the game's
 buffer, and goes on as for a power taught: the game uses the tome up and shows
-it. The short sword, the cloak whose plus counts and the bone helm are
-item types the helper adds after the game's 115 each time the game reads its
-table in; the Ledger's item names (`dscompanion/names.py`) are entries it adds
+it. The short sword, the cloak whose plus counts, the bone helm and the rest
+(22, the last Galefang's: a metal dagger whose class list has the air cleric's
+bit, which none of the game's daggers have) are item types the helper adds
+after the game's 115 each time the game reads its table in (`TYPES_EXTRA`; its
+weapon kinds by type, `kind_of_type`, cover them too); the Ledger's item names (`dscompanion/names.py`) are entries it adds
 after the game's 322 (the game puts the item type's material before the name
 when it shows one); and the icons are objects in the Ledger's copy of
 `SEGOBJEX.GFF` (`dscompanion/icons.py`), which the helper has the game open
@@ -605,6 +611,11 @@ Alagorn's new menu lines are in the Ledger's copy of his scripts
   short.
 - The two Rings of Protection have different pictures, so their one menu line
   joins two queries with "or", as the game's own tests do.
+- Each item a menu shows needs a value saying it's carried, and a script has 16
+  locals: the weapons menu's six game items, its loop's own and ten new ones
+  are one too many, so items past the locals use the Ledger's flags from 784
+  on (set afresh as the part starts, as the locals are). The new stories'
+  "none left" test is one subroutine they all call.
 
 ### Kalzith
 

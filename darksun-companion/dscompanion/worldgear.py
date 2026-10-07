@@ -31,6 +31,11 @@
 - The magic axes: Drakejaw, a bone axe +1, on one of the Magera guarding the wagon's prisoners;
   Glasshewer, an obsidian axe +2, on the elven slavers' Templar; Headsman, a metal great axe +2,
   in the arena Announcer's stash. And the Elven Leader's Gythka +1 made +2.
+- Weapons for those who had too few magic ones: Galefang, a metal dagger +2 of DSCLOG's own type
+  that air clerics may use, on the Rogue Shaman; Mindshard, an obsidian short sword +1, on Maris,
+  and Stillwater, a bone short sword +1, in the chest Chaya gives as her apology (psionicists',
+  alone or with a cleric's); Linebreaker, a metal polearm +2, on the Troop Leader; Thornwall, a
+  bone polearm +1, on the slave pens' weapon rack, in place of one of its two plain ones.
 - Bracers of defense (DSCLOG's BRACERS type, worn on the arms: their plus counts for AC while neither
   armour nor a helm is worn), now that a preserver can't cast in armour: on four
   of the game's wizards, better the later they're met.
@@ -80,6 +85,19 @@ NAMES.update({DRAKEJAW: b"Drakejaw", GLASSHEWER: b"Glasshewer", HEADSMAN: b"Head
 BONE_AXE_1 = ((game.BONE_AXE_TYPE, DRAKEJAW, 0x10000 - 2554, PLUS_VALUE), 1)
 OBSIDIAN_AXE_2 = ((game.OBSIDIAN_AXE_TYPE, GLASSHEWER, 0x10000 - 2556, 2 * PLUS_VALUE), 2)
 GREAT_AXE_2 = ((game.METAL_GREAT_AXE_TYPE, HEADSMAN, 0x10000 - 2558, 2 * PLUS_VALUE), 2)
+# the weapons for those who had too few magic ones: an air cleric's dagger +2 (DSCLOG's own type: no dagger
+# of the game's is an air cleric's), an obsidian and a bone short sword +1 (a psionicist's, alone or
+# with a fire, earth or water cleric's), a metal polearm +2 and a bone one +1 (the game has no
+# polearm to find)
+GALEFANG, MINDSHARD, STILLWATER, LINEBREAKER, THORNWALL = 0x15C, 0x15D, 0x15E, 0x15F, 0x160
+NAMES.update({GALEFANG: b"Galefang", MINDSHARD: b"Mindshard", STILLWATER: b"Stillwater", LINEBREAKER: b"Linebreaker",
+              THORNWALL: b"Thornwall"})
+AIR_DAGGER_2 = ((game.AIR_DAGGER_TYPE, GALEFANG, 0x10000 - 2564, 2 * PLUS_VALUE), 2)
+OBSIDIAN_SHORT_SWORD_1 = ((game.OBSIDIAN_SHORT_SWORD_TYPE, MINDSHARD, 0x10000 - 2566, PLUS_VALUE), 1)
+BONE_SHORT_SWORD_1 = ((game.BONE_SHORT_SWORD_TYPE, STILLWATER, 0x10000 - 2568, PLUS_VALUE), 1)
+POLEARM_2 = ((game.METAL_POLEARM_TYPE, LINEBREAKER, 0x10000 - 2570, 2 * PLUS_VALUE), 2)
+BONE_POLEARM = 19  # (the game's Polearm, of bone)
+BONE_POLEARM_1 = ((BONE_POLEARM, THORNWALL, 0x10000 - 2572, PLUS_VALUE), 1)
 # the Elven Leader's Gythka +1 (in his pack, object 124; and the item his script gives, a new one of
 # object 2534) a Gythka +2
 ELVEN_LEADER, ELVEN_GYTHKA = 124, 2534
@@ -186,12 +204,14 @@ class Gift(NamedTuple):
     """Items for the people or chests of OBJECTS (SEGOBJEX's), written into their data. CLONE: the
     objects' people share theirs with others of their kind (one object each kind), and the items
     are for one of them: the person of entity ENTITY of the region's table (ETAB), who gets an
-    object of their own, NEW, a copy of their kind's."""
+    object of their own, NEW, a copy of their kind's. INSTEAD: (item type, plus) of an item of
+    theirs the (one) item takes the place of, the first of the kind; None, the items are added."""
     name: str
     items: Tuple[bytes, ...]
     objects: Tuple[int, ...]
     region: Optional[int] = None  # (where: the region's file, for a clone; None, RGNFF's people)
     clone: Optional[Tuple[int, int]] = None  # (entity, new object)
+    instead: Optional[Tuple[int, int]] = None  # (item type, plus)
 
 
 PLAIN = (BONE_SHORT_SWORD, OBSIDIAN_SHORT_SWORD, BONE_AXE, OBSIDIAN_AXE, OBSIDIAN_MACE)
@@ -212,6 +232,8 @@ GIFTS: Tuple[Gift, ...] = (
     Gift("Kwerin", (weapon(METAL_PICK),), (113,), 0x0B),
     Gift("Castle Guard", (weapon(METAL_POLEARM),), (55,), 0x1C, clone=(121, 2560)),  # (one of six)
 )
+CHAYAS_CHEST = 2249  # (her script's)
+WEAPON_RACK, PENS, PENS_RACK = 1647, 0x29, 131  # (the slave pens' rack: its region, its entity)
 DAGOLAR, BALKAZAR = 26, 14  # (Dagolar: the one with Dag's Dagger, object 26; his double is 27)
 MAGIC: Tuple[Gift, ...] = (
     Gift("Bowyer", (weapon(*STAFF_SLING_1),), (283,), 0x0B),
@@ -245,6 +267,17 @@ MAGIC: Tuple[Gift, ...] = (
     Gift("Magera", (weapon(*BONE_AXE_1),), (71,), 0x08, clone=(122, 2562)),
     Gift("Templar", (weapon(*OBSIDIAN_AXE_2),), (131,), 0x14),
     Gift("Announcer", (weapon(*GREAT_AXE_2),), (91,)),
+    # Galefang on the Rogue Shaman (with his Shaman Followers), Mindshard on Maris (carrying psionic
+    # scrolls), Stillwater in the chest Chaya gives as her apology (its object made by her script,
+    # with the Sling +2, the Grapes of Bless and the obelisk's gem), Linebreaker on the Troop
+    # Leader, Thornwall on the slave pens' weapon rack, in place of one of its two bone polearms
+    # (the Lower Castle's rack is the same object: the pens' one gets its own)
+    Gift("Rogue Shaman", (weapon(*AIR_DAGGER_2),), (77,), 0x0F),
+    Gift("Maris", (weapon(*OBSIDIAN_SHORT_SWORD_1),), (228,), 0x22),
+    Gift("Chaya's chest", (weapon(*BONE_SHORT_SWORD_1),), (CHAYAS_CHEST,)),
+    Gift("Troop Leader", (weapon(*POLEARM_2),), (18,), 0x21),
+    Gift("Weapon Rack", (weapon(*BONE_POLEARM_1),), (WEAPON_RACK,), PENS, clone=(PENS_RACK, 2563),
+         instead=(BONE_POLEARM, 0)),
 )
 
 
@@ -281,7 +314,8 @@ BASE_TYPES = {game.SHORT_SWORD_TYPE: 63, game.CLOAK_TYPE: 65, game.BONE_HELM_TYP
               game.METAL_SHORT_SWORD_TYPE: 63, game.BRACERS_TYPE: 7, game.METAL_DAGGER_TYPE: 33,
               game.METAL_MACE_TYPE: 20, game.METAL_GREAT_AXE_TYPE: 2, game.METAL_PICK_TYPE: 112,
               game.METAL_POLEARM_TYPE: 19, game.CIRCLET_TYPE: 36, game.CROWN_TYPE: 36, game.PLATE_CHEST_TYPE: 57,
-              game.PLATE_ARMS_TYPE: 58, game.PLATE_LEGS_TYPE: 59, game.ELVEN_CLOAK_TYPE: 65, game.ELVEN_BOOTS_TYPE: 68}
+              game.PLATE_ARMS_TYPE: 58, game.PLATE_LEGS_TYPE: 59, game.ELVEN_CLOAK_TYPE: 65, game.ELVEN_BOOTS_TYPE: 68,
+              game.AIR_DAGGER_TYPE: 33}
 
 
 def header_numbers(chunks) -> Dict[int, int]:
@@ -298,6 +332,13 @@ def object_chunks(chunks, gifts: Sequence[Gift], extra: Sequence[Tuple[int, Sequ
     numbers = header_numbers(chunks)
     wanted: Dict[int, List[bytes]] = {}
     out: Dict[Tuple[str, int], bytes] = {}
+
+    def given(base: bytes, gift: Gift) -> bytes:
+        if not gift.instead:
+            return dataitems.with_items(base, gift.items, numbers)
+        kind, plus = gift.instead
+        return dataitems.with_item_replaced(base, lambda r: struct.unpack_from("<H", r, game.ITEM_TYPE)[0] == kind
+                                            and r[game.ITEM_PLUS] == plus, gift.items[0], numbers)
     for gift in gifts:
         for obj in gift.objects:
             if gift.clone:
@@ -306,7 +347,9 @@ def object_chunks(chunks, gifts: Sequence[Gift], extra: Sequence[Tuple[int, Sequ
                     continue
                 out[("OJFF", new)] = chunks[("OJFF", obj)]
                 base = out.get(("RDFF", new), dataitems.renumbered(chunks[("RDFF", obj)], new))
-                out[("RDFF", new)] = dataitems.with_items(base, gift.items, numbers)
+                out[("RDFF", new)] = given(base, gift)
+            elif gift.instead:
+                out[("RDFF", obj)] = given(out.get(("RDFF", obj), chunks[("RDFF", obj)]), gift)
             else:
                 wanted.setdefault(obj, []).extend(gift.items)
     for obj, items in extra:

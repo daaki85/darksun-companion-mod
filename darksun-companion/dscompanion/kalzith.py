@@ -632,12 +632,15 @@ def script_chunks(gpldata: bytes, kalzith: bool = True, semyon: bool = True,
     return out
 
 
-def region_chunks(rgn: bytes) -> Dict[Tuple[str, int], bytes]:
-    """For the Ledger's copy of RGN29.GFF: the pens' entity table with him in it."""
+def region_chunks(rgn: bytes, gifts=()) -> Dict[Tuple[str, int], bytes]:
+    """For the Ledger's copy of RGN29.GFF: the pens' entity table with him in it (and with
+    GIFTS' clones there, worldgear.py's: the pens' weapon rack's own object)."""
+    from . import worldgear
     chunks = read_gff(rgn)
     if ("ETAB", ETAB_ID) not in chunks:
         return {}
-    return {("ETAB", ETAB_ID): with_entity(chunks[("ETAB", ETAB_ID)])}
+    etab = worldgear.region_chunks(REGION, chunks, gifts).get(("ETAB", ETAB_ID), chunks[("ETAB", ETAB_ID)])
+    return {("ETAB", ETAB_ID): with_entity(etab)}
 
 
 # ---------------------------------------------------------------------------------------------
@@ -868,6 +871,7 @@ def write_scripts(source: str, dest: str, kalzith: bool = True, semyon: bool = T
     _write(source, dest, lambda data: script_chunks(data, kalzith, semyon, vulture, ring, arms, magic, cloak, tome, pens))
 
 
-def write_region(source: str, dest: str) -> None:
-    """The game's RGN29.GFF (SOURCE, only read) with Kalzith in his pen, to DEST."""
-    _write(source, dest, region_chunks)
+def write_region(source: str, dest: str, gifts=()) -> None:
+    """The game's RGN29.GFF (SOURCE, only read) with Kalzith in his pen (and GIFTS' clones), to
+    DEST."""
+    _write(source, dest, lambda data: region_chunks(data, gifts))

@@ -265,6 +265,17 @@ ICONS: Tuple[Tuple[str, int, int, int, Callable[[Rows], Rows]], ...] = (
      lambda r: glow(recolour(r, AXE_OBSIDIAN), lambda p, x, y: 208 <= p <= 212 and (x + y) % 2 == 0, FIRE)),
     ("Headsman", 0xFC06, 2558, 2559,
      lambda r: glow(recolour(r, {1: 58, 2: 59, **TEAL_TO_METAL}), lambda p, x, y: 208 <= p <= 215 and (x + y) % 2 == 0, FIRE)),
+    # the weapons for those who had too few (worldgear.py): the metal Dagger, the obsidian and bone
+    # Short Swords and the metal Polearm, every other pixel of their blades in the fire colours
+    ("Galefang", 0xFB5A, 2564, 2565,
+     lambda r: glow(recolour(r, STONE_TO_METAL), lambda p, x, y: p in STONE_TO_METAL.values() and (x + y) % 2 == 0, FIRE)),
+    ("Mindshard", 0xFC0B, 2566, 2567,
+     lambda r: glow(shorter_blade(r), lambda p, x, y: (p in BLADE or p in (208, 209, 210)) and (x + y) % 2 == 0, FIRE)),
+    ("Stillwater", 0xFC0C, 2568, 2569,
+     lambda r: glow(shorter_blade(r), lambda p, x, y: p in (0x92, 0x94, 0x98, 0x9C) and (x + y) % 2 == 0, FIRE)),
+    ("Linebreaker", 0xFB5E, 2570, 2571,
+     lambda r: glow(recolour(r, LIGHT_TO_METAL), lambda p, x, y: p in LIGHT_TO_METAL.values() and (x + y) % 2 == 0, FIRE)),
+    ("Thornwall", 0xFB5E, 2572, 2573, lambda r: glow(r, lambda p, x, y: 210 <= p <= 215 and (x + y) % 2 == 0, FIRE)),
 )
 PICTURES: Dict[str, int] = {name: 0x10000 - number for name, _, number, _, _ in ICONS}  # an item's +0
 
@@ -518,13 +529,15 @@ def which(rec: bytes) -> Optional[str]:
     kind, = struct.unpack_from("<H", rec, game.ITEM_TYPE)
     if kind == game.BONE_HELM_TYPE:
         return "Bone Helm"
-    if kind == game.BONE_SHORT_SWORD_TYPE:
-        return "Bone Short Sword"
     plus = struct.unpack("b", rec[game.ITEM_PLUS:game.ITEM_PLUS + 1])[0]
+    if kind == game.BONE_SHORT_SWORD_TYPE:
+        return "Stillwater" if plus == 1 else "Bone Short Sword"
     if kind == game.BONE_AXE_TYPE:
         return "Drakejaw" if plus == 1 else "Bone Axe"
     if kind == game.OBSIDIAN_SHORT_SWORD_TYPE:
-        return "Obsidian Short Sword"
+        return "Mindshard" if plus == 1 else "Obsidian Short Sword"
+    if kind == game.AIR_DAGGER_TYPE:
+        return "Galefang"
     if kind == game.OBSIDIAN_AXE_TYPE:
         return "Glasshewer" if plus == 2 else "Obsidian Axe"
     if kind == GREAT_AXE_TYPE and plus == 0:
@@ -553,6 +566,10 @@ def which(rec: bytes) -> Optional[str]:
         return "Warden's Helm"
     if kind == game.METAL_GREAT_AXE_TYPE and plus == 2:
         return "Headsman"
+    if kind == game.METAL_POLEARM_TYPE and plus == 2:
+        return "Linebreaker"
+    if kind == 19 and plus == 1 and struct.unpack_from("<H", rec, game.ITEM_NAME)[0] == 0x160:
+        return "Thornwall"
     if kind in METAL_TYPES and plus == 0:
         return METAL_TYPES[kind]
     if plus == 1 and kind in MAGIC_KINDS:

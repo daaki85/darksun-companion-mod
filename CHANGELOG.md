@@ -5,6 +5,27 @@ Released pull requests are summarised in a line or two each; the release notes
 ([1.1.0](release-notes/v1.1.0.md): #14 to #18; [1.0.0](release-notes/v1.0.0.md):
 #1 to #13) and the pull requests themselves have the detail.
 
+## Pull request #24 ([merged 2026-10-07](https://github.com/daaki85/darksun-companion-mod/pull/24))
+
+**Added**
+- **Magic weapons for the classes that had too few,** each with an icon of its
+  own and a story from Alagorn:
+  - **Galefang,** a metal dagger +2 an air cleric can wield (a new item type:
+    none of the game's daggers are an air cleric's), on the Rogue Shaman;
+  - **Mindshard,** an obsidian short sword +1, on Maris, and **Stillwater,** a
+    bone short sword +1, in the chest Chaya gives as her apology: a
+    psionicist's, alone or with a cleric's;
+  - **Linebreaker,** a metal polearm +2, on the Troop Leader, and
+    **Thornwall,** a bone polearm +1, on the slave pens' weapon rack in place
+    of one of its two plain ones (the rack gets an object of its own: the
+    Lower Castle's is the same object).
+  - Alagorn's weapons menu now has more items than a script has locals: the
+    last are kept in the Ledger's flags.
+
+**Fixed**
+- **Drakejaw** (pull request #23) was never on its Magera: the game read its
+  own Gemfields region, not the Ledger's copy, which DSCLOG now opens instead.
+
 ## Pull request #23 ([merged 2026-10-07](https://github.com/daaki85/darksun-companion-mod/pull/23))
 
 **Added**
