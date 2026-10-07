@@ -14,6 +14,9 @@ Released pull requests are summarised in a line or two each; the release notes
   chatkcha 3/2, then 2 (AD&D's specialist's rate for the sling, a step above
   it for the others). A grand master shoots once more a round, as in melee.
   Before, missiles kept the game's rate.
+- **Guide:** a table of attacks a round by skill (none, the game's, a kind
+  not chosen, expertise, specialized, mastery, grand mastery) and level, for
+  melee, bows and the other missile weapons.
 - **Rangers and the bow:** every ranger has expertise with the bow on top of
   the kind it chooses, and a ranger's expertise with a missile weapon now
   gives the same rate of fire (by ranger level), with no other bonus. The Characters tab shows each missile weapon's rate.

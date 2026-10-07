@@ -1435,27 +1435,33 @@ in chosen kinds of weapon, as in AD&D:
 | **Ranger** (one class or more) | 1 kind, and the bow always | expertise: the game's attacks a round in melee, a specialist's rate of fire with a missile weapon, no other bonus |
 
 The game already gives every fighter, gladiator and ranger the specialist's
-attacks in melee (3/2 a round, 2 from 7th level, 5/2 from 13th). With the
-rule, a warrior fighting with a weapon of a kind it hasn't chosen gets AD&D's
-plain rate, half an attack less (1, then 3/2, then 2); with its own kind it
-keeps the game's rate (a grand master one more).
+attacks in melee (3/2 a round, 2 from 7th level). With the rule, a warrior
+fighting with a weapon of a kind it hasn't chosen gets AD&D's plain rate, half
+an attack less; with its own kind it keeps the game's rate (a grand master one
+more).
 
 Missile weapons have a rate of fire of their own in the game, the same for
 everyone (a bow 2 a round, a sling, staff sling or chatkcha 1). A fighter or
 gladiator who has chosen the kind shoots faster, and so does a ranger with its
 chosen kind and with every bow (a ranger's expertise with the bow comes on top
-of the kind it chooses). The rate goes by the warrior's level (the highest of
-its fighter, gladiator and ranger levels): AD&D's specialist's rate for the
-sling, and a step above AD&D's for the bow, staff sling and chatkcha:
+of the kind it chooses): AD&D's specialist's rate for the sling, a step above
+AD&D's for the bow, staff sling and chatkcha. Mastery's and grand mastery's
+bonuses to hit and damage count for missiles too.
 
-| Kind | Game (anyone) | Specialist, levels 1–6 | 7–10 |
-|---|---|---|---|
-| bow | 2 | 3 | 4 |
-| sling, staff sling, chatkcha | 1 | 3/2 | 2 |
+**Attacks a round,** by skill and level (a warrior's level: the highest of its
+fighter, gladiator and ranger levels; characters stop at 10):
 
-A grand master shoots once more a round, as in melee, and mastery's and
-grand mastery's bonuses to hit and damage count for missiles too. The
-Characters tab shows each missile weapon's rate.
+| Skill with the weapon | Who | Melee, levels 1–6 | 7–10 | Bow, 1–6 | 7–10 | Sling, staff sling or chatkcha, 1–6 | 7–10 |
+|---|---|---|---|---|---|---|---|
+| none (not a warrior) | clerics, druids, preservers, psionicists, thieves | 1 | 1 | 2 | 2 | 1 | 1 |
+| the game's (no kinds chosen, or the rule off) | any warrior | 3/2 | 2 | 2 | 2 | 1 | 1 |
+| a kind not chosen | any warrior | 1 | 3/2 | 2 | 2 | 1 | 1 |
+| expertise | a ranger: its chosen kind, and every bow | 3/2 | 2 | 3 | 4 | 3/2 | 2 |
+| specialized | a fighter's or gladiator's chosen kind | 3/2 | 2 | 3 | 4 | 3/2 | 2 |
+| mastery | a fighter's first kind, from 5th level | 3/2 | 2 | 3 | 4 | 3/2 | 2 |
+| grand mastery | a fighter's first kind, from 9th level | | 3 | | 5 | | 3 |
+
+The Characters tab shows each ready weapon's attacks a round.
 
 Mastery and grand mastery are for a fighter's chosen kind; a
 gladiator's kinds stay at specialized. The sixteen kinds take in the game's
