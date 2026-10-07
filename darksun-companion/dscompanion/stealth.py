@@ -9,12 +9,11 @@ a weapon that can backstab; attacking gives them away, and the turn ending ends 
 Worn, a cloak adds CLOAK_HIDE to hiding in shadows and boots BOOTS_QUIET to moving silently
 (at most MOST), before the light halves it.
 
-The Cloak and Boots of Elvenkind (worldgear.py) do more, for anyone who wears them, thief or
-not: the cloak makes its wearer all but invisible, ELVEN_HIDE_OUT under the open sky and
-ELVEN_HIDE_IN under a roof, whatever the light (AD&D's: 95-100% in the wild, 90% among
-buildings, 95% underground by torchlight); the boots make them silent, ELVEN_QUIET (AD&D's 95% in
-the worst conditions). Someone with neither thief nor ranger skills hides only in the cloak,
-and moves silently only in the boots; their attack from behind is no backstab.
+The Cloak and Boots of Elvenkind (worldgear.py, worn by thieves and rangers only) do more: the
+cloak makes its wearer all but invisible, ELVEN_HIDE_OUT under the open sky and ELVEN_HIDE_IN
+under a roof, whatever the light (AD&D's: 95-100% in the wild, 90% among buildings, 95%
+underground by torchlight), unless their own chance is better; the boots make them silent,
+ELVEN_QUIET (AD&D's 95% in the worst conditions).
 
 Rangers do it too, with AD&D's chances for a ranger (the game gives them no thief skills;
 game.ranger_skill_parts), but the other way round for the light: outdoorsmen, they hide with
@@ -151,8 +150,8 @@ def wears(gd: GameData, creature: int, type_: int, slot: int) -> bool:
 
 
 def turn(gd: GameData, combatant: int, roll: Callable[[], int], gear: bool = True) -> Tuple[List[str], bool]:
-    """A party member's turn has come in a fight: if a thief or a ranger, or wearing the Cloak of
-    Elvenkind, the hiding and moving silently, with a worn cloak's and boots' bonuses if GEAR.
+    """A party member's turn has come in a fight: if a thief or a ranger, the hiding and moving
+    silently, with a worn cloak's and boots' bonuses if GEAR.
     (log lines, whether their next attack is from behind)."""
     creature = gd.combatant_creature(combatant)
     if creature is None or creature >= game.PARTY_SIZE:
@@ -162,11 +161,9 @@ def turn(gd: GameData, combatant: int, roll: Callable[[], int], gear: bool = Tru
     ranger = hide is None
     if ranger:
         hide, of = ranger_chance(gd, creature, HIDE), ranger_chance
-    elven_cloak = wears(gd, creature, game.ELVEN_CLOAK_TYPE, game.CLOAK_SLOT)
-    if hide is None and not elven_cloak:
+    if hide is None:
         return [], False
-    skilled = hide is not None
-    hide = hide or 0
+    elven_cloak = wears(gd, creature, game.ELVEN_CLOAK_TYPE, game.CLOAK_SLOT)
     extra, note = worn_bonus(gd, creature, game.CLOAK_SLOT, CLOAK_HIDE, "cloak") \
         if gear and not elven_cloak else (0, "")
     shown = f"{hide}{note} = {min(MOST, hide + extra)}" if extra else f"{hide}"
@@ -201,7 +198,7 @@ def turn(gd: GameData, combatant: int, roll: Callable[[], int], gear: bool = Tru
         quiet = min(MOST, quiet + extra)
     d100 = roll()
     unheard = d100 <= quiet
-    behind = "from behind" if ranger or not skilled else "from behind (a backstab with a weapon that can)"
+    behind = "from behind" if ranger else "from behind (a backstab with a weapon that can)"
     lines.append(f"  {who} moves silently: d100 = {d100}, needs {quiet}{boots} or less -> "
                  + (f"unheard: their next attack this turn is {behind}" if unheard else "heard"))
     return lines, unheard

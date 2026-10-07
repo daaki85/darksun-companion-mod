@@ -18,10 +18,11 @@ requests #1 to #13; its notes are in
   has an icon of its own and is drawn on the figures.
 - **The Cloak and Boots of Elvenkind** (with the magic weapons' switch): the
   cloak comes with the Elven Leader's gift of his Gythka +1, the boots are in
-  the buried chest of Kel's caravan. With the hiding rule, anyone wearing the
-  cloak hides in shadows on 95 or less under the open sky, 90 under a roof
-  (not halved by the light), and anyone in the boots moves silently on 95 or
-  less, thief or not; their item boxes say so (`Hide 90-95%`, `Move 95%`).
+  the buried chest of Kel's caravan. Thieves and rangers only (multiclasses
+  too). With the hiding rule, the cloak's wearer hides in shadows on 95 or
+  less under the open sky, 90 under a roof (not halved by the light), and the
+  boots' moves silently on 95 or less; their item boxes say so (`Hide 90-95%`,
+  `Move 95%`).
 - **The Flame Blade,** an obsidian long sword +1 (with the magic weapons'
   switch) whose blade casts the fire clerics' Focus Heat on what it hits (2d6
   fire, a save for half), as the game's Dark Flame does Burning Hands: in the pack of the Hot Springs'

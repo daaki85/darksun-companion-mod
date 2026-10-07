@@ -1018,14 +1018,13 @@ screen's thief rows have them).
 
 ![Item boxes in the game: a Leather Belt's "Pick +5, Lock +5", Leather Boots (Speed+1)'s "Move +10" and a Leather Cloak's "Hide +10", each at 24](docs/gear-boxes.png)
 
-The [Cloak and Boots of Elvenkind](#new-items) do more, for anyone who wears
-them, thief, ranger or not (whatever the plain gear's switch): in the cloak,
-hiding in shadows needs 95 or less under the open sky and 90 under a roof, not
-halved by the light (AD&D's: all but invisible in the wild, 90% among
-buildings), unless their own chance is better; in the boots, moving silently
-needs 95 or less. Someone with neither thief nor ranger skills hides only in
-the cloak and moves silently only in the boots, and their attack from behind
-is no backstab. Their boxes say `Hide 90-95%` and `Move 95%`.
+The [Cloak and Boots of Elvenkind](#new-items) do more (whatever the plain
+gear's switch). Only thieves and rangers can wear them (multiclasses too; for
+anyone else, the game's "Cannot use this item"). In the cloak, hiding in
+shadows needs 95 or less under the open sky and 90 under a roof, not halved by
+the light (AD&D's: all but invisible in the wild, 90% among buildings), unless
+their own chance is better; in the boots, moving silently needs 95 or less.
+Their boxes say `Hide 90-95%` and `Move 95%`.
 
 ![Item boxes in the game: the Cloak of Elvenkind's "Hide 90-95%", 25,000; the Boots of Elvenkind's "Move 95%", 20,000](docs/elvenkind.png)
 
@@ -1856,8 +1855,8 @@ like its own. The log doesn't say: they're there to be found.
 | **Warden's Arms** | the Lower Castle's treasure chest, with Dark Flame (behind the wall the Serpent Boots show, where the vrock perch) | plate arm armour +1 (AC 2, +1) |
 | **Warden's Legs** | the Gemfields' chest | plate leg armour +1 (AC 2, +1) |
 | **Warden's Chest** | on **Balkazar**'s body | plate chest armour +1 (AC 3, +1): Resist Fire on its wearer while worn |
-| **Cloak of Elvenkind** | with the **Elven Leader**'s gift of his Gythka +1 (to whoever is given it) | a grey cloak: [all but invisible](#hiding-in-shadows-to-backstab) to anyone wearing it in a fight, with the hiding rule |
-| **Boots of Elvenkind** | the buried chest of Kel's caravan, with the Cahulaks +1 | soft boots: [silent](#hiding-in-shadows-to-backstab), with the hiding rule |
+| **Cloak of Elvenkind** | with the **Elven Leader**'s gift of his Gythka +1 (to whoever is given it) | a grey cloak: [all but invisible](#hiding-in-shadows-to-backstab) in a fight, with the hiding rule; thieves and rangers only |
+| **Boots of Elvenkind** | the buried chest of Kel's caravan, with the Cahulaks +1 | soft boots: [silent](#hiding-in-shadows-to-backstab), with the hiding rule; thieves and rangers only |
 | **Bracers of Defense** | **Mikquetzl** (AC 6, in his pack), **Wyrmias** (AC 5), **Balkazar** (AC 4), **Dagolar** (AC 2, the one carrying Dag's Dagger) | AC for those wearing no armour: [bracers of defense](#bracers-of-defense) |
 
 **Prices** follow the game's own:

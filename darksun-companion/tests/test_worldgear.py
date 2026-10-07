@@ -128,6 +128,7 @@ class WorldGearTests(unittest.TestCase):
             self.assertEqual(struct.unpack_from("<H", item, game.ITEM_TYPE)[0], type_)
             self.assertEqual((item[game.ITEM_PLUS], item[worldgear.ITEM_SPELL]), (0, 0))
             self.assertEqual(npcitems.TYPES[type_ - game.GAME_TYPES][9], slot)
+            self.assertEqual(npcitems.TYPES[type_ - game.GAME_TYPES][0x10:0x12], b"\x00\x06")  # (thieves, rangers)
             self.assertEqual(icons.which(item), name)
         self.assertEqual(names.NAMES[worldgear.CLOAK_OF_ELVENKIND], b"Cloak/Elvenkind")
         self.assertEqual(gift("Elven Leader's gift").beside, (game.GYTHKA_TYPE, 1))

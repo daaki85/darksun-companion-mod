@@ -5860,11 +5860,12 @@ extra_types:
         db 0x00, 0x00, 0x00, 0x00, 0x4B, 0x00, 0xFA, 0x00, 0x04, 0x0A, 0x00, 0x00
         db 0x00, 0x00, 0x00, 0x80, 0x6F, 0x12, 0x02, 0x00
         ; the Cloak and Boots of Elvenkind (ELVEN_CLOAK, ELVEN_BOOTS: dscompanion/worldgear.py,
-        ; their stealth stealth.py): the Cloak's (65) and the Boots' (68)
+        ; their stealth stealth.py): the Cloak's (65) and the Boots' (68), for thieves and rangers
+        ; only (+10h: 600h, their class bits; a multiclass with either may wear them)
         db 0x00, 0x00, 0x00, 0x00, 0x0A, 0x00, 0x0A, 0x00, 0x05, 0x08, 0x00, 0x00
-        db 0x00, 0x00, 0x00, 0x00, 0xFF, 0x1F, 0x00, 0x01
+        db 0x00, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x01
         db 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x0A, 0x00, 0x85, 0x04, 0x00, 0x00
-        db 0x00, 0x00, 0x00, 0x00, 0xFF, 0x1F, 0x00, 0x00
+        db 0x00, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00
 ; the names, numbered from NAMES_OWN (322): the companion's items' (the same as the companion's
 ; NAMES in dscompanion/names.py), the rest blank until it writes more
 extra_names:
@@ -7941,7 +7942,7 @@ ib_draw    dd 0
 ib_hide    db 'Hide +10', 0     ; (the skills' short names, as the inventory screen's thief rows
 ib_quiet   db 'Move +10', 0     ;   have them: HIDE, MOVE, PICK, LOCK; mixed case, as item names)
 ib_belt    db 'Pick +5, Lock +5', 0
-ib_elf_hide  db 'Hide 90-95%', 0    ; (the Cloak of Elvenkind's chance, for anyone: stealth.py)
+ib_elf_hide  db 'Hide 90-95%', 0    ; (the Cloak of Elvenkind's chance: stealth.py)
 ib_elf_quiet db 'Move 95%', 0
 
 ; PROBE_BELT: INT VEC_BELT replaces "mov ax,si" (2 bytes) at the end of the game's thief skill

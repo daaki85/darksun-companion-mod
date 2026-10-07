@@ -92,21 +92,22 @@ class StealthTests(unittest.TestCase):
         self.region(0x29)
         self.assertIn("needs 90 or less (Cloak of Elvenkind, under a roof)", stealth.turn(self.gd, 0, rolls(99))[0][0])
 
-    def test_elvenkind_anyone(self):
-        """No thief or ranger: hidden in the cloak, silent in the boots, from behind (no backstab);
-        without the boots, never unheard."""
+    def test_elvenkind_not_a_thief(self):
+        """No thief or ranger (who couldn't put them on in the game): nothing."""
         self.m[game_sheet() + game.SHEET_CLASSES + 1] = 0  # (a fighter only)
-        self.assertEqual(stealth.turn(self.gd, 0, rolls()), ([], False))
         self.elven()
-        lines, hidden = stealth.turn(self.gd, 0, rolls(50, 50))
-        self.assertTrue(hidden)
-        self.assertTrue(lines[1].endswith("their next attack this turn is from behind"))
-        self.elven(boots=False)
-        lines, hidden = stealth.turn(self.gd, 0, rolls(50, 1))
-        self.assertFalse(hidden)
-        self.assertEqual(lines[1], "  Dag moves silently: d100 = 1, needs 0 or less -> heard")
-        self.elven(cloak=False)
         self.assertEqual(stealth.turn(self.gd, 0, rolls()), ([], False))
+
+    def test_elvenkind_ranger(self):
+        """A ranger in the cloak indoors: 90, not their halved chance."""
+        self.m[game_sheet() + game.SHEET_CLASSES + 1] = 13
+        self.m[game_sheet() + game.SHEET_LEVELS + 1] = 10
+        self.region(0x29)
+        self.elven()
+        lines, hidden = stealth.turn(self.gd, 0, rolls(90, 95))
+        self.assertTrue(hidden)
+        self.assertIn("needs 90 or less (Cloak of Elvenkind, under a roof)", lines[0])
+        self.assertTrue(lines[1].endswith("their next attack this turn is from behind"))
 
     def test_cloak_and_boots_switched_off(self):
         """With the Options tab's switch off, a worn cloak and boots add nothing."""
