@@ -33,6 +33,9 @@ requests #1 to #13; its notes are in
   and Boots of Elvenkind among his magic clothes.
 
 **Fixed**
+- **No manual check:** the dragon asking for a word from the manual when the
+  party first leaves the sewers (the game's copy protection) no longer
+  comes; the game goes on as if it had been answered.
 - **The Ledger's window started with an error** (an indentation slip in its
   Options code since pull request #20); a test now compiles every module.
 

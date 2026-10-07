@@ -616,6 +616,8 @@ def script_chunks(gpldata: bytes, kalzith: bool = True, semyon: bool = True,
     if cloak:  # the Elven Leader gives the Cloak of Elvenkind (elvenleader.py; its object in the
         from . import elvenleader  # objects' copy)
         out.update(elvenleader.script_chunks(chunks, field_types))
+    from . import manualcheck  # no manual check (the dragon's question): always
+    out.update(manualcheck.script_chunks(chunks, field_types))
     if ring:  # the XP for finding the arena's ring (ring.py), in the same script as Semyon's exit
         from . import ring as rg
         body = ("GPL ", rg.BODY_SCRIPT)

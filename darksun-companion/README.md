@@ -43,6 +43,7 @@ records; this ledger keeps the ones the game doesn't show you.
   - [Spell slots on the USE screen](#spell-slots-on-the-use-screen)
   - [Each turn's rolls](#each-turns-rolls)
   - [What hurts a monster (the Look box)](#what-hurts-a-monster-the-look-box)
+  - [No manual check](#no-manual-check)
 - [Rule changes](#rule-changes)
   - [Weapon specialization](#weapon-specialization)
   - [Class restrictions](#class-restrictions)
@@ -1377,6 +1378,16 @@ magic resistance or special defences, so the box shows just the numbers and
 the alignment.)
 
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#what-hurts-a-monster-the-look-box).
+
+### No manual check
+
+The game's copy protection is gone. Leaving the sewers (the Tari's warrens) the
+first time, the game has a dragon appear and ask for a word from the manual
+("The 3rd word on page 14, line 1, begins with the letter 'p'. What is that
+word?"), and three wrong answers kill the party. Started from the Ledger, the
+dragon doesn't come: the game goes on as if it had been answered. Always on.
+
+How: [DEVELOPMENT.md](DEVELOPMENT.md#no-manual-check).
 
 ## Rule changes
 

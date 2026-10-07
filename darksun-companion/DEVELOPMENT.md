@@ -434,6 +434,20 @@ pointer to the name, then the icon) has an empty name and no icon for 54, and
 the screen shows only effects with an icon; with the rule on, the Ledger gives
 54 Flaming Sphere's icon (21014, read as Cat's Grace's) and the spell's name.
 
+### No manual check
+
+([In the README](README.md#no-manual-check).)
+
+How: the dragon's question is the game's script 20, which script 120 runs (a
+call into another script, command 14h) when the party leaves the warrens
+(region 28h) until bit 12 of the game's variable (135, 73) is set. The right
+answer goes on to script 86 at 1087, which sets 255 in the variable (7, 4)
+and, in region 28h, that bit. In the Ledger's copy of the scripts
+(`dscompanion/manualcheck.py`), script 20 does just that and ends: the same
+start (offset 1, its one entry in the game's table of entry points), no words
+and no question. It is replaced only if it is the dragon's (its
+`" word on page "` line).
+
 ### New items
 
 ([In the README](README.md#new-items).)
