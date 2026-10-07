@@ -19,6 +19,9 @@
   wall the Serpent Boots show, the vrock's cliff); the legs in the Gemfields' chest; the chest
   on Balkazar's body. The chest puts Resist Fire on its wearer while worn, the helm Cloak of
   Bravery; the arms and legs are plain.
+- The Cloak and Boots of Elvenkind (DSCLOG's types, the game's Cloak's and Boots'; their stealth:
+  stealth.py): the cloak comes with the Elven Leader's gift of his Gythka +1 (to whoever has it),
+  the boots are in the buried chest of Kel's caravan, with the Cahulaks +1.
 - Bracers of defense (DSCLOG's BRACERS type, worn on the arms: their plus counts for AC while neither
   armour nor a helm is worn), now that a preserver can't cast in armour: on four
   of the game's wizards, better the later they're met.
@@ -135,6 +138,16 @@ WARDENS_PLATE = (
 
 
 DARK_FLAME_CHEST, GEMFIELDS_CHEST = 1360, 1065  # (SEGOBJEX objects: their item records' picture, negated)
+CARAVAN_CHEST = 2293  # the elven caravan's buried chest (with the Cahulaks +1)
+CLOAK_OF_ELVENKIND, BOOTS_OF_ELVENKIND = 0x154, 0x155
+NAMES.update({CLOAK_OF_ELVENKIND: b"Cloak/Elvenkind", BOOTS_OF_ELVENKIND: b"Boots/Elvenkind"})
+# priced as the game's magic clothes: its Serpent Boots 20,000, Chameleon Gloves 30,000
+ELVEN_CLOAK = armour(game.ELVEN_CLOAK_TYPE, CLOAK_OF_ELVENKIND, 0x10000 - 2546, 25000, plus=0)
+ELVEN_BOOTS = armour(game.ELVEN_BOOTS_TYPE, BOOTS_OF_ELVENKIND, 0x10000 - 2548, 20000, plus=0)
+GYTHKA_1 = (game.GYTHKA_TYPE, 1)  # the Elven Leader's gift (the game's own: its own name, not Kreenfang)
+
+
+NAMES_OWN = 0x142  # the game's names: those before the Ledger's (DSCLOG's NAMES_OWN)
 
 
 class Gift(NamedTuple):
@@ -145,6 +158,8 @@ class Gift(NamedTuple):
     slot: Optional[int] = None  # worn there if it's free (else in the backpack)
     carrying: Optional[int] = None  # only one carrying an item of this name entry
     container: Optional[int] = None  # not a person's: in the container of this object (SEGOBJEX's)
+    beside: Optional[Tuple[int, int]] = None  # not a person's: to the party member with an item of
+    #   this (type, plus) of a name of the game's own (a gift given by the game's script)
 
 
 PLAIN = (BONE_SHORT_SWORD, OBSIDIAN_SHORT_SWORD, BONE_AXE, OBSIDIAN_AXE, OBSIDIAN_MACE)
@@ -185,6 +200,9 @@ MAGIC: Tuple[Gift, ...] = (
     Gift(0x1D, "Treasure chest", (WARDENS_PLATE[1],), container=DARK_FLAME_CHEST),
     Gift(0x08, "Gemfields chest", (WARDENS_PLATE[2],), container=GEMFIELDS_CHEST),
     Gift(0x0D, "Balkazar", (WARDENS_PLATE[0],)),
+    # the Cloak of Elvenkind with the Elven Leader's Gythka +1, the boots in the caravan's buried chest
+    Gift(0x14, "Elven Leader's gift", (ELVEN_CLOAK,), beside=GYTHKA_1),
+    Gift(0x1A, "Buried chest", (ELVEN_BOOTS,), container=CARAVAN_CHEST),
 )
 def _lists(gd: GameData, index: int) -> List[int]:
     return [struct.unpack_from("<h", gd.creature(index), o)[0] for o in game.CREATURE_ITEM_LISTS]
@@ -214,6 +232,14 @@ def _container(it: ring.Items, obj: int) -> Optional[int]:
             if struct.unpack_from("<H", rec, 0)[0] == 0x10000 - obj:
                 return item
     return None
+
+
+def _with_item(gd: GameData, it: ring.Items, kind: Tuple[int, int]) -> Optional[int]:
+    """The party member carrying an item of KIND (type, plus) named by the game (not the Ledger)."""
+    def test(rec: bytes) -> bool:
+        return len(rec) >= game.ITEM_SIZE and struct.unpack_from("<H", rec, game.ITEM_TYPE)[0] == kind[0] \
+            and rec[game.ITEM_PLUS] == kind[1] and struct.unpack_from("<H", rec, game.ITEM_NAME)[0] < NAMES_OWN
+    return next((m for m in range(game.PARTY_SIZE) if _carries(gd, it, m, test)), None)
 
 
 def add_inside(gd: GameData, obj: int, rec: bytes) -> bool:
@@ -257,7 +283,7 @@ def place(gd: GameData, given: Set[str], gifts: Tuple[Gift, ...] = GIFTS) -> Lis
     leader = gd.creature_name(0)
     it = ring.Items(gd)
     for gift in here:
-        if gift.container is None:
+        if gift.container is None and gift.beside is None:
             continue
         for item in gift.items:
             key = f"{leader}|world:{gift.name}:{struct.unpack_from('<H', item, game.ITEM_TYPE)[0]}:{item[game.ITEM_PLUS]}"
@@ -265,9 +291,15 @@ def place(gd: GameData, given: Set[str], gifts: Tuple[Gift, ...] = GIFTS) -> Lis
                 continue
             if _in_region(it, _same(item)):  # (a save from after it was put there)
                 given.add(key)
-            elif add_inside(gd, gift.container, item):
-                given.add(key)
-                it = ring.Items(gd)
+            elif gift.container is not None:
+                if add_inside(gd, gift.container, item):
+                    given.add(key)
+                    it = ring.Items(gd)
+            else:
+                member = _with_item(gd, it, gift.beside)
+                if member is not None and npcitems.add_to(gd, member, item):
+                    given.add(key)
+                    it = ring.Items(gd)
     for index in sorted(set(gd.combatants().values())):
         if index < game.PARTY_SIZE:
             continue

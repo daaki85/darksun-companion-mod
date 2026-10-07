@@ -22,14 +22,20 @@ def zero(*locals_):
     return alagorn._zero(list(locals_))
 
 
-def alagorns(last="Other"):
-    """Two kinds, each of two items: (part, menu, stories), the game's way."""
+def alagorns(last="Other", kinds=alagorn.KINDS, done=alagorn.DONE, split=False):
+    """Two kinds, each of two items: (part, menu, stories), the game's way (SPLIT: the test for
+    none carried in two, each of a local, as script 212's clothes)."""
     s = _Script()
-    for k, kind in enumerate(alagorn.KINDS):
+    for k, kind in enumerate(kinds):
         first = kind.first_reply.strip()
         s.op(SET, query(-30000 - 2 * k), ("var", 14, 0))
         s.op(SET, query(-30001 - 2 * k), ("var", 14, 1))
-        s.op(TEST, zero(0, 1))
+        if split:
+            s.op(TEST, zero(0))
+            s.op(IF_NOT, ("label", f"has {k}"))
+            s.op(TEST, zero(1))
+        else:
+            s.op(TEST, zero(0, 1))
         s.op(IF_NOT, ("label", f"has {k}"))
         s.op(0x4F, ("n", 115), ("str", kind.none_text))
         s.op(BACK)
@@ -37,7 +43,7 @@ def alagorns(last="Other"):
         s.op(END_IF)
         s.op(0x4F, ("n", 115), ("str", "Let me see. "))
         s.label(f"loop {k}")
-        s.op(TEST, ("expr", ["(", ("var", 0x8E, alagorn.DONE), "==", ("n", 0), ")"]))
+        s.op(TEST, ("expr", ["(", ("var", 0x8E, done), "==", ("n", 0), ")"]))
         s.op(0x63, ("label", f"out {k}"))
         s.op(MENU, {"before": [], "title": ("str", "What item do you show him?"), "replies": [
             {"text": ("str", f"  {name}"), "goto": ("label", f"story {k} {i}"), "if": ("var", 0x8E, i),
@@ -45,14 +51,14 @@ def alagorns(last="Other"):
         s.op(GOTO, ("label", f"loop {k}"))
         s.label(f"out {k}")
         s.op(BACK)
-    for k in range(len(alagorn.KINDS)):
+    for k in range(len(kinds)):
         for i in range(2):
             s.label(f"story {k} {i}")
             s.op(0x4F, ("n", 115), ("str", f"Story {k} {i}. "))
             s.op(SET, ("n", 0), ("var", 14, i))
             s.op(TEST, zero(1 - i))
             s.op(IF_NOT, ("label", f"end {k} {i}"))
-            s.op(SET, ("n", 1), ("var", 14, alagorn.DONE))
+            s.op(SET, ("n", 1), ("var", 14, done))
             s.label(f"end {k} {i}")
             s.op(END_IF)
             s.op(RETURN)
@@ -143,6 +149,45 @@ class AlagornTests(unittest.TestCase):
                          [["Greenbright"], ["Gutterknot", "Deepbiter", "Windlash"]])
         self.assertEqual(alagorn.kinds(arms=False, magic=False), ())
         self.assertEqual(alagorn.script_chunks({("GPL ", alagorn.SCRIPT): self.script}, FIELDS, False, False), {})
+
+    def test_armour_and_clothes(self):
+        """Script 212's armour and clothes: the Warden's Plate's four pieces and the Cloak and Boots
+        of Elvenkind, their locals past the loop's own (6 there), and its test for none carried in
+        two."""
+        kinds = alagorn.kinds(script=alagorn.OTHER_SCRIPT)
+        script = alagorns(last="Nothing", kinds=kinds, done=6, split=True)
+        self.assertTrue(alagorn._nothing({"text": ("str", "Nothing")}))  # (script 212's, unindented)
+        out = alagorn.with_items(script, FIELDS, kinds)
+        r = gpl._Reader(out, FIELDS)
+        r.i = len(script)
+        added = []
+        while r.i < len(out):
+            added.append(gpl._op(r))
+        menus = [[x["text"][1] for x in op.args[0]["replies"]] for op in added if op.code == MENU]
+        self.assertEqual(menus, [["  Tanelyv's Armor", "  Warden's Helm", "  Warden's Arms", "  Warden's Legs",
+                                  "  Warden's Chest", "  Nothing"],
+                                 ["  Belt of Might", "  Cloak of Elvenkind", "  Boots of Elvenkind", "  Nothing"]])
+        sets = [alagorn._sets(op) for op in added if op.code == SET and op.args[0][0] == "op"]
+        self.assertEqual([n for n, _ in sets], [2, 3, 4, 5, 2, 3])
+        self.assertIn([0, 1, 2, 3, 4, 5], [alagorn._locals(op.args[0]) for op in added if op.code == TEST])
+        flags = [op.args for op in added if op.code == SET and op.args[0] == ("n", 1)]
+        self.assertTrue(flags and all(f == [("n", 1), ("var", 14, 6)] for f in flags))
+        lines = " ".join(gpl.strings(added))
+        for name in ("The Warden's Helm!", "The Warden's Chest!", "A Cloak of Elvenkind!", "Boots of Elvenkind!"):
+            self.assertIn(name, lines)
+
+    def test_past_the_loops_local(self):
+        """The new items' locals skip the loop's own."""
+        kinds = alagorn.kinds(script=alagorn.OTHER_SCRIPT)
+        script = alagorns(last="Nothing", kinds=kinds, done=4)
+        out = alagorn.with_items(script, FIELDS, kinds)
+        r = gpl._Reader(out, FIELDS)
+        r.i = len(script)
+        added = []
+        while r.i < len(out):
+            added.append(gpl._op(r))
+        sets = [alagorn._sets(op)[0] for op in added if op.code == SET and op.args[0][0] == "op"]
+        self.assertEqual(sets, [2, 3, 5, 6, 2, 3])
 
     def test_other_script_unchanged(self):
         other = _Script()

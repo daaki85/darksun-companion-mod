@@ -54,6 +54,7 @@ TSR_MAIN_TICKS = 260  # the map's main loop run (counted)
 TSR_XP_WHO, TSR_XP_AMOUNT = 262, 264  # a party member to be given XP with the pick's text (FFFFh: none)
 TSR_SKILLS_ON = 266  # bits: item boxes name a cloak's and boots' bonus to hiding and moving silently;
 SKILLS_STEALTH, SKILLS_BELT = 1, 2  # a worn belt adds to picking pockets and opening locks (and its box says)
+SKILLS_ELVEN = 4  # the Cloak and Boots of Elvenkind's boxes name their chances (the hiding rule on)
 TSR_PICK_SEQ, TSR_PICK_REPLY, TSR_PICK_OFF, TSR_PICK_ON, PICK_SIZE = 172, 174, 176, 178, 240
 PICK_TOOLS, PICK_KEY = 1, 2  # (TSR_PICK_ON: the thieving tools on someone; P in a conversation too)
 TSR_USE_SEQ, TSR_USE_REPLY, TSR_USE_WHO, TSR_USE_TAKEN, TSR_USE_ITEM = 180, 182, 184, 186, 188
@@ -672,7 +673,8 @@ class DiceLog:
         if self.tsr_hdr is not None:
             self.guest.write(self.tsr_hdr + TSR_RULES, struct.pack("<H", rules))
             skills = (SKILLS_STEALTH if rules & game.RULE_STEALTH and self.stealth_gear else 0) \
-                | (SKILLS_BELT if self.stealth_gear else 0)  # (the hiding rule's cloak and boots; the belt's own)
+                | (SKILLS_BELT if self.stealth_gear else 0) \
+                | (SKILLS_ELVEN if rules & game.RULE_STEALTH else 0)  # (the hiding rule's cloak and boots; the belt's own)
             self.guest.write(self.tsr_hdr + TSR_SKILLS_ON, struct.pack("<H", skills))
             table = self.game.ds * 16 + game.SAVE_KINDS if self.game is not None else None
             # (only over the game's own table: kind 5 is petrification/polymorph or, so far, the spell save)

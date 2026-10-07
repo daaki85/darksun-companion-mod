@@ -158,6 +158,18 @@ def plate_icon(colours: Dict[int, int], bright: Tuple[int, ...]) -> Callable[[Ro
     return lambda r: recolour(glow(r, lambda p, x, y: p in bright and (x + y) % 3 == 0, FIRE), colours)
 
 
+# the Cloak and Boots of Elvenkind (worldgear.py): the Cloak's leather browns, by brightness, in a
+# neutral grey cloth, a few of its lightest folds in a leaf green (no region changes 53-56); the
+# Boots' browns in soft grey leather, their orange-browns in the greens
+LEATHER_TO_GREY = {128: 208, 129: 209, 134: 210, 135: 211, 136: 212, 137: 213, 138: 214, 139: 215, 140: 216}
+BOOTS_TO_ELVEN = {128: 209, 129: 210, 134: 211, 135: 212, 179: 53, 180: 54, 181: 55, 182: 56}
+LEAF = (54, 55, 56, 55)
+
+
+def elven_cloak_icon(rows: Rows) -> Rows:
+    return recolour(glow(rows, lambda p, x, y: p in (138, 139, 140) and (x + y) % 3 == 0, LEAF), LEATHER_TO_GREY)
+
+
 SILVER = (210, 212, 213, 214, 215, 216, 217)  # dark to light (the metal long sword's greys)
 
 
@@ -240,6 +252,9 @@ ICONS: Tuple[Tuple[str, int, int, int, Callable[[Rows], Rows]], ...] = (
     ("Warden's Arms", 0xFBF3, 2540, 2541, plate_icon(CHAIN_TO_PLATE, (213, 214, 215))),
     ("Warden's Legs", 0xFBF2, 2542, 2543, plate_icon(CHAIN_TO_PLATE, (213, 215, 216))),
     ("Warden's Helm", 0xFC03, 2544, 2545, plate_icon(LEATHER_TO_PLATE, (138, 139, 140))),
+    # the Cloak and Boots of Elvenkind (worldgear.py): the Cloak's and the Boots'
+    ("Cloak of Elvenkind", 0xFBE3, 2546, 2547, elven_cloak_icon),
+    ("Boots of Elvenkind", 0xFBE5, 2548, 2549, lambda r: recolour(r, BOOTS_TO_ELVEN)),
 )
 PICTURES: Dict[str, int] = {name: 0x10000 - number for name, _, number, _, _ in ICONS}  # an item's +0
 
@@ -509,6 +524,10 @@ def which(rec: bytes) -> Optional[str]:
         return "Arrowbane"
     if kind == game.CROWN_TYPE:
         return "Sunking Crown"
+    if kind == game.ELVEN_CLOAK_TYPE:
+        return "Cloak of Elvenkind"
+    if kind == game.ELVEN_BOOTS_TYPE:
+        return "Boots of Elvenkind"
     if kind in PLATE_TYPES:
         return PLATE_TYPES[kind]
     if kind == METAL_HELM_TYPE and struct.unpack_from("<H", rec, game.ITEM_NAME)[0] == WARDENS_HELM:

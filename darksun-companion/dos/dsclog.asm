@@ -254,7 +254,8 @@ xp_amount  dw 0                 ; +264
 skills_on  dw 0                 ; +266 the companion sets SKILLS_STEALTH to have an item's box name a
                                 ;      cloak's and boots' bonus to hiding and moving silently
                                 ;      (PROBE_ITEM_BOX), SKILLS_BELT for a worn belt's to picking
-                                ;      pockets and opening locks (PROBE_BELT, and its box's line)
+                                ;      pockets and opening locks (PROBE_BELT, and its box's line),
+                                ;      SKILLS_ELVEN the Cloak and Boots of Elvenkind's chances
 
 ; TEXT BUFFER: what the game sends to its dialogue window, as records of
 ;   byte 0FEh, byte kind (the dialogue window's: 0 = a reply to choose, the
@@ -5722,9 +5723,11 @@ n_fl    dw 0
 ; companion's own items that no type of the game's fits (a metal short sword, a cloak of
 ; protection). Nothing in the game limits the numbers to its own.
 TYPE_SIZE   equ 20
-TYPES_EXTRA equ 19
+TYPES_EXTRA equ 21
 TYPES_PTR   equ 0x1669          ; DS: far pointer to the item types
 BRACERS     equ 8               ; (the bracers of defense: the ninth of them)
+ELVEN_CLOAK equ 19              ; (the Cloak and Boots of Elvenkind)
+ELVEN_BOOTS equ 20
 GREYS_ARMS  equ 54              ; Grey's Scale's arm and leg armour: the game's AC 2 each, made 3
 GREYS_LEGS  equ 24              ; (PROBE_TYPES_FILL)
 
@@ -5856,6 +5859,12 @@ extra_types:
         db 0x00, 0x00, 0x00, 0x80, 0x6F, 0x12, 0x02, 0x00
         db 0x00, 0x00, 0x00, 0x00, 0x4B, 0x00, 0xFA, 0x00, 0x04, 0x0A, 0x00, 0x00
         db 0x00, 0x00, 0x00, 0x80, 0x6F, 0x12, 0x02, 0x00
+        ; the Cloak and Boots of Elvenkind (ELVEN_CLOAK, ELVEN_BOOTS: dscompanion/worldgear.py,
+        ; their stealth stealth.py): the Cloak's (65) and the Boots' (68)
+        db 0x00, 0x00, 0x00, 0x00, 0x0A, 0x00, 0x0A, 0x00, 0x05, 0x08, 0x00, 0x00
+        db 0x00, 0x00, 0x00, 0x00, 0xFF, 0x1F, 0x00, 0x01
+        db 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x0A, 0x00, 0x85, 0x04, 0x00, 0x00
+        db 0x00, 0x00, 0x00, 0x00, 0xFF, 0x1F, 0x00, 0x00
 ; the names, numbered from NAMES_OWN (322): the companion's items' (the same as the companion's
 ; NAMES in dscompanion/names.py), the rest blank until it writes more
 extra_names:
@@ -5895,7 +5904,11 @@ extra_names:
         times NAME_SIZE - 13 db 0
         db "Warden's Helm"
         times NAME_SIZE - 13 db 0
-        times (NAMES_EXTRA - 18) * NAME_SIZE db 0
+        db "Cloak/Elvenkind"            ; (the Cloak and Boots of Elvenkind)
+        times NAME_SIZE - 15 db 0
+        db "Boots/Elvenkind"
+        times NAME_SIZE - 15 db 0
+        times (NAMES_EXTRA - 20) * NAME_SIZE db 0
 
 ; STEALTH (RULE_STEALTH): a thief who starts a turn with no enemy next to them may hide in
 ; shadows and move silently up to someone; the companion rolls both and, when both succeed,
@@ -7853,6 +7866,7 @@ TYPES_PTR equ 0x1669            ; DS: far pointer to the item types, 20 bytes ea
 TYPE_WORN equ 9                 ; in one: where it is worn (8: as a cloak, 4: on the feet, 2: as a belt)
 SKILLS_STEALTH equ 1            ; (SKILLS_ON's bits)
 SKILLS_BELT equ 2
+SKILLS_ELVEN equ 4              ; (the Cloak and Boots of Elvenkind's: the stealth rule on)
 TYPE_ARMOUR equ 0x0F            ; ... 80h: armour (AC BONUS drawn)
 probe_item_box:
         pushad
@@ -7864,6 +7878,15 @@ probe_item_box:
         les bx, [TYPES_PTR]             ; (DS: the game's)
         imul ax, si, 20
         add bx, ax
+        mov ax, si                      ; the Cloak and Boots of Elvenkind: their own lines
+        sub ax, [cs:types_first]
+        mov cl, SKILLS_ELVEN
+        mov dx, ib_elf_hide
+        cmp ax, ELVEN_CLOAK
+        je .want
+        mov dx, ib_elf_quiet
+        cmp ax, ELVEN_BOOTS
+        je .want
         mov al, [es:bx + TYPE_WORN]
         mov cl, SKILLS_STEALTH
         mov dx, ib_hide
@@ -7916,6 +7939,8 @@ ib_draw    dd 0
 ib_hide    db 'Hide +10', 0     ; (the skills' short names, as the inventory screen's thief rows
 ib_quiet   db 'Move +10', 0     ;   have them: HIDE, MOVE, PICK, LOCK; mixed case, as item names)
 ib_belt    db 'Pick +5, Lock +5', 0
+ib_elf_hide  db 'Hide 90-95%', 0    ; (the Cloak of Elvenkind's chance, for anyone: stealth.py)
+ib_elf_quiet db 'Move 95%', 0
 
 ; PROBE_BELT: INT VEC_BELT replaces "mov ax,si" (2 bytes) at the end of the game's thief skill
 ; routine (DSUN.EXE 803B2h: SI the chance, armour and effects counted; DI the thief's object; the

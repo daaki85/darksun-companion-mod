@@ -56,6 +56,9 @@ TYPES = (  # as DSCLOG's EXTRA_TYPES has them
     bytes.fromhex("00000000fa00fa00040100000000008" "06f120301"),
     bytes.fromhex("000000004b00fa00040300000000008" "06f120200"),
     bytes.fromhex("000000004b00fa00040a00000000008" "06f120200"),
+    # the Cloak and Boots of Elvenkind (worldgear.py, stealth.py): the Cloak's (65), the Boots' (68)
+    bytes.fromhex("000000000a000a00050800000000000" "0ff1f0001"),
+    bytes.fromhex("0000000001000a00850400000000000" "0ff1f0000"),
 )
 TSR_TYPES_OFF, TSR_TYPES_COUNT, TSR_TYPES_FIRST, TSR_TYPES_PTR = 208, 210, 212, 214
 BLOODWRATH = 0x9C  # the name entry of the Templar's sword: which Templar is Pehtucl

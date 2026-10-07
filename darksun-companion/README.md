@@ -1018,6 +1018,17 @@ screen's thief rows have them).
 
 ![Item boxes in the game: a Leather Belt's "Pick +5, Lock +5", Leather Boots (Speed+1)'s "Move +10" and a Leather Cloak's "Hide +10", each at 24](docs/gear-boxes.png)
 
+The [Cloak and Boots of Elvenkind](#new-items) do more, for anyone who wears
+them, thief, ranger or not (whatever the plain gear's switch): in the cloak,
+hiding in shadows needs 95 or less under the open sky and 90 under a roof, not
+halved by the light (AD&D's: all but invisible in the wild, 90% among
+buildings), unless their own chance is better; in the boots, moving silently
+needs 95 or less. Someone with neither thief nor ranger skills hides only in
+the cloak and moves silently only in the boots, and their attack from behind
+is no backstab. Their boxes say `Hide 90-95%` and `Move 95%`.
+
+![Item boxes in the game: the Cloak of Elvenkind's "Hide 90-95%", 25,000; the Boots of Elvenkind's "Move 95%", 20,000](docs/elvenkind.png)
+
 The same switch has a worn **belt** add 5 to a thief's **picking pockets and
 opening locks**, whether hiding is on or not: the game's own lock picking
 counts it, and so do the Ledger's pockets and its thief rows (`PICK 80`,
@@ -1844,6 +1855,8 @@ like its own. The log doesn't say: they're there to be found.
 | **Warden's Arms** | the Lower Castle's treasure chest, with Dark Flame (behind the wall the Serpent Boots show, where the vrock perch) | plate arm armour +1 (AC 2, +1) |
 | **Warden's Legs** | the Gemfields' chest | plate leg armour +1 (AC 2, +1) |
 | **Warden's Chest** | on **Balkazar**'s body | plate chest armour +1 (AC 3, +1): Resist Fire on its wearer while worn |
+| **Cloak of Elvenkind** | with the **Elven Leader**'s gift of his Gythka +1 (to whoever is given it) | a grey cloak: [all but invisible](#hiding-in-shadows-to-backstab) to anyone wearing it in a fight, with the hiding rule |
+| **Boots of Elvenkind** | the buried chest of Kel's caravan, with the Cahulaks +1 | soft boots: [silent](#hiding-in-shadows-to-backstab), with the hiding rule |
 | **Bracers of Defense** | **Mikquetzl** (AC 6, in his pack), **Wyrmias** (AC 5), **Balkazar** (AC 4), **Dagolar** (AC 2, the one carrying Dag's Dagger) | AC for those wearing no armour: [bracers of defense](#bracers-of-defense) |
 
 **Prices** follow the game's own:
@@ -1857,6 +1870,8 @@ like its own. The log doesn't say: they're there to be found.
 - Arrowbane 30,000 and the Sunking Crown 40,000 (its Helm of Might is 30,000,
   the Helm of Contemplation 35,000);
 - the rings and cloak of protection 15,000 each, Leather Chest Armor +1 6,000;
+- the Cloak of Elvenkind 25,000 and Boots 20,000, as the Serpent Boots
+  (20,000) and Chameleon Gloves (30,000);
 - the Warden's Arms and Legs 27,000 each, as a piece of its Grey's Scale (AC 3
   too), the Warden's Chest 36,000 and Helm 30,000 (each with a spell).
 
@@ -1869,7 +1884,8 @@ leg armour is AC 3 each (the game's is 2).
 **On the Options tab**, under New content:
 - **Bone, obsidian and metal short swords...** places the plain weapons;
 - **Bracers of defense on four wizards...** places the bracers, the
-  magic weapons, Arrowbane, the Sunking Crown and the Warden's Plate;
+  magic weapons, Arrowbane, the Sunking Crown, the Warden's Plate and the
+  Cloak and Boots of Elvenkind;
 - the arena's ring (**A Ring of Protection +1 on the arena's Tied-up
   Prisoner**) and Kreenfang and Shadowseeker (**...are +1 magic weapons**:
   without it Kurzak's is a plain Short Sword, 1d6) each have their own box;
@@ -1912,10 +1928,13 @@ full.
 ![Shadowseeker's item box in the game: 22000, Detect Invisibility's icon, "Metal +1 Shadowseeker", 1D6+1](docs/shadowseeker-box.png)
 
 **Alagorn**, the wizard of the Painted Badlands who identifies magic items,
-knows the Ledger's magic weapons when the party carries them, each with a story
+knows the Ledger's magic items when the party carries them, each with a story
 of its own: Shadowseeker and Greenbright among his magic swords, Kreenfang,
-Gutterknot, Deepbiter and Windlash among his magic weapons, before his menus'
-"Nothing". (Checked in his script, not yet in a game that has reached him.)
+Gutterknot, Deepbiter and Windlash among his magic weapons, the Warden's Plate's
+four pieces (each a part of Haldren's story, the last of the Wardens) among his
+magic armor, and the Cloak and Boots of Elvenkind among his magic clothes,
+before his menus' "Nothing". (Checked in his scripts, not yet in a game that
+has reached him.)
 
 **A piece of the bone scale set that vanishes.** One was seen to vanish from a
 pack with no trace, so the Ledger keeps an eye on the set's three pieces: one

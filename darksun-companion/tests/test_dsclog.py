@@ -1823,7 +1823,7 @@ class TypesTests(unittest.TestCase):
         self.mu = mu = Uc(UC_ARCH_X86, UC_MODE_16)
         mu.mem_map(0, 0x100000)
         mu.mem_write(TSR * 16, image)
-        size = image.find(bytes.fromhex("8146fc7c01" "8356fe00"))  # 19 types of 20 bytes: 17Ch
+        size = image.find(bytes.fromhex("8146fca401" "8356fe00"))  # 21 types of 20 bytes: 1A4h
         names_fill, fill = fill_probes(image)
         self.assertGreater(min(size, fill - names_fill), 0)
         mu.mem_write(VEC_TYPES_SIZE * 4, struct.pack("<HH", size, TSR))
@@ -1841,12 +1841,12 @@ class TypesTests(unittest.TestCase):
         return mu.reg_read(r.UC_X86_REG_SP)
 
     def test_room_and_filled(self):
-        """The game's 115 types (2300 bytes): 380 bytes more reserved, and after the read
+        """The game's 115 types (2300 bytes): 420 bytes more reserved, and after the read
         DSCLOG's types at 115 on, the number noted, and Grey's Scale's arm and leg armour AC 3."""
         from dscompanion import npcitems
         self.mu.mem_write(SS * 16 + BP - 4, struct.pack("<I", 2300))
         self.assertEqual(self.interrupt(VEC_TYPES_SIZE), 0x7FC)
-        self.assertEqual(struct.unpack("<I", self.mu.mem_read(SS * 16 + BP - 4, 4))[0], 2680)
+        self.assertEqual(struct.unpack("<I", self.mu.mem_read(SS * 16 + BP - 4, 4))[0], 2720)
         self.mu.mem_write(SS * 16 + 0x7FC, bytes(4))
         self.assertEqual(self.interrupt(VEC_TYPES_FILL, eax=0), 0x80C)
         at = self.TYPES_SEG * 16 + 115 * 20

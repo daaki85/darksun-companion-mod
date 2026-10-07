@@ -119,6 +119,20 @@ class WorldGearTests(unittest.TestCase):
         self.assertEqual(where, {helm: (None, "Dagolar", None, 0x75), arms: (0x1D, "Treasure chest", 1360, None),
                                  legs: (0x08, "Gemfields chest", 1065, None), chest: (0x0D, "Balkazar", None, None)})
 
+    def test_elvenkind(self):
+        """The Cloak and Boots of Elvenkind: their own types (the Cloak's, the Boots'), names and
+        icons, no plus; the cloak with the Elven Leader's Gythka +1, the boots in the caravan's
+        buried chest."""
+        for item, type_, slot, name in ((worldgear.ELVEN_CLOAK, game.ELVEN_CLOAK_TYPE, 8, "Cloak of Elvenkind"),
+                                        (worldgear.ELVEN_BOOTS, game.ELVEN_BOOTS_TYPE, 4, "Boots of Elvenkind")):
+            self.assertEqual(struct.unpack_from("<H", item, game.ITEM_TYPE)[0], type_)
+            self.assertEqual((item[game.ITEM_PLUS], item[worldgear.ITEM_SPELL]), (0, 0))
+            self.assertEqual(npcitems.TYPES[type_ - game.GAME_TYPES][9], slot)
+            self.assertEqual(icons.which(item), name)
+        self.assertEqual(names.NAMES[worldgear.CLOAK_OF_ELVENKIND], b"Cloak/Elvenkind")
+        self.assertEqual(gift("Elven Leader's gift").beside, (game.GYTHKA_TYPE, 1))
+        self.assertEqual(gift("Buried chest").container, worldgear.CARAVAN_CHEST)
+
     def test_bracers_not_armour(self):
         """The bracers' type (as DSCLOG has it) isn't armour to the class rules; arm armour is."""
         bracers = npcitems.TYPES[game.BRACERS_TYPE - game.GAME_TYPES]
@@ -177,3 +191,50 @@ class ContainerTests(unittest.TestCase):
         worldgear.place(self.gd, set(), worldgear.MAGIC)
         self.assertEqual(self.inside(), [(worldgear.WARDENS_ARMS, 0xFF)])
         self.assertEqual(struct.unpack_from("<H", self.m, self.items + 90 * game.ITEM_SIZE + ring.ITEM_CONTENTS)[0], 505)
+
+
+class BesideTests(unittest.TestCase):
+    """The Cloak of Elvenkind, to the party member given the Elven Leader's Gythka +1 (the game's
+    own name: not Kreenfang)."""
+
+    def setUp(self):
+        from test_dicelog import CREATURES, DS, ITEMS
+        from test_ring import THINGS, arena
+        self.log = log = arena()
+        self.gd, self.m = log.game, log.guest.mem
+        self.items, self.things, self.creatures = ITEMS, THINGS, CREATURES
+        struct.pack_into("<H", self.m, DS * 16 + ring.REGION, 0x14)
+        for item in range(60, 70):
+            struct.pack_into("<h", self.m, ITEMS + item * game.ITEM_SIZE + game.ITEM_NEXT, item + 1 if item < 69 else game.NO_ITEM)
+
+    def give(self, member, name):
+        """A Gythka +1 named NAME in MEMBER's list (object 400 + member, item 90 + member)."""
+        rec = bytearray(game.ITEM_SIZE)
+        struct.pack_into("<h", rec, game.ITEM_NEXT, game.NO_ITEM)
+        struct.pack_into("<H", rec, ring.ITEM_CONTENTS, game.NO_ITEM)
+        struct.pack_into("<HH", rec, game.ITEM_TYPE, game.GYTHKA_TYPE, 0)
+        struct.pack_into("<H", rec, game.ITEM_NAME, name)
+        rec[game.ITEM_PLUS], rec[game.ITEM_SLOT] = 1, 0x0E
+        item, thing = 90 + member, 400 + member
+        self.m[self.items + item * game.ITEM_SIZE:self.items + (item + 1) * game.ITEM_SIZE] = rec
+        struct.pack_into("<Bh", self.m, self.things + thing * 3, game.THING_ITEM, item)
+        struct.pack_into("<h", self.m, self.creatures + member * game.CREATURE_SIZE + 8 + 4, thing)
+
+    def carried(self, member):
+        it = ring.Items(self.gd)
+        thing, = struct.unpack_from("<h", self.gd.creature(member), 8 + 4)
+        return [struct.unpack_from("<H", rec, game.ITEM_NAME)[0] for _, rec in it.chain(thing)]
+
+    def test_with_the_gythka(self):
+        self.give(2, 0x2C)
+        given = set()
+        worldgear.place(self.gd, given, worldgear.MAGIC)
+        self.assertEqual(self.carried(2), [worldgear.CLOAK_OF_ELVENKIND, 0x2C])
+        worldgear.place(self.gd, given, worldgear.MAGIC)
+        worldgear.place(self.gd, set(), worldgear.MAGIC)  # (a save from after: has it)
+        self.assertEqual(len(self.carried(2)), 2)
+
+    def test_not_with_kreenfang(self):
+        self.give(1, 0x148)
+        worldgear.place(self.gd, set(), worldgear.MAGIC)
+        self.assertEqual(self.carried(1), [0x148])

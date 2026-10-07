@@ -95,6 +95,8 @@ METAL_PICK_TYPE, METAL_POLEARM_TYPE = GAME_TYPES + 12, GAME_TYPES + 13
 CIRCLET_TYPE, CROWN_TYPE = GAME_TYPES + 14, GAME_TYPES + 15  # worn on the head, not armour (worldgear.py)
 # plate mail's chest, arm and leg armour (worldgear.py's Warden's Plate): AC 3, 2, 2
 PLATE_CHEST_TYPE, PLATE_ARMS_TYPE, PLATE_LEGS_TYPE = GAME_TYPES + 16, GAME_TYPES + 17, GAME_TYPES + 18
+# the Cloak and Boots of Elvenkind (worldgear.py; their stealth: stealth.py)
+ELVEN_CLOAK_TYPE, ELVEN_BOOTS_TYPE = GAME_TYPES + 19, GAME_TYPES + 20
 GYTHKA_TYPE = 0x2C  # the game's gythka ("2 handed Bone Gythka")
 # The companion's rule changes (DSCLOG's RULES): helms count AC 1, boots add a move in a fight;
 # AD&D's two-weapon penalties; spells saved against with the spell save; no doubled d20

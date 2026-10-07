@@ -16,6 +16,15 @@ requests #1 to #13; its notes are in
   (Resist Fire while worn). Plate is AC 3 chest, 2 arms, 2 legs (DSCLOG's new
   item types), each +1; the helm is the game's metal helm +1. Each piece
   has an icon of its own and is drawn on the figures.
+- **The Cloak and Boots of Elvenkind** (with the magic weapons' switch): the
+  cloak comes with the Elven Leader's gift of his Gythka +1, the boots are in
+  the buried chest of Kel's caravan. With the hiding rule, anyone wearing the
+  cloak hides in shadows on 95 or less under the open sky, 90 under a roof
+  (not halved by the light), and anyone in the boots moves silently on 95 or
+  less, thief or not; their item boxes say so (`Hide 90-95%`, `Move 95%`).
+- **Alagorn tells of the Warden's Plate** (Haldren's, the last of the Wardens:
+  a part of his story for each piece) among his magic armor, and of the Cloak
+  and Boots of Elvenkind among his magic clothes.
 
 **Changed**
 - **Grey's Scale's arm and leg armour are AC 3** (the game's are 2).
