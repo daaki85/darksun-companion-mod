@@ -124,6 +124,8 @@ STEEL = (22, 23, 24, 25, 26, 27, 28, 29, 30)  # dark to light
 STONE_TO_METAL = {208: 211, 209: 212, 210: 213, 211: 161, 212: 214, 213: 215, 214: 216, 215: 217}
 LIGHT_TO_METAL = {210: 209, 211: 210, 212: 160, 213: 161, 214: 213, 215: 215}
 TEAL_TO_METAL = {70: 160, 71: 161, 72: 215}
+TEAL_TO_BONE = {70: 206, 71: 61, 72: 152}
+TEAL_TO_OBSIDIAN = {70: 208, 71: 210, 72: 212}
 GOLD = (64, 65, 45)
 
 
@@ -276,6 +278,10 @@ ICONS: Tuple[Tuple[str, int, int, int, Callable[[Rows], Rows]], ...] = (
     ("Linebreaker", 0xFB5E, 2570, 2571,
      lambda r: glow(recolour(r, LIGHT_TO_METAL), lambda p, x, y: p in LIGHT_TO_METAL.values() and (x + y) % 2 == 0, FIRE)),
     ("Thornwall", 0xFB5E, 2572, 2573, lambda r: glow(r, lambda p, x, y: 210 <= p <= 215 and (x + y) % 2 == 0, FIRE)),
+    # the bone and obsidian Great Axes (weaponchoice.py): the Great Axe +3's, without its green gem,
+    # its teal head in the bone long sword's whites and the obsidian long sword's greys
+    ("Bone Great Axe", 0xFC06, 2574, 2575, lambda r: recolour(r, {1: 58, 2: 59, **TEAL_TO_BONE})),
+    ("Obsidian Great Axe", 0xFC06, 2576, 2577, lambda r: recolour(r, {1: 58, 2: 59, **TEAL_TO_OBSIDIAN})),
 )
 PICTURES: Dict[str, int] = {name: 0x10000 - number for name, _, number, _, _ in ICONS}  # an item's +0
 
@@ -542,6 +548,10 @@ def which(rec: bytes) -> Optional[str]:
         return "Glasshewer" if plus == 2 else "Obsidian Axe"
     if kind == GREAT_AXE_TYPE and plus == 0:
         return "Great Axe"
+    if kind == game.BONE_GREAT_AXE_TYPE and plus == 0:
+        return "Bone Great Axe"
+    if kind == game.OBSIDIAN_GREAT_AXE_TYPE and plus == 0:
+        return "Obsidian Great Axe"
     if kind == OBSIDIAN_MACE_TYPE and plus == 0 and struct.unpack_from("<H", rec, game.ITEM_NAME)[0] == MACE_NAME:
         return "Obsidian Mace"
     if kind == game.SHORT_SWORD_TYPE:

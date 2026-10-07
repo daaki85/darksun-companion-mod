@@ -50,7 +50,7 @@ pointing to it, in the Ledger's copy of that region's file).
 import struct
 from typing import Dict, List, NamedTuple, Optional, Sequence, Tuple
 
-from . import dataitems, game, npcitems, specialize, weaponchoice
+from . import dataitems, game, npcitems, specialize, tools, weaponchoice
 
 # the bone long sword the game's merchants sell (SEGOBJEX's), which the weapons are made from
 TEMPLATE = npcitems._item("0cfc000000002d000000510000000000" "04ff1c0000")
@@ -63,7 +63,9 @@ OBSIDIAN_MACE = weaponchoice.OTHERS[KIND("mace")][0]
 METAL_SHORT_SWORD = (game.METAL_SHORT_SWORD_TYPE, 0x144, 0x10000 - 2427, 300)  # (the metal long sword: 500)
 METAL_DAGGER = (game.METAL_DAGGER_TYPE, 0x10, 0x10000 - 2504, 50)
 METAL_MACE = (game.METAL_MACE_TYPE, 0x13, 0x10000 - 2506, 200)
-METAL_GREAT_AXE = weaponchoice.OTHERS[KIND("great axe")][0]  # (300; an earth cleric's starting one)
+BONE_GREAT_AXE = weaponchoice.PLAIN[KIND("great axe")]
+OBSIDIAN_GREAT_AXE = weaponchoice.OTHERS[KIND("great axe")][0]
+METAL_GREAT_AXE = weaponchoice.OTHERS[KIND("great axe")][1]  # (300)
 METAL_PICK = (game.METAL_PICK_TYPE, 0xAD, 0x10000 - 2510, 150)
 METAL_POLEARM = weaponchoice.OTHERS[KIND("polearm")][0]  # (250)
 # (type, name entry, picture, price) and plus, priced as the game prices its own: a melee weapon as
@@ -213,22 +215,27 @@ class Gift(NamedTuple):
     instead: Optional[Tuple[int, int]] = None  # (item type, plus)
 
 
+TOOLS = tools.ITEM[:weaponchoice.ITEM_VALUE] + struct.pack("<H", 30) + tools.ITEM[weaponchoice.ITEM_VALUE + 2:]  # (AD&D's 30)
 PLAIN = (BONE_SHORT_SWORD, OBSIDIAN_SHORT_SWORD, BONE_AXE, OBSIDIAN_AXE, OBSIDIAN_MACE)
 # (the objects: the people of each name in the region, as SEGOBJEX and the region's ETAB have them)
 GIFTS: Tuple[Gift, ...] = (
-    Gift("Weapon Merchant", tuple(weapon(w) for w in PLAIN + (METAL_SHORT_SWORD,)), (285,), 0x0B),
-    Gift("Jark", tuple(weapon(w) for w in (BONE_SHORT_SWORD, OBSIDIAN_SHORT_SWORD, BONE_AXE, OBSIDIAN_MACE)), (106,), 0x1A),
+    # (the great axes in every material, a warrior's starting one being bone, and bone breaks:
+    # bone ones on every Wild Mul too)
+    Gift("Weapon Merchant", tuple(weapon(w) for w in PLAIN + (METAL_SHORT_SWORD, BONE_GREAT_AXE, OBSIDIAN_GREAT_AXE,
+                                                              METAL_GREAT_AXE, METAL_PICK)), (285,), 0x0B),
+    Gift("Jark", tuple(weapon(w) for w in (BONE_SHORT_SWORD, OBSIDIAN_SHORT_SWORD, BONE_AXE, OBSIDIAN_MACE,
+                                           BONE_GREAT_AXE, OBSIDIAN_GREAT_AXE)), (106,), 0x1A),
+    # Thieves' Tools, a pair, from Kel (the caravan's merchant of everything else), for a thief who
+    # has lost theirs
+    Gift("Kel", 2 * (TOOLS,), (107,), 0x1A),
     Gift("Merzol", (weapon(OBSIDIAN_AXE),), (180,), 0x29),  # the slave pens' gladiator
-    Gift("Krikor", (weapon(BONE_AXE),), (16,), 0x1F),
     Gift("Chaero", (weapon(OBSIDIAN_SHORT_SWORD),), (41,), 0x1D),
     Gift("Tari", (weapon(OBSIDIAN_MACE),), (60, 243), 0x28),  # the warrens' Tari, every one
     Gift("Renegade", (weapon(BONE_SHORT_SWORD),), (289,)),  # (every one)
-    Gift("Wild Mul", (weapon(BONE_AXE),), (290,)),
+    Gift("Wild Mul", (weapon(BONE_AXE), weapon(BONE_GREAT_AXE)), (290,)),
     # the metal ones, on people who fight with the like
     Gift("Tobrian", (weapon(METAL_DAGGER),), (104,), 0x1A),  # (a stone dagger)
     Gift("Templar", (weapon(METAL_MACE),), (131,), 0x14),  # the slavers' camp's (a bone mace)
-    Gift("Uskuye", (weapon(METAL_GREAT_AXE),), (75,), 0x1F),  # (a metal long sword)
-    Gift("Kwerin", (weapon(METAL_PICK),), (113,), 0x0B),
     Gift("Castle Guard", (weapon(METAL_POLEARM),), (55,), 0x1C, clone=(121, 2560)),  # (one of six)
 )
 CHAYAS_CHEST = 2249  # (her script's)
@@ -314,7 +321,7 @@ BASE_TYPES = {game.SHORT_SWORD_TYPE: 63, game.CLOAK_TYPE: 65, game.BONE_HELM_TYP
               game.METAL_MACE_TYPE: 20, game.METAL_GREAT_AXE_TYPE: 2, game.METAL_PICK_TYPE: 112,
               game.METAL_POLEARM_TYPE: 19, game.CIRCLET_TYPE: 36, game.CROWN_TYPE: 36, game.PLATE_CHEST_TYPE: 57,
               game.PLATE_ARMS_TYPE: 58, game.PLATE_LEGS_TYPE: 59, game.ELVEN_CLOAK_TYPE: 65, game.ELVEN_BOOTS_TYPE: 68,
-              game.AIR_DAGGER_TYPE: 33}
+              game.AIR_DAGGER_TYPE: 33, game.BONE_GREAT_AXE_TYPE: 2, game.OBSIDIAN_GREAT_AXE_TYPE: 2}
 
 
 def header_numbers(chunks) -> Dict[int, int]:

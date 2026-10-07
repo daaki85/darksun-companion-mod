@@ -39,7 +39,7 @@ PLAIN: Tuple[Tuple[int, int, int, int], ...] = (
     (game.BONE_SHORT_SWORD_TYPE, 0x144, 0x10000 - 2419, 10),  # short sword (the Ledger's, of bone)
     (20, 0x13, 0xFB5D, 8),     # mace (bone)
     (game.BONE_AXE_TYPE, 0x1A, 0x10000 - 2421, 8),  # axe (the Ledger's, of bone: the game's is metal)
-    (2, 0x03, 0x10000 - 2492, 12),  # great axe (the Ledger's picture: the game's only one is +3)
+    (game.BONE_GREAT_AXE_TYPE, 0x03, 0x10000 - 2574, 12),  # great axe (the Ledger's, of bone: the game's only one is +3)
     (112, 0xAD, 0xFB46, 8),    # pick (stone)
     (3, 0x04, 0xFC05, 1),      # quarterstaff
     (19, 0x12, 0xFB5E, 7),     # polearm (bone)
@@ -59,8 +59,9 @@ OTHERS = {
     specialize.KINDS.index("short sword"): ((game.OBSIDIAN_SHORT_SWORD_TYPE, 0x144, 0x10000 - 2488, 20),),
     specialize.KINDS.index("axe"): ((game.OBSIDIAN_AXE_TYPE, 0x1A, 0x10000 - 2490, 15),
                                     (22, 0x1A, 0xFB61, 100)),  # obsidian (a fire cleric's), metal
-    # the Ledger's metal ones (worldgear.py): an earth cleric's great axe and polearm
-    specialize.KINDS.index("great axe"): ((game.METAL_GREAT_AXE_TYPE, 0x03, 0x10000 - 2508, 300),),
+    # the Ledger's obsidian great axe (a fire or earth cleric's), and its metal ones (worldgear.py)
+    specialize.KINDS.index("great axe"): ((game.OBSIDIAN_GREAT_AXE_TYPE, 0x03, 0x10000 - 2576, 25),
+                                          (game.METAL_GREAT_AXE_TYPE, 0x03, 0x10000 - 2508, 300)),
     specialize.KINDS.index("polearm"): ((game.METAL_POLEARM_TYPE, 0x12, 0x10000 - 2512, 250),),
 }
 MISSILE_KINDS = frozenset(specialize.KINDS.index(k) for k in ("bow", "sling", "staff sling"))

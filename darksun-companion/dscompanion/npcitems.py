@@ -65,6 +65,11 @@ TYPES = (  # as DSCLOG's EXTRA_TYPES has them
     # a metal dagger air clerics may use too (worldgear.py's Galefang): the metal Dagger's, its
     # classes' air cleric bit (1) set; fire and water clerics still not, as the game's daggers
     bytes.fromhex("010020000a00fa000405010104010000f31f0000"),
+    # bone and obsidian great axes (weaponchoice.py, worldgear.py): the metal one's, of bone
+    # (lighter, 50, still too heavy to backstab with; for water clerics) and of obsidian (for earth,
+    # fire and water clerics)
+    bytes.fromhex("010010003200fa00010501010a01004068160002"),
+    bytes.fromhex("010010004600fa00030501010a0100406e160002"),
 )
 TSR_TYPES_OFF, TSR_TYPES_COUNT, TSR_TYPES_FIRST, TSR_TYPES_PTR = 208, 210, 212, 214
 

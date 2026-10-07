@@ -7,7 +7,19 @@ Released pull requests are summarised in a line or two each; the release notes
 
 ## Pull request #25 (in progress)
 
+**Added**
+- **Bone and obsidian great axes,** with icons of their own: a warrior's
+  starting great axe is now bone (obsidian for a fire or earth cleric), and
+  water and fire clerics' warriors can choose the great axe. For a broken one,
+  the Weapon Merchant sells all three materials, Jark bone and obsidian, and
+  every Wild Mul carries a bone one.
+- **Thieves' Tools from Kel:** two sets in his stock, for a thief who has lost
+  theirs.
+
 **Changed**
+- **Weapons off the allies:** Krikor's bone axe, Uskuye's metal great axe and
+  Lt. Kwerin's metal pick are gone; the Weapon Merchant sells the metal great
+  axe and pick instead (the bone axe is sold and carried elsewhere).
 - **One box for the new items:** the Options tab's four item boxes (the
   plain weapons, the magic items, the slave pens' gear, Kreenfang and
   Shadowseeker) are one, **New items, magical and mundane**. The arena's

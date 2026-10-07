@@ -1466,9 +1466,9 @@ character may use, in any material. The rest stay greyed:
 | …of one class (a gladiator too), or with thief, preserver or druid | all sixteen | the game's bone long sword |
 | …with psionicist (small weapons) | club, dagger, short sword, mace, chatkcha, bow, sling | a wooden club |
 | …with air cleric (missile weapons, and the dagger that can be thrown) | dagger, chatkcha, bow, sling, staff sling | an obsidian dagger |
-| …with earth cleric (stone, obsidian, metal, wood) | long sword, club, dagger, short sword, mace, axe, great axe, pick, quarterstaff, polearm, chatkcha, bow (the great axe and polearm in the Ledger's metal) | an obsidian long sword |
-| …with fire cleric (obsidian) | long sword, dagger, short sword, mace, axe, chatkcha | an obsidian long sword |
-| …with water cleric (bone, wood) | long sword, club, short sword, mace, axe, quarterstaff, polearm, gythka, cahulaks, bow | the game's bone long sword |
+| …with earth cleric (stone, obsidian, metal, wood) | long sword, club, dagger, short sword, mace, axe, great axe, pick, quarterstaff, polearm, chatkcha, bow (the polearm in the Ledger's metal) | an obsidian long sword |
+| …with fire cleric (obsidian) | long sword, dagger, short sword, mace, axe, great axe, chatkcha | an obsidian long sword |
+| …with water cleric (bone, wood) | long sword, club, short sword, mace, axe, great axe, quarterstaff, polearm, gythka, cahulaks, bow | the game's bone long sword |
 
 (The starting weapon is for the kind marked first; the next table has the
 rest.)
@@ -1488,7 +1488,7 @@ weapon specialization chosen, in place of the bone long sword`):
 | short sword | bone, the Ledger's (the game's only short sword is Kurzak's) | obsidian (fire, earth) |
 | mace, polearm, gythka, cahulaks | bone | a mace: obsidian, the game's plain Mace type (its only one is Blackmace) with a picture of the Ledger's; a polearm: metal, the Ledger's (earth) |
 | axe | bone, the Ledger's (the game's only axe is metal) | obsidian (fire, earth) |
-| great axe | the game's, with a picture of the Ledger's (the game's only one is +3: its green gem) | metal, the Ledger's (earth: the game's great axe is wood) |
+| great axe | bone, the Ledger's (the game's only great axe is +3) | obsidian (fire, earth) |
 | pick | stone | |
 | sling, staff sling | leather | |
 
@@ -1867,19 +1867,20 @@ metal axe, and no plain metal weapons at all; the Ledger adds them:
 |---|---|---|
 | **Bone Short Sword** | sold by the **Weapon Merchant** in Teaquetzl and **Jark** in Kel's caravan; carried by every **Renegade** | 1d6 |
 | **Obsidian Short Sword** | sold by the Weapon Merchant and Jark; carried by **Chaero** | 1d6 |
-| **Bone Axe** | sold by the Weapon Merchant and Jark; carried by **Krikor** and every **Wild Mul** | 1d8 |
+| **Bone Axe** | sold by the Weapon Merchant and Jark; carried by every **Wild Mul** | 1d8 |
 | **Obsidian Axe** | sold by the Weapon Merchant; carried by **Merzol**, the slave pens' gladiator | 1d8 |
 | **Obsidian Mace** | sold by the Weapon Merchant and Jark; carried by every **Tari** in the warrens | the game's Mace (1d6+1), in obsidian (its only obsidian mace is Blackmace) |
 | **Metal Short Sword** | sold by the Weapon Merchant | 1d6: Shadowseeker without the plus |
 | **Metal Dagger** | carried by **Tobrian**, in Kel's caravan | the game's dagger, in metal |
 | **Metal Mace** | carried by the **Templar** of the elven slavers' camp | the game's mace, in metal |
-| **Metal Great Axe** | carried by **Uskuye**; an earth cleric's starting great axe | the game's great axe, in metal |
-| **Metal Pick** | carried by **Lt. Kwerin** in Teaquetzl | the game's pick, in metal |
+| **Bone Great Axe** | a warrior's starting great axe; sold by the Weapon Merchant and Jark; carried by every **Wild Mul** | 1d10, two-handed; lighter than metal (and breaks as bone does) |
+| **Obsidian Great Axe** | a fire or earth cleric's starting great axe; sold by the Weapon Merchant and Jark | 1d10, two-handed |
+| **Metal Great Axe** | sold by the Weapon Merchant | the game's great axe, in metal |
+| **Metal Pick** | sold by the Weapon Merchant | the game's pick, in metal |
 | **Metal Polearm** | carried by one of the six **Castle Guards** of the Upper Castle; an earth cleric's starting polearm | the game's polearm, in metal |
-| **Great Axe** | a warrior's starting great axe | the game's plain Great Axe, with an icon without the +3's green gem |
 | **Bone Scale Arm Armor**, **Leg Armor** and **Bone Helm** | in the slave pens' chest with the Bone Scale Chest Armor and Arrows +3 (the game has the set but places only the chest piece) | the set; the helm AC 1 with [Helms give AC 1](#helms-and-boots), worn by those who can wear the armour (not thieves) |
 | **Helm** | in **Kurzak**'s pack, in the slave pens | the game's leather helm |
-| **Thieves' Tools** | every thief's backpack | [picking pockets](#picking-pockets) |
+| **Thieves' Tools** | every thief's backpack; sold by **Kel** in his caravan (two sets, 30 each) | [picking pockets](#picking-pockets) |
 
 The bone and obsidian short swords and axes, and the obsidian mace, are also a
 new character's starting weapon with [weapon specialization](#weapon-specialization)
@@ -2282,7 +2283,7 @@ thief as the party's leader (keys 1-4):
   backpack, in its first free cell (the log says so); a thief who joins later, or one in a game
   started before this version, gets a set once too. **Give thieving tools
   now** on the Options tab gives a set at once to each thief in the party
-  without one (lost or sold ones included). Moving the tools about the inventory
+  without one (lost or sold ones included); in the game, Kel sells two sets. Moving the tools about the inventory
   screen doesn't count as being without: no second set for that. They are called **Thieves'
   Tools**, a name the helper adds to the game's (see
   [New item names](#new-items)). Tools an earlier version gave, called

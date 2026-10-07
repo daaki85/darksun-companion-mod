@@ -33,7 +33,7 @@ _TYPES = {
     "mace": (20, 46, game.METAL_MACE_TYPE),  # bone (Mace, Wyvern Hook); Blackmace; the Ledger's metal
     "club": (18,),  # Club, Striker
     "axe": (22, game.BONE_AXE_TYPE, game.OBSIDIAN_AXE_TYPE),  # Axe, Soulcrusher (metal); the Ledger's
-    "great axe": (2, game.METAL_GREAT_AXE_TYPE),
+    "great axe": (2, game.METAL_GREAT_AXE_TYPE, game.BONE_GREAT_AXE_TYPE, game.OBSIDIAN_GREAT_AXE_TYPE),
     "pick": (112, game.METAL_PICK_TYPE),
     "quarterstaff": (3, 80),  # Quarterstaff, Parting Staff; Balk's Staff
     "polearm": (19, 111, game.METAL_POLEARM_TYPE),

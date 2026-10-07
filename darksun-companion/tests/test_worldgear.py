@@ -36,10 +36,22 @@ class WorldGearTests(unittest.TestCase):
             self.assertEqual(rec[game.ITEM_PLUS], plus)
 
     def test_merchants(self):
-        """The Weapon Merchant stocks every new plain weapon, Jark all but the axes of obsidian and
-        the metal short sword; the kinds of people carry theirs each."""
-        self.assertEqual(len(gift("Weapon Merchant").items), 6)
-        self.assertEqual(len(gift("Jark").items), 4)
+        """The Weapon Merchant stocks every new plain weapon (the great axes in every material, a
+        warrior's starting one being bone; every Wild Mul carries a bone one too), Jark all but the obsidian axe and the metal ones;
+        Kel a pair of Thieves' Tools; the kinds of people carry theirs each; no one the party
+        wouldn't fight has one (Krikor, Uskuye, Lt. Kwerin)."""
+        from dscompanion import tools
+        sold = [icons.which(r) for r in gift("Weapon Merchant").items]
+        self.assertEqual(sold, ["Bone Short Sword", "Obsidian Short Sword", "Bone Axe", "Obsidian Axe", "Obsidian Mace",
+                                "Short Sword", "Bone Great Axe", "Obsidian Great Axe", "Metal Great Axe", "Metal Pick"])
+        self.assertEqual([icons.which(r) for r in gift("Wild Mul").items], ["Bone Axe", "Bone Great Axe"])
+        self.assertEqual([icons.which(r) for r in gift("Jark").items],
+                         ["Bone Short Sword", "Obsidian Short Sword", "Bone Axe", "Obsidian Mace", "Bone Great Axe",
+                          "Obsidian Great Axe"])
+        kel = [g for g in worldgear.GIFTS if g.name == "Kel"][0]
+        self.assertEqual(len(kel.items), 2)
+        self.assertTrue(all(tools.is_tools(r) and struct.unpack_from("<H", r, 6)[0] == 30 for r in kel.items))
+        self.assertFalse({"Krikor", "Uskuye", "Kwerin"} & {g.name for g in worldgear.GIFTS + worldgear.MAGIC})
         self.assertEqual([gift(n).objects for n in ("Tari", "Renegade", "Wild Mul")], [(60, 243), (289,), (290,)])
 
     def test_metal_kinds(self):
@@ -89,7 +101,7 @@ class WorldGearTests(unittest.TestCase):
             self.assertEqual(typ[9], 6)  # (the head)
             self.assertFalse(restrict.is_armour(typ))
             self.assertEqual(names.NAMES[struct.unpack_from("<H", item, game.ITEM_NAME)[0]], name.encode())
-        self.assertEqual(gift("Kel").items, (worldgear.ARROWBANE_ITEM,))
+        self.assertEqual([g.items for g in worldgear.MAGIC if g.name == "Kel"], [(worldgear.ARROWBANE_ITEM,)])
         self.assertEqual(gift("Keldar").objects, (28,))
 
     def test_wardens_plate(self):
