@@ -8,12 +8,16 @@ Released pull requests are summarised in a line or two each; the release notes
 ## Pull request #25 (in progress)
 
 **Changed**
-- **The Options tab's New content boxes** say what each one adds now: the
-  magic items box names the new weapons, the Gythka +2 and the tome, and the
-  others name their items (Kreenfang and Shadowseeker, the pens' gear, the
-  plain weapons).
+- **One box for the new items:** the Options tab's four item boxes (the
+  plain weapons, the magic items, the slave pens' gear, Kreenfang and
+  Shadowseeker) are one, **New items, magical and mundane**. The arena's
+  ring keeps a box of its own.
+- **The Sunking Crown** gives Protection from Evil on its wearer, no longer
+  the 10' Radius one.
 
 **Documentation**
+- **Mundane items:** the guide's New items has a table of its own for them,
+  each with who sells or carries it and where.
 - **[Every magic item](darksun-companion/README.md#every-magic-item):** the
   guide lists all the magic items in a game with the new content, the game's
   and the Ledger's, sorted by where they're worn (weapons by material and

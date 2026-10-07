@@ -200,11 +200,15 @@ def write_conf(game_dir: str, path: str = CONF, dice_log: bool = True) -> str:
 # The Options tab's new content and game changes (settings keys), each on unless switched off;
 # the game's copies are written with them as they stand when it is started
 CONTENT = ("kalzith", "semyon", "vulture", "pens_gear", "magic_arms", "world_gear", "world_magic", "effects_kept", "stealth_gear", "arena_ring")
+# the new items' parts (worldgear.data_chunks'), all switched by one box: NEW_ITEMS
+ITEM_PARTS, NEW_ITEMS = ("pens_gear", "magic_arms", "world_gear", "world_magic"), "new_items"
 
 
 def content(settings: dict) -> dict:
-    """{key: on} for each of CONTENT (on unless the settings say False)."""
-    return {key: settings.get(key, True) is not False for key in CONTENT}
+    """{key: on} for each of CONTENT (on unless the settings say False; the new items' parts as
+    NEW_ITEMS is)."""
+    items = settings.get(NEW_ITEMS, True) is not False
+    return {key: items if key in ITEM_PARTS else settings.get(key, True) is not False for key in CONTENT}
 
 
 def prepare_patched_game(game_dir: str, settings: Optional[dict] = None) -> Optional[str]:

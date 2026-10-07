@@ -1857,8 +1857,35 @@ into the game's own data each time the Ledger starts the game, so the game
 makes them with their people and chests and then keeps and saves them like its
 own. A changed switch takes effect in regions the party hasn't visited yet;
 start a new game to have them all. The log doesn't say where they are: they're
-there to be found. [Every magic item](#every-magic-item) lists them with
-the game's own.
+there to be found. [Every magic item](#every-magic-item) lists the magic ones
+with the game's own.
+
+**Mundane items.** The game has no plain short sword (only Kurzak's), only a
+metal axe, and no plain metal weapons at all; the Ledger adds them:
+
+| Item | Where | What it is |
+|---|---|---|
+| **Bone Short Sword** | sold by the **Weapon Merchant** in Teaquetzl and **Jark** in Kel's caravan; carried by every **Renegade** | 1d6 |
+| **Obsidian Short Sword** | sold by the Weapon Merchant and Jark; carried by **Chaero** | 1d6 |
+| **Bone Axe** | sold by the Weapon Merchant and Jark; carried by **Krikor** and every **Wild Mul** | 1d8 |
+| **Obsidian Axe** | sold by the Weapon Merchant; carried by **Merzol**, the slave pens' gladiator | 1d8 |
+| **Obsidian Mace** | sold by the Weapon Merchant and Jark; carried by every **Tari** in the warrens | the game's Mace (1d6+1), in obsidian (its only obsidian mace is Blackmace) |
+| **Metal Short Sword** | sold by the Weapon Merchant | 1d6: Shadowseeker without the plus |
+| **Metal Dagger** | carried by **Tobrian**, in Kel's caravan | the game's dagger, in metal |
+| **Metal Mace** | carried by the **Templar** of the elven slavers' camp | the game's mace, in metal |
+| **Metal Great Axe** | carried by **Uskuye**; an earth cleric's starting great axe | the game's great axe, in metal |
+| **Metal Pick** | carried by **Lt. Kwerin** in Teaquetzl | the game's pick, in metal |
+| **Metal Polearm** | carried by one of the six **Castle Guards** of the Upper Castle; an earth cleric's starting polearm | the game's polearm, in metal |
+| **Great Axe** | a warrior's starting great axe | the game's plain Great Axe, with an icon without the +3's green gem |
+| **Bone Scale Arm Armor**, **Leg Armor** and **Bone Helm** | in the slave pens' chest with the Bone Scale Chest Armor and Arrows +3 (the game has the set but places only the chest piece) | the set; the helm AC 1 with [Helms give AC 1](#helms-and-boots), worn by those who can wear the armour (not thieves) |
+| **Helm** | in **Kurzak**'s pack, in the slave pens | the game's leather helm |
+| **Thieves' Tools** | every thief's backpack | [picking pockets](#picking-pockets) |
+
+The bone and obsidian short swords and axes, and the obsidian mace, are also a
+new character's starting weapon with [weapon specialization](#weapon-specialization)
+(obsidian for a fire or earth cleric).
+
+**Magic items:**
 
 | Item | Where | What it does |
 |---|---|---|
@@ -1868,14 +1895,7 @@ the game's own.
 | **Inixhide** | worn by **Legcrusher**, the pens' half-giant | Leather Chest Armor +1: the leather's AC, +1 |
 | **Shadowseeker** | in the pack of **Kurzak**, the pens' guard leader | a short sword +1 (1d6+1): whoever wields it, in either hand, sees the invisible |
 | **Kreenfang** | the 2 handed Bone Gythka on the dead body by the arena's stone arch | a gythka +1 (2d4+1) |
-| **Bone Scale Arm Armor**, **Leg Armor** and **Bone Helm** | in the slave pens' chest with the Bone Scale Chest Armor and Arrows +3 (the game has the set but places only the chest piece) | the set; the helm AC 1 with [Helms give AC 1](#helms-and-boots), worn by those who can wear the armour (not thieves) |
-| **Thieves' Tools** | every thief's backpack | [picking pockets](#picking-pockets) |
 | **Six scrolls** | [Kalzith's](#kalzith) shop | spells the game has no scroll of |
-| **Bone and obsidian Short Swords and Axes** | a new warrior's starting weapon with [weapon specialization](#weapon-specialization) (obsidian for a fire or earth cleric); sold by the **Weapon Merchant** and **Jark**; carried by **Merzol** in the slave pens, **Krikor**, **Chaero**, and every **Renegade** and **Wild Mul** | a short sword 1d6, an axe 1d8 (the game has no short sword but Kurzak's, and only a metal axe) |
-| **Obsidian Mace** | a fire or earth cleric's starting mace; sold by the Weapon Merchant and Jark; carried by every **Tari** in the warrens | the game's Mace (1d6+1), in obsidian (the game's only obsidian mace is Blackmace) |
-| **Great Axe** | a warrior's starting great axe | the game's plain Great Axe, with an icon without the +3's green gem |
-| **Metal Short Sword** | sold by the Weapon Merchant | 1d6: Kurzak's, without the plus |
-| **Metal Dagger, Mace, Great Axe, Pick and Polearm** | carried by **Tobrian**, the **Templar** of the slavers' camp, **Uskuye**, **Kwerin** and a **Castle Guard**; an earth cleric's starting great axe or polearm | the game's own weapons, in metal (the game has none plain) |
 | **Gutterknot** | carried by **Churrr** in the warrens; a thief can lift it (200 XP) | a club +1 (the game has no magic club) |
 | **Deepbiter** | carried by one of the **Undermountain folk** (the miners) | a stone pick +1 (the game has no magic pick) |
 | **Windlash** | sold by the **Bowyer** | a staff sling +1 (the game has no magic staff sling) |
@@ -1892,7 +1912,7 @@ the game's own.
 | **Flame Blade** | in the pack of the **Templar** of the Hot Springs (the one with the Drake Shield) | an obsidian long sword +1 (1d8+1) whose blade burns what it hits: the fire clerics' Focus Heat, 2d6 fire damage to the creature hit (a save for half), as the game's Dark Flame casts Burning Hands. Obsidian, so a fire (or earth) cleric can wield it |
 | **Tome of Understanding** | **Father Garyn**'s gift, in Teaquetzl, when the party brings him the ranike pith from Notaku | read as a scroll is (right-click it in the inventory, click its icon): the one whose pack it is in gains a point of WIS for good (at most 25), and the tome is gone. Not in a fight, as no scroll can be read in one |
 | **Arrowbane** | sold by **Kel** | a silver circlet: Protection from Normal Missiles on its wearer while worn (normal arrows, sling stones and chatkchas can't hurt them); worn on the head, not armour |
-| **Sunking Crown** | worn by **Keldar**, the templar of Dagolar's tunnels | a gold crown: Protection from Evil, 10' Radius on its wearer while worn; worn on the head, not armour |
+| **Sunking Crown** | worn by **Keldar**, the templar of Dagolar's tunnels | a gold crown: Protection from Evil on its wearer while worn; worn on the head, not armour |
 | **Warden's Helm** | on **Dagolar**'s body (the one carrying Dag's Dagger) | the game's metal helm +1: Cloak of Bravery on its wearer while worn |
 | **Warden's Arms** | the Lower Castle's treasure chest, with Dark Flame (behind the wall the Serpent Boots show, where the vrock perch) | plate arm armour +1 (AC 2, +1) |
 | **Warden's Legs** | the Gemfields' chest | plate leg armour +1 (AC 2, +1) |
@@ -1916,13 +1936,9 @@ that can wear the game's chain (no single-class thieves), and kept from more
 with [class restrictions](#class-restrictions). **Grey's Scale**'s arm and
 leg armour is AC 3 each (the game's is 2).
 
-**On the Options tab**, under New content: **Plain weapons the game
-lacks...** places the plain weapons; **Magic items in the world...** the
-named magic items, the bracers and the tome, with Alagorn's stories;
-**The slave pens' people's gear...** Kurzak's, Legcrusher's and Pehtucl's
-items and the bone scale set; the arena's ring and **Kreenfang and
-Shadowseeker** have a box each (without the last, Kurzak's is a plain Short
-Sword); a thief's tools come with picking pockets.
+**On the Options tab**, under New content, **New items, magical and mundane**
+places them all (the arena's ring has a box of its own); a thief's tools come
+with picking pockets.
 
 A thief can lift Pehtucl's ring, Shadowseeker and Gutterknot (200 XP for each
 weapon), not what's worn on the body. With [AD&D's rules for rings and cloaks of
@@ -2073,7 +2089,7 @@ Tanelyv's Armor also has a chest piece, with no plus.
 | Metal | Helm of Contemplation | a shield of thought against psionic attacks | the Warren Chief |
 | Metal | **Warden's Helm** | +1, Cloak of Bravery | Dagolar |
 | none (not armour) | **Arrowbane** | Protection from Normal Missiles | sold by Kel |
-| none (not armour) | **Sunking Crown** | Protection from Evil, 10' Radius | Keldar |
+| none (not armour) | **Sunking Crown** | Protection from Evil | Keldar |
 
 **Shields and gloves** (worn in a hand, in this game):
 

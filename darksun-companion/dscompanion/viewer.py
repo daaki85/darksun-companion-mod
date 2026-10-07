@@ -382,17 +382,9 @@ class Viewer:
                 ("kalzith", "Kalzith, a defiler slave in the slave pens who sells arcane scrolls (new games)"),
                 ("semyon", "Semyon in the slave pens after he leaves the arena, and breaking out with Scar"),
                 ("vulture", "The cooked vulture: Dinos cooks it for the party (XP and a full rest)"),
-                ("pens_gear", "The slave pens' people's gear: a Bone Helm and short sword for Kurzak, Inixhide for "
-                              "Legcrusher, a Ring and Cloak of Protection +1 for Pehtucl, and the rest of the bone "
-                              "scale armour"),
-                ("magic_arms", "Kreenfang and Shadowseeker: the Bone Gythka on the arena's dead body and Kurzak's "
-                               "short sword made +1 magic weapons"),
-                ("world_gear", "Plain weapons the game lacks (bone, obsidian and metal short swords, axes, maces and "
-                               "more), sold by the Weapon Merchant and Jark and carried by people who fight with them"),
-                ("world_magic", "Magic items in the world: 13 named weapons (among them three axes, two polearms, an "
-                                "air cleric's dagger and two psionicists' short swords), the Elven Leader's Gythka +2, "
-                                "bracers of defense on four wizards, a circlet and a crown, the Warden's Plate, elven "
-                                "cloak and boots and the Tome of Understanding")):
+                (launch.NEW_ITEMS, "New items, magical and mundane: weapons, armour and other gear the game "
+                                   "lacks or never placed, on its people, in its shops and chests (the guide's "
+                                   "New items lists them)")):
             self.content_vars[key] = tk.BooleanVar(value=settings.get(key, True) is not False)
             ttk.Checkbutton(new, text=text, variable=self.content_vars[key],
                             command=self._popups_changed).pack(anchor="w", pady=(4, 0))

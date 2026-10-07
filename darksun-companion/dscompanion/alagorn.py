@@ -211,7 +211,7 @@ MAGIC = {
               ("Sunking Crown",
                "The Sunking Crown! It was taken from the tomb of a king who ruled before Draj was "
                "a city, and who claimed the sun's own favour. Its gold still keeps evil from its "
-               "wearer, and from those who stand close by. Keldar wore it in the dark of Dagolar's "
+               "wearer. Keldar wore it in the dark of Dagolar's "
                "tunnels; much good it did him.")),
     OTHER: (("Tome of Understanding",
              "The Tome of Understanding! Father Garyn gave you this? Then he trusts you more than "

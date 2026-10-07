@@ -58,6 +58,11 @@ class LaunchTests(unittest.TestCase):
         self.assertFalse(off["vulture"])
         self.assertFalse(off["kalzith"])
         self.assertTrue(off["semyon"])  # (only False switches off)
+        # (the new items: one box for all their parts, the parts' own old settings not read)
+        items = launch.content({"new_items": False, "world_gear": True})
+        self.assertFalse(any(items[k] for k in launch.ITEM_PARTS))
+        self.assertTrue(items["vulture"])
+        self.assertTrue(all(launch.content({"world_magic": False, "pens_gear": False})[k] for k in launch.ITEM_PARTS))
 
     def test_crash_report(self):
         """What DOSBox and the game left, the switches, and the end of the logs, in a file of its

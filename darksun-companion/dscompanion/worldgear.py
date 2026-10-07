@@ -11,8 +11,7 @@
 - A circlet and a crown, worn on the head and not armour (no AC; bracers of defense and a
   preserver's spells go with them), each with a spell the game keeps on its wearer while it's
   worn, as it does its own magic items': Arrowbane, Protection from Normal Missiles, sold by
-  Kel; the Sunking Crown, Protection from Evil 10' Radius (the party round its wearer warded),
-  worn by Keldar, the templar of Dagolar's tunnels.
+  Kel; the Sunking Crown, Protection from Evil, worn by Keldar, the templar of Dagolar's tunnels.
 - The Warden's Plate, plate mail +1 (DSCLOG's plate types: AC 3 chest, 2 arms, 2 legs, as AD&D's
   piecemeal plate; the helm the game's metal one), its four pieces scattered: the helm on
   Dagolar's body; the arms in the Lower Castle's treasure chest with Dark Flame (behind the
@@ -106,7 +105,7 @@ BRACERS_NAME = 0x149  # the name entry DSCLOG adds ("Bracers/Defense")
 ARROWBANE, SUNKING_CROWN = 0x14E, 0x14F  # and the circlet's and crown's
 NAMES[ARROWBANE], NAMES[SUNKING_CROWN] = b"Arrowbane", b"Sunking Crown"
 ITEM_SPELL, ITEM_SPELL_SHOWN = 0x0F, 0x02  # a magic item's spell, one past its number (as arms.py's)
-PROT_MISSILES, PROT_EVIL_10 = 36, 121  # the game's Prot'n from Normal Missiles, Prot'n from Evil 10' Rad.
+PROT_MISSILES, PROT_EVIL = 36, 76  # the game's Prot'n from Normal Missiles, Protection from Evil
 HEAD = game.EQUIP_SLOTS.index("head")
 BRACERS_PICTURE = 0x10000 - 2502
 ARM = game.EQUIP_SLOTS.index("arm")
@@ -146,7 +145,7 @@ def head_item(type_: int, name: int, picture: int, value: int, spell: int) -> by
 
 # priced as the game's magic helms: the Helm of Might 30,000, the Helm of Contemplation 35,000
 ARROWBANE_ITEM = head_item(game.CIRCLET_TYPE, ARROWBANE, 0x10000 - 2514, 30000, PROT_MISSILES)
-CROWN_ITEM = head_item(game.CROWN_TYPE, SUNKING_CROWN, 0x10000 - 2516, 40000, PROT_EVIL_10)
+CROWN_ITEM = head_item(game.CROWN_TYPE, SUNKING_CROWN, 0x10000 - 2516, 40000, PROT_EVIL)
 
 
 WARDENS_CHEST, WARDENS_ARMS, WARDENS_LEGS, WARDENS_HELM = 0x150, 0x151, 0x152, 0x153
