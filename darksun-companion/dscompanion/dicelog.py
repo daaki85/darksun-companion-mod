@@ -346,6 +346,7 @@ class DiceLog:
         self.pens_gear = True  # the slave pens' gear for Kurzak, Legcrusher, Pehtucl, the bone scale set
         self.magic_arms = True  # the arena's dead body's gythka and Kurzak's short sword +1 (arms.py)
         self.world_gear = True  # the new plain weapons in merchants' stock and people's packs (worldgear.py)
+        self.world_magic = True  # bracers of defense and magic weapons (worldgear.py)
         self.vulture_on = True  # the cooked vulture quest (vulture.py)
         self.stealth_gear = True  # a worn cloak's and boots' bonuses to hiding (stealth.py)
         self._dust = dust.Dust()
@@ -649,6 +650,7 @@ class DiceLog:
         self.pens_gear = bool(settings.get("pens_gear", True))
         self.magic_arms = bool(settings.get("magic_arms", True))
         self.world_gear = bool(settings.get("world_gear", True))
+        self.world_magic = bool(settings.get("world_magic", True))
         self.vulture_on = bool(settings.get("vulture", True))
         self.stealth_gear = bool(settings.get("stealth_gear", True))
         self.ring_mode = rings.mode(settings)
@@ -1062,9 +1064,13 @@ class DiceLog:
                 before = set(self.tools_given)
                 out += arms.upgrade(self.game, self.tools_given)  # the gythka and the short sword +1
                 self._tools_new += sorted(self.tools_given - before)
-            if self.world_gear and npcitems.types_ready(self.game, self.tsr_hdr):
+            if (self.world_gear or self.world_magic) and npcitems.types_ready(self.game, self.tsr_hdr):
                 before = set(self.tools_given)
-                out += worldgear.place(self.game, self.tools_given)  # the new weapons, in shops and packs
+                if self.world_gear:  # the new weapons, in shops and packs
+                    out += worldgear.place(self.game, self.tools_given)
+                if self.world_magic:  # bracers of defense and magic weapons; the Warren Chief's club
+                    out += worldgear.place(self.game, self.tools_given, worldgear.MAGIC)
+                    out += worldgear.reward(self.game, self.tools_given)
                 self._tools_new += sorted(self.tools_given - before)
             if self.stealth_gear:
                 stealth.reprice(self.game)  # (cloaks and boots: they help a thief hide and move silently)

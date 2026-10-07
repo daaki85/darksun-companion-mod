@@ -669,6 +669,49 @@ class ProtectionRuleTests(RingTests):
 
 
 @unittest.skipIf(Uc is None, "unicorn is not installed")
+class BracersTests(ProtectionRuleTests):
+    """Bracers of defense (the ninth of DSCLOG's types, worn in the arm armour's slot): their plus
+    counts for AC without armour on the arms, legs or chest, with or without RULE_PROTECTION, and
+    they aren't armour to a ring's or cloak's rule."""
+    BRACERS = 123
+    test_the_better_ring = test_rule_off = test_ring_ac_lost_to_magical_armour = test_cloak = None
+
+    def setUp(self):
+        super().setUp()
+        rec = bytearray(0x14)
+        rec[0x08], rec[0x09], rec[0x0F] = 0x40, 3, 0x80
+        self.mu.mem_write(self.TYPES * 16 + self.BRACERS * 0x14, bytes(rec))
+        self.wear(7, self.BRACERS, 0, 4)  # creature 1: ring 4 (+1) on a finger, the bracers on the arms
+
+    def test_alone(self):
+        self.assertTrue(self.counts(7, self.BRACERS))
+        self.assertTrue(self.counts(4, 102))  # (not magical armour: the ring counts)
+
+    def test_lost_to_armour(self):
+        for typ, slot, plus in ((6, 9, 0), (15, 6, 0), (57, 9, 1)):  # leather, bone scale legs, metal +1
+            self.wear(5, typ, slot, plus)
+            self.assertFalse(self.counts(7, self.BRACERS), (typ, slot))
+        for typ, slot in ((4, 10), (89, 7)):  # a shield, a helm: they stay
+            self.wear(5, typ, slot)
+            self.assertTrue(self.counts(7, self.BRACERS), (typ, slot))
+        self.wear(5, 6, 0xFF)  # armour only carried
+        self.assertTrue(self.counts(7, self.BRACERS))
+
+    def test_without_the_rule(self):
+        self.mu.mem_write(TSR * 16 + load_image().find(HDR_SIG) + self.RULES, struct.pack("<H", 0))
+        self.wear(5, 6, 9)
+        self.assertFalse(self.counts(7, self.BRACERS))
+        self.wear(5, 6, 0xFF)
+        self.assertTrue(self.counts(7, self.BRACERS))
+
+    def test_not_before_the_types(self):
+        """Before DSCLOG's types are in, type 123 is nothing of its own: the game's way."""
+        self.mu.mem_write(TSR * 16 + load_image().find(HDR_SIG) + self.TYPES_FIRST, struct.pack("<H", 0))
+        self.wear(5, 6, 9)
+        self.assertTrue(self.counts(7, self.BRACERS))
+
+
+@unittest.skipIf(Uc is None, "unicorn is not installed")
 class ScriptRandTests(unittest.TestCase):
     """The scripts' random command (PROBE_SCRIPT_RAND): EAX and EDX N + 1, as the replaced code
     leaves them, and the command recorded with its result, N, the script's position and the
@@ -1777,7 +1820,7 @@ class TypesTests(unittest.TestCase):
         self.mu = mu = Uc(UC_ARCH_X86, UC_MODE_16)
         mu.mem_map(0, 0x100000)
         mu.mem_write(TSR * 16, image)
-        size = image.find(bytes.fromhex("8146fca000" "8356fe00"))  # 8 types of 20 bytes: A0h
+        size = image.find(bytes.fromhex("8146fcf000" "8356fe00"))  # 12 types of 20 bytes: F0h
         names_fill, fill = fill_probes(image)
         self.assertGreater(min(size, fill - names_fill), 0)
         mu.mem_write(VEC_TYPES_SIZE * 4, struct.pack("<HH", size, TSR))
@@ -1795,12 +1838,12 @@ class TypesTests(unittest.TestCase):
         return mu.reg_read(r.UC_X86_REG_SP)
 
     def test_room_and_filled(self):
-        """The game's 115 types (2300 bytes): 160 bytes more reserved, and after the read
+        """The game's 115 types (2300 bytes): 240 bytes more reserved, and after the read
         DSCLOG's types at 115 on, the number noted."""
         from dscompanion import npcitems
         self.mu.mem_write(SS * 16 + BP - 4, struct.pack("<I", 2300))
         self.assertEqual(self.interrupt(VEC_TYPES_SIZE), 0x7FC)
-        self.assertEqual(struct.unpack("<I", self.mu.mem_read(SS * 16 + BP - 4, 4))[0], 2460)
+        self.assertEqual(struct.unpack("<I", self.mu.mem_read(SS * 16 + BP - 4, 4))[0], 2540)
         self.mu.mem_write(SS * 16 + 0x7FC, bytes(4))
         self.assertEqual(self.interrupt(VEC_TYPES_FILL, eax=0), 0x80C)
         at = self.TYPES_SEG * 16 + 115 * 20

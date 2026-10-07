@@ -28,7 +28,8 @@ _TYPES = {
     "long sword": (45, 63, 81, 47, 41, 50, 85, 97, 98),  # obsidian, metal, bone; Dragonsbane and El's
     # Drinker (47), Draketooth, Swiftbite, Dark Flame, Hornblade, Bloodwrath: all 1d8 blades
     "dagger": (17, 33, 84, 94),  # obsidian, stone; Dag's Dagger, Terror Blade
-    "short sword": (game.SHORT_SWORD_TYPE, game.BONE_SHORT_SWORD_TYPE, game.OBSIDIAN_SHORT_SWORD_TYPE),  # Kurzak's (metal); the Ledger's
+    "short sword": (game.SHORT_SWORD_TYPE, game.BONE_SHORT_SWORD_TYPE, game.OBSIDIAN_SHORT_SWORD_TYPE,
+                    game.METAL_SHORT_SWORD_TYPE),  # Kurzak's (metal); the Ledger's
     "mace": (20, 46),  # bone (Mace, Wyvern Hook); Blackmace
     "club": (18,),  # Club, Striker
     "axe": (22, game.BONE_AXE_TYPE, game.OBSIDIAN_AXE_TYPE),  # Axe, Soulcrusher (metal); the Ledger's

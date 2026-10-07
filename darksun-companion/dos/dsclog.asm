@@ -2308,6 +2308,16 @@ probe_ring_ac:
         jnz .off
         iret
 .other: pop ax
+        push ax                 ; bracers of defense: their plus counts, but not over armour
+        mov ax, cx              ; on the arms, legs or chest (AD&D's; a shield, a helm, rings and
+        call bracers_ax         ; cloaks go with them)
+        pop ax
+        jne .helm
+        call prot_here
+        jc .done
+        test byte [cs:p_flags], P_ARMOUR
+        jnz .off
+        iret
 .helm:  cmp cx, HELM_LEATHER    ; a helm: AC 1 with RULE_HELMS (the game's are all 0), 0 without
         je .is
         cmp cx, HELM_METAL
@@ -2465,7 +2475,12 @@ prot_scan:
         jne .on
         mov [cs:p_ring2], ah
         jmp .on
-.type:  les bx, [ITEM_TYPES]
+.type:  push ax
+        mov ax, si
+        call bracers_ax                 ; (bracers aren't armour)
+        pop ax
+        je .on
+        les bx, [ITEM_TYPES]
         imul si, si, 0x14
         add bx, si
         test byte [es:bx], 4            ; a shield (the flag the game's AC reads for one)
@@ -2486,7 +2501,10 @@ prot_scan:
         jne .on
 .armour: test byte [es:bx+0x0F], 0x80
         jz .on
-        cmp ah, 0
+        cmp al, HEAD_SLOT
+        je .plus
+        or byte [cs:p_flags], P_ARMOUR  ; (a helm isn't, to bracers)
+.plus:  cmp ah, 0
         jle .metal
         or byte [cs:p_flags], P_MAGIC_ARMOUR
 .metal: mov al, [es:bx+8]               ; its material (no material: 40h with 0)
@@ -2730,7 +2748,12 @@ class_forbids:
         jz .mat
         mov al, NO_MATERIAL
 .mat:   mov [cs:cu_mat], al
-        xor al, al                      ; armour: +0Fh 80h, and not a shield
+        xor al, al                      ; armour: +0Fh 80h, and not a shield (nor bracers)
+        push ax
+        mov ax, dx
+        call bracers_ax
+        pop ax
+        je .armour
         test byte [si + 0x0F], 0x80
         jz .armour
         test byte [cs:cu_flags], 4
@@ -2960,6 +2983,21 @@ sphere_allows:
 cu_flags   db 0
 cu_mat     db 0
 cu_armour  db 0
+
+; BRACERS_AX: ZF set if AX is the bracers of defense's type (TYPES_FIRST + BRACERS, once the
+; types are in). All registers kept.
+bracers_ax:
+        push bx
+        mov bx, [cs:types_first]
+        or bx, bx
+        jz .no
+        add bx, BRACERS
+        cmp ax, bx
+        pop bx
+        ret
+.no:    inc bx                  ; (ZF clear)
+        pop bx
+        ret
 cu_kind    db 0
 cu_others  dw 0
 
@@ -3055,7 +3093,13 @@ armour_worn:
         je .slot
         cmp al, CHEST_SLOT
         jne .on
-.slot:  imul si, [es:bx+0x0A], 0x14
+.slot:  mov si, [es:bx+0x0A]
+        push ax
+        mov ax, si
+        call bracers_ax                 ; (bracers aren't armour)
+        pop ax
+        je .on
+        imul si, si, 0x14
         les bx, [ITEM_TYPES]
         add bx, si
         test byte [es:bx], 4    ; a shield
@@ -4527,7 +4571,7 @@ KIND_TYPES equ 128
 kind_of_type  db 16, 14, 7, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 2, 10, 5, 12, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0
               db 0, 3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 11, 1, 5, 1, 13, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1
               db 15, 0, 0, 0, 0, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 1, 0, 0, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0
-              db 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 8, 0, 0, 4, 0, 0, 4, 6, 4, 6, 0, 0, 0, 0, 0, 0
+              db 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 8, 0, 0, 4, 0, 0, 4, 6, 4, 6, 4, 0, 0, 0, 0, 0
 
 ; PROBE_XP_NEXT: INT VEC_XP_NEXT replaces "push 10F4h" (3 bytes: INT + NOP; DSUN.EXE 67DBEh) in
 ; View Character's line "EXP:10301 (16000)", where the game adds ")" (DS:10F4h) after the XP the
@@ -4850,6 +4894,7 @@ acid_saves db 8, 11, 5, 5, 13, 10, 12   ; wood, bone, stone, obsidian, metal, le
 P_MAGIC_ARMOUR equ 1
 P_METAL_ARMOUR equ 2
 P_SHIELD       equ 4
+P_ARMOUR       equ 8                    ; any armour on the arms, legs or chest
 ARM_SLOT       equ 0                    ; the item slots of armour (the game's: arm, legs,
 LEG_SLOT       equ 6                    ; head, chest)
 HEAD_SLOT      equ 7
@@ -5678,8 +5723,9 @@ n_fl    dw 0
 ; companion's own items that no type of the game's fits (a metal short sword, a cloak of
 ; protection). Nothing in the game limits the numbers to its own.
 TYPE_SIZE   equ 20
-TYPES_EXTRA equ 8
+TYPES_EXTRA equ 12
 TYPES_PTR   equ 0x1669          ; DS: far pointer to the item types
+BRACERS     equ 8               ; (the bracers of defense: the ninth of them)
 
 ; PROBE_TYPES_SIZE: INT VEC_TYPES_SIZE replaces "push dword 1" (3 bytes: INT + NOP) before the
 ; game reserves memory for the IT1R chunk, its size the dword at [BP-4]: adds the room.
@@ -5768,7 +5814,14 @@ extra_types:
         ; an obsidian axe: the Axe's, of obsidian, for the obsidian weapons' classes
         db 0x01, 0x00, 0x10, 0x00, 0x46, 0x00, 0xFA, 0x00, 0x03, 0x05, 0x01, 0x01
         db 0x08, 0x01, 0x00, 0x00, 0x7E, 0x17, 0x00, 0x01
-        times (TYPES_EXTRA - 7) * TYPE_SIZE db 0
+        ; a plain metal short sword: the first's (Kurzak's, which is his alone: Shadowseeker)
+        db 0x01, 0x00, 0x30, 0x00, 0x1E, 0x00, 0xFA, 0x00, 0x04, 0x05, 0x01, 0x01
+        db 0x06, 0x01, 0x00, 0x00, 0x72, 0x16, 0x00, 0x01
+        ; bracers of defense (BRACERS): the cloak of protection's, worn on the arms (+9: 3, the
+        ; arm armour's slot), their plus counting for AC; not armour to anything else here
+        db 0x00, 0x00, 0x00, 0x00, 0x0A, 0x00, 0x0A, 0x00, 0x40, 0x03, 0x00, 0x00
+        db 0x00, 0x00, 0x00, 0x80, 0xFF, 0x1F, 0x00, 0x01
+        times (TYPES_EXTRA - 9) * TYPE_SIZE db 0
 ; the names, numbered from NAMES_OWN (322): the companion's items' (the same as the companion's
 ; NAMES in dscompanion/names.py), the rest blank until it writes more
 extra_names:
@@ -5786,7 +5839,9 @@ extra_names:
         times NAME_SIZE - 12 db 0
         db "Kreenfang"                  ; (the arena's Bone Gythka made +1)
         times NAME_SIZE - 9 db 0
-        times (NAMES_EXTRA - 7) * NAME_SIZE db 0
+        db "Bracers/Defense"            ; (bracers of defense: BRACERS, dscompanion/worldgear.py)
+        times NAME_SIZE - 15 db 0
+        times (NAMES_EXTRA - 8) * NAME_SIZE db 0
 
 ; STEALTH (RULE_STEALTH): a thief who starts a turn with no enemy next to them may hide in
 ; shadows and move silently up to someone; the companion rolls both and, when both succeed,

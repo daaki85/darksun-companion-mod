@@ -38,6 +38,10 @@ TYPES = (  # as DSCLOG's EXTRA_TYPES has them
     # an obsidian short sword and an obsidian axe
     bytes.fromhex("010030001e00fa0003050101060100007e17" "0001"),
     bytes.fromhex("010010004600fa0003050101080100007e17" "0001"),
+    # a plain metal short sword (worldgear.py): the first's
+    bytes.fromhex("010030001e00fa00040501010601000072160001"),
+    # bracers of defense (bracers.py): the cloak of protection's, worn on the arms
+    bytes.fromhex("000000000a000a00400300000000008" "0ff1f0001"),
 )
 TSR_TYPES_OFF, TSR_TYPES_COUNT, TSR_TYPES_FIRST, TSR_TYPES_PTR = 208, 210, 212, 214
 BLOODWRATH = 0x9C  # the name entry of the Templar's sword: which Templar is Pehtucl

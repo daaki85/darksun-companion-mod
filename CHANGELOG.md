@@ -10,9 +10,18 @@ requests #1 to #13; its notes are in
 
 **Added**
 - **The new plain weapons in the world** (a new content switch, on by default):
-  the Weapon Merchant and Jark sell the bone and obsidian short swords and axes
-  and the obsidian mace, and Merzol, Krikor, Chaero, a Tari, a Renegade and a
-  Wild Mul carry one, each once a game.
+  the Weapon Merchant and Jark sell the bone and obsidian short swords and axes,
+  the obsidian mace and (the Weapon Merchant) a plain metal short sword; Merzol,
+  Krikor and Chaero carry one, and every Tari in the warrens, Renegade and Wild
+  Mul has one as loot.
+- **Bracers of defense** (a new content switch with the magic weapons, on by
+  default): AC 6 on Mikquetzl, AC 5 on Wyrmias, AC 4 on Balkazar and AC 2 on
+  Dagolar; worn on the arms, nothing while armour is worn on the arms, legs or
+  chest, and not armour to the class rules (a preserver casts in them).
+- **Magic weapons of the kinds the game has none of:** a Club +1 with the
+  Warren Chief's Helm of Contemplation, a stone Pick +1 in Melkor's pack, a
+  Staff Sling +1 sold by the Bowyer and a metal Short Sword +2 on an Elite
+  Guard, each with an icon of its own.
 - **Weapon specialization** (a new rule change, on by default): fighters and
   gladiators specialize in kinds of weapon (+1 to hit, +2 damage), fighters
   on to mastery at 5th level (+3, +3) and grand mastery at 9th (the damage
