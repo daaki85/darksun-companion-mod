@@ -5,6 +5,15 @@ Released pull requests are summarised in a line or two each; the release notes
 ([1.1.0](release-notes/v1.1.0.md): #14 to #18; [1.0.0](release-notes/v1.0.0.md):
 #1 to #13) and the pull requests themselves have the detail.
 
+## Pull request #25 (in progress)
+
+**Documentation**
+- **[Every magic item](darksun-companion/README.md#every-magic-item):** the
+  guide lists all the magic items in a game with the new content, the game's
+  and the Ledger's, sorted by where they're worn (weapons by material and
+  kind, armour by material), with each one's bonus or power and who has it,
+  and the magic weapons of each kind for weapon specialization.
+
 ## Pull request #24 ([merged 2026-10-07](https://github.com/daaki85/darksun-companion-mod/pull/24))
 
 **Added**
