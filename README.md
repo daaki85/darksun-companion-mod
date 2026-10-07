@@ -71,11 +71,10 @@ double-click, with the options as last set.)
 
 ## What's new
 
-In pull request #25 (merged 2026-10-07): **bone and obsidian great axes and a bone
-dagger**, so water and fire clerics' warriors have more to choose from, and
-ways to replace a broken weapon or lost Thieves' Tools in the shops. Defilers
-now leave a body, a thief can lift Mindshard from Maris for 200 XP, and the
-guide's item tables show each item's icon.
+In pull request #26 (merged 2026-10-07): **missile specialists shoot faster.** A
+fighter or gladiator specialized in the bow, sling, staff sling or chatkcha
+shoots faster: a bow 3 arrows a round, 4 from 7th level, a grand master one
+more. Every ranger now has expertise with the bow, at the same rate.
 
 Earlier changes, pull request by pull request, are in
 [`CHANGELOG.md`](CHANGELOG.md). Releases have notes of their own:

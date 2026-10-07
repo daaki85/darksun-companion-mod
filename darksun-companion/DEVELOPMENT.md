@@ -434,6 +434,11 @@ the creation pages (`INT C8h` to `INT C3h`, windows 3014 to 3019 in the
 Ledger's copy of `RESOURCE.GFF`), calls the game's psionic pop-up in weapon
 mode at a level gained (`INT C2h`, then `INT C1h` to `INT BCh` in the pop-up,
 window 3021), and prints the Effects screen's lines (`INT BBh`).
+A missile weapon's attacks a round are its item type's (+0Bh, in halves: a
+bow 4, the rest 2), not the character's (sheet +2Ah) as in melee; `INT D1h`
+raises them to a specialist's (`MISSILE_RATE`, by the fighter, gladiator or
+ranger level; a grand master one more), and the Ledger's Characters tab does the same
+(`specialize.missile_attacks`).
 
 ### Class restrictions
 

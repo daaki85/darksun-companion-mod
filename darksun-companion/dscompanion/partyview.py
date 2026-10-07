@@ -156,8 +156,8 @@ def attacks_text(shown: str, hits) -> str:
         halves = int(whole) if half else int(whole) * 2
     except ValueError:
         return f"Attacks: {shown} a round"
-    each = [(h.name, specialize.attacks(halves, h.skill, h.slot == game.MISSILE_SLOT)) for h in hits
-            if h.skill and h.item >= 0]
+    each = [(h.name, h.halves if h.halves is not None else specialize.attacks(halves, h.skill)) for h in hits
+            if (h.skill or h.halves is not None) and h.item >= 0]
     if not each or all(n == halves for _, n in each):
         return f"Attacks: {shown} a round"
     return "Attacks: " + ", ".join(f"{halves_text(n)} a round with {name}" if i == 0 else f"{halves_text(n)} with {name}"

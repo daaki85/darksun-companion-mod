@@ -2558,7 +2558,7 @@ probe_attacks:
         push dx
         call spec_of
         cmp word [bp + 0x16], 1
-        jg .hit                 ; (a missile: the game's rate of fire)
+        jg .missile
         cmp ax, 2
         jbe .hit                ; (not a warrior)
         cmp dl, SPEC_PLAIN
@@ -2577,6 +2577,93 @@ probe_attacks:
 .done:  pop dx
 .store: mov [bp - 8], ax
         iret
+.missile:                       ; (a specialist's rate of fire, else the game's)
+        push bx
+        push si
+        push es
+        mov si, [bp + 0x10]
+        imul si, si, 0x47
+        les bx, [0x1661]
+        add bx, si
+        mov si, [bp + 0x14]
+        call missile_rate
+        pop es
+        pop si
+        pop bx
+        jmp .hit
+
+; MISSILE_RATE: AX (the attacks a round in halves: the weapon type's, +0Bh, as the game has a
+; missile's) made a specialist's rate of fire when greater, for skill DL (SPEC_EXPERT or above: a
+; fighter's or gladiator's chosen kind, a ranger's, a ranger's bow) with item type SI, the sheet at
+; ES:BX, by the warrior's level (the highest fighter, gladiator or ranger level of the classes it
+; has now: 1-6, 7-12, 13 on): AD&D's
+; for the sling, 3/2, 2, 5/2 a round; the bow, staff sling and chatkcha a step above AD&D's, the bow
+; 3, 4, 5, the staff sling and chatkcha 3/2, 2, 5/2; a grand master one more.
+MISSILE_KIND equ 13             ; (the chatkcha's kind + 1; then the bow, the sling, the staff sling)
+missile_halves db 3, 4, 5, 6, 8, 10, 3, 4, 5, 3, 4, 5
+missile_rate:
+        cmp dl, SPEC_EXPERT
+        jb .ret
+        cmp si, KIND_TYPES
+        jae .ret
+        push cx
+        push dx
+        push si
+        movzx cx, byte [cs:si + kind_of_type]
+        sub cx, MISSILE_KIND
+        jb .out
+        cmp cx, 3
+        ja .out
+        xor dx, dx              ; DL the specialist's level
+        xor si, si
+.class: push ax
+        mov al, [es:bx + si + 0x21]
+        mov ah, [es:bx + si + 0x24]
+        or si, si               ; (a human's earlier classes once the first's level has passed theirs)
+        jz .on
+        cmp byte [es:bx + 0x18], 1
+        jne .on
+        cmp ah, [es:bx + 0x24]
+        jae .next
+.on:    cmp al, FIGHTER_CLASS
+        je .warrior
+        cmp al, GLADIATOR_CLASS
+        je .warrior
+        cmp al, 13              ; (a ranger, 13-16)
+        jb .next
+        cmp al, 16
+        ja .next
+.warrior:
+        cmp ah, dl
+        jbe .next
+        mov dl, ah
+.next:  pop ax
+        inc si
+        cmp si, 3
+        jb .class
+        imul cx, cx, 3
+        cmp dl, 7
+        jb .tier
+        inc cx
+        cmp dl, 13
+        jb .tier
+        inc cx
+.tier:  mov si, cx
+        movzx cx, byte [cs:si + missile_halves]
+        cmp cx, ax
+        jbe .grand
+        mov ax, cx
+.grand: pop si                  ; (DX, pushed after it: the skill back in DL)
+        pop dx
+        push dx
+        push si
+        cmp dl, SPEC_GRAND
+        jne .out
+        add ax, 2               ; (a grand master one more shot, as in melee)
+.out:   pop si
+        pop dx
+        pop cx
+.ret:   ret
 
 probe_spec_damage:
         add [bp - 0x12], ax
@@ -4487,8 +4574,9 @@ spec_of:
 
 ; SPEC_OF_SHEET: DL the skill with item type SI of the character whose sheet is at ES:BX:
 ; SPEC_NONE (it has chosen no kinds), SPEC_PLAIN (not this kind), SPEC_EXPERT (a ranger's: no
-; fighter or gladiator class), SPEC_SPECIAL, SPEC_MASTER (a fighter's own kind, the first, from
-; 5th level), SPEC_GRAND (9th).
+; fighter or gladiator class; and every ranger's with the bow, chosen or not), SPEC_SPECIAL,
+; SPEC_MASTER (a fighter's own kind, the first, from 5th level), SPEC_GRAND (9th).
+BOW_KIND equ 14                 ; (the bow's kind + 1)
 spec_of_sheet:
         push ax
         push cx
@@ -4511,6 +4599,26 @@ spec_of_sheet:
         inc si
         cmp si, SPEC_COUNT
         jb .slot
+        cmp cl, BOW_KIND        ; (not chosen: a ranger's bow all the same)
+        jne .ret
+        xor si, si
+.rbow:  mov al, [es:bx + si + 0x21]
+        or si, si               ; (a human's earlier classes once the first's level has passed theirs)
+        jz .ron
+        cmp byte [es:bx + 0x18], 1
+        jne .ron
+        mov ah, [es:bx + si + 0x24]
+        cmp ah, [es:bx + 0x24]
+        jae .rnext
+.ron:   cmp al, 13
+        jb .rnext
+        cmp al, 16
+        ja .rnext
+        mov dl, SPEC_EXPERT
+        jmp .ret
+.rnext: inc si
+        cmp si, 3
+        jb .rbow
         jmp .ret
 .found: mov dl, SPEC_EXPERT
         xor ax, ax              ; AH a fighter or gladiator, AL any warrior, CH the fighter level
