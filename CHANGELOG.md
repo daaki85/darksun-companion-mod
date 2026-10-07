@@ -11,8 +11,10 @@ Released pull requests are summarised in a line or two each; the release notes
 - **Guide reorganised:** Every magic item and Every mundane weapon in a section
   of their own, Item tables (they list the game's items too, not only new
   content); Suggested system requirements under Requirements, linked from Game
-  speed; weapon specialization tidied (repeated notes gone, one table heading
-  for every warrior).
+  speed; Picking pockets moved to Thieves; weapon specialization tidied
+  (repeated notes gone, one table heading for every warrior, "weapon spec" for
+  the kinds chosen, as the creation pages call them, and every ranger's bow
+  expertise said first).
 
 ## Pull request #27 ([merged 2026-10-07](https://github.com/daaki85/darksun-companion-mod/pull/27))
 

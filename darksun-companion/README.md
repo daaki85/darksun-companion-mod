@@ -34,6 +34,7 @@ records; this ledger keeps the ones the game doesn't show you.
   - [Attacks from behind and backstabs](#attacks-from-behind-and-backstabs)
   - [Thief skills from AD&D's table](#thief-skills-from-adds-table)
   - [Hiding in shadows to backstab](#hiding-in-shadows-to-backstab)
+  - [Picking pockets](#picking-pockets)
 - [Saving throws](#saving-throws)
   - [The game's saving throws](#the-games-saving-throws)
   - [Spells saved against with the spell save](#spells-saved-against-with-the-spell-save)
@@ -60,7 +61,6 @@ records; this ledger keeps the ones the game doesn't show you.
 - [New content](#new-content)
   - [New items](#new-items)
   - [New people](#new-people)
-  - [Picking pockets](#picking-pockets)
   - [The cooked vulture](#the-cooked-vulture)
 - [Item tables](#item-tables)
   - [Every magic item](#every-magic-item)
@@ -812,8 +812,10 @@ damage as any other. A backstab is the only thing that multiplies damage.
 
 ## Thieves
 
-What the game does with thieves' skills and attacks from behind, then what the two
-rule changes for them do (each its own box on the Options tab).
+What the game does with thieves' skills and attacks from behind, what the two
+rule changes for them do (each its own box on the Options tab), and picking
+pockets, the Ledger's use for a thief's pick pockets skill (its box is in the
+Options tab's New content group).
 
 ### How the game works out thief skills
 
@@ -1109,6 +1111,66 @@ Gerakis attacks Slig from behind with Wooden Club (1d6): d20 = 12, needs 10+ (55
 ```
 
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#hiding-in-shadows-to-backstab).
+
+### Picking pockets
+
+The game has one pocket to pick, in the Trustee's conversation (his key). With
+**Picking pockets** ticked on the Options tab (it is by default), a thief can
+try anyone's with Thieves' Tools; with its **... or the leader, a thief, presses
+P in a conversation** ticked too (it is off by default), also with P, the
+thief as the party's leader (keys 1-4):
+
+- **Thieves' Tools.** Every thief starts a new game with a set (a satchel) in
+  the first free backpack cell, and a thief who joins later gets one too (the
+  log says so). A thief who loses or sells theirs can buy another from Kel, who
+  sells two sets. On the inventory screen, pick the tools up, go back to the
+  game with them on the pointer, and click someone in sight: the result comes
+  up in the game's message window, and the tools stay on the pointer for the
+  next try. (Clicking open ground drops them, as with anything carried.) Not in
+  a fight: there's no time for it then.
+- **P in a conversation** (if ticked). In a conversation, press **P**.
+
+Either way, the Ledger rolls the leader's pick pockets chance as
+it stands now (effects and a worn belt's 5 counted, as in the thief rows):
+
+- **Success:** one small thing goes into the thief's backpack (its first free
+  cell): something weighing 10 or less (a bag or arrows are 10, a helm 15, a
+  long sword 30) that isn't worn on the body (armour, a belt, boots, a helm, a
+  cloak). A dagger, a ring, an amulet, a gem or food can be lifted, and so can
+  three weapons whatever their weight: Kurzak's Shadowseeker, Churrr's
+  Gutterknot and Maris's Mindshard (see [New items](#new-items)). Lifting one is
+  worth 200 XP to the thief, given as the game gives a quest's ("Cilla
+  receives 200 experience points!", with the quest's sound; split among a
+  multi-class thief's classes). Keys stay, as scripts may look for them. People outside the party keep all they own in
+  their pack, so this goes by what each thing is.
+- **Failure:** a move silently roll. Made, the thief slips away unnoticed;
+  missed, they're caught.
+
+With nothing like that left on them, the thief takes what's in their purse
+instead: a few ceramic pieces (2 to 5), added to the party's money. That is
+the last try on that person.
+
+A thief can go on trying the same person until **caught** (both rolls failed)
+or until they take the coins; after that, that person keeps a hand on their
+pockets for good. The Ledger remembers who in `settings.json`,
+for this party, with the time on the game's clock: load a game saved before
+the try and the clock goes back past it, so the try is forgotten and the
+person can be tried again. The Trustee is left to his own conversation. What happens is
+added to the conversation's text (use its arrow to scroll down to it if the
+text is long) and to the dice log:
+
+```
+Daaki picks Kurzak's pocket: d100 = 71, needs 63 or less -> failed
+  Daaki moves silently to get away: d100 = 12, needs 55 or less -> success
+  Daaki fumbles Kurzak's pockets, but slips away unnoticed.
+```
+
+The thief's card on the Ledger's Characters tab shows the chances as they
+stand, move silently among them, and the tools they carry:
+
+![Cilla's card on the Characters tab: Thieves' Tools carried, and her thief skills now, move silently and hide in shadows among them](docs/thief-card.png)
+
+How it works: [DEVELOPMENT.md](DEVELOPMENT.md#picking-pockets).
 
 ## Saving throws
 
@@ -1443,24 +1505,25 @@ and [Saving throws](#saving-throws).
 ### Weapon specialization
 
 With **Weapon specialization** ticked, fighters, gladiators and rangers train
-in chosen kinds of weapon, as in AD&D:
+in chosen weapon specs (kinds of weapon), as in AD&D. **Every ranger starts
+with expertise in the bow**, on top of the weapon spec it chooses.
 
-| Who | Chooses | With a weapon of a kind chosen |
+| Who | Chooses | With a weapon of a chosen weapon spec |
 |---|---|---|
-| **Fighter** (one class or more) | 1 kind | specialized: +1 to hit, +2 damage; **mastery** from 5th fighter level (+3 to hit, +3 damage); **grand mastery** from 9th (the same, the damage die a size larger, d8 to d10, and one more attack a round) |
-| **Gladiator** | 2 kinds at creation, a 3rd at 6th level and a 4th at 9th | specialized in each: +1 to hit, +2 damage |
-| **Ranger** (one class or more) | 1 kind (not the bow), and the bow always | expertise: the game's attacks a round in melee, a specialist's rate of fire with a missile weapon, no other bonus |
+| **Fighter** (one class or more) | 1 weapon spec | specialized: +1 to hit, +2 damage; **mastery** from 5th fighter level (+3 to hit, +3 damage); **grand mastery** from 9th (the same, the damage die a size larger, d8 to d10, and one more attack a round) |
+| **Gladiator** | 2 weapon specs at creation, a 3rd at 6th level and a 4th at 9th | specialized in each: +1 to hit, +2 damage |
+| **Ranger** (one class or more) | **the bow from the start**, and 1 weapon spec (any but the bow) | expertise: the game's attacks a round in melee, a specialist's rate of fire with a missile weapon, no other bonus |
 
 The game already gives every fighter, gladiator and ranger the specialist's
 attacks in melee (3/2 a round, 2 from 7th level). With the rule, a warrior
-fighting with a weapon of a kind it hasn't chosen gets AD&D's plain rate, half
+fighting with a weapon outside its chosen weapon specs gets AD&D's plain rate, half
 an attack less; with its own kind it keeps the game's rate (a grand master one
 more).
 
 Missile weapons have a rate of fire of their own in the game, the same for
 everyone (a bow 2 a round, a sling, staff sling or chatkcha 1). A fighter or
 gladiator who has chosen the kind shoots faster, and so does a ranger with its
-chosen kind and with every bow: AD&D's specialist's rate for the sling, a step
+chosen weapon spec and with every bow: AD&D's specialist's rate for the sling, a step
 above AD&D's for the bow, staff sling and chatkcha. Mastery's and grand
 mastery's bonuses to hit and damage count for missiles too.
 
@@ -1470,11 +1533,11 @@ fighter, gladiator and ranger levels; characters stop at 10):
 | Skill with the weapon | Who | Melee, levels 1–6 | Melee, levels 7–10 | Bow, levels 1–6 | Bow, levels 7–10 | Sling, staff sling or chatkcha, levels 1–6 | Sling, staff sling or chatkcha, levels 7–10 |
 |---|---|---|---|---|---|---|---|
 | none | non-warriors: clerics, druids, preservers, psionicists, thieves | 1 | 1 | 2 | 2 | 1 | 1 |
-| a kind not chosen | any warrior | 1 | 3/2 | 2 | 2 | 1 | 1 |
-| expertise | a ranger: its chosen kind, and every bow | 3/2 | 2 | 3 | 4 | 3/2 | 2 |
-| specialized | a fighter's or gladiator's chosen kind | 3/2 | 2 | 3 | 4 | 3/2 | 2 |
-| mastery | a fighter's chosen kind, from 5th level | 3/2 | 2 | 3 | 4 | 3/2 | 2 |
-| grand mastery | a fighter's chosen kind, from 9th level | | 3 | | 5 | | 3 |
+| not a chosen weapon spec | any warrior | 1 | 3/2 | 2 | 2 | 1 | 1 |
+| expertise | a ranger: every bow, and its chosen weapon spec | 3/2 | 2 | 3 | 4 | 3/2 | 2 |
+| specialized | a fighter's or gladiator's chosen weapon spec | 3/2 | 2 | 3 | 4 | 3/2 | 2 |
+| mastery | a fighter's chosen weapon spec, from 5th level | 3/2 | 2 | 3 | 4 | 3/2 | 2 |
+| grand mastery | a fighter's chosen weapon spec, from 9th level | | 3 | | 5 | | 3 |
 
 The sixteen kinds take in the game's
 weapons of every material and its named ones (Bloodwrath, Swiftbite and the
@@ -1551,7 +1614,7 @@ the kinds (**Weapons: long sword (grand mastery)**) and gives the attacks a
 round with each weapon ready, a missile weapon's its own (**Attacks: 3/2 a
 round with Long Sword, 1 with Axe, 3 with Bow**); and the dice log names it on
 each attack (`+1 specialized`, `+3 grand mastery`, `(d10 for d8: grand
-mastery)`). A ranger's expertise with the bow isn't a chosen kind, so neither
+mastery)`). A ranger's expertise with the bow isn't a chosen weapon spec, so neither
 list shows it, but it counts; and View Character, as the game has it, gives a
 character's melee rate whatever weapon is ready.
 
@@ -2158,66 +2221,6 @@ and Semyon are taken off the map too, the way the game takes the others (flag
 775), and Semyon is never put in his pen after it.
 
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#what-dinos-and-the-trustee-say-about-them).
-
-### Picking pockets
-
-The game has one pocket to pick, in the Trustee's conversation (his key). With
-**Picking pockets** ticked on the Options tab (it is by default), a thief can
-try anyone's with Thieves' Tools; with its **... or the leader, a thief, presses
-P in a conversation** ticked too (it is off by default), also with P, the
-thief as the party's leader (keys 1-4):
-
-- **Thieves' Tools.** Every thief starts a new game with a set (a satchel) in
-  the first free backpack cell, and a thief who joins later gets one too (the
-  log says so). A thief who loses or sells theirs can buy another from Kel, who
-  sells two sets. On the inventory screen, pick the tools up, go back to the
-  game with them on the pointer, and click someone in sight: the result comes
-  up in the game's message window, and the tools stay on the pointer for the
-  next try. (Clicking open ground drops them, as with anything carried.) Not in
-  a fight: there's no time for it then.
-- **P in a conversation** (if ticked). In a conversation, press **P**.
-
-Either way, the Ledger rolls the leader's pick pockets chance as
-it stands now (effects and a worn belt's 5 counted, as in the thief rows):
-
-- **Success:** one small thing goes into the thief's backpack (its first free
-  cell): something weighing 10 or less (a bag or arrows are 10, a helm 15, a
-  long sword 30) that isn't worn on the body (armour, a belt, boots, a helm, a
-  cloak). A dagger, a ring, an amulet, a gem or food can be lifted, and so can
-  three weapons whatever their weight: Kurzak's Shadowseeker, Churrr's
-  Gutterknot and Maris's Mindshard (see [New items](#new-items)). Lifting one is
-  worth 200 XP to the thief, given as the game gives a quest's ("Cilla
-  receives 200 experience points!", with the quest's sound; split among a
-  multi-class thief's classes). Keys stay, as scripts may look for them. People outside the party keep all they own in
-  their pack, so this goes by what each thing is.
-- **Failure:** a move silently roll. Made, the thief slips away unnoticed;
-  missed, they're caught.
-
-With nothing like that left on them, the thief takes what's in their purse
-instead: a few ceramic pieces (2 to 5), added to the party's money. That is
-the last try on that person.
-
-A thief can go on trying the same person until **caught** (both rolls failed)
-or until they take the coins; after that, that person keeps a hand on their
-pockets for good. The Ledger remembers who in `settings.json`,
-for this party, with the time on the game's clock: load a game saved before
-the try and the clock goes back past it, so the try is forgotten and the
-person can be tried again. The Trustee is left to his own conversation. What happens is
-added to the conversation's text (use its arrow to scroll down to it if the
-text is long) and to the dice log:
-
-```
-Daaki picks Kurzak's pocket: d100 = 71, needs 63 or less -> failed
-  Daaki moves silently to get away: d100 = 12, needs 55 or less -> success
-  Daaki fumbles Kurzak's pockets, but slips away unnoticed.
-```
-
-The thief's card on the Ledger's Characters tab shows the chances as they
-stand, move silently among them, and the tools they carry:
-
-![Cilla's card on the Characters tab: Thieves' Tools carried, and her thief skills now, move silently and hide in shadows among them](docs/thief-card.png)
-
-How it works: [DEVELOPMENT.md](DEVELOPMENT.md#picking-pockets).
 
 ### The cooked vulture
 
