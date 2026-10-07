@@ -1466,8 +1466,10 @@ weapon specialization chosen, in place of the bone long sword`):
 | pick | stone | |
 | sling, staff sling | leather | |
 
-A two-handed weapon puts the game's starting shield in the backpack (not a
-half-giant's, with [its rule](#half-giants-two-handed-weapons)). The weapon is
+A two-handed weapon held in the hands puts the game's starting shield in the
+backpack (not a half-giant's, with [its rule](#half-giants-two-handed-weapons)).
+A bow or staff sling goes in the missile slot instead, and the shield stays, as
+the game asks nothing of the hands for it. The weapon is
 made once: a long sword handed to the character later stays one.
 
 **At a level gained.** A warrior with fewer kinds than it is due (a gladiator

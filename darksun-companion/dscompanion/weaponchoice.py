@@ -187,11 +187,13 @@ def finish_new(gd) -> List[str]:
             if struct.unpack_from("<H", item, game.ITEM_TYPE)[0] == START_TYPE \
                     and struct.unpack_from("<H", item, game.ITEM_NAME)[0] == START_NAME \
                     and item[game.ITEM_SLOT] in game.WEAPON_HANDS and item[game.ITEM_PLUS] == 0:
-                new, _ = plain_weapon(item, kind, weapon)
+                new, slot = plain_weapon(item, kind, weapon)
                 gd.guest.write(items + item_index * game.ITEM_SIZE, new)
                 if kind == BOW:
                     npcitems.add_to(gd, member, arrows(new), AMMO_SLOT)
-                elif two_handed(gd, sheet, weapon[0]):
+                # (a two-handed weapon in a hand needs the other free; the game asks nothing of a
+                # bow or a staff sling in the missile slot: the shield stays)
+                if slot is None and two_handed(gd, sheet, weapon[0]):
                     out += _shield_off(gd, member, owned, items)
                 material = MATERIALS.get(read(weapon[0])[8] & 0x4F, "")
                 why = "" if kind == kinds[0] - 1 else f" (no {specialize.KINDS[kinds[0] - 1]} it can use to start with)"

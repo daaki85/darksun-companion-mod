@@ -9,6 +9,9 @@ requests #1 to #13; its notes are in
 ## Pull request #21 ([in review](https://github.com/daaki85/darksun-companion-mod/pull/21))
 
 **Changed**
+- **A new warrior with a staff sling keeps its shield,** as with a bow: both
+  go in the missile slot, and the game asks nothing of the hands for them (the
+  shield went into the backpack before).
 - **The magic weapons have names and stories:** the Club +1 is **Gutterknot**,
   the Pick +1 **Deepbiter**, the Staff Sling +1 **Windlash** and the Short
   Sword +2 **Greenbright**, each with a story Alagorn tells, among his magic
