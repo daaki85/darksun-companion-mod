@@ -1438,8 +1438,21 @@ The game already gives every fighter, gladiator and ranger the specialist's
 attacks in melee (3/2 a round, 2 from 7th level, 5/2 from 13th). With the
 rule, a warrior fighting with a weapon of a kind it hasn't chosen gets AD&D's
 plain rate, half an attack less (1, then 3/2, then 2); with its own kind it
-keeps the game's rate (a grand master one more). Missiles keep the game's rate
-of fire. Mastery and grand mastery are for a fighter's chosen kind; a
+keeps the game's rate (a grand master one more).
+
+Missile weapons have a rate of fire of their own in the game, the same for
+everyone (a bow 2 a round, a sling, staff sling or chatkcha 1). A fighter or
+gladiator who has chosen the kind shoots at AD&D's specialist's rate instead,
+by that class's level (from 7th level, the higher one):
+
+| Kind | Game (anyone) | Specialist, levels 1–6 | 7–10 |
+|---|---|---|---|
+| bow | 2 | 2 | 3 |
+| sling | 1 | 3/2 | 2 |
+| staff sling, chatkcha | 1 | 1 | 3/2 |
+
+(A grand master gets no extra shot, and a ranger's expertise keeps the game's
+rate; the Characters tab shows each missile weapon's rate.) Mastery and grand mastery are for a fighter's chosen kind; a
 gladiator's kinds stay at specialized. The sixteen kinds take in the game's
 weapons of every material and its named ones (Bloodwrath, Swiftbite and the
 like are long swords); spell-made weapons and gloves are none.

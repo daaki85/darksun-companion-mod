@@ -2558,7 +2558,7 @@ probe_attacks:
         push dx
         call spec_of
         cmp word [bp + 0x16], 1
-        jg .hit                 ; (a missile: the game's rate of fire)
+        jg .missile
         cmp ax, 2
         jbe .hit                ; (not a warrior)
         cmp dl, SPEC_PLAIN
@@ -2577,6 +2577,80 @@ probe_attacks:
 .done:  pop dx
 .store: mov [bp - 8], ax
         iret
+.missile:                       ; (a specialist's rate of fire, else the game's)
+        push bx
+        push si
+        push es
+        mov si, [bp + 0x10]
+        imul si, si, 0x47
+        les bx, [0x1661]
+        add bx, si
+        mov si, [bp + 0x14]
+        call missile_rate
+        pop es
+        pop si
+        pop bx
+        jmp .hit
+
+; MISSILE_RATE: AX (the attacks a round in halves: the weapon type's, +0Bh, as the game has a
+; missile's) made AD&D's specialist's rate of fire when greater, for skill DL (SPEC_SPECIAL or
+; above: a fighter's or gladiator's chosen kind) with item type SI, the sheet at ES:BX, by the
+; specialist's level (the higher fighter or gladiator level of the classes it has now: 1-6, 7-12,
+; 13 on): a bow 2, 3, 4 a round; a sling 3/2, 2, 5/2; a staff sling or a chatkcha (thrown) 1, 3/2, 2.
+MISSILE_KIND equ 13             ; (the chatkcha's kind + 1; then the bow, the sling, the staff sling)
+missile_halves db 2, 3, 4, 4, 6, 8, 3, 4, 5, 2, 3, 4
+missile_rate:
+        cmp dl, SPEC_SPECIAL
+        jb .ret
+        cmp si, KIND_TYPES
+        jae .ret
+        push cx
+        push dx
+        push si
+        movzx cx, byte [cs:si + kind_of_type]
+        sub cx, MISSILE_KIND
+        jb .out
+        cmp cx, 3
+        ja .out
+        xor dx, dx              ; DL the specialist's level
+        xor si, si
+.class: push ax
+        mov al, [es:bx + si + 0x21]
+        mov ah, [es:bx + si + 0x24]
+        or si, si               ; (a human's earlier classes once the first's level has passed theirs)
+        jz .on
+        cmp byte [es:bx + 0x18], 1
+        jne .on
+        cmp ah, [es:bx + 0x24]
+        jae .next
+.on:    cmp al, FIGHTER_CLASS
+        je .warrior
+        cmp al, GLADIATOR_CLASS
+        jne .next
+.warrior:
+        cmp ah, dl
+        jbe .next
+        mov dl, ah
+.next:  pop ax
+        inc si
+        cmp si, 3
+        jb .class
+        imul cx, cx, 3
+        cmp dl, 7
+        jb .tier
+        inc cx
+        cmp dl, 13
+        jb .tier
+        inc cx
+.tier:  mov si, cx
+        movzx cx, byte [cs:si + missile_halves]
+        cmp cx, ax
+        jbe .out
+        mov ax, cx
+.out:   pop si
+        pop dx
+        pop cx
+.ret:   ret
 
 probe_spec_damage:
         add [bp - 0x12], ax

@@ -110,6 +110,27 @@ def attacks(halves: int, level: int, missile: bool = False) -> int:
     return halves - 1 if level == PLAIN else halves + 2 if level == GRAND else halves
 
 
+# AD&D's specialist's rate of fire (in halves) by kind, at specialist levels 1-6, 7-12 and 13 on
+# (DSCLOG's MISSILE_RATE): the chatkcha as other thrown weapons
+MISSILE_RATES = {"bow": (4, 6, 8), "sling": (3, 4, 5), "staff sling": (2, 3, 4), "chatkcha": (2, 3, 4)}
+
+
+def warrior_level(sheet: bytes) -> int:
+    """The specialist's level: the higher fighter or gladiator level of the classes it has now."""
+    return max((level for c, level in active_classes(sheet) if c in (FIGHTER, GLADIATOR)), default=0)
+
+
+def missile_attacks(halves: int, level: int, item_type: Optional[int], sheet: bytes) -> int:
+    """A missile weapon's attacks a round (in halves): the weapon type's (HALVES, its +0Bh, as the
+    game has it), or a specialist's rate of fire (LEVEL SPECIAL or above) when greater."""
+    kind = kind_of(item_type) if item_type is not None else None
+    rates = MISSILE_RATES.get(KINDS[kind]) if kind is not None else None
+    if level < SPECIAL or not rates:
+        return halves
+    warrior = warrior_level(sheet)
+    return max(halves, rates[0 if warrior < 7 else 1 if warrior < 13 else 2])
+
+
 def to_hit(level: int) -> int:
     """What the skill adds to hit (takes off THAC0)."""
     return 3 if level >= MASTER else 1 if level == SPECIAL else 0

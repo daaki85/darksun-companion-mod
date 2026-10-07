@@ -848,8 +848,32 @@ class SpecializeTests(unittest.TestCase):
         self.assertEqual(self.attack(3, self.LONG_SWORD, chosen=(0,), **ranger), (3, 15, 3, 8))
         self.assertEqual(self.attack(3, self.AXE, chosen=(0,), **ranger), (2, 15, 3, 8))
 
-    def test_missile_keeps_its_rate(self):
-        self.assertEqual(self.attack(4, 1, chosen=(13,), levels=(4, 0, 0), missile=True), (4, 14, 5, 8))  # (a bow)
+    def test_missile_rate(self):
+        """A missile weapon: the weapon's rate (the game's), or AD&D's specialist's when greater, by
+        the fighter's or gladiator's level (1-6, 7-12); a grand master no extra attack. As
+        specialize.missile_attacks."""
+        from dscompanion import specialize
+        BOW, SLING, STAFF_SLING, CHATKCHA = 1, 64, 0, 48
+        cases = ((4, BOW, 13, (9, 0, 0), (4, 0, 0), (4, 14, 5, 8)),       # bow 2/1 at 1-6
+                 (4, BOW, 13, (9, 0, 0), (7, 0, 0), (6, 12, 6, 8)),       # 3/1 at 7 (and mastery)
+                 (4, BOW, 13, (9, 0, 0), (9, 0, 0), (6, 12, 6, 10)),      # grand mastery: no more
+                 (4, BOW, 13, (10, 0, 0), (8, 0, 0), (6, 14, 5, 8)),      # a gladiator
+                 (2, SLING, 14, (9, 0, 0), (2, 0, 0), (3, 14, 5, 8)),     # sling 3/2
+                 (2, SLING, 14, (11, 9, 0), (3, 7, 0), (4, 12, 6, 8)),    # 2/1 by the fighter level
+                 (2, STAFF_SLING, 15, (9, 0, 0), (4, 0, 0), (2, 14, 5, 8)),   # staff sling 1/1 at 1-6
+                 (2, STAFF_SLING, 15, (9, 0, 0), (8, 0, 0), (3, 12, 6, 8)),   # 3/2 at 7-12
+                 (2, CHATKCHA, 12, (9, 0, 0), (7, 0, 0), (3, 12, 6, 8)),  # chatkcha as other thrown
+                 (4, BOW, 0, (9, 0, 0), (8, 0, 0), (4, 15, 3, 8)),        # another kind: the game's
+                 (4, BOW, 13, (13, 0, 0), (8, 0, 0), (4, 15, 3, 8)))      # a ranger: the game's
+        for halves, weapon, kind, classes, levels, want in cases:
+            with self.subTest(weapon=weapon, classes=classes, levels=levels):
+                self.assertEqual(self.attack(halves, weapon, chosen=(kind,), classes=classes, levels=levels,
+                                             missile=True), want)
+                sheet = bytearray(0x47)
+                sheet[0x14] = kind + 1
+                sheet[0x21:0x24], sheet[0x24:0x27] = bytes(classes), bytes(levels)
+                self.assertEqual(specialize.missile_attacks(halves, specialize.skill(bytes(sheet), weapon), weapon,
+                                                            bytes(sheet)), want[0])
 
     def test_dual_class(self):
         """A human fighter turned preserver: the game's numbers until its preserver level passes

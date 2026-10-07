@@ -452,6 +452,7 @@ class WeaponHit(NamedTuple):
     thac0: int  # with this weapon, now
     parts: List[Tuple[str, int]]  # what is taken off the base THAC0 for it
     skill: int = 0  # weapon specialization's skill with it (specialize.NONE...), with the rule on
+    halves: Optional[int] = None  # a missile weapon's attacks a round, in halves (its own, not the character's)
 
 
 class ItemSave(NamedTuple):
@@ -1391,13 +1392,17 @@ class GameData:
             if two_weapons and not missile:
                 parts.append(self.two_weapons(creature, slot))
             skill = 0
+            halves = typ[0x0B] if missile else None  # (the game's rate of fire: the weapon's own)
             if self.rules & RULE_SPECIALIZE:  # (weapon specialization: DSCLOG's PROBE_ATTACKS)
                 from . import specialize
-                skill = specialize.skill(self.sheet(creature), struct.unpack_from("<H", item, ITEM_TYPE)[0])
+                kind = struct.unpack_from("<H", item, ITEM_TYPE)[0]
+                skill = specialize.skill(self.sheet(creature), kind)
                 parts.append((specialize.SKILL_NAMES.get(skill, ""), specialize.to_hit(skill)))
+                if missile:
+                    halves = specialize.missile_attacks(halves, skill, kind, self.sheet(creature))
             parts = [(why, n) for why, n in parts if n]
             out.append(WeaponHit(index, slot, self.item_label(item, typ), base - sum(n for _, n in parts), parts,
-                                 skill))
+                                 skill, halves))
         if not out:
             parts = [(why, n) for why, n in [("STR", table(STR_TO_HIT, strength))] + common if n]
             out.append(WeaponHit(-1, -1, "unarmed", base - sum(n for _, n in parts), parts))
