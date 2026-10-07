@@ -1068,9 +1068,8 @@ class DiceLog:
                 before = set(self.tools_given)
                 if self.world_gear:  # the new weapons, in shops and packs
                     out += worldgear.place(self.game, self.tools_given)
-                if self.world_magic:  # bracers of defense and magic weapons; the Warren Chief's club
+                if self.world_magic:  # bracers of defense and magic weapons
                     out += worldgear.place(self.game, self.tools_given, worldgear.MAGIC)
-                    out += worldgear.reward(self.game, self.tools_given)
                 self._tools_new += sorted(self.tools_given - before)
             if self.stealth_gear:
                 stealth.reprice(self.game)  # (cloaks and boots: they help a thief hide and move silently)

@@ -759,7 +759,7 @@ class KindTableTests(unittest.TestCase):
         """DSCLOG's weapon kinds by item type are specialize.py's."""
         from dscompanion import specialize
         image = load_image()
-        want = bytearray(128)
+        want = bytearray(136)
         for t, k in specialize.KIND_OF_TYPE.items():
             want[t] = k + 1
         self.assertGreater(image.find(bytes(want)), 0)
@@ -1146,7 +1146,10 @@ class KindsAllowedTests(unittest.TestCase):
                21: (1, 1, 0x167B), 48: (0x12, 3, 0x1F77), 1: (0x0A, 0, 0x177B), 69: (0x0A, 0, 0x177B),
                64: (2, 5, 0x1EF9), 0: (2, 5, 0x1EF1), game.SHORT_SWORD_TYPE: (1, 4, 0x1672),
                game.BONE_SHORT_SWORD_TYPE: (1, 1, 0x1778), game.BONE_AXE_TYPE: (1, 1, 0x1778),
-               game.OBSIDIAN_SHORT_SWORD_TYPE: (1, 3, 0x177E), game.OBSIDIAN_AXE_TYPE: (1, 3, 0x177E)}
+               game.OBSIDIAN_SHORT_SWORD_TYPE: (1, 3, 0x177E), game.OBSIDIAN_AXE_TYPE: (1, 3, 0x177E),
+               game.METAL_SHORT_SWORD_TYPE: (1, 4, 0x1672), game.METAL_DAGGER_TYPE: (1, 4, 0x1FF2),
+               game.METAL_MACE_TYPE: (1, 4, 0x1672), game.METAL_GREAT_AXE_TYPE: (1, 4, 0x1662),
+               game.METAL_PICK_TYPE: (1, 4, 0x1772), game.METAL_POLEARM_TYPE: (1, 4, 0x1672)}
     TYPES = 0x8000  # (segment)
 
     def record(self, t):
@@ -1166,7 +1169,7 @@ class KindsAllowedTests(unittest.TestCase):
         mu.mem_write(TSR * 16, image)
         mu.mem_write(TSR * 16 + 0xFFF0, bytes((0xF4,)))  # (hlt: where KINDS_ALLOWED returns)
         mu.mem_write(GAME_DS * 16 + 0x1669, struct.pack("<HH", 0, self.TYPES))
-        mu.mem_write(self.TYPES * 16, b"".join(self.record(t) for t in range(128)))
+        mu.mem_write(self.TYPES * 16, b"".join(self.record(t) for t in range(136)))
         sheet = test_restrict.sheet
         combos = [(9,), (13,), (10,), (11,), (12,), (17,), (9, 12), (9, 17), (9, 11), (13, 5), (13, 12)]
         for c in range(1, 5):
@@ -1820,7 +1823,7 @@ class TypesTests(unittest.TestCase):
         self.mu = mu = Uc(UC_ARCH_X86, UC_MODE_16)
         mu.mem_map(0, 0x100000)
         mu.mem_write(TSR * 16, image)
-        size = image.find(bytes.fromhex("8146fcf000" "8356fe00"))  # 12 types of 20 bytes: F0h
+        size = image.find(bytes.fromhex("8146fc1801" "8356fe00"))  # 14 types of 20 bytes: 118h
         names_fill, fill = fill_probes(image)
         self.assertGreater(min(size, fill - names_fill), 0)
         mu.mem_write(VEC_TYPES_SIZE * 4, struct.pack("<HH", size, TSR))
@@ -1838,12 +1841,12 @@ class TypesTests(unittest.TestCase):
         return mu.reg_read(r.UC_X86_REG_SP)
 
     def test_room_and_filled(self):
-        """The game's 115 types (2300 bytes): 240 bytes more reserved, and after the read
+        """The game's 115 types (2300 bytes): 280 bytes more reserved, and after the read
         DSCLOG's types at 115 on, the number noted."""
         from dscompanion import npcitems
         self.mu.mem_write(SS * 16 + BP - 4, struct.pack("<I", 2300))
         self.assertEqual(self.interrupt(VEC_TYPES_SIZE), 0x7FC)
-        self.assertEqual(struct.unpack("<I", self.mu.mem_read(SS * 16 + BP - 4, 4))[0], 2540)
+        self.assertEqual(struct.unpack("<I", self.mu.mem_read(SS * 16 + BP - 4, 4))[0], 2580)
         self.mu.mem_write(SS * 16 + 0x7FC, bytes(4))
         self.assertEqual(self.interrupt(VEC_TYPES_FILL, eax=0), 0x80C)
         at = self.TYPES_SEG * 16 + 115 * 20

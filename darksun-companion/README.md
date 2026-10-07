@@ -1440,7 +1440,7 @@ character may use, in any material. The rest stay greyed:
 | …of one class (a gladiator too), or with thief, preserver or druid | all sixteen | the game's bone long sword |
 | …with psionicist (small weapons) | club, dagger, short sword, mace, chatkcha, bow, sling | a wooden club |
 | …with air cleric (missile weapons, and the dagger that can be thrown) | dagger, chatkcha, bow, sling, staff sling | an obsidian dagger |
-| …with earth cleric (stone, obsidian, metal, wood) | long sword, club, dagger, short sword, mace, axe, pick, quarterstaff, chatkcha, bow | an obsidian long sword |
+| …with earth cleric (stone, obsidian, metal, wood) | long sword, club, dagger, short sword, mace, axe, great axe, pick, quarterstaff, polearm, chatkcha, bow (the great axe and polearm in the Ledger's metal) | an obsidian long sword |
 | …with fire cleric (obsidian) | long sword, dagger, short sword, mace, axe, chatkcha | an obsidian long sword |
 | …with water cleric (bone, wood) | long sword, club, short sword, mace, axe, quarterstaff, polearm, gythka, cahulaks, bow | the game's bone long sword |
 
@@ -1460,9 +1460,9 @@ weapon specialization chosen, in place of the bone long sword`):
 | club, quarterstaff, bow | wooden (a bow with 20 arrows) | |
 | dagger, chatkcha | obsidian | |
 | short sword | bone, the Ledger's (the game's only short sword is Kurzak's) | obsidian (fire, earth) |
-| mace, polearm, gythka, cahulaks | bone | a mace: obsidian, the game's plain Mace type (its only one is Blackmace) with a picture of the Ledger's |
+| mace, polearm, gythka, cahulaks | bone | a mace: obsidian, the game's plain Mace type (its only one is Blackmace) with a picture of the Ledger's; a polearm: metal, the Ledger's (earth) |
 | axe | bone, the Ledger's (the game's only axe is metal) | obsidian (fire, earth) |
-| great axe | the game's, with a picture of the Ledger's (the game's only one is +3: its green gem) | |
+| great axe | the game's, with a picture of the Ledger's (the game's only one is +3: its green gem) | metal, the Ledger's (earth: the game's great axe is wood) |
 | pick | stone | |
 | sling, staff sling | leather | |
 
@@ -1710,7 +1710,8 @@ magical or not); a shield, a helm, rings and cloaks of protection go with
 them, and they aren't armour to anything else (a preserver casts in them, a
 thief wears them, and a ring or cloak of protection still counts). In the game
 they are **BRACERS/DEFENSE** with their plus: Bracers/Defense +4 is AC 6.
-Each is priced 3,000 for each point (AC 6: 12,000; AC 2: 24,000).
+Each is priced 5,000 for each point (AC 6: 20,000, as the game's Shimmer Armor +3
+and Drake Shield +1, about 24,000; AC 2: 40,000, as its magic rings, 30,000-50,000).
 
 The dice log's saving throws name each: `+1 Ring of Protection +1 Cloak of
 Protection`, and its attack lines show the AC that results (`target AC`).
@@ -1828,12 +1829,14 @@ like its own. The log doesn't say: they're there to be found.
 | **Bone and obsidian Short Swords and Axes** | a new warrior's starting weapon, with [weapon specialization](#weapon-specialization) (the obsidian ones a fire or earth cleric's): the game has no short sword but Kurzak's, and only a metal axe | a short sword 1d6, an axe 1d8, of their material |
 | **Obsidian Mace** | a fire or earth cleric's starting mace; also with the short swords and axes below | 1d6+1, the game's Mace (Blackmace without the +1), with an icon without Blackmace's glow |
 | **Bone and obsidian Short Swords and Axes, Obsidian Maces, a metal Short Sword** (box: **Bone, obsidian and metal short swords, bone and obsidian axes and obsidian maces sold by the Weapon Merchant and Jark, and carried by a few kinds of people**) | sold by the **Weapon Merchant** (with the Armor Merchant and the Bowyer: all six, the metal short sword 300) and **Jark** (with Kel: the short swords and axe of bone, the obsidian short sword and mace); in the packs of **Merzol** in the slave pens (an obsidian axe), **Krikor** (a bone axe) and **Chaero** (an obsidian short sword), and as loot on every **Tari** in the warrens (an obsidian mace), every **Renegade** (a bone short sword) and every **Wild Mul** (a bone axe) | the same as a new warrior's; the metal short sword 1d6, Kurzak's (Shadowseeker's) without the plus |
-| **Club +1, Pick +1, Staff Sling +1, Short Sword +2** (box: **Bracers of defense on four wizards, and a magic club, pick, staff sling and short sword**) | the club is the **Warren Chief's** reward with his Helm of Contemplation (whoever of the party first carries the helm gets the club too, and the log says so); the stone pick in **Melkor's** pack; the staff sling sold by the **Bowyer**; the metal short sword on the first **Elite Guard** met | the kinds the game has no magic weapon of (its only magic short sword is the Ledger's Shadowseeker); priced 2,000, 3,000, 3,000 and 25,000 |
+| **Metal Dagger, Mace, Great Axe, Pick and Polearm** (with the box above) | the kinds the game has in no plain metal: in the packs of **Tobrian** (the dagger), the **Templar** of the slavers' camp (the mace), **Uskuye** (the great axe), **Kwerin** (the pick) and the first **Castle Guard** met (the polearm); a new earth cleric's great axe and polearm | the game's own weapons of the kind, of metal (unbreakable; an earth cleric's, not a fire or water cleric's); priced 50, 200, 300, 150 and 250 (the metal long sword is 500, the Axe 100) |
+| **Club +1, Pick +1, Staff Sling +1, Short Sword +2** (box: **Bracers of defense on four wizards, and a magic club, pick, staff sling and short sword**) | the club on the **Warren Chief** himself, with his Helm of Contemplation; the stone pick in the pack of the first of the **Undermountain folk** met (the miners); the staff sling sold by the **Bowyer**; the metal short sword on the first **Elite Guard** met | the kinds the game has no magic weapon of (its only magic short sword is the Ledger's Shadowseeker); priced as the game's magic weapons of the like: 11,600 (as the Cahulaks +1), 18,300 (the Axe +1), 2,800 (the Sling +1) and 41,000 (Dark Flame +2) |
 | **Bracers of Defense** | worn by **Mikquetzl** (AC 6: in his pack, as he wears ring armour), **Wyrmias** (AC 5), **Balkazar** (AC 4) and **Dagolar**, the one carrying Dag's Dagger (AC 2) | [bracers of defense](#bracers-of-defense) |
 | **Great Axe** | a warrior's starting great axe | the game's plain Great Axe, with an icon without the +3's green gem |
 
-Prices, as magic items: the armour 3,000, the cloak and Pehtucl's ring 5,000
-each, Kreenfang 18,000, Shadowseeker 22,000. A thief can lift Pehtucl's ring and
+Prices, as the game's magic items: the armour 6,000 (its Drake Armor +1 is 8,000),
+the cloak and both rings 15,000 each (its Living Cloak is 20,000, its magic rings
+30,000-50,000), Kreenfang 18,000, Shadowseeker 22,000. A thief can lift Pehtucl's ring and
 Shadowseeker (200 XP for the sword), not what's worn on the body. The
 arena's ring has its own box on the Options tab (**A Ring of Protection +1 on
 the arena's Tied-up Prisoner**), and so do the two weapons (**...are +1 magic
@@ -1848,6 +1851,8 @@ and neither ring nor cloak gives AC over magical armour.
 
 ![Backpack cells in the game: the Club +1, the Pick +1, the Staff Sling +1, the Short Sword +2, a plain metal Short Sword and Bracers of Defense](docs/magic-items.png)
 
+![Backpack cells in the game: the metal Dagger, Mace, Great Axe, Pick and Polearm](docs/metal-weapons.png)
+
 **Icons and names.** Each has an icon of its own on the inventory screen,
 made from the plain item's the way the game makes its magic items' (a few
 pixels in the colours it cycles like fire: Kreenfang's blades, the arena's
@@ -1856,7 +1861,8 @@ steel for Shadowseeker's blade, bone shades for the helm; the short swords the
 bone and obsidian long swords' with the shorter blade, the axes the Axe's head
 in bone or obsidian shades, the obsidian mace Blackmace's without its glow,
 and a plain great axe the game's without its green gem, as the game's only one
-is its Great Axe +3; the Club +1, Pick +1, Staff Sling +1 and Short Sword +2
+is its Great Axe +3; the metal dagger, mace, great axe, pick and polearm the
+plain ones' heads and blades in the metal long sword's light greys and blues; the Club +1, Pick +1, Staff Sling +1 and Short Sword +2
 the plain ones with a few pixels in the fire colours; the bracers drawn, a
 pair of steel cuffs with gold rims and a fire-coloured stud); dropped on the map they look
 like the plain item. The game's names are at most 15 letters (it

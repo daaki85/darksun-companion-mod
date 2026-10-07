@@ -4567,11 +4567,12 @@ spec_of_sheet:
 
 ; By item type (the game's 115, then the companion's own: 115 its short sword), the weapon kind
 ; + 1 (dscompanion/specialize.py's KIND_OF_TYPE; 0 none)
-KIND_TYPES equ 128
+KIND_TYPES equ 136
 kind_of_type  db 16, 14, 7, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 2, 10, 5, 12, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0
               db 0, 3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 11, 1, 5, 1, 13, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1
               db 15, 0, 0, 0, 0, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 1, 0, 0, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0
-              db 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 8, 0, 0, 4, 0, 0, 4, 6, 4, 6, 4, 0, 0, 0, 0, 0
+              db 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 8, 0, 0, 4, 0, 0, 4, 6, 4, 6, 4, 0, 3, 5, 7, 8
+              db 10, 0, 0, 0, 0, 0, 0, 0
 
 ; PROBE_XP_NEXT: INT VEC_XP_NEXT replaces "push 10F4h" (3 bytes: INT + NOP; DSUN.EXE 67DBEh) in
 ; View Character's line "EXP:10301 (16000)", where the game adds ")" (DS:10F4h) after the XP the
@@ -5723,7 +5724,7 @@ n_fl    dw 0
 ; companion's own items that no type of the game's fits (a metal short sword, a cloak of
 ; protection). Nothing in the game limits the numbers to its own.
 TYPE_SIZE   equ 20
-TYPES_EXTRA equ 12
+TYPES_EXTRA equ 14
 TYPES_PTR   equ 0x1669          ; DS: far pointer to the item types
 BRACERS     equ 8               ; (the bracers of defense: the ninth of them)
 
@@ -5821,7 +5822,23 @@ extra_types:
         ; arm armour's slot), their plus counting for AC; not armour to anything else here
         db 0x00, 0x00, 0x00, 0x00, 0x0A, 0x00, 0x0A, 0x00, 0x40, 0x03, 0x00, 0x00
         db 0x00, 0x00, 0x00, 0x80, 0xFF, 0x1F, 0x00, 0x01
-        times (TYPES_EXTRA - 9) * TYPE_SIZE db 0
+        ; metal versions of the game's plain weapons that have none (dscompanion/worldgear.py):
+        ; each its type of metal (+8: 4), for the metal long sword's clerics (+10h's low nibble:
+        ; 2, earth's): the Dagger's (33)
+        db 0x01, 0x00, 0x20, 0x00, 0x0A, 0x00, 0xFA, 0x00, 0x04, 0x05, 0x01, 0x01
+        db 0x04, 0x01, 0x00, 0x00, 0xF2, 0x1F, 0x00, 0x00
+        ; the Mace's (20)
+        db 0x01, 0x00, 0x08, 0x00, 0x64, 0x00, 0xFA, 0x00, 0x04, 0x05, 0x01, 0x01
+        db 0x06, 0x01, 0x01, 0x00, 0x72, 0x16, 0x00, 0x01
+        ; the Great Axe's (2)
+        db 0x01, 0x00, 0x10, 0x00, 0x46, 0x00, 0xFA, 0x00, 0x04, 0x05, 0x01, 0x01
+        db 0x0A, 0x01, 0x00, 0x40, 0x62, 0x16, 0x00, 0x02
+        ; the pick's (112)
+        db 0x01, 0x00, 0x20, 0x00, 0x28, 0x00, 0xFA, 0x00, 0x04, 0x05, 0x01, 0x01
+        db 0x04, 0x01, 0x01, 0x00, 0x72, 0x17, 0x00, 0x00
+        ; the Polearm's (19)
+        db 0x01, 0x00, 0x30, 0x00, 0x96, 0x00, 0xFA, 0x00, 0x04, 0x05, 0x01, 0x01
+        db 0x0A, 0x01, 0x00, 0x40, 0x72, 0x16, 0x00, 0x06
 ; the names, numbered from NAMES_OWN (322): the companion's items' (the same as the companion's
 ; NAMES in dscompanion/names.py), the rest blank until it writes more
 extra_names:

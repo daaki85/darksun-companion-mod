@@ -16,12 +16,17 @@ requests #1 to #13; its notes are in
   Mul has one as loot.
 - **Bracers of defense** (a new content switch with the magic weapons, on by
   default): AC 6 on Mikquetzl, AC 5 on Wyrmias, AC 4 on Balkazar and AC 2 on
-  Dagolar; worn on the arms, nothing while armour is worn on the arms, legs or
+  Dagolar, 20,000 to 40,000; worn on the arms, nothing while armour is worn on the arms, legs or
   chest, and not armour to the class rules (a preserver casts in them).
-- **Magic weapons of the kinds the game has none of:** a Club +1 with the
-  Warren Chief's Helm of Contemplation, a stone Pick +1 in Melkor's pack, a
-  Staff Sling +1 sold by the Bowyer and a metal Short Sword +2 on an Elite
-  Guard, each with an icon of its own.
+- **Magic weapons of the kinds the game has none of:** a Club +1 on the
+  Warren Chief, a stone Pick +1 on one of the Undermountain folk, a Staff
+  Sling +1 sold by the Bowyer and a metal Short Sword +2 on an Elite Guard,
+  each with an icon of its own and priced as the game's magic weapons of the
+  like.
+- **Metal daggers, maces, great axes, picks and polearms** (the game has none
+  plain): one each on Tobrian, a Templar of the slavers' camp, Uskuye, Kwerin
+  and a Castle Guard; an earth cleric may now take the great axe and the
+  polearm, and starts with a metal one.
 - **Weapon specialization** (a new rule change, on by default): fighters and
   gladiators specialize in kinds of weapon (+1 to hit, +2 damage), fighters
   on to mastery at 5th level (+3, +3) and grand mastery at 9th (the damage
@@ -72,6 +77,9 @@ requests #1 to #13; its notes are in
   only added a fraction (the game divides the whole total by the classes).
 
 **Changed**
+- **The Ledger's magic items are priced as the game's own:** the Rings and the
+  Cloak of Protection +1 15,000 (were 5,000), Leather Chest Armor +1 6,000
+  (was 3,000); ones already given are repriced.
 - **The README is shorter** (2,974 lines to about 2,300): how each part works
   (the helper's interrupts, the game's offsets and flags), how the dice log
   works, what's known of the game's data and the development notes are in a

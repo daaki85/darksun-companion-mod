@@ -59,6 +59,9 @@ OTHERS = {
     specialize.KINDS.index("short sword"): ((game.OBSIDIAN_SHORT_SWORD_TYPE, 0x144, 0x10000 - 2488, 20),),
     specialize.KINDS.index("axe"): ((game.OBSIDIAN_AXE_TYPE, 0x1A, 0x10000 - 2490, 15),
                                     (22, 0x1A, 0xFB61, 100)),  # obsidian (a fire cleric's), metal
+    # the Ledger's metal ones (worldgear.py): an earth cleric's great axe and polearm
+    specialize.KINDS.index("great axe"): ((game.METAL_GREAT_AXE_TYPE, 0x03, 0x10000 - 2508, 300),),
+    specialize.KINDS.index("polearm"): ((game.METAL_POLEARM_TYPE, 0x12, 0x10000 - 2512, 250),),
 }
 MISSILE_KINDS = frozenset(specialize.KINDS.index(k) for k in ("bow", "sling", "staff sling"))
 BOW = specialize.KINDS.index("bow")

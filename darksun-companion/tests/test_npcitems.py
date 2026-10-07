@@ -118,14 +118,14 @@ class NpcItemTests(unittest.TestCase):
         npcitems.place(self.gd, set())
         price = lambda c, n: [struct.unpack_from("<H", data, npcitems.ITEM_VALUE)[0]
                               for _, data in ring.Items(self.gd).chain(struct.unpack_from("<h", self.gd.creature(c), 8 + 4)[0])][n]
-        self.assertEqual(price(LEGCRUSHER, 0), 3000)
-        self.assertEqual(sorted([price(PEHTUCL, 0), price(PEHTUCL, 1)]), [5000, 5000])
+        self.assertEqual(price(LEGCRUSHER, 0), npcitems.CHEST_VALUE)
+        self.assertEqual(sorted([price(PEHTUCL, 0), price(PEHTUCL, 1)]), [15000, 15000])
         it = ring.Items(self.gd)
         thing, = struct.unpack_from("<h", self.gd.creature(LEGCRUSHER), 8 + 4)
         armour = next(iter(it.chain(thing)))[0]
         struct.pack_into("<H", self.m, ITEMS + armour * game.ITEM_SIZE + npcitems.ITEM_VALUE, 10)
         self.assertEqual(npcitems.reprice(self.gd), 1)
-        self.assertEqual(price(LEGCRUSHER, 0), 3000)
+        self.assertEqual(price(LEGCRUSHER, 0), npcitems.CHEST_VALUE)
         self.assertEqual(npcitems.reprice(self.gd), 0)
 
     def test_worn_slot_taken(self):
