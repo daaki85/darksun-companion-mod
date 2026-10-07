@@ -8,8 +8,9 @@ Released pull requests are summarised in a line or two each; the release notes
 ## Pull request #27 (in progress)
 
 **Changed**
-- **No bow to choose for a ranger** at creation or a level gained: every
-  ranger has expertise with the bow already.
+- **No bow to choose for a ranger** at creation (nor in the catch-up pick at
+  a level gained, for a ranger with no kind yet): every ranger has expertise
+  with the bow already.
 
 **Documentation**
 - Where a ranger's bow expertise and missile weapons' rates show, and the
