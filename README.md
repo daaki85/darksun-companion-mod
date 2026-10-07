@@ -71,7 +71,7 @@ double-click, with the options as last set.)
 
 ## What's new
 
-In pull request #24 (in progress): **magic weapons for the classes that had
+In pull request #24 (merged 2026-10-07): **magic weapons for the classes that had
 too few.** **Galefang**, a dagger +2 an air cleric can wield; **Mindshard** and
 **Stillwater**, short swords +1 a psionicist can wield (alone or with a
 cleric); and two polearms, **Linebreaker** +2 and **Thornwall** +1 (on the
