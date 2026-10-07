@@ -71,37 +71,13 @@ double-click, with the options as last set.)
 
 ## What's new
 
-In pull request #23 (in progress):
+In [pull request #23](https://github.com/daaki85/darksun-companion-mod/pull/23)
+(in review):
 - **Three magic axes:** **Drakejaw**, a bone axe +1, on a Magera guarding the
   wagon's prisoners; **Glasshewer**, an obsidian axe +2, on the elven slavers'
   Templar; and **Headsman**, a metal great axe +2, in the arena Announcer's
   stash. Alagorn tells the story of each.
 - **The Elven Leader's Gythka is now +2.**
-
-In [pull request #22](https://github.com/daaki85/darksun-companion-mod/pull/22)
-(merged 2026-10-07): Cermak, of the game's own party, specializes in the long
-sword and the axe.
-
-In [pull request #21](https://github.com/daaki85/darksun-companion-mod/pull/21)
-(merged 2026-10-07):
-- **No manual check:** the dragon's question, the game's copy protection, is
-  gone; the game goes on as if it had been answered.
-- **New magic items:** the **Warden's Plate**, plate mail +1 in four pieces
-  across the world; the **Cloak and Boots of Elvenkind** for thieves and
-  rangers, the cloak given by the Elven Leader with his Gythka +1; and the
-  **Flame Blade**, an obsidian long sword +1 for fire clerics.
-- **The Tome of Understanding:** Father Garyn's gift for the ranike pith; read
-  like a scroll, it gives a point of Wisdom for good.
-- **Alagorn knows every new magic item,** with a story for each kind, the tome
-  among them; Legcrusher's leather is now **Inixhide**.
-- **Every new item is in the game's own data,** so a new game makes them where
-  they belong.
-- **The game's own party is ready for the rule changes** when you press START
-  GAME: weapon kinds to match their weapons, a bone gythka for Gerakis, and
-  Armor in place of leather armour for Cilla, a druid.
-- **Arrowbane** and the **Sunking Crown,** worn on the head and not armour;
-  Grey's Scale's arm and leg armour AC 3; bracers of defense give nothing with
-  a helm on.
 
 Earlier changes, pull request by pull request, are in
 [`CHANGELOG.md`](CHANGELOG.md). Releases have notes of their own:

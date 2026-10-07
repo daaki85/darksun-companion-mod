@@ -1894,9 +1894,8 @@ there to be found.
 | **Boots of Elvenkind** | the buried chest of Kel's caravan, with the Cahulaks +1 | soft boots: [silent](#hiding-in-shadows-to-backstab), with the hiding rule; thieves and rangers only |
 | **Bracers of Defense** | **Mikquetzl** (AC 6, in his pack), **Wyrmias** (AC 5), **Balkazar** (AC 4), **Dagolar** (AC 2, the one carrying Dag's Dagger) | AC for those wearing no armour: [bracers of defense](#bracers-of-defense) |
 
-**Prices** follow the game's own: magic melee weapons 20,800 a plus (the +2
-axes and the Gythka +2 41,600; 22,000
-with a spell too), Windlash 2,800 (as its Sling +1), plain metal weapons 50 to
+**Prices** follow the game's own: magic melee weapons 20,800 a plus (41,600
+for a +2; a +1 with a spell 22,000), Windlash 2,800 (as its Sling +1), plain metal weapons 50 to
 300, bracers 5,000 a point of AC, Arrowbane 30,000, the Sunking Crown 40,000,
 the rings and cloak of protection 15,000, Inixhide 6,000, the
 Cloak of Elvenkind 25,000 and Boots 20,000, the Warden's Arms and Legs 27,000
@@ -1946,7 +1945,8 @@ its own items, the game puts the material first: **Leather Inixhide**,
 ![Shadowseeker's item box in the game: 22000, Detect Invisibility's icon, "Metal +1 Shadowseeker", 1D6+1](docs/shadowseeker-box.png)
 
 **Alagorn**, the wizard of the Painted Badlands who identifies magic items,
-tells the story of every magic item in the table when the party carries it,
+tells the story of every magic item in the table but the plain Gythka +2
+when the party carries it,
 in the menu the game would put it in (swords, weapons, rings, armor, clothes
 or other items), before "Nothing". As with the game's own, one story for each
 kind: the four pairs of bracers share one, and so do both rings of

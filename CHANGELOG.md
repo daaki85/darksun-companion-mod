@@ -5,7 +5,7 @@ Released pull requests are summarised in a line or two each; the release notes
 ([1.1.0](release-notes/v1.1.0.md): #14 to #18; [1.0.0](release-notes/v1.0.0.md):
 #1 to #13) and the pull requests themselves have the detail.
 
-## Pull request #23 (in progress)
+## Pull request #23 ([in review](https://github.com/daaki85/darksun-companion-mod/pull/23))
 
 **Added**
 - **Three magic axes,** each with an icon of its own and a story from Alagorn:
@@ -13,8 +13,8 @@ Released pull requests are summarised in a line or two each; the release notes
     prisoners (he gets an object of his own);
   - **Glasshewer,** an obsidian axe +2, on the elven slavers' Templar;
   - **Headsman,** a metal great axe +2, in the arena Announcer's stash.
-  - Alagorn's weapons are told by a copy of his script 213 (222), so it
-    stays inside the script buffer.
+  - Alagorn's weapons are told by a copy of his script 213 (222), so no
+    script overflows the game's script buffer.
 
 **Changed**
 - **The Elven Leader's Gythka is +2** (was +1). It also no longer takes
