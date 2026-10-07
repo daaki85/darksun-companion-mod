@@ -111,7 +111,16 @@ MAGIC = {
               "A Flame Blade! Its blade is no common obsidian, but glass from the heart of a "
               "fire-mountain, and the clerics of fire sang its flames into it. Whatever it cuts, "
               "it burns. The templars of Draj have tried to keep every one of them; the one at "
-              "the Hot Springs wore his like a badge, though he never knew the prayers to wake it."),),
+              "the Hot Springs wore his like a badge, though he never knew the prayers to wake it."),
+             ("Mindshard",
+              "Mindshard! A psionicist knapped its blade and would let no hand but hers shape it; "
+              "she held the stone in her mind as she worked, and some of her will stayed in it. It "
+              "answers a trained mind better than any sword of its kind, and strikes truer and "
+              "deeper. Psionicists hand it down, master to pupil."),
+             ("Stillwater",
+              "Stillwater! Carved from the rib of a beast that drank at the last clear pool in the "
+              "Tablelands, and bound by a mind and a water cleric together. It strikes truer than any "
+              "common short sword, and its wielder's thoughts stay calm in the thick of a fight."),),
     WEAPONS: (("Gutterknot",
                "Gutterknot! A knot of agafari root, the hardest wood under the sun, with the stub "
                "of an iron spike driven through it. Every boss of the Draj low warrens has beaten "
@@ -140,7 +149,21 @@ MAGIC = {
                "Headsman! The arenas once kept their own executioners, and this was the last of "
                "their axes: true iron, forged in the Green Age, heavy enough to end a fight in one "
                "stroke. It has passed from champion to champion since. It strikes truer and harder "
-               "than any other great axe."),),
+               "than any other great axe."),
+              ("Galefang",
+               "Galefang! The clerics of the air bless few blades; the wind, they say, needs no edge. "
+               "This one they made for a cleric who guarded their high places, and the wind sharpens "
+               "it still: it strikes truer and deeper than any common dagger. How a rogue shaman came "
+               "by it, the clerics would dearly like to know."),
+              ("Linebreaker",
+               "Linebreaker! True iron on a long agafari haft, made in the Green Age for the soldiers "
+               "who held a city's gates. A rank of them could stop a charge of inix. This one has "
+               "outlived every army that carried it. It strikes truer and harder than any common "
+               "polearm, and reaches over a shield."),
+              ("Thornwall",
+               "Thornwall! A thri-kreen's polearm, its blade a bone hook as long as a man's arm, bound "
+               "in chitin. The kreen hold a line with them and drag riders from their kanks. It strikes "
+               "truer than any common polearm."),),
     # the Warden's Plate, a piece of its story each
     ARMOUR: (("Warden's Helm",
               "The Warden's Helm! In the Green Age the Wardens kept the iron roads between the "
@@ -243,10 +266,26 @@ def _carried(name: str) -> tuple:
     return ("expr", out)
 
 
-def _zero(locals_: List[int]) -> tuple:
+# A menu with more items than the script's locals hold (the game's six weapons, the loop's own, and
+# the new ones) keeps the rest in the Ledger's flags from FLAGS on (the game's run to 755, the
+# Ledger's own 760-783, a save keeps 808), set afresh each time the part starts, as the locals are.
+# A slot: a local's number, or a flag's negated.
+FLAGS = 784
+FLAG_SET, FLAG_READ = 13, 141
+
+
+def _read(slot: int) -> tuple:
+    return ("var", LOCAL_READ, slot) if slot >= 0 else ("var", FLAG_READ, -slot)
+
+
+def _set(slot: int) -> tuple:
+    return ("var", LOCAL_SET, slot) if slot >= 0 else ("var", FLAG_SET, -slot)
+
+
+def _zero(slots: List[int]) -> tuple:
     out: list = []
-    for n in locals_:
-        out += (["and"] if out else []) + ["(", ("var", LOCAL_READ, n), "==", ("n", 0), ")"]
+    for n in slots:
+        out += (["and"] if out else []) + ["(", _read(n), "==", ("n", 0), ")"]
     return ("expr", out)
 
 
@@ -315,13 +354,12 @@ def with_items(script: bytes, field_types: bytes, kinds=KINDS) -> bytes:
         menu = ops[menu_i].args[0]
         used = [r["if"][2] for r in menu["replies"] if isinstance(r["if"], tuple) and r["if"][:2] == ("var", LOCAL_READ)]
         mine = [n for n in range(max(used + held) + 1, LOCALS) if n != done][:len(kind.items)]
-        if len(mine) < len(kind.items):
-            return script
+        mine += [-(FLAGS + i) for i in range(len(kind.items) - len(mine))]  # (past the locals: flags)
         all_of = held + mine
         entry = f"entry {k}"
         s.label(entry)
         for (item, _), n in zip(kind.items, mine):
-            s.op(SET, _carried(item), ("var", LOCAL_SET, n))
+            s.op(SET, _carried(item), _set(n))
         # the game's tests again, each to its own place (the game keeps its ifs and elses
         # nested: skipping one, an else further on goes the wrong way), the new items in the last
         for t, (names, target) in enumerate(chain):
@@ -334,13 +372,13 @@ def with_items(script: bytes, field_types: bytes, kinds=KINDS) -> bytes:
         replies = list(menu["replies"])
         # (before the game's "Nothing", which leaves: it stays last)
         at = next((r for r, reply in enumerate(replies) if _nothing(reply)), len(replies))
+        # (the new stories' test for none left, the kind's every local: one subroutine they call)
+        s.sub(f"left {k}", lambda all_of=all_of, done=done: s.when(_zero(all_of), lambda: s.set(done, 1)))
         for j, ((item, text), n) in enumerate(zip(kind.items, mine)):
             story = f"story {k} {j}"
-            s.sub(story, lambda text=text, n=n, all_of=all_of, done=done: (
-                s.say(text), s.set(n, 0),
-                s.when(_zero(all_of), lambda: s.set(done, 1))))
+            s.sub(story, lambda text=text, n=n, k=k: (s.say(text), s.op(SET, ("n", 0), _set(n)), s.call(f"left {k}")))
             replies.insert(at + j, {"text": ("str", f"  {item}"), "goto": ("label", story),
-                                    "if": ("var", LOCAL_READ, n), "before": [], "after": []})
+                                    "if": _read(n), "before": [], "after": []})
         copy = f"menu {k}"
         s.label(copy)
         s.op(MENU, dict(menu, replies=replies))

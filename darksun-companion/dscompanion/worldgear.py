@@ -31,6 +31,10 @@
 - The magic axes: Drakejaw, a bone axe +1, on one of the Magera guarding the wagon's prisoners;
   Glasshewer, an obsidian axe +2, on the elven slavers' Templar; Headsman, a metal great axe +2,
   in the arena Announcer's stash. And the Elven Leader's Gythka +1 made +2.
+- Weapons for those who had too few magic ones: Galefang, a metal dagger +2 of DSCLOG's own type
+  that air clerics may use, on the Rogue Shaman; Mindshard, an obsidian short sword +1, on Maris,
+  and Stillwater, a bone short sword +1, on Chaya (psionicists', alone or with a cleric's);
+  Linebreaker, a metal polearm +2, on the Troop Leader; Thornwall, a bone polearm +1, on Uskuye.
 - Bracers of defense (DSCLOG's BRACERS type, worn on the arms: their plus counts for AC while neither
   armour nor a helm is worn), now that a preserver can't cast in armour: on four
   of the game's wizards, better the later they're met.
@@ -80,6 +84,18 @@ NAMES.update({DRAKEJAW: b"Drakejaw", GLASSHEWER: b"Glasshewer", HEADSMAN: b"Head
 BONE_AXE_1 = ((game.BONE_AXE_TYPE, DRAKEJAW, 0x10000 - 2554, PLUS_VALUE), 1)
 OBSIDIAN_AXE_2 = ((game.OBSIDIAN_AXE_TYPE, GLASSHEWER, 0x10000 - 2556, 2 * PLUS_VALUE), 2)
 GREAT_AXE_2 = ((game.METAL_GREAT_AXE_TYPE, HEADSMAN, 0x10000 - 2558, 2 * PLUS_VALUE), 2)
+# the weapons for those who had too few magic ones: an air cleric's dagger +2 (DSCLOG's own type: no dagger
+# of the game's is an air cleric's), an obsidian and a bone short sword +1 (a psionicist's, alone or
+# with a fire, earth or water cleric's), a metal polearm +2 and a bone one +1 (the game has no
+# polearm to find)
+GALEFANG, MINDSHARD, STILLWATER, LINEBREAKER, THORNWALL = 0x15C, 0x15D, 0x15E, 0x15F, 0x160
+NAMES.update({GALEFANG: b"Galefang", MINDSHARD: b"Mindshard", STILLWATER: b"Stillwater", LINEBREAKER: b"Linebreaker",
+              THORNWALL: b"Thornwall"})
+AIR_DAGGER_2 = ((game.AIR_DAGGER_TYPE, GALEFANG, 0x10000 - 2564, 2 * PLUS_VALUE), 2)
+OBSIDIAN_SHORT_SWORD_1 = ((game.OBSIDIAN_SHORT_SWORD_TYPE, MINDSHARD, 0x10000 - 2566, PLUS_VALUE), 1)
+BONE_SHORT_SWORD_1 = ((game.BONE_SHORT_SWORD_TYPE, STILLWATER, 0x10000 - 2568, PLUS_VALUE), 1)
+POLEARM_2 = ((game.METAL_POLEARM_TYPE, LINEBREAKER, 0x10000 - 2570, 2 * PLUS_VALUE), 2)
+BONE_POLEARM_1 = ((19, THORNWALL, 0x10000 - 2572, PLUS_VALUE), 1)  # (the game's Polearm, of bone)
 # the Elven Leader's Gythka +1 (in his pack, object 124; and the item his script gives, a new one of
 # object 2534) a Gythka +2
 ELVEN_LEADER, ELVEN_GYTHKA = 124, 2534
@@ -245,6 +261,13 @@ MAGIC: Tuple[Gift, ...] = (
     Gift("Magera", (weapon(*BONE_AXE_1),), (71,), 0x08, clone=(122, 2562)),
     Gift("Templar", (weapon(*OBSIDIAN_AXE_2),), (131,), 0x14),
     Gift("Announcer", (weapon(*GREAT_AXE_2),), (91,)),
+    # Galefang on the Rogue Shaman (with his Shaman Followers), Mindshard on Maris and Stillwater on
+    # Chaya (both carrying psionic scrolls), Linebreaker on the Troop Leader, Thornwall on Uskuye
+    Gift("Rogue Shaman", (weapon(*AIR_DAGGER_2),), (77,), 0x0F),
+    Gift("Maris", (weapon(*OBSIDIAN_SHORT_SWORD_1),), (228,), 0x22),
+    Gift("Chaya", (weapon(*BONE_SHORT_SWORD_1),), (74,), 0x1F),
+    Gift("Troop Leader", (weapon(*POLEARM_2),), (18,), 0x21),
+    Gift("Uskuye", (weapon(*BONE_POLEARM_1),), (75,), 0x1F),
 )
 
 
@@ -281,7 +304,8 @@ BASE_TYPES = {game.SHORT_SWORD_TYPE: 63, game.CLOAK_TYPE: 65, game.BONE_HELM_TYP
               game.METAL_SHORT_SWORD_TYPE: 63, game.BRACERS_TYPE: 7, game.METAL_DAGGER_TYPE: 33,
               game.METAL_MACE_TYPE: 20, game.METAL_GREAT_AXE_TYPE: 2, game.METAL_PICK_TYPE: 112,
               game.METAL_POLEARM_TYPE: 19, game.CIRCLET_TYPE: 36, game.CROWN_TYPE: 36, game.PLATE_CHEST_TYPE: 57,
-              game.PLATE_ARMS_TYPE: 58, game.PLATE_LEGS_TYPE: 59, game.ELVEN_CLOAK_TYPE: 65, game.ELVEN_BOOTS_TYPE: 68}
+              game.PLATE_ARMS_TYPE: 58, game.PLATE_LEGS_TYPE: 59, game.ELVEN_CLOAK_TYPE: 65, game.ELVEN_BOOTS_TYPE: 68,
+              game.AIR_DAGGER_TYPE: 33}
 
 
 def header_numbers(chunks) -> Dict[int, int]:

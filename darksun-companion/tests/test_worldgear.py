@@ -165,6 +165,37 @@ class WorldGearTests(unittest.TestCase):
         self.assertEqual(icons.which(worldgear.weapon(worldgear.BONE_AXE)), "Bone Axe")
         self.assertEqual(icons.which(worldgear.weapon(worldgear.OBSIDIAN_AXE)), "Obsidian Axe")
 
+    def test_weapons_for_the_few(self):
+        """Galefang (an air cleric's dagger +2, DSCLOG's own type), Mindshard and Stillwater (a
+        psionicist's short swords +1, obsidian and bone), Linebreaker and Thornwall (polearms +2 and
+        +1): named, priced, on their holders; Galefang's type an air cleric's, the short swords'
+        a lone psionicist's."""
+        import test_restrict
+        cases = ((worldgear.AIR_DAGGER_2, game.AIR_DAGGER_TYPE, 2, "Galefang", "Rogue Shaman", (77,), 0x0F),
+                 (worldgear.OBSIDIAN_SHORT_SWORD_1, game.OBSIDIAN_SHORT_SWORD_TYPE, 1, "Mindshard", "Maris", (228,), 0x22),
+                 (worldgear.BONE_SHORT_SWORD_1, game.BONE_SHORT_SWORD_TYPE, 1, "Stillwater", "Chaya", (74,), 0x1F),
+                 (worldgear.POLEARM_2, game.METAL_POLEARM_TYPE, 2, "Linebreaker", "Troop Leader", (18,), 0x21),
+                 (worldgear.BONE_POLEARM_1, 19, 1, "Thornwall", "Uskuye", (75,), 0x1F))
+        for spec, type_, plus, name, holder, objects, region in cases:
+            item = worldgear.weapon(*spec)
+            self.assertEqual((struct.unpack_from("<H", item, game.ITEM_TYPE)[0], item[game.ITEM_PLUS]), (type_, plus))
+            self.assertEqual(struct.unpack_from("<H", item, 6)[0], plus * worldgear.PLUS_VALUE)
+            self.assertEqual(icons.which(item), name)
+            self.assertEqual(names.NAMES[struct.unpack_from("<H", item, game.ITEM_NAME)[0]], name.encode())
+            g = next(g for g in worldgear.MAGIC if item in g.items)
+            self.assertEqual((g.name, g.objects, g.region), (holder, objects, region))
+        record = lambda t: npcitems.TYPES[t - game.GAME_TYPES]
+        air = test_restrict.sheet(1, race=game.HUMAN)
+        self.assertTrue(restrict.usable(air, game.AIR_DAGGER_TYPE, record(game.AIR_DAGGER_TYPE)))
+        self.assertFalse(restrict.usable(air, game.METAL_DAGGER_TYPE, record(game.METAL_DAGGER_TYPE)))
+        psionicist = test_restrict.sheet(12, race=game.HUMAN)
+        for t in (game.OBSIDIAN_SHORT_SWORD_TYPE, game.BONE_SHORT_SWORD_TYPE):
+            self.assertTrue(restrict.usable(psionicist, t, record(t)))
+        # (the plain short swords and polearm still the plain ones)
+        self.assertEqual(icons.which(worldgear.weapon(worldgear.BONE_SHORT_SWORD)), "Bone Short Sword")
+        self.assertEqual(icons.which(worldgear.weapon(worldgear.OBSIDIAN_SHORT_SWORD)), "Obsidian Short Sword")
+        self.assertEqual(icons.which(worldgear.weapon(worldgear.METAL_POLEARM)), "Metal Polearm")
+
     def test_elven_gythka_2(self):
         """The Elven Leader's Gythka +1 a Gythka +2, in his pack and his script's object (an item),
         priced as two pluses; once."""

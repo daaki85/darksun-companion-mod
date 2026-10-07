@@ -132,27 +132,32 @@ class AlagornTests(unittest.TestCase):
         while r.i < len(out):
             added.append(gpl._op(r))
         menus = [[x["text"][1] for x in op.args[0]["replies"]] for op in added if op.code == MENU]
-        self.assertEqual(menus, [["  Darkflame", "  Shadowseeker", "  Greenbright", "  Flame Blade", alagorn.NOTHING],
+        self.assertEqual(menus, [["  Darkflame", "  Shadowseeker", "  Greenbright", "  Flame Blade", "  Mindshard",
+                                  "  Stillwater", alagorn.NOTHING],
                                  ["  Balkazar's Staff", "  Kreenfang", "  Gutterknot", "  Deepbiter", "  Windlash",
-                                  "  Drakejaw", "  Glasshewer", "  Headsman", alagorn.NOTHING]])
+                                  "  Drakejaw", "  Glasshewer", "  Headsman", "  Galefang", "  Linebreaker",
+                                  "  Thornwall", alagorn.NOTHING]])
         sets = [alagorn._sets(op) for op in added if op.code == SET and op.args[0][0] == "op"]
         self.assertEqual(sets, [(2, alagorn._picture("Shadowseeker")), (3, alagorn._picture("Greenbright")),
-                                (4, alagorn._picture("Flame Blade")),
+                                (4, alagorn._picture("Flame Blade")), (5, alagorn._picture("Mindshard")),
+                                (6, alagorn._picture("Stillwater")),
                                 (2, alagorn._picture("Kreenfang")), (3, alagorn._picture("Gutterknot")),
                                 (4, alagorn._picture("Deepbiter")), (5, alagorn._picture("Windlash")),
                                 (6, alagorn._picture("Drakejaw")), (7, alagorn._picture("Glasshewer")),
-                                (8, alagorn._picture("Headsman"))])
+                                (8, alagorn._picture("Headsman")), (9, alagorn._picture("Galefang")),
+                                (10, alagorn._picture("Linebreaker")), (11, alagorn._picture("Thornwall"))])
         lines = " ".join(gpl.strings(added))
-        for name in ("Greenbright!", "A Flame Blade!", "Gutterknot!", "Deepbiter!", "Windlash!", "Drakejaw!",
-                     "Glasshewer!", "Headsman!"):
+        for name in ("Greenbright!", "A Flame Blade!", "Mindshard!", "Stillwater!", "Gutterknot!", "Deepbiter!",
+                     "Windlash!", "Drakejaw!", "Glasshewer!", "Headsman!", "Galefang!", "Linebreaker!", "Thornwall!"):
             self.assertIn(name, lines)
-        self.assertIn([0, 1, 2, 3, 4, 5, 6, 7, 8], [alagorn._locals(op.args[0]) for op in added if op.code == TEST])
+        self.assertIn([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], [alagorn._locals(op.args[0]) for op in added if op.code == TEST])
 
     def test_switches(self):
         """Only the switches' items; none, no change."""
         self.assertEqual([[i for i, _ in k.items] for k in alagorn.kinds(arms=False, magic=True)],
-                         [["Greenbright", "Flame Blade"],
-                          ["Gutterknot", "Deepbiter", "Windlash", "Drakejaw", "Glasshewer", "Headsman"]])
+                         [["Greenbright", "Flame Blade", "Mindshard", "Stillwater"],
+                          ["Gutterknot", "Deepbiter", "Windlash", "Drakejaw", "Glasshewer", "Headsman", "Galefang",
+                           "Linebreaker", "Thornwall"]])
         self.assertEqual(alagorn.kinds(arms=False, magic=False), ())
         self.assertEqual(alagorn.script_chunks({("GPL ", alagorn.SCRIPT): self.script}, FIELDS, False, False), {})
 
@@ -228,6 +233,23 @@ class AlagornTests(unittest.TestCase):
         sets = [alagorn._sets(op)[0] for op in added if op.code == SET and op.args[0][0] == "op"]
         self.assertEqual(sets, [2, 3, 5, 6, 7, 2, 3, 5, 6, 7, 8])
 
+    def test_past_the_locals_flags(self):
+        """Items past the script's locals (the loop's own one of them) kept in the Ledger's flags
+        from FLAGS on: set by their query, shown by them, cleared by their story, counted in the
+        tests for none carried and none left."""
+        from unittest import mock
+        kinds = alagorn.kinds(arms=False, magic=True)
+        script = alagorns(last=alagorn.NOTHING.strip(), kinds=kinds, done=6)
+        with mock.patch.object(alagorn, "LOCALS", 11):  # (locals 2-10 less the loop's: eight for nine weapons)
+            added = self.new_ops(script, kinds)
+        weapons = [op for op in added if op.code == MENU][1].args[0]["replies"]
+        shown = [r["if"] for r in weapons if r["text"][1].strip() in ("Linebreaker", "Thornwall")]
+        self.assertEqual(shown, [("var", 142, 10), ("var", alagorn.FLAG_READ, alagorn.FLAGS)])
+        flags = [op for op in added if op.code == SET and op.args[1] == ("var", alagorn.FLAG_SET, alagorn.FLAGS)]
+        self.assertEqual([op.args[0][0] for op in flags], ["op", "n"])  # (its query; its story's clearing)
+        tests = [op.args[0] for op in added if op.code == TEST and ("var", alagorn.FLAG_READ, alagorn.FLAGS) in op.args[0][1]]
+        self.assertTrue(tests)
+
     def test_every_magic_item_told(self):
         """Each magic item the Ledger adds has a story: named ones their own, the rings and cloaks
         of protection one for their kind (whichever the party carries), as the bracers."""
@@ -238,7 +260,8 @@ class AlagornTests(unittest.TestCase):
                                 "Warden's Arms", "Warden's Legs", "Warden's Chest", "Cloak of Elvenkind",
                                 "Boots of Elvenkind", "Tome of Understanding", "Ring of Protection +1",
                                 "Pehtucl's Ring of Protection +1", "Cloak of Protection +1", "Inixhide",
-                                "Drakejaw", "Glasshewer", "Headsman"})
+                                "Drakejaw", "Glasshewer", "Headsman", "Galefang", "Mindshard", "Stillwater",
+                                "Linebreaker", "Thornwall"})
         for name in told - {"Tome of Understanding"}:
             self.assertIn(name, icons.PICTURES)
 

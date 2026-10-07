@@ -71,13 +71,11 @@ double-click, with the options as last set.)
 
 ## What's new
 
-In [pull request #23](https://github.com/daaki85/darksun-companion-mod/pull/23)
-(merged 2026-10-07):
-- **Three magic axes:** **Drakejaw**, a bone axe +1, on a Magera guarding the
-  wagon's prisoners; **Glasshewer**, an obsidian axe +2, on the elven slavers'
-  Templar; and **Headsman**, a metal great axe +2, in the arena Announcer's
-  stash. Alagorn tells the story of each.
-- **The Elven Leader's Gythka is now +2.**
+In pull request #24 (in progress): **magic weapons for the classes that had
+too few.** **Galefang**, a dagger +2 an air cleric can wield; **Mindshard** and
+**Stillwater**, short swords +1 a psionicist can wield (alone or with a
+cleric); and two polearms, **Linebreaker** +2 and **Thornwall** +1. Alagorn
+tells the story of each.
 
 Earlier changes, pull request by pull request, are in
 [`CHANGELOG.md`](CHANGELOG.md). Releases have notes of their own:

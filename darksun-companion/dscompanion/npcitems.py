@@ -62,6 +62,9 @@ TYPES = (  # as DSCLOG's EXTRA_TYPES has them
     # for thieves and rangers (their class bits, 600h)
     bytes.fromhex("000000000a000a00050800000000000" "000060001"),
     bytes.fromhex("0000000001000a00850400000000000" "000060000"),
+    # a metal dagger air clerics may use too (worldgear.py's Galefang): the metal Dagger's, its
+    # classes' air cleric bit (1) set; fire and water clerics still not, as the game's daggers
+    bytes.fromhex("010020000a00fa000405010104010000f31f0000"),
 )
 TSR_TYPES_OFF, TSR_TYPES_COUNT, TSR_TYPES_FIRST, TSR_TYPES_PTR = 208, 210, 212, 214
 

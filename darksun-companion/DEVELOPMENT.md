@@ -579,9 +579,11 @@ it would show "CANNOT LEARN FROM THIS ITEM" and keep the scroll (from 196 on,
 the icon can't be clicked). There the helper (`INT B9h`) raises the reader's
 WIS, in the sheet and the creature record, writes its message in the game's
 buffer, and goes on as for a power taught: the game uses the tome up and shows
-it. The short sword, the cloak whose plus counts and the bone helm are
-item types the helper adds after the game's 115 each time the game reads its
-table in; the Ledger's item names (`dscompanion/names.py`) are entries it adds
+it. The short sword, the cloak whose plus counts, the bone helm and the rest
+(22, the last Galefang's: a metal dagger whose class list has the air cleric's
+bit, which none of the game's daggers have) are item types the helper adds
+after the game's 115 each time the game reads its table in (`TYPES_EXTRA`; its
+weapon kinds by type, `kind_of_type`, cover them too); the Ledger's item names (`dscompanion/names.py`) are entries it adds
 after the game's 322 (the game puts the item type's material before the name
 when it shows one); and the icons are objects in the Ledger's copy of
 `SEGOBJEX.GFF` (`dscompanion/icons.py`), which the helper has the game open
@@ -605,6 +607,11 @@ Alagorn's new menu lines are in the Ledger's copy of his scripts
   short.
 - The two Rings of Protection have different pictures, so their one menu line
   joins two queries with "or", as the game's own tests do.
+- Each item a menu shows needs a value saying it's carried, and a script has 16
+  locals: the weapons menu's six game items, its loop's own and ten new ones
+  are one too many, so items past the locals use the Ledger's flags from 784
+  on (set afresh as the part starts, as the locals are). The new stories'
+  "none left" test is one subroutine they all call.
 
 ### Kalzith
 

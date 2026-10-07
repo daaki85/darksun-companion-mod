@@ -4567,12 +4567,12 @@ spec_of_sheet:
 
 ; By item type (the game's 115, then the companion's own: 115 its short sword), the weapon kind
 ; + 1 (dscompanion/specialize.py's KIND_OF_TYPE; 0 none)
-KIND_TYPES equ 136
+KIND_TYPES equ 137
 kind_of_type  db 16, 14, 7, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 2, 10, 5, 12, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0
               db 0, 3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 11, 1, 5, 1, 13, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1
               db 15, 0, 0, 0, 0, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 1, 0, 0, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0
               db 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 8, 0, 0, 4, 0, 0, 4, 6, 4, 6, 4, 0, 3, 5, 7, 8
-              db 10, 0, 0, 0, 0, 0, 0, 0
+              db 10, 0, 0, 0, 0, 0, 0, 0, 3   ; (136: the air clerics' metal dagger, Galefang's)
 
 ; PROBE_XP_NEXT: INT VEC_XP_NEXT replaces "push 10F4h" (3 bytes: INT + NOP; DSUN.EXE 67DBEh) in
 ; View Character's line "EXP:10301 (16000)", where the game adds ")" (DS:10F4h) after the XP the
@@ -5848,7 +5848,7 @@ n_fl    dw 0
 ; companion's own items that no type of the game's fits (a metal short sword, a cloak of
 ; protection). Nothing in the game limits the numbers to its own.
 TYPE_SIZE   equ 20
-TYPES_EXTRA equ 21
+TYPES_EXTRA equ 22
 TYPES_PTR   equ 0x1669          ; DS: far pointer to the item types
 BRACERS     equ 8               ; (the bracers of defense: the ninth of them)
 ELVEN_CLOAK equ 19              ; (the Cloak and Boots of Elvenkind)
@@ -5991,6 +5991,10 @@ extra_types:
         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x01
         db 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x0A, 0x00, 0x85, 0x04, 0x00, 0x00
         db 0x00, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00
+        ; a metal dagger air clerics may use too (Galefang, dscompanion/worldgear.py): the metal
+        ; Dagger's, with the air cleric's class bit (+10h: 1FF3h; fire and water clerics still not)
+        db 0x01, 0x00, 0x20, 0x00, 0x0A, 0x00, 0xFA, 0x00, 0x04, 0x05, 0x01, 0x01
+        db 0x04, 0x01, 0x00, 0x00, 0xF3, 0x1F, 0x00, 0x00
 ; the names, numbered from NAMES_OWN (322): the companion's items' (the same as the companion's
 ; NAMES in dscompanion/names.py), the rest blank until it writes more
 extra_names:
@@ -6046,7 +6050,17 @@ extra_names:
         times NAME_SIZE - 10 db 0
         db "Headsman"                   ; a metal great axe +2)
         times NAME_SIZE - 8 db 0
-        times (NAMES_EXTRA - 26) * NAME_SIZE db 0
+        db "Galefang"                   ; (more magic weapons of dscompanion/worldgear.py: an air
+        times NAME_SIZE - 8 db 0        ; cleric's dagger +2,
+        db "Mindshard"                  ; an obsidian short sword +1,
+        times NAME_SIZE - 9 db 0
+        db "Stillwater"                 ; a bone short sword +1,
+        times NAME_SIZE - 10 db 0
+        db "Linebreaker"                ; a metal polearm +2,
+        times NAME_SIZE - 11 db 0
+        db "Thornwall"                  ; a bone polearm +1)
+        times NAME_SIZE - 9 db 0
+        times (NAMES_EXTRA - 31) * NAME_SIZE db 0
 
 ; STEALTH (RULE_STEALTH): a thief who starts a turn with no enemy next to them may hide in
 ; shadows and move silently up to someone; the companion rolls both and, when both succeed,
