@@ -851,12 +851,12 @@ class SpecializeTests(unittest.TestCase):
     def test_missile_rate(self):
         """A missile weapon: the weapon's rate (the game's), or a specialist's when greater, by the
         fighter's or gladiator's level (1-6, 7-12): AD&D's for the sling, a step above for the bow,
-        staff sling and chatkcha; a grand master no extra attack. As specialize.missile_attacks."""
+        staff sling and chatkcha; a grand master one more, as in melee. As specialize.missile_attacks."""
         from dscompanion import specialize
         BOW, SLING, STAFF_SLING, CHATKCHA = 1, 64, 0, 48
         cases = ((4, BOW, 13, (9, 0, 0), (4, 0, 0), (6, 14, 5, 8)),       # bow 3/1 at 1-6
                  (4, BOW, 13, (9, 0, 0), (7, 0, 0), (8, 12, 6, 8)),       # 4/1 at 7 (and mastery)
-                 (4, BOW, 13, (9, 0, 0), (9, 0, 0), (8, 12, 6, 10)),      # grand mastery: no more
+                 (4, BOW, 13, (9, 0, 0), (9, 0, 0), (10, 12, 6, 10)),     # grand mastery: one more
                  (4, BOW, 13, (10, 0, 0), (8, 0, 0), (8, 14, 5, 8)),      # a gladiator
                  (2, SLING, 14, (9, 0, 0), (2, 0, 0), (3, 14, 5, 8)),     # sling 3/2
                  (2, SLING, 14, (11, 9, 0), (3, 7, 0), (4, 12, 6, 8)),    # 2/1 by the fighter level
@@ -864,7 +864,10 @@ class SpecializeTests(unittest.TestCase):
                  (2, STAFF_SLING, 15, (9, 0, 0), (8, 0, 0), (4, 12, 6, 8)),   # 2/1 at 7-12
                  (2, CHATKCHA, 12, (9, 0, 0), (7, 0, 0), (4, 12, 6, 8)),  # chatkcha, as the staff sling
                  (4, BOW, 0, (9, 0, 0), (8, 0, 0), (4, 15, 3, 8)),        # another kind: the game's
-                 (4, BOW, 13, (13, 0, 0), (8, 0, 0), (4, 15, 3, 8)))      # a ranger: the game's
+                 (4, BOW, 13, (13, 0, 0), (8, 0, 0), (8, 15, 3, 8)),      # a ranger's expertise: the rate
+                 (4, BOW, 0, (13, 0, 0), (4, 0, 0), (6, 15, 3, 8)),       # every ranger's bow, chosen or not
+                 (4, BOW, 0, (9, 14, 0), (8, 3, 0), (8, 15, 3, 8)),       # a fighter/ranger: the higher level
+                 (2, SLING, 0, (13, 0, 0), (8, 0, 0), (2, 15, 3, 8)))     # a ranger's unchosen sling: the game's
         for halves, weapon, kind, classes, levels, want in cases:
             with self.subTest(weapon=weapon, classes=classes, levels=levels):
                 self.assertEqual(self.attack(halves, weapon, chosen=(kind,), classes=classes, levels=levels,
@@ -874,6 +877,11 @@ class SpecializeTests(unittest.TestCase):
                 sheet[0x21:0x24], sheet[0x24:0x27] = bytes(classes), bytes(levels)
                 self.assertEqual(specialize.missile_attacks(halves, specialize.skill(bytes(sheet), weapon), weapon,
                                                             bytes(sheet)), want[0])
+        # (a human ranger turned preserver: no bow expertise until the preserver level passes the ranger's)
+        self.assertEqual(self.attack(4, BOW, chosen=(0,), classes=(11, 13, 0), levels=(3, 5, 0), missile=True,
+                                     race=1), (4, 15, 3, 8))
+        self.assertEqual(self.attack(4, BOW, chosen=(0,), classes=(11, 13, 0), levels=(6, 5, 0), missile=True,
+                                     race=1), (6, 15, 3, 8))
 
     def test_dual_class(self):
         """A human fighter turned preserver: the game's numbers until its preserver level passes

@@ -2593,15 +2593,16 @@ probe_attacks:
         jmp .hit
 
 ; MISSILE_RATE: AX (the attacks a round in halves: the weapon type's, +0Bh, as the game has a
-; missile's) made a specialist's rate of fire when greater, for skill DL (SPEC_SPECIAL or above: a
-; fighter's or gladiator's chosen kind) with item type SI, the sheet at ES:BX, by the specialist's
-; level (the higher fighter or gladiator level of the classes it has now: 1-6, 7-12, 13 on): AD&D's
+; missile's) made a specialist's rate of fire when greater, for skill DL (SPEC_EXPERT or above: a
+; fighter's or gladiator's chosen kind, a ranger's, a ranger's bow) with item type SI, the sheet at
+; ES:BX, by the warrior's level (the highest fighter, gladiator or ranger level of the classes it
+; has now: 1-6, 7-12, 13 on): AD&D's
 ; for the sling, 3/2, 2, 5/2 a round; the bow, staff sling and chatkcha a step above AD&D's, the bow
-; 3, 4, 5, the staff sling and chatkcha 3/2, 2, 5/2.
+; 3, 4, 5, the staff sling and chatkcha 3/2, 2, 5/2; a grand master one more.
 MISSILE_KIND equ 13             ; (the chatkcha's kind + 1; then the bow, the sling, the staff sling)
 missile_halves db 3, 4, 5, 6, 8, 10, 3, 4, 5, 3, 4, 5
 missile_rate:
-        cmp dl, SPEC_SPECIAL
+        cmp dl, SPEC_EXPERT
         jb .ret
         cmp si, KIND_TYPES
         jae .ret
@@ -2627,7 +2628,11 @@ missile_rate:
 .on:    cmp al, FIGHTER_CLASS
         je .warrior
         cmp al, GLADIATOR_CLASS
-        jne .next
+        je .warrior
+        cmp al, 13              ; (a ranger, 13-16)
+        jb .next
+        cmp al, 16
+        ja .next
 .warrior:
         cmp ah, dl
         jbe .next
@@ -2646,8 +2651,15 @@ missile_rate:
 .tier:  mov si, cx
         movzx cx, byte [cs:si + missile_halves]
         cmp cx, ax
-        jbe .out
+        jbe .grand
         mov ax, cx
+.grand: pop si                  ; (DX, pushed after it: the skill back in DL)
+        pop dx
+        push dx
+        push si
+        cmp dl, SPEC_GRAND
+        jne .out
+        add ax, 2               ; (a grand master one more shot, as in melee)
 .out:   pop si
         pop dx
         pop cx
@@ -4562,8 +4574,9 @@ spec_of:
 
 ; SPEC_OF_SHEET: DL the skill with item type SI of the character whose sheet is at ES:BX:
 ; SPEC_NONE (it has chosen no kinds), SPEC_PLAIN (not this kind), SPEC_EXPERT (a ranger's: no
-; fighter or gladiator class), SPEC_SPECIAL, SPEC_MASTER (a fighter's own kind, the first, from
-; 5th level), SPEC_GRAND (9th).
+; fighter or gladiator class; and every ranger's with the bow, chosen or not), SPEC_SPECIAL,
+; SPEC_MASTER (a fighter's own kind, the first, from 5th level), SPEC_GRAND (9th).
+BOW_KIND equ 14                 ; (the bow's kind + 1)
 spec_of_sheet:
         push ax
         push cx
@@ -4586,6 +4599,26 @@ spec_of_sheet:
         inc si
         cmp si, SPEC_COUNT
         jb .slot
+        cmp cl, BOW_KIND        ; (not chosen: a ranger's bow all the same)
+        jne .ret
+        xor si, si
+.rbow:  mov al, [es:bx + si + 0x21]
+        or si, si               ; (a human's earlier classes once the first's level has passed theirs)
+        jz .ron
+        cmp byte [es:bx + 0x18], 1
+        jne .ron
+        mov ah, [es:bx + si + 0x24]
+        cmp ah, [es:bx + 0x24]
+        jae .rnext
+.ron:   cmp al, 13
+        jb .rnext
+        cmp al, 16
+        ja .rnext
+        mov dl, SPEC_EXPERT
+        jmp .ret
+.rnext: inc si
+        cmp si, 3
+        jb .rbow
         jmp .ret
 .found: mov dl, SPEC_EXPERT
         xor ax, ax              ; AH a fighter or gladiator, AL any warrior, CH the fighter level

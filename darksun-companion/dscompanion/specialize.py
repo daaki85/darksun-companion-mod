@@ -88,6 +88,9 @@ def skill(sheet: bytes, item_type: Optional[int]) -> int:
         return NONE
     kind = kind_of(item_type) if item_type is not None else None
     if kind is None or kind + 1 not in chosen:
+        # (every ranger's expertise with the bow, chosen or not)
+        if kind == KINDS.index("bow") and any(c in RANGERS for c, _ in active_classes(sheet)):
+            return EXPERT
         return PLAIN
     active = active_classes(sheet)
     classes = {c for c, _ in active}
@@ -117,19 +120,21 @@ MISSILE_RATES = {"bow": (6, 8, 10), "sling": (3, 4, 5), "staff sling": (3, 4, 5)
 
 
 def warrior_level(sheet: bytes) -> int:
-    """The specialist's level: the higher fighter or gladiator level of the classes it has now."""
-    return max((level for c, level in active_classes(sheet) if c in (FIGHTER, GLADIATOR)), default=0)
+    """The specialist's level: the highest fighter, gladiator or ranger level of the classes it has now."""
+    return max((level for c, level in active_classes(sheet) if c in (FIGHTER, GLADIATOR) or c in RANGERS),
+               default=0)
 
 
 def missile_attacks(halves: int, level: int, item_type: Optional[int], sheet: bytes) -> int:
     """A missile weapon's attacks a round (in halves): the weapon type's (HALVES, its +0Bh, as the
-    game has it), or a specialist's rate of fire (LEVEL SPECIAL or above) when greater."""
+    game has it), or a specialist's rate of fire (LEVEL EXPERT or above: a ranger's too) when greater."""
     kind = kind_of(item_type) if item_type is not None else None
     rates = MISSILE_RATES.get(KINDS[kind]) if kind is not None else None
-    if level < SPECIAL or not rates:
+    if level < EXPERT or not rates:
         return halves
     warrior = warrior_level(sheet)
-    return max(halves, rates[0 if warrior < 7 else 1 if warrior < 13 else 2])
+    rate = max(halves, rates[0 if warrior < 7 else 1 if warrior < 13 else 2])
+    return rate + 2 if level == GRAND else rate  # (a grand master one more, as in melee)
 
 
 def to_hit(level: int) -> int:
