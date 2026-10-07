@@ -3260,16 +3260,22 @@ wp_allowed:
         ret
 
 ; KINDS_ALLOWED: AX the kinds (bit 0 the long sword) the character whose sheet is at ES:BX can
-; choose: those whose plain weapon (WP_PLAIN) the game's class lists and CLASS_FORBIDS let it use.
+; choose: those with an item type (KIND_OF_TYPE) the game's class lists and CLASS_FORBIDS let it
+; use (a fire cleric's long sword the obsidian one, not the plain bone one).
 ; DS = the game's. Others kept.
 kinds_allowed:
         push cx
         push dx
         push si
         push di
-        xor si, si
+        xor dx, dx              ; DX each item type of a kind, CL its kind
         xor di, di
-.kind:  mov dx, [cs:si + wp_plain]
+.type:  mov si, dx
+        mov cl, [cs:si + kind_of_type]
+        sub cl, 1
+        jc .no
+        bt di, cx
+        jc .no                  ; (one of its types already let in)
         push es
         push bx
         imul ax, dx, 0x14
@@ -3282,12 +3288,11 @@ kinds_allowed:
         jz .no
         call class_forbids
         jc .no
-        mov cx, si
-        shr cx, 1
+        movzx cx, cl
         bts di, cx
-.no:    add si, 2
-        cmp si, 32
-        jb .kind
+.no:    inc dx
+        cmp dx, KIND_TYPES
+        jb .type
         mov ax, di
         pop di
         pop si

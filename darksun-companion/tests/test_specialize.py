@@ -8,6 +8,8 @@ import unittest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dscompanion import game, restrict, specialize
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import test_restrict  # noqa: E402
 
 # The game's weapon types (DSUN's IT1R: a weapon's flags at +0, 1 melee, 2 missile, 10h thrown),
 # and the ones that are no kind: spell-made weapons, gloves, the broken weapon
@@ -187,6 +189,26 @@ class NewCharacterTests(unittest.TestCase):
 
 
 
+class StartWeaponTests(unittest.TestCase):
+    """weaponchoice.start_weapon: in a material the character can use (the game's weapon types,
+    as tests/test_dsclog.py's KindsAllowedTests has them)."""
+
+    def start(self, kind, classes):
+        from dscompanion import weaponchoice
+        from test_dsclog import KindsAllowedTests
+        s = test_restrict.sheet(*classes)
+        record = KindsAllowedTests.record.__get__(KindsAllowedTests("test_as_the_python"))
+        got = weaponchoice.start_weapon(s, [specialize.KINDS.index(kind) + 1, 0, 0, 0], record)
+        return (specialize.KINDS[got[0]], got[1][0]) if got else None
+
+    def test_materials(self):
+        self.assertEqual(self.start("long sword", (9,)), ("long sword", 81))  # the game's bone one
+        self.assertEqual(self.start("long sword", (9, 3)), ("long sword", 45))  # fire: obsidian
+        self.assertEqual(self.start("long sword", (9, 2)), ("long sword", 45))  # earth: obsidian
+        self.assertEqual(self.start("dagger", (9, 2)), ("dagger", 17))
+        self.assertEqual(self.start("mace", (9, 3)), ("long sword", 45))  # no plain obsidian mace
+
+
 class FinishNewTests(unittest.TestCase):
     """weaponchoice.finish_new on a party of one New character (a fake of the game's memory)."""
     DS, SHEETS, ITEMS, TYPES = 0x100, 0x2000, 0x3000, 0x4000
@@ -229,7 +251,7 @@ class FinishNewTests(unittest.TestCase):
         self.items = 0
         for patch in (mock.patch("dscompanion.pickpocket.free_cell", lambda gd, it, m: 30),
                       mock.patch("dscompanion.ring.Items", lambda gd: None),
-                      mock.patch("dscompanion.restrict.allowed_kinds", lambda sheet, read: None)):
+                      mock.patch("dscompanion.restrict.allowed_kinds", lambda sheet, read: list(range(16)))):
             patch.start()
             self.addCleanup(patch.stop)
 
@@ -250,10 +272,13 @@ class FinishNewTests(unittest.TestCase):
         from dscompanion import weaponchoice
         s = bytearray(sheet((specialize.KINDS.index(kind),), classes=classes))
         s[game.SHEET_RACE] = race
+        s[game.SHEET_FLAGS:game.SHEET_FLAGS + 2] = b"\xff\xff"
         self.mem[self.SHEETS:self.SHEETS + game.SHEET_SIZE] = s
         right, left = game.WEAPON_HANDS
         self.give(weaponchoice.START_TYPE, weaponchoice.START_NAME, right)
         self.give(36, 0x40, left)  # (a shield)
+        for t in range(128):  # (every class may use every type, as far as the game's lists go)
+            self.mem[self.TYPES + t * game.ITEM_TYPE_SIZE + 0x10:self.TYPES + t * game.ITEM_TYPE_SIZE + 0x12] = b"\xff\xff"
         great_axe = weaponchoice.PLAIN[specialize.KINDS.index("great axe")][0]
         self.mem[self.TYPES + great_axe * game.ITEM_TYPE_SIZE + 0x0F] = weaponchoice.TWO_HANDED
         return right, left

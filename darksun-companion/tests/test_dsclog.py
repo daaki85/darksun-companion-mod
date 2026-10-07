@@ -19,7 +19,7 @@ from dscompanion.gamepatch import (VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_NO
                                   VEC_GRACE_ABILITY, VEC_NAMES_FILL, VEC_NAMES_SIZE, VEC_STEALTH, VEC_TYPES_FILL,
                                   VEC_TYPES_SIZE, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED,
                                   VEC_SPELL_TEXT, VEC_CHUNK_ID)
-from dscompanion import game, restrict
+from dscompanion import game, restrict, specialize
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import test_restrict  # noqa: E402 (its item types and sheets)
@@ -1086,6 +1086,59 @@ class MultiHpTests(unittest.TestCase):
                                          (0x7FC, 2 * 0x47, 0x3333, 0x4444, 2, self.SHEETS))
                         out = self.run_probe(VEC_MC_UNCON, s, rules, eax=bonus & 0xFFFF, edx=50)
                         self.assertEqual(out["dx"], (50 - share) & 0xFFFF)
+
+
+@unittest.skipIf(Uc is None, "unicorn is not installed")
+class KindsAllowedTests(unittest.TestCase):
+    """DSCLOG's KINDS_ALLOWED against restrict.allowed_kinds, on the game's weapon types (their
+    flags, material and classes, as DSUN's IT1R has them): a kind open if any of its types is
+    usable, so a fire or earth cleric's long sword (obsidian or metal) and mace (obsidian)."""
+    # type: (flags, material byte, classes)
+    WEAPONS = {45: (1, 3, 0x167E), 63: (1, 4, 0x1672), 81: (1, 1, 0x1678), 47: (1, 4, 0x1672),
+               41: (1, 1, 0x1672), 50: (1, 1, 0x1772), 85: (1, 3, 0x1676), 97: (1, 1, 0x1FF2),
+               98: (1, 3, 0x1776), 17: (1, 3, 0x1FF6), 33: (1, 2, 0x1FF2), 84: (0x11, 4, 0x1FF2),
+               94: (1, 3, 0x1FF2), 20: (1, 1, 0x167A), 46: (1, 3, 0x167E), 18: (1, 0, 0x177A),
+               22: (1, 4, 0x177A), 2: (1, 0x40, 0x166C), 112: (1, 2, 0x177A), 3: (1, 0, 0x1EFA),
+               80: (1, 0, 0x1EFA), 19: (1, 1, 0x167A), 111: (1, 1, 0x167A), 44: (1, 1, 0x177B),
+               21: (1, 1, 0x167B), 48: (0x12, 3, 0x1F77), 1: (0x0A, 0, 0x177B), 69: (0x0A, 0, 0x177B),
+               64: (2, 5, 0x1EF9), 0: (2, 5, 0x1EF1), game.SHORT_SWORD_TYPE: (1, 4, 0x1672)}
+    TYPES = 0x8000  # (segment)
+
+    def record(self, t):
+        rec = bytearray(game.ITEM_TYPE_SIZE)
+        if t in self.WEAPONS:
+            flags, material, classes = self.WEAPONS[t]
+            rec[0], rec[8] = flags, material
+            rec[0x10:0x12] = classes.to_bytes(2, "little")
+        return bytes(rec)
+
+    def test_as_the_python(self):
+        image = load_image()
+        start = image.find(bytes.fromhex("5152565731d231ff89d62e8a8c"))
+        self.assertGreater(start, 0)
+        mu = Uc(UC_ARCH_X86, UC_MODE_16)
+        mu.mem_map(0, 0x100000)
+        mu.mem_write(TSR * 16, image)
+        mu.mem_write(TSR * 16 + 0xFFF0, bytes((0xF4,)))  # (hlt: where KINDS_ALLOWED returns)
+        mu.mem_write(GAME_DS * 16 + 0x1669, struct.pack("<HH", 0, self.TYPES))
+        mu.mem_write(self.TYPES * 16, b"".join(self.record(t) for t in range(128)))
+        sheet = test_restrict.sheet
+        combos = [(9,), (13,), (10,), (11,), (12,), (17,), (9, 12), (9, 17), (9, 11), (13, 5), (13, 12)]
+        for c in range(1, 5):
+            combos += [(c,), (9, c), (12 + c, c)]
+        for classes in combos:
+            s = sheet(*classes)
+            with self.subTest(classes=classes):
+                mu.mem_write(SS * 16 + 0x500, s)
+                mu.mem_write(SS * 16 + 0x7FC, struct.pack("<H", 0xFFF0))
+                for name, value in dict(cs=TSR, ds=GAME_DS, es=SS, ebx=0x500, ss=SS, esp=0x7FC).items():
+                    mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+                mu.emu_start(TSR * 16 + start, TSR * 16 + 0xFFF0)
+                got = mu.reg_read(r.UC_X86_REG_AX)
+                want = restrict.allowed_kinds(s, self.record)
+                self.assertEqual([k for k in range(16) if got >> k & 1], want)
+        fire = restrict.allowed_kinds(sheet(9, 3), self.record)
+        self.assertEqual([specialize.KINDS[k] for k in fire], ["long sword", "dagger", "mace", "chatkcha"])
 
 
 @unittest.skipIf(Uc is None, "unicorn is not installed")

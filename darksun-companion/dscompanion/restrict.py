@@ -135,15 +135,17 @@ def no_spells(sheet: bytes, worn: Iterable[bytes]) -> bool:
     return any(is_armour(t) for t in worn)
 
 
-def allowed_kinds(sheet: bytes, type_record) -> List[int]:
-    """The weapon kinds a character can choose: those whose plain weapon (weaponchoice.PLAIN)
-    the game's class lists and these restrictions both let it use (a fighter/psionicist, say,
-    only the psionicist's). TYPE_RECORD(type) gives an item type's record."""
-    from .weaponchoice import PLAIN
+def usable(sheet: bytes, type_: int, typ: bytes) -> bool:
+    """Whether the game's class lists and these restrictions both let the character use an item
+    of this type (TYP its record)."""
     flags = int.from_bytes(sheet[game.SHEET_FLAGS:game.SHEET_FLAGS + 2], "little")
-    out = []
-    for kind, (type_, _, _, _) in enumerate(PLAIN):
-        typ = type_record(type_)
-        if int.from_bytes(typ[TYPE_CLASSES:TYPE_CLASSES + 2], "little") & flags and allowed(sheet, type_, typ):
-            out.append(kind)
-    return out
+    return bool(int.from_bytes(typ[TYPE_CLASSES:TYPE_CLASSES + 2], "little") & flags) and allowed(sheet, type_, typ)
+
+
+def allowed_kinds(sheet: bytes, type_record) -> List[int]:
+    """The weapon kinds a character can choose: those with an item type of the game's (any
+    material: a fire cleric's long sword the obsidian one) that it can use (a fighter/psionicist,
+    say, only the psionicist's). TYPE_RECORD(type) gives an item type's record. DSCLOG's
+    KINDS_ALLOWED."""
+    return [kind for kind, name in enumerate(specialize.KINDS)
+            if any(usable(sheet, t, type_record(t)) for t in specialize._TYPES[name])]
