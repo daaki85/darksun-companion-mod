@@ -619,6 +619,13 @@ Alagorn's new menu lines are in the Ledger's copy of his scripts
   on (set afresh as the part starts, as the locals are). The new stories'
   "none left" test is one subroutine they all call.
 
+The icons in the guide's item tables (`docs/items/*.png`) are drawn from the
+game's data by `python -m dscompanion.docicons GAME_FOLDER`, from the Ledger's
+copy of `SEGOBJEX.GFF` in `dos/` (start the game from the Ledger once first)
+and the game's palette: each picture twice its size, the rest transparent.
+`docicons.ICONS` names each image's object; a new item needs its line there,
+and `tests/test_docicons.py` checks that every icon the guide shows is there.
+
 ### Kalzith
 
 ([In the README](README.md#kalzith).)

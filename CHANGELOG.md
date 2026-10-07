@@ -42,6 +42,9 @@ Released pull requests are summarised in a line or two each; the release notes
   the 10' Radius one.
 
 **Documentation**
+- **Item icons in the guide's tables:** every item and magic item table shows
+  each item's icon, the game's own and the Ledger's, drawn from the game's
+  data (`python -m dscompanion.docicons`).
 - **[Every mundane weapon](darksun-companion/README.md#every-mundane-weapon):**
   every plain weapon by kind and material, who sells it and who carries it.
 - **Items saving against acid:** the table has the Ledger's weapons too.
