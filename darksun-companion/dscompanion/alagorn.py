@@ -1,8 +1,8 @@
 """Alagorn tells of the Ledger's magic items: Kreenfang and Shadowseeker (arms.py), Gutterknot,
 Deepbiter, Windlash, Greenbright and the Flame Blade, the Warden's Plate, the Cloak and Boots of
 Elvenkind, the Bracers of Defense, Arrowbane and the Sunking Crown (worldgear.py), and the Tome of
-Understanding (tome.py), and the Rings and Cloak of Protection (ring.py, npcitems.py): one story
-for each kind, whichever of it the party carries, as the game's own.
+Understanding (tome.py), Inixhide (npcitems.py), and the Rings and Cloak of Protection (ring.py,
+npcitems.py): one story for each kind, whichever of it the party carries, as the game's own.
 
 Alagorn, the wizard wandering the Painted Badlands, identifies magic items from menus by kind:
 magic swords, magic weapons, fruit and wands (script 213); rings, armour, shields, necklaces,
@@ -12,12 +12,12 @@ there are none, or shows a menu of those, one reply each; a reply's story clears
 when none is left (a local of the script's: DONE) the menu's loop ends.
 
 With the Ledger, Shadowseeker, Greenbright and the Flame Blade join the swords, Kreenfang,
-Gutterknot, Deepbiter and Windlash the weapons, the Warden's Plate's four pieces the armour, the
-Cloak and Boots of Elvenkind, the bracers, Arrowbane, the crown and the cloak of protection the
-clothes (where the game has its Helm of Contemplation and Chameleon Gloves), the rings of
-protection the rings, and the tome the other items, by their
-pictures of their own (icons.py: without the icons' copy he doesn't know them; the tome's, its
-object's), each only with its content switch on. As pensasks.py does, nothing
+Gutterknot, Deepbiter and Windlash the weapons, Inixhide and the Warden's Plate's four pieces the
+armour, the Cloak and Boots of Elvenkind, the bracers, Arrowbane, the crown and the cloak of
+protection the clothes (where the game has its Helm of Contemplation and Chameleon Gloves), the
+rings of protection the rings, and the tome the other items, by their pictures of their own
+(icons.py: without the icons' copy he doesn't know them; the tome's, its object's), each only
+with its content switch on. As pensasks.py does, nothing
 of the game's script moves: commands of it become jumps (64h) to code put after the script's end,
 which jumps back:
 
@@ -80,15 +80,20 @@ ARMS = {
                "gythka. A kreen does not part with such a weapon while it lives; whoever carried it "
                "into the arena died with it in hand."),),
 }
-# ... the rings and cloak of protection (the arena prisoner's ring, ring.py; Pehtucl's ring and cloak,
-# npcitems.py): plain "+1" items, told of as a kind, as the bracers are (one story for all, as the
+# ... the slave pens' people's and the arena prisoner's (npcitems.py, ring.py): Inixhide, and the
+# rings and cloak of protection, told of as a kind, as the bracers are (one story for all, as the
 # game's own of a kind)
-PROTECTION = {
+PENS = {
     RINGS: (("Ring of Protection",
              "A Ring of Protection! Every apprentice of the old schools made one as a first work, "
              "before the sorcerer-kings closed the schools; few are left now. It turns aside a blow "
              "that should have landed, and a curse that should have taken hold. The templars take "
              "them from those they arrest, and wear them themselves."),),
+    ARMOUR: (("Inixhide",
+              "Inixhide! Legcrusher cut it from the hide of an inix that threw its rider in the "
+              "arena and charged the crowd; he caught it by the neck and held on until it died. "
+              "A templar's preserver, deep in debt to him, enchanted it. It turns blows better than "
+              "any common leather; small wonder he lasted so long in the pens."),),
     CLOTHES: (("Cloak of Protection",
                "A Cloak of Protection! Its weave turns aside blades and spells alike: only a little, "
                "but a little is often enough. The tailors who know the craft sell to the templars by "
@@ -179,13 +184,13 @@ MAGIC = {
 }
 
 
-def kinds(arms: bool = True, magic: bool = True, script: int = SCRIPT, protection: bool = True) -> Tuple[Kind, ...]:
+def kinds(arms: bool = True, magic: bool = True, script: int = SCRIPT, pens: bool = True) -> Tuple[Kind, ...]:
     """Each kind of the script's with the new items of the switches on."""
     out = []
     for kind in (SWORDS, WEAPONS, RINGS, ARMOUR, CLOTHES, OTHER):
         if SCRIPT_OF[kind] != script:
             continue
-        items = (ARMS.get(kind, ()) if arms else ()) + (PROTECTION.get(kind, ()) if protection else ()) \
+        items = (ARMS.get(kind, ()) if arms else ()) + (PENS.get(kind, ()) if pens else ()) \
             + (MAGIC.get(kind, ()) if magic else ())
         if items:
             out.append(Kind(kind[0], kind[1], items))
@@ -378,17 +383,17 @@ def _called_from(talk: bytes, field_types: bytes, entry: int, number: int) -> Op
 
 
 def script_chunks(chunks, field_types: bytes, arms: bool = True, magic: bool = True,
-                  protection: bool = True) -> Dict[Tuple[str, int], bytes]:
+                  pens: bool = True) -> Dict[Tuple[str, int], bytes]:
     """For the Ledger's copy of GPLDATA: Alagorn's talks (his two scripts, and the copies of 212:
-    COPY_OF) with the magic items of the switches on (ARMS: Kreenfang and Shadowseeker; PROTECTION:
-    the rings and cloak of protection; MAGIC: the world's and the tome)."""
+    COPY_OF) with the magic items of the switches on (ARMS: Kreenfang and Shadowseeker; PENS:
+    Inixhide and the rings and cloak of protection; MAGIC: the world's and the tome)."""
     out: Dict[Tuple[str, int], bytes] = {}
     for number in (SCRIPT, OTHER_SCRIPT):
         key = ("GPL ", number)
         if key not in chunks:
             continue
         groups: Dict[int, List[Kind]] = {}
-        for kind in kinds(arms, magic, number, protection):
+        for kind in kinds(arms, magic, number, pens):
             first = (kind.first_reply, kind.none_text)
             groups.setdefault(COPY_OF.get(first, number), []).append(kind)
         for target, chosen in groups.items():

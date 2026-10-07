@@ -47,6 +47,8 @@ Released pull requests are summarised in a line or two each; the release notes
   his magic rings).
   - One story for each kind, as with the game's own items: the four pairs of
     bracers share one, and so do both rings.
+- **Legcrusher's Leather Chest Armor +1 is named Inixhide** ("Leather Inixhide"
+  in the game), and Alagorn tells its story among his magic armor.
   - His clothes, rings and other items are told by copies of his script 212
     (220, 221), so no script overflows the game's buffer.
 

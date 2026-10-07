@@ -6038,7 +6038,9 @@ extra_names:
         times NAME_SIZE - 11 db 0
         db "Tome/Understand"            ; (the Tome of Understanding: dscompanion/tome.py)
         times NAME_SIZE - 15 db 0
-        times (NAMES_EXTRA - 22) * NAME_SIZE db 0
+        db "Inixhide"                   ; (Legcrusher's Leather Chest Armor +1: dscompanion/npcitems.py)
+        times NAME_SIZE - 8 db 0
+        times (NAMES_EXTRA - 23) * NAME_SIZE db 0
 
 ; STEALTH (RULE_STEALTH): a thief who starts a turn with no enemy next to them may hide in
 ; shadows and move silently up to someone; the companion rolls both and, when both succeed,

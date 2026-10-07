@@ -3,7 +3,7 @@ items' (the Bloodwrath's is the obsidian long sword's with a few pixels in the c
 cycles: 240-248, fire): from the plain item's icon.
 
 - the Short Sword: the metal long sword's, its blade four steps shorter, centred;
-- Leather Chest Armor +1: the leather's brightest pixels in the fire colours;
+- Inixhide (Legcrusher's Leather Chest Armor +1): the leather's brightest pixels in the fire colours;
 - the Cloak of Protection +1: every other pixel of its lightest folds in the violet ones (232-239);
 - the Rings of Protection +1: the gold band violet for Pehtucl's, in the fire colours for the
   arena's (the Tied-up Prisoner's), so the two can be told apart.
@@ -213,7 +213,7 @@ def crown_icon(_rows: Rows = None) -> Rows:
 # the plain one's)
 ICONS: Tuple[Tuple[str, int, int, int, Callable[[Rows], Rows]], ...] = (
     ("Short Sword", 0xFC0A, 2427, 2432, shorter_blade),
-    ("Leather Chest Armor +1", 0xFC02, 2428, 2433,
+    ("Inixhide", 0xFC02, 2428, 2433,
      lambda r: glow(r, lambda p, x, y: p in (0x89, 0x8A), FIRE)),
     ("Cloak of Protection +1", 0xFBE3, 2429, 2434,
      lambda r: glow(r, lambda p, x, y: p in (0x8A, 0x8B, 0x8C) and (x + y) % 2 == 0, VIOLET)),
@@ -502,7 +502,7 @@ METAL_HELM_TYPE, WARDENS_HELM = 89, 0x153  # (the game's metal helm, the Helm of
 
 def which(rec: bytes) -> Optional[str]:
     """Which of the companion's items an item record is, if one: the Short Sword (Shadowseeker once +1) and the
-    Cloak by their types, the rings by their names and plus, Leather Chest Armor +1 and Kreenfang (the Gythka
+    Cloak by their types, the rings by their names and plus, Inixhide (Leather Chest Armor +1) and Kreenfang (the Gythka
     +1) by their types and plus (the game has no gythka with a plus)."""
     from . import game, npcitems, ring
     if len(rec) < game.ITEM_SIZE:
@@ -558,7 +558,7 @@ def which(rec: bytes) -> Optional[str]:
         if name == npcitems.RING:
             return "Pehtucl's Ring of Protection +1"
     if kind == LEATHER_CHEST_TYPE and plus == 1:
-        return "Leather Chest Armor +1"
+        return "Inixhide"
     return None
 
 

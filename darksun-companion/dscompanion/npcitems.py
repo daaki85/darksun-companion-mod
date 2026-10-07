@@ -2,7 +2,8 @@
 
 - Kurzak, the leader of the guards: a metal Short Sword (Shadowseeker, a short sword +1, with the
   magic weapons' switch: arms.py; a thief can lift it) and a leather Helm.
-- Legcrusher, the half-giant monster trainer: Leather Chest Armor +1.
+- Legcrusher, the half-giant monster trainer: Inixhide, his Leather Chest Armor +1 (a name of its
+  own, as the magic items Alagorn tells of have: alagorn.py).
 - Pehtucl, the head templar (the Templar in the pens' south-west corner, who carries the
   Obsidian Bloodwrath): a Cloak of Protection +1 (+1 AC, +1 on saves) and a Ring of
   Protection +1 (a thief can lift it).
@@ -21,9 +22,10 @@ from . import game, pickpocket, ring
 from .game import GameData
 
 SHORT_SWORD, CLOAK, RING = 0x144, 0x145, 0x146  # name entries DSCLOG adds
+INIXHIDE = 0x158  # (Legcrusher's leather)
 # as DSCLOG's EXTRA_NAMES has them. Pehtucl's ring is named as the arena's, in an entry of its own
 # so that each keeps its own icon (icons.py)
-NAMES = {SHORT_SWORD: b"Short Sword", CLOAK: b"Cloak/Protectn", RING: ring.NAME}
+NAMES = {SHORT_SWORD: b"Short Sword", CLOAK: b"Cloak/Protectn", RING: ring.NAME, INIXHIDE: b"Inixhide"}
 GAME_TYPES, SHORT_SWORD_TYPE, CLOAK_TYPE = game.GAME_TYPES, game.SHORT_SWORD_TYPE, game.CLOAK_TYPE
 BONE_HELM_TYPE = game.BONE_HELM_TYPE
 TYPES = (  # as DSCLOG's EXTRA_TYPES has them
@@ -93,7 +95,7 @@ HELM = _item("03fc000000000500000005000000000004ff060000")
 # 8000, Silk Armor +2 4000, Chain Chest Armor 1500, its magic rings 30000-50000, the Living Cloak
 # 20000): the leather +1 6000, the cloak 15000, as the Rings of Protection (ring.VALUE)
 CHEST_VALUE, CLOAK_VALUE = 6000, 15000
-CHEST_ARMOR = _item("02fc000000000a00000006000000000004ff070000", plus=1, value=CHEST_VALUE)
+CHEST_ARMOR = _item("02fc000000000a00000006000000000004ff070000", plus=1, name=INIXHIDE, value=CHEST_VALUE)
 CLOAK_ITEM = _item("e3fb000000001400000041003500000003ff0e0000", plus=1, type_=CLOAK_TYPE, name=CLOAK, value=CLOAK_VALUE)
 RING_ITEM = ring.RING[:game.ITEM_NAME] + struct.pack("<H", RING) + ring.RING[game.ITEM_NAME + 2:]
 KURZAK, LEGCRUSHER, PEHTUCL = 29, 326, 37  # their objects (Pehtucl's: the Templar with the Bloodwrath)

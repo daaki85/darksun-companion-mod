@@ -1863,7 +1863,7 @@ there to be found.
 | **Ring of Protection +1** | the arena's Tied-up Prisoner: free him, then look at his body (the game's script says there's nothing; the Ledger finds a ring sewn into his loincloth, 50 XP to whoever searched) | +1 AC and +1 on every saving throw |
 | **Ring of Protection +1** | worn by **Pehtucl**, the slave pens' head templar (in the south-west corner, with the Obsidian Bloodwrath) | the same |
 | **Cloak of Protection +1** | worn by Pehtucl | the same, from the cloak slot |
-| **Leather Chest Armor +1** | worn by **Legcrusher**, the pens' half-giant | the leather's AC, +1 |
+| **Inixhide** | worn by **Legcrusher**, the pens' half-giant | Leather Chest Armor +1: the leather's AC, +1 (in the game, "Leather Inixhide") |
 | **Shadowseeker** | in the pack of **Kurzak**, the pens' guard leader | a short sword +1 (1d6+1): whoever wields it, in either hand, sees the invisible |
 | **Kreenfang** | the 2 handed Bone Gythka on the dead body by the arena's stone arch | a gythka +1 (2d4+1) |
 | **Bone Scale Arm Armor**, **Leg Armor** and **Bone Helm** | in the slave pens' chest with the Bone Scale Chest Armor and Arrows +3 (the game has the set but places only the chest piece) | the set; the helm AC 1 with [Helms give AC 1](#helms-and-boots), worn by those who can wear the armour (not thieves) |
@@ -1893,7 +1893,7 @@ there to be found.
 **Prices** follow the game's own: magic melee weapons 20,800 a plus (22,000
 with a spell too), Windlash 2,800 (as its Sling +1), plain metal weapons 50 to
 300, bracers 5,000 a point of AC, Arrowbane 30,000, the Sunking Crown 40,000,
-the rings and cloak of protection 15,000, Leather Chest Armor +1 6,000, the
+the rings and cloak of protection 15,000, Inixhide 6,000, the
 Cloak of Elvenkind 25,000 and Boots 20,000, the Warden's Arms and Legs 27,000
 each, Chest 36,000 and Helm 30,000, and the Tome of Understanding AD&D's 43,500.
 
@@ -1916,7 +1916,7 @@ weapon), not what's worn on the body. With [AD&D's rules for rings and cloaks of
 protection](#rings-and-cloaks-of-protection) on, two rings give +1 together
 and neither ring nor cloak gives AC over magical armour.
 
-![Backpack cells in the game: Kreenfang and Shadowseeker; Leather Chest Armor +1 and the Cloak of Protection +1; Pehtucl's and the arena's Rings of Protection +1; the Bone Helm](docs/icons.png)
+![Backpack cells in the game: Kreenfang and Shadowseeker; Inixhide (Leather Chest Armor +1) and the Cloak of Protection +1; Pehtucl's and the arena's Rings of Protection +1; the Bone Helm](docs/icons.png)
 
 ![Backpack cells in the game: the bone and obsidian Short Swords, the bone and obsidian Axes, the obsidian Mace and a plain Great Axe](docs/new-weapons.png)
 
@@ -1939,15 +1939,14 @@ are at most 15 letters, so the rings are **RING/PROTECTION** and the cloak
 **Alagorn**, the wizard of the Painted Badlands who identifies magic items,
 knows the new magic items when the party carries them, each with a story
 of its own: Shadowseeker, Greenbright and the Flame Blade among his magic swords, Kreenfang,
-Gutterknot, Deepbiter and Windlash among his magic weapons, the Warden's Plate's
-four pieces (each a part of Haldren's story, the last of the Wardens) among his
+Gutterknot, Deepbiter and Windlash among his magic weapons, Legcrusher's
+Inixhide and the Warden's Plate's four pieces (each a part of Haldren's story, the last of the Wardens) among his
 magic armor, the Cloak and Boots of Elvenkind, the Bracers of Defense,
 Arrowbane, the Sunking Crown and the Cloak of Protection among his magic
 clothes, the Rings of Protection among his magic rings, and the Tome of
 Understanding among his other items, before his menus' "Nothing". As with the
 game's own, he has one story for each kind: all four pairs of bracers, and
-both rings of protection, share one line and one story. Plain +1 gear such as
-Legcrusher's leather has none.
+both rings of protection, share one line and one story.
 
 ![Dream's pack with the bone scale set: the chest, arm and leg pieces, and the Bone Helm under the pointer with its name](docs/bonescale.png)
 

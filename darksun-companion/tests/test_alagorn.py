@@ -171,7 +171,7 @@ class AlagornTests(unittest.TestCase):
         added = self.new_ops(script, kinds)
         menus = [[x["text"][1] for x in op.args[0]["replies"]] for op in added if op.code == MENU]
         self.assertEqual(menus, [["  Light of Dawn", "  Ring of Protection", "  Nothing"],
-                                 ["  Tanelyv's Armor", "  Warden's Helm", "  Warden's Arms", "  Warden's Legs",
+                                 ["  Tanelyv's Armor", "  Inixhide", "  Warden's Helm", "  Warden's Arms", "  Warden's Legs",
                                   "  Warden's Chest", "  Nothing"],
                                  ["  Belt of Might", "  Cloak of Protection", "  Cloak of Elvenkind",
                                   "  Boots of Elvenkind", "  Bracers of Defense", "  Arrowbane", "  Sunking Crown",
@@ -179,13 +179,13 @@ class AlagornTests(unittest.TestCase):
                                  ["  Orb of Knowledge", "  Tome of Understanding", "  Nothing"]])
         locals_ = [op.args[1][2] for op in added if op.code == SET and op.args[1][:2] == ("var", 14)
                    and op.args[0][0] in ("op", "expr")]
-        self.assertEqual(locals_, [2, 2, 3, 4, 5, 2, 3, 4, 5, 7, 8, 2])
+        self.assertEqual(locals_, [2, 2, 3, 4, 5, 7, 2, 3, 4, 5, 7, 8, 2])
         sets = [alagorn._sets(op) for op in added if op.code == SET and op.args[0][0] == "op"]
         self.assertIn((2, -tome.TOME_OBJECT), sets)  # (the tome by its own object's picture)
         flags = [op.args for op in added if op.code == SET and op.args[0] == ("n", 1)]
         self.assertTrue(flags and all(f == [("n", 1), ("var", 14, 6)] for f in flags))
         lines = " ".join(gpl.strings(added))
-        for name in ("A Ring of Protection!", "The Warden's Chest!", "A Cloak of Protection!", "A Cloak of Elvenkind!",
+        for name in ("A Ring of Protection!", "Inixhide!", "The Warden's Chest!", "A Cloak of Protection!", "A Cloak of Elvenkind!",
                      "Bracers of Defense!", "Arrowbane!", "The Sunking Crown!", "The Tome of Understanding!"):
             self.assertIn(name, lines)
 
@@ -201,8 +201,8 @@ class AlagornTests(unittest.TestCase):
                                     icons.PICTURES["Pehtucl's Ring of Protection +1"] - 0x10000])
         self.assertEqual(alagorn._carried("Arrowbane")[0], "op")  # (one picture: the query alone)
         self.assertEqual([[i for i, _ in k.items] for k in alagorn.kinds(False, False, alagorn.OTHER_SCRIPT)],
-                         [["Ring of Protection"], ["Cloak of Protection"]])
-        self.assertEqual(alagorn.kinds(False, False, alagorn.OTHER_SCRIPT, protection=False), ())
+                         [["Ring of Protection"], ["Inixhide"], ["Cloak of Protection"]])
+        self.assertEqual(alagorn.kinds(False, False, alagorn.OTHER_SCRIPT, pens=False), ())
 
     def test_split_test_kept(self):
         """A test for none carried in two (script 212's clothes): both tests again, each to the
@@ -222,18 +222,18 @@ class AlagornTests(unittest.TestCase):
         kinds = tuple(k for k in kinds if k.first_reply in (alagorn.ARMOUR[0], alagorn.CLOTHES[0]))
         added = self.new_ops(alagorns(last="Nothing", kinds=kinds, done=4), kinds)
         sets = [alagorn._sets(op)[0] for op in added if op.code == SET and op.args[0][0] == "op"]
-        self.assertEqual(sets, [2, 3, 5, 6, 2, 3, 5, 6, 7, 8])
+        self.assertEqual(sets, [2, 3, 5, 6, 7, 2, 3, 5, 6, 7, 8])
 
     def test_every_magic_item_told(self):
         """Each magic item the Ledger adds has a story: named ones their own, the rings and cloaks
         of protection one for their kind (whichever the party carries), as the bracers."""
-        told = {n for kinds in (alagorn.ARMS, alagorn.PROTECTION, alagorn.MAGIC) for items in kinds.values()
+        told = {n for kinds in (alagorn.ARMS, alagorn.PENS, alagorn.MAGIC) for items in kinds.values()
                 for name, _ in items for n in alagorn.PICTURES_OF.get(name, (name,))}
         self.assertEqual(told, {"Shadowseeker", "Kreenfang", "Greenbright", "Flame Blade", "Gutterknot", "Deepbiter",
                                 "Windlash", "Bracers of Defense", "Arrowbane", "Sunking Crown", "Warden's Helm",
                                 "Warden's Arms", "Warden's Legs", "Warden's Chest", "Cloak of Elvenkind",
                                 "Boots of Elvenkind", "Tome of Understanding", "Ring of Protection +1",
-                                "Pehtucl's Ring of Protection +1", "Cloak of Protection +1"})
+                                "Pehtucl's Ring of Protection +1", "Cloak of Protection +1", "Inixhide"})
         for name in told - {"Tome of Understanding"}:
             self.assertIn(name, icons.PICTURES)
 
