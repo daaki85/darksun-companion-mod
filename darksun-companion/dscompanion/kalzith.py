@@ -742,36 +742,6 @@ def _held_by_party(gd, it) -> set:
     return held
 
 
-def _unlink(gd, it, item: int) -> bool:
-    """ITEM taken out of whatever list holds it (never the only one in it) and given back to the
-    game's free list of item records."""
-    from . import ring
-    for thing in range(ring.THING_COUNT):
-        kind, first = it.thing(thing)
-        if kind != game.THING_ITEM:
-            continue
-        before, index = None, first
-        for _ in range(ring.MAX_ITEMS):
-            if not 0 <= index < game.NO_ITEM:
-                break
-            rec = it.item(index)
-            after = struct.unpack_from("<h", rec, game.ITEM_NEXT)[0]
-            if index == item:
-                if before is None:
-                    if not 0 <= after < game.NO_ITEM:
-                        return False  # (the only one: left)
-                    gd.guest.write(it.things + thing * 3 + 1, struct.pack("<h", after))
-                else:
-                    gd.guest.write(it.items + before * game.ITEM_SIZE + game.ITEM_NEXT, struct.pack("<h", after))
-                gd.guest.write(it.items + item * game.ITEM_SIZE + game.ITEM_NEXT,
-                               struct.pack("<H", it.word(ring.FREE_ITEMS)))
-                gd.guest.write(gd.ds * 16 + ring.FREE_ITEMS, struct.pack("<H", item))
-                ring.took(item, "given back (Kalzith's)")
-                return True
-            before, index = index, after
-    return False
-
-
 def _after(gd, it, item: int, rec: bytes) -> bool:
     """A new item REC (from the game's free list) put next after ITEM, in its list."""
     from . import ring
@@ -807,7 +777,7 @@ def loot(gd, choose: Callable = None) -> List[str]:
     keep = (choose or random.choice)(sorted(left))
     for index in sorted(left):
         if index != keep:
-            _unlink(gd, ring.Items(gd), index)
+            ring.unlink(gd, ring.Items(gd), index, "given back (Kalzith's)")
     out = [f"Scroll of {left[keep]}"]
     if gd.flag(DRESSED):
         return out  # (he carried them: in his body already)

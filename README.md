@@ -82,6 +82,9 @@ In [pull request #21](https://github.com/daaki85/darksun-companion-mod/pull/21)
   the story of each.
 - **Every new item is in the game's own data,** so a new game makes them where
   they belong.
+- **The game's own party is ready for the rule changes** when you press START
+  GAME: weapon kinds to match their weapons, a bone gythka for Gerakis, and
+  Armor in place of leather armour for Cilla, a druid.
 - **Arrowbane** and the **Sunking Crown,** worn on the head and not armour;
   Grey's Scale's arm and leg armour AC 3; bracers of defense give nothing with
   a helm on.

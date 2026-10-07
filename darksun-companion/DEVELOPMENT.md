@@ -193,8 +193,14 @@ sheet at `+0x4E`, then its items. The game's own party, which START GAME uses
 when no party has been made (Cermak, Cilla, Gerakis and K'ratchek), is objects
 300, 307, 308 and 313 in `SEGOBJEX.GFF`: a creature record and a sheet each,
 already Okay, with no items. The game gives them their gear as the game
-starts; with class restrictions on, Cilla's leather Chest Armor goes to her
-backpack rather than her chest (seen in play).
+starts (see [the game's own party](#the-games-own-party)).
+
+**Spells.** They are numbered 0 to 137: 0 to 68 wizard spells (0 is Armor, the
+first of the 1st level; its scroll is Old One-Eye's), 69 to 137 priest
+spells, a 7-byte record each from 0 (its level first, its name's DS offset at
++5). What the party knows is a table of 138 bytes for each member, 1 for a
+spell known, through the far pointer at `DS:0x132A` (in a save, `SAVE` chunk
+19).
 
 
 ## Reading the game's memory
@@ -519,6 +525,21 @@ the screen shows only effects with an icon; with the rule on, the Ledger gives
 How: the helper sets the helm types' AC as the game's AC routine reads it
 (`INT F8h`, the Ring +1's place), and adds the move where the game sets a
 round's movement, Move x 10 (`INT FBh`).
+
+### The game's own party
+
+([In the README](README.md#the-games-own-party).)
+
+How: the four are objects in `SEGOBJEX.GFF` (32000 to 32003, and 300, 307,
+308 and 313 for their figures), a creature record and a sheet each, already
+Okay and with no items; the game gives them their gear and spells as it
+starts. So the Ledger (`dscompanion/defaultparty.py`) changes them in memory
+while the game is new (its first hour, in the arena, as with Thieves' Tools),
+each change once, knowing each by name, race and classes together: their
+weapon kinds in the sheet's spare bytes, Gerakis's club item made a bone
+gythka in its place, Cilla's plain armour given back to the free item list
+(her chest armour is alone in its list, which is left empty, as a new list
+is), and her byte for spell 0 set in the known-spells table.
 
 ### New items
 

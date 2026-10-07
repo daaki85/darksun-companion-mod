@@ -222,6 +222,7 @@ EVENT_QUEUE, EVENT_COUNT, EVENT_SIZE, EVENT_EFFECT_ENDS = 0x2FBE, 0x2FC6, 0x11, 
 INITIATIVE_SEG, INITIATIVE_OFF = 0x37BD, 0xD9
 # Wizard and cleric spells, 7 bytes each from id 1: level, ..., DS offset of the name (+5)
 SPELL_INFO_OFF, SPELL_INFO_SIZE, SPELL_COUNT = 0x3FD33, 7, 137
+SPELL_FIRST = 0  # Armor, the first wizard spell: spells are 0 to SPELL_COUNT (Old One-Eye's scroll is 0's)
 # Psionic powers are numbered after the spells (Detonate 138 ... Thought Shield 171) and share
 # the spells' records and casting code; higher numbers are monsters' own powers
 PSIONIC_FIRST, PSIONIC_COUNT = 138, 34
@@ -844,7 +845,7 @@ class GameData:
             return ITEM_ATTACKS[spell].capitalize()
         if spell > SPELL_COUNT:  # monsters' powers, such as a paralysing touch
             return f"special attack {spell}"
-        if 1 <= spell <= SPELL_COUNT:
+        if SPELL_FIRST <= spell <= SPELL_COUNT:
             info = self.load_seg * 16 + SPELL_INFO_OFF + (spell - 1) * SPELL_INFO_SIZE
             name = struct.unpack("<H", self.guest.read(info + 5, 2))[0]
             if SPELL_NAMES <= name < SPELL_NAMES_END:
@@ -869,7 +870,7 @@ class GameData:
         """Mark the fire, cold and electricity spells for DEX on their saves (CATEGORY_DODGE),
         or unmark them. Returns how many records changed."""
         changed = 0
-        for spell in range(1, 256):
+        for spell in range(SPELL_FIRST, 256):
             at = (self.load_seg + SPELLS_SEG) * 16 + SPELLS_OFF + spell * SPELL_SIZE
             rec = self.guest.read(at, SPELL_SIZE)
             if len(rec) < SPELL_SIZE:

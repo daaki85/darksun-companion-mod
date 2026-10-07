@@ -8,6 +8,12 @@ Released pull requests are summarised in a line or two each; the release notes
 ## Pull request #21 ([in review](https://github.com/daaki85/darksun-companion-mod/pull/21))
 
 **Added**
+- **The game's own party made ready for the rule changes,** for a new
+  player who presses START GAME: Gerakis specializes in the long sword and
+  the gythka and carries a bone gythka in place of his club, K'ratchek
+  specializes in the chatkcha, Cermak in the long sword and the club, and
+  Cilla, a druid who can't wear armour, has her leather armour taken away
+  and knows Armor instead.
 - **The Warden's Plate,** plate mail +1 in four pieces (with the magic
   weapons' switch): the **Helm** on Dagolar's body (Cloak of Bravery while
   worn), the **Arms** in the Lower Castle's treasure chest with Dark Flame,
@@ -32,6 +38,9 @@ Released pull requests are summarised in a line or two each; the release notes
   and Boots of Elvenkind among his magic clothes.
 
 **Fixed**
+- **Armor, spell 0, was missing from the Ledger:** the Spells tab left it
+  out and the dice log would have named it "spell 0"; the game numbers its
+  spells from 0.
 - **No manual check:** the dragon asking for a word from the manual when the
   party first leaves the sewers (the game's copy protection) no longer
   comes; the game goes on as if it had been answered.

@@ -55,6 +55,7 @@ records; this ledger keeps the ones the game doesn't show you.
   - [Half-giants' two-handed weapons](#half-giants-two-handed-weapons)
   - [Cat's Grace](#cats-grace)
   - [Helms and boots](#helms-and-boots)
+  - [The game's own party](#the-games-own-party)
 - [New content](#new-content)
   - [New items](#new-items)
   - [New people](#new-people)
@@ -1822,6 +1823,21 @@ each time it starts and a game is loaded; without the Ledger they're the
 game's own.)
 
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#helms-and-boots).
+
+### The game's own party
+
+START GAME with no party made plays the game's own four. With the rules on,
+the Ledger makes them ready for them in the first moments of a new game, and
+says so in the dice log:
+
+| Character | With weapon specialization | With class restrictions |
+|---|---|---|
+| **Gerakis**, half-giant gladiator | specializes in the long sword and the gythka; with [half-giants' two-handed weapons](#half-giants-two-handed-weapons), his club is a bone gythka, a two-handed weapon beside his long sword | |
+| **K'ratchek**, thri-kreen fighter, druid and psionicist | specializes in the chatkcha, her only weapon | |
+| **Cermak**, human preserver, once a gladiator | specializes in the long sword and the club, his once his gladiator levels count again | |
+| **Cilla**, elf preserver, druid and thief | | no leather armour (a druid wears none), and she knows **Armor**, the spell Old One-Eye's scroll teaches |
+
+How it works: [DEVELOPMENT.md](DEVELOPMENT.md#the-games-own-party).
 
 ## New content
 

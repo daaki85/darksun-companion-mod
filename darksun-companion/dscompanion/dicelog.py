@@ -24,7 +24,7 @@ from collections import Counter, deque
 from dataclasses import dataclass
 from typing import Callable, Deque, Dict, List, NamedTuple, Optional, Tuple
 
-from . import dust, game, rings, targeting, icons, kalzith, monsters, names, pickpocket, ring, scrolling, searches, semyon, shadows, specialize, sprites, stealth, tools, vulture, weaponchoice
+from . import defaultparty, dust, game, rings, targeting, icons, kalzith, monsters, names, pickpocket, ring, scrolling, searches, semyon, shadows, specialize, sprites, stealth, tools, vulture, weaponchoice
 from .game import (CONVENTIONAL_AND_UPPER, CREATURE_ABILITIES, CREATURE_SIDE, CREATURE_THAC0, EFFECT_NAMES,
                    EFFECT_RULES, MATERIAL_TO_HIT, MATERIALS, SAVE_NAMES, STR_DAMAGE, GameData)
 from .guestmem import GuestMemory
@@ -365,6 +365,7 @@ class DiceLog:
         self._clock: Optional[int] = None
         self._mended_in: Optional[int] = None  # the area Kalzith's scrolls were last mended in
         self.tools_given: set = set()  # the thieves given thieving tools (tools.py)
+        self._party_done: set = set()  # the game's own party's changes made (defaultparty.py)
         self._tools_session: set = set()  # ... while this runs
         self._swap_seq = 0  # DSCLOG's text swaps seen (the arena ring's search, ring.py)
         self._tools_new: List[str] = []
@@ -1044,6 +1045,7 @@ class DiceLog:
                 return out  # no names for them yet: none given
             if self.rules & game.RULE_SPECIALIZE:  # (new characters' weapon kinds and starting weapon)
                 out += weaponchoice.finish_new(self.game)
+            out += defaultparty.ready(self.game, self.rules, self._party_done)  # (the game's own party, once)
             # (the slave pens' and the world's new items are in the game's data: worldgear.py)
             if self.stealth_gear:
                 stealth.reprice(self.game)  # (cloaks and boots: they help a thief hide and move silently)
@@ -1834,7 +1836,7 @@ class DiceLog:
                 pending = PendingDice(f"{count}d{sides} = {faces_text} = {sum(faces)}", now,
                                       damage=e.parent_code.startswith(SPELL_DAMAGE_RETURN))
                 target, spell = e.parent_arg(6), e.parent_arg(8)
-                if count == 1 and sides == 100 and target is not None and 1 <= spell < game.PSIONIC_FIRST + game.PSIONIC_COUNT \
+                if count == 1 and sides == 100 and target is not None and game.SPELL_FIRST <= spell < game.PSIONIC_FIRST + game.PSIONIC_COUNT \
                         and self.game.combatant_creature(target) is not None:
                     pending.resistance = (target, spell, faces[0])
                 self._pending.append(pending)
@@ -1884,7 +1886,7 @@ class DiceLog:
         if not e.parent_code.startswith(OVERLAY_TRAP):
             return False
         spell, level = e.parent_arg(6), e.parent_arg(8)
-        if spell is None or level is None or not 1 <= spell < game.PSIONIC_FIRST + game.PSIONIC_COUNT or not 1 <= level <= 40:
+        if spell is None or level is None or not game.SPELL_FIRST <= spell < game.PSIONIC_FIRST + game.PSIONIC_COUNT or not 1 <= level <= 40:
             return False
         rec = self.game.spell_record(spell)
         return len(rec) > 4 and (rec[4] & 0x0F, rec[4] >> 4) == (count, sides)
@@ -1915,7 +1917,7 @@ class DiceLog:
         if not e.parent_code.startswith(OVERLAY_TRAP):
             return None
         spell = e.arg(0x0C)
-        if spell is None or spell != e.parent_arg(6) or not 1 <= spell < game.PSIONIC_FIRST + game.PSIONIC_COUNT:
+        if spell is None or spell != e.parent_arg(6) or not game.SPELL_FIRST <= spell < game.PSIONIC_FIRST + game.PSIONIC_COUNT:
             return None
         rule = self.game.spell_damage(spell)
         if rule is None or rule.sides != sides or sides < 2:
