@@ -199,7 +199,7 @@ def write_conf(game_dir: str, path: str = CONF, dice_log: bool = True) -> str:
 
 # The Options tab's new content and game changes (settings keys), each on unless switched off;
 # the game's copies are written with them as they stand when it is started
-CONTENT = ("kalzith", "semyon", "vulture", "pens_gear", "magic_arms", "effects_kept", "stealth_gear", "arena_ring")
+CONTENT = ("kalzith", "semyon", "vulture", "pens_gear", "magic_arms", "world_gear", "world_magic", "effects_kept", "stealth_gear", "arena_ring")
 
 
 def content(settings: dict) -> dict:

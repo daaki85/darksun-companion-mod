@@ -31,6 +31,7 @@ class Member(NamedTuple):
     max_hp: int
     levels: Tuple[int, int, int]
     classes: Tuple[int, int, int]
+    race: int = 0
 
 
 class Kill(NamedTuple):
@@ -68,7 +69,7 @@ class PartyTracker:
         return Member(name, struct.unpack_from("<I", sheet, game.SHEET_XP)[0],
                       struct.unpack_from("<h", sheet, game.SHEET_MAX_HP)[0],
                       tuple(sheet[game.SHEET_LEVELS:game.SHEET_LEVELS + 3]),
-                      tuple(sheet[game.SHEET_CLASSES:game.SHEET_CLASSES + 3]))
+                      tuple(sheet[game.SHEET_CLASSES:game.SHEET_CLASSES + 3]), sheet[game.SHEET_RACE])
 
     def check(self, now: float) -> List[str]:
         out = self._check_monsters(now)
@@ -147,10 +148,14 @@ class PartyTracker:
                 out.append(f"{new.name} is now a {ordinal(new.levels[slot])} level {cls}")
         if new.max_hp != old.max_hp and out:
             out.append(f"    max HP {old.max_hp} -> {new.max_hp} ({new.max_hp - old.max_hp:+d})")
-        elif out and max(new.levels) <= max(old.levels):
-            # the game rolls hit points only when the highest of the class levels goes up
-            out.append(f"    no hit point roll: that comes only when the highest class level rises "
-                       f"(still {ordinal(max(new.levels))})")
+        elif out and new.race == game.HUMAN and sum(1 for c in new.classes if c) > 1:
+            # (the game's level-up routine, 87250h: a human's new class rolls once it passes the old)
+            out.append("    no hit points: a human who changed class gains them in the new class only once "
+                       "its level passes the old class's")
+        elif out and sum(1 for c in new.classes if c) > 1:
+            # every new class level rolls, but the game divides the whole total by the classes
+            out.append("    max HP unchanged: the game divides the hit point total by the classes, and this "
+                       "level's roll left a fraction, which counts at a later level")
         return out
 
     def _xp_line(self, before: List[Optional[Member]], after: List[Optional[Member]]) -> List[str]:

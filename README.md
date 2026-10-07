@@ -54,6 +54,16 @@ can be switched off on its Options tab.
 ### Rule changes
 
 - **Optional AD&D rule changes**, all on by default and each one switchable:
+  - weapon specialization: fighters and gladiators specialize in kinds of
+    weapon (chosen on the creation screen, and a gladiator's later ones at a
+    level gained, in the game's own pop-up), fighters go on to mastery and
+    grand mastery, rangers take expertise, and the Effects screen lists them;
+  - class restrictions: each class's limits on armour, shields and weapons
+    hold for a multiclass character too, the strictest winning, and a
+    multiclass preserver casts no spells in armour;
+  - multiclass hit points as in AD&D, each level's die and CON's bonus shared
+    between the classes;
+  - hit dice rolled twice, the better kept, for every character;
   - spells saved against with the spell save;
   - DEX on saves against fire, cold and electricity instead of a doubled d20;
   - two-weapon penalties;
@@ -69,26 +79,21 @@ can be switched off on its Options tab.
     magical or metal armour or a shield;
   - half-giants wielding two-handed weapons in one hand;
   - a new spell, Cat's Grace;
-  - helms give AC;
-  - boots give movement in a fight ("Boots (Speed+1)").
+  - helms give AC, and boots movement in a fight ("Boots (Speed+1)").
 
 (More in [Rule changes](darksun-companion/README.md#rule-changes).)
 
 ### New content
 
-- **New items and thief play:** a Ring of Protection +1 to find in the arena
-  (and 50 XP for finding it);
-  gear for Kurzak, Legcrusher and Pehtucl in the slave pens (a short sword
-  and a Cloak of Protection among it), with icons of their own; the rest of
-  the bone scale armour, with a Bone Helm, where its chest piece lies; Thieves'
-  Tools for every thief;
-  picking anyone's pockets; and no more thief skill penalty for what a thief
-  holds.
-- **Two named magic weapons:** the Bone Gythka on the dead body in the arena
-  becomes **Kreenfang** (+1), and Kurzak's short sword **Shadowseeker** (+1),
-  whose wielder sees the invisible; lifting it from Kurzak is worth 200 XP,
-  and Alagorn, the Painted Badlands' wizard who identifies magic items, tells
-  the story of each.
+- **New items:** a Ring of Protection +1 to find in the arena (50 XP for
+  finding it); gear for Kurzak, Legcrusher and Pehtucl in the slave pens (a
+  Cloak and a Ring of Protection +1 among it); two named magic weapons,
+  **Kreenfang** and **Shadowseeker** (whose wielder sees the invisible), that
+  Alagorn tells the story of; the rest of the bone scale armour, with a Bone
+  Helm, where its chest piece lies; each with an icon of its own.
+- **Thief play:** Thieves' Tools for every thief, picking anyone's pockets
+  (200 XP for lifting Shadowseeker), and no more thief skill penalty for what
+  a thief holds.
 - **A mini-quest:** the cooked vulture, at last good for something (Dinos
   cooks it for the party, to the game's own quest-done sound).
 - **A new person in the slave pens:** Kalzith, a defiler slave who, treated
@@ -173,8 +178,26 @@ double-click, with the options as last set.)
 
 ## What's new
 
+In [pull request #20](https://github.com/daaki85/darksun-companion-mod/pull/20)
+(merged):
+- **Four new rule changes:** weapon specialization (chosen on the
+  creation screen's new WEAPON SPEC pages, a gladiator's later picks in the
+  game's own level-up pop-up, and listed on the Effects screen), class
+  restrictions for multiclass characters, multiclass hit points as in
+  AD&D, and hit dice rolled twice with the better kept.
+- **New weapons in the world:** bone and obsidian short swords and axes, an
+  obsidian mace, and metal short swords, daggers, maces, great axes, picks
+  and polearms, sold by the Weapon Merchant and Jark and carried by people
+  across Athas.
+- **Bracers of defense** (AC 6 to AC 2) on four wizards, now that a
+  preserver can't cast in armour, and **magic weapons of the kinds the game
+  has none of:** a Club +1, a Pick +1, a Staff Sling +1 and a Short Sword +2.
+- **Prices as the game's own** for the Ledger's magic items.
+- **The dice log's character creation** gives only the character the die
+  stops on, checked against the screen.
+
 In [pull request #19](https://github.com/daaki85/darksun-companion-mod/pull/19)
-(in review):
+(merged):
 - **Which class levels up next, on View Character:** for a character of more
   than one class, the XP in brackets now names its class,
   `EXP:87230 (90000 Pr)`: a letter for each class, Pr and Ps for preserver and

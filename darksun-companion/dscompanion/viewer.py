@@ -327,6 +327,18 @@ class Viewer:
         self.stealth_gear = tk.BooleanVar(value=settings.get("stealth_gear", True) is not False)
         # (in the order the README's Rule changes has them: the ones that change most first)
         for n, (key, text) in enumerate((
+                ("weapon_specialization", "Weapon specialization: fighters and gladiators specialize (+1 to hit, +2 "
+                                          "damage), fighters on to mastery at 5th level and grand mastery at 9th, "
+                                          "rangers' expertise; warriors without it attack as AD&D's (chosen on the "
+                                          "creation panel's WEAPON SPEC pages, a gladiator's later ones at "
+                                          "a level gained; listed on the Effects screen)"),
+                ("class_restrictions", "Class restrictions on armour, shields and weapons, the strictest class "
+                                       "winning (psionicists, multiclass thieves, preservers, druids, clerics' "
+                                       "spheres); a multiclass preserver casts no spells in armour"),
+                ("multiclass_hp", "Multiclass hit points as in AD&D: each level's die and CON's bonus shared "
+                                  "between the classes"),
+                ("best_hit_die", "Hit dice rolled twice, the better kept, at creation and at every level "
+                                 "(every character)"),
                 ("spell_save", "Spells are saved against with the spell save (the game uses "
                                "petrification/polymorph)"),
                 ("no_doubled_save", "Saves against fire, cold and electricity: DEX defensive adjustment "
@@ -372,7 +384,11 @@ class Viewer:
                 ("pens_gear", "Gear for Kurzak, Legcrusher and Pehtucl, and the rest of the bone scale "
                               "armour with a Bone Helm"),
                 ("magic_arms", "The 2 handed Bone Gythka on the arena's dead body and Kurzak's Short Sword are +1 magic "
-                               "weapons")):
+                               "weapons"),
+                ("world_gear", "Bone, obsidian and metal short swords, bone and obsidian axes and obsidian maces "
+                               "sold by the Weapon Merchant and Jark, and carried by a few kinds of people"),
+                ("world_magic", "Bracers of defense on four wizards, and a magic club, pick, staff sling and "
+                                "short sword")):
             self.content_vars[key] = tk.BooleanVar(value=settings.get(key, True) is not False)
             ttk.Checkbutton(new, text=text, variable=self.content_vars[key],
                             command=self._popups_changed).pack(anchor="w", pady=(4, 0))
@@ -776,11 +792,14 @@ class Viewer:
                 self.dice.scroll_right = self.scroll_right.get()
                 self.dice.pens_gear = self.content_vars["pens_gear"].get()
                 self.dice.magic_arms = self.content_vars["magic_arms"].get()
+            self.dice.world_gear = self.content_vars["world_gear"].get()
+            self.dice.world_magic = self.content_vars["world_magic"].get()
+                self.dice.world_gear = self.content_vars["world_gear"].get()
                 self.dice.vulture_on = self.content_vars["vulture"].get()
                 self.dice.stealth_gear = self.stealth_gear.get()
                 self.dice.load_picked(launch.pickpocketed())
                 self.dice.tools_given = launch.tools_given()
-                self.dice.rules = self._rules()
+                self.dice.set_rules(self._rules())
             try:
                 self.dice_status.set(self.dice.attach())
             except DiceLogError as e:
@@ -897,6 +916,8 @@ class Viewer:
             self.dice.scroll_right = self.scroll_right.get()
             self.dice.pens_gear = self.content_vars["pens_gear"].get()
             self.dice.magic_arms = self.content_vars["magic_arms"].get()
+            self.dice.world_gear = self.content_vars["world_gear"].get()
+            self.dice.world_magic = self.content_vars["world_magic"].get()
             self.dice.vulture_on = self.content_vars["vulture"].get()
             self.dice.stealth_gear = self.stealth_gear.get()
             self.dice.set_rules(self._rules())
@@ -911,7 +932,7 @@ class Viewer:
             self.spell_text.insert("end", "Connect to the game to read its spells.")
             return
         try:
-            spells = spellbook.all_spells(game.GameData(self.guest, self.ds))
+            spells = spellbook.all_spells(game.GameData(self.guest, self.ds, self._rules()))
         except (struct.error, IndexError, ValueError, OSError) as e:
             self.spell_text.insert("end", f"Couldn't read the spells: {e}")
             return
@@ -1088,7 +1109,7 @@ class Viewer:
         labels = ("  THAC0 now, each weapon", "  Saves now " + "/".join(game.SAVE_SHORT))
         if self.ds is None:
             return [(label, [""] * len(slots)) for label in labels]
-        gd = game.GameData(self.guest, self.ds)
+        gd = game.GameData(self.guest, self.ds, self._rules())
         table = game.far_pointer(self.guest, self.ds, game.CREATURES_PTR)
         hits, saves = [], []
         for s in slots:
@@ -1107,7 +1128,7 @@ class Viewer:
         """Each slot's spell slots (GameData.spell_slots), or [] when the game isn't running."""
         if self.ds is None:
             return [[] for _ in slots]
-        gd = game.GameData(self.guest, self.ds)
+        gd = game.GameData(self.guest, self.ds, self._rules())
         table = game.far_pointer(self.guest, self.ds, game.CREATURES_PTR)
         out = []
         for s in slots:
@@ -1125,7 +1146,7 @@ class Viewer:
         rows = [(f"{kind} spells left", [game.slots_text(m.get(kind, [])) for m in per_member])
                 for kind, _ in game.MAGIC_KINDS]
         if self.ds is not None:  # each thief's skills as they stand (equipment and effects)
-            gd = game.GameData(self.guest, self.ds)
+            gd = game.GameData(self.guest, self.ds, self._rules())
             table = game.far_pointer(self.guest, self.ds, game.CREATURES_PTR)
             cells = []
             for s in slots:
@@ -1175,7 +1196,7 @@ class Viewer:
 
     def _refresh_cards(self, slots) -> None:
         """The Characters tab: each slot's card, with its condition and current AC."""
-        gd = game.GameData(self.guest, self.ds) if self.ds is not None else None
+        gd = game.GameData(self.guest, self.ds, self._rules()) if self.ds is not None else None
         effects = gd.effects_left() if gd else []
         combatants = gd.combatants() if gd else {}
         table = game.far_pointer(self.guest, self.ds, game.CREATURES_PTR) if gd else None
@@ -1205,8 +1226,13 @@ class Viewer:
             except (struct.error, IndexError, ValueError):
                 hits, saves = [], []
             boots = bool(known and self.rule_vars["boots_move"].get() and gd.wears_boots(index))
+            try:
+                weapons = gd.specializations(index) if known and index < game.PARTY_SIZE else []
+                no_spells = bool(known and index < game.PARTY_SIZE and gd.no_spells(index))
+            except (struct.error, IndexError, ValueError):
+                weapons, no_spells = [], False
             card.show(name, dict(fields), status, ac, self.art, member_slots, thief, equipment, hits, saves, boots,
-                      skills_label=label)
+                      skills_label=label, weapons=weapons, no_spells=no_spells)
 
     def _hex_base(self) -> Optional[int]:
         record = self.layout.records.get(self.hex_record.get())

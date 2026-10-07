@@ -85,6 +85,13 @@ RING_TYPE = 102
 # on saves as a ring's does
 GAME_TYPES = 115
 SHORT_SWORD_TYPE, CLOAK_TYPE, BONE_HELM_TYPE = GAME_TYPES, GAME_TYPES + 1, GAME_TYPES + 2
+BONE_SHORT_SWORD_TYPE, BONE_AXE_TYPE = GAME_TYPES + 3, GAME_TYPES + 4  # (a new warrior's, weaponchoice.py)
+OBSIDIAN_SHORT_SWORD_TYPE, OBSIDIAN_AXE_TYPE = GAME_TYPES + 5, GAME_TYPES + 6
+METAL_SHORT_SWORD_TYPE = GAME_TYPES + 7  # a plain one (Kurzak's type is his alone: Shadowseeker)
+BRACERS_TYPE = GAME_TYPES + 8  # bracers of defense: worn on the arms, their plus counting for AC
+# metal versions of the game's plain weapons that have none (worldgear.py)
+METAL_DAGGER_TYPE, METAL_MACE_TYPE, METAL_GREAT_AXE_TYPE = GAME_TYPES + 9, GAME_TYPES + 10, GAME_TYPES + 11
+METAL_PICK_TYPE, METAL_POLEARM_TYPE = GAME_TYPES + 12, GAME_TYPES + 13
 GYTHKA_TYPE = 0x2C  # the game's gythka ("2 handed Bone Gythka")
 # The companion's rule changes (DSCLOG's RULES): helms count AC 1, boots add a move in a fight;
 # AD&D's two-weapon penalties; spells saved against with the spell save; no doubled d20
@@ -102,6 +109,13 @@ RULE_PROTECTION = 1024
 # corroding touch would destroy needs the easier of the game's number and AD&D's save for
 # its material (ACID_SAVES), less its plus and 1 more for a magical power
 RULE_ITEM_SAVES = 2048
+# Weapon specialization (specialize.py; DSCLOG's PROBE_ATTACKS): the kinds a warrior chose, kind + 1
+# each in the sheet's SPEC_SLOTS bytes (four the game never uses), set the attacks a round
+RULE_SPECIALIZE = 4096
+RULE_RESTRICT = 8192  # class restrictions on armour, shields and weapons (restrict.py)
+RULE_MULTI_HP = 16384  # multiclass hit points as in AD&D: each level's die and CON's bonus shared
+RULE_HP_BEST = 32768  # a hit die rolled twice, the better kept (DSCLOG's PROBE_HP_BEST)
+SPEC_SLOTS, SPEC_COUNT = 0x14, 4
 # AD&D's item saving throws against acid (the DMG's table), by the game's materials: wood
 # (thick), bone, stone and obsidian (glass's), metal, leather; and cloth for no material
 ACID_SAVES = {0: ("wood", 8), 1: ("bone", 11), 2: ("stone", 5), 3: ("obsidian", 5), 4: ("metal", 13),
@@ -114,7 +128,9 @@ RULE_SETTINGS = (("helm_ac", RULE_HELMS), ("boots_move", RULE_BOOTS), ("two_weap
                  ("spell_save", RULE_SPELL_SAVE), ("no_doubled_save", RULE_NO_DOUBLE),
                  ("cats_grace", RULE_CATS_GRACE), ("stealth", RULE_STEALTH), ("level_10", RULE_LEVEL_10),
                  ("thief_table", RULE_THIEF_TABLE), ("half_giant_hands", RULE_HALF_GIANT),
-                 ("protection_rules", RULE_PROTECTION), ("item_saves", RULE_ITEM_SAVES))
+                 ("protection_rules", RULE_PROTECTION), ("item_saves", RULE_ITEM_SAVES),
+                 ("weapon_specialization", RULE_SPECIALIZE), ("class_restrictions", RULE_RESTRICT),
+                 ("multiclass_hp", RULE_MULTI_HP), ("best_hit_die", RULE_HP_BEST))
 # Cat's Grace (RULE_CATS_GRACE): Flaming Sphere (wizard level 2) gets Strength's record and the
 # name, and DSCLOG sends it to Strength's code, which rolls 1d6 into an effect of its own (54,
 # a number the game leaves unused) that adds to DEX, at most 24, as Strength's adds to STR.
@@ -426,6 +442,7 @@ class WeaponHit(NamedTuple):
     name: str
     thac0: int  # with this weapon, now
     parts: List[Tuple[str, int]]  # what is taken off the base THAC0 for it
+    skill: int = 0  # weapon specialization's skill with it (specialize.NONE...), with the rule on
 
 
 class ItemSave(NamedTuple):
@@ -461,6 +478,27 @@ CLASS_NAMES = {1: "Cleric (air)", 2: "Cleric (earth)", 3: "Cleric (fire)", 4: "C
 
 def ordinal(n: int) -> str:
     return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
+
+
+def class_share(sheet: bytes) -> int:
+    """The classes a character's hit points are shared between: its number of classes, 1 for a
+    human (who dual-classes)."""
+    if sheet[SHEET_RACE] == HUMAN:
+        return 1
+    return max(sum(1 for c in sheet[SHEET_CLASSES:SHEET_CLASSES + 3] if c), 1)
+
+
+def multiclass_gain(sheet: bytes, gain: int) -> int:
+    """With RULE_MULTI_HP (DSCLOG's PROBE_MC_ROLL), what a new level's hit point gain adds to the
+    sheet's base: its share (dropping fractions, at least 1) times the classes, as the game
+    divides the base by them."""
+    n = class_share(sheet)
+    return gain if n == 1 else max(int(gain / n), 1) * n
+
+
+def con_share(sheet: bytes, bonus: int) -> int:
+    """With RULE_MULTI_HP (PROBE_MC_CON), CON's hit point bonus shared between the classes."""
+    return int(bonus / class_share(sheet))
 
 
 class LevelHp(NamedTuple):
@@ -1343,8 +1381,14 @@ class GameData:
                 parts.append((MATERIALS[material].lower(), MATERIAL_TO_HIT[material]))
             if two_weapons and not missile:
                 parts.append(self.two_weapons(creature, slot))
+            skill = 0
+            if self.rules & RULE_SPECIALIZE:  # (weapon specialization: DSCLOG's PROBE_ATTACKS)
+                from . import specialize
+                skill = specialize.skill(self.sheet(creature), struct.unpack_from("<H", item, ITEM_TYPE)[0])
+                parts.append((specialize.SKILL_NAMES.get(skill, ""), specialize.to_hit(skill)))
             parts = [(why, n) for why, n in parts if n]
-            out.append(WeaponHit(index, slot, self.item_label(item, typ), base - sum(n for _, n in parts), parts))
+            out.append(WeaponHit(index, slot, self.item_label(item, typ), base - sum(n for _, n in parts), parts,
+                                 skill))
         if not out:
             parts = [(why, n) for why, n in [("STR", table(STR_TO_HIT, strength))] + common if n]
             out.append(WeaponHit(-1, -1, "unarmed", base - sum(n for _, n in parts), parts))
@@ -1427,6 +1471,8 @@ class GameData:
             elif kind == CLOAK_TYPE:
                 if slot == CLOAK_SLOT and plus > 0:
                     cloak = plus
+            elif kind == BRACERS_TYPE:
+                pass  # (not armour)
             elif len(typ) == ITEM_TYPE_SIZE:
                 if typ[0] & TYPE_SHIELD:
                     blocked |= slot in WEAPON_HANDS
@@ -1436,6 +1482,33 @@ class GameData:
         if cloak and not blocked:
             out.append((cloak, "Cloak of Protection"))
         return out
+
+    def specializations(self, creature: int) -> List[Tuple[str, str]]:
+        """With weapon specialization, (kind, skill) for each weapon kind the creature has chosen:
+        "specialized", "mastery", "grand mastery", "expertise", or "not yet" for a dual-classed
+        warrior whose warrior class isn't back yet."""
+        if not self.rules & RULE_SPECIALIZE:
+            return []
+        from . import specialize, weaponchoice
+        sheet = self.sheet(creature)
+        if len(sheet) < SHEET_SIZE:
+            return []
+        names = {**specialize.SKILL_NAMES, specialize.EXPERT: "expertise", specialize.PLAIN: "not yet"}
+        out = []
+        for k in sheet[SPEC_SLOTS:SPEC_SLOTS + SPEC_COUNT]:
+            if 0 < k <= len(specialize.KINDS):
+                skill = specialize.skill(sheet, weaponchoice.PLAIN[k - 1][0])
+                out.append((specialize.KINDS[k - 1], names.get(skill, "")))
+        return out
+
+    def no_spells(self, creature: int) -> bool:
+        """With class restrictions, whether a multiclass preserver can't cast for the armour it
+        wears (DSCLOG's PROBE_NO_CAST; restrict.no_spells)."""
+        if not self.rules & RULE_RESTRICT:
+            return False
+        from . import restrict
+        worn = [typ for _, item, typ in self._worn(creature) if item[ITEM_SLOT] in ARMOUR_SLOTS]
+        return restrict.no_spells(self.sheet(creature), worn)
 
     def dex_ac(self, dex: int) -> int:
         """The game's AC adjustment for a DEX score."""
@@ -1482,6 +1555,13 @@ class GameData:
     def creation_sheet(self) -> bytes:
         """The character being made on the creation screen."""
         return self.guest.read(far_pointer(self.guest, self.ds, CREATION_SHEET_PTR), SHEET_SIZE)
+
+    def creation_abilities(self) -> Optional[List[int]]:
+        """The abilities the creation screen shows, STR to CHA: in the creature record after the
+        creation sheet (None if they don't look like abilities)."""
+        at = far_pointer(self.guest, self.ds, CREATION_SHEET_PTR) + SHEET_SIZE + CREATURE_ABILITIES
+        values = list(self.guest.read(at, 6))
+        return values if len(values) == 6 and all(3 <= v <= 25 for v in values) else None
 
     def race_adjustment(self, race: int, ability: int) -> int:
         if not 0 < race < 16 or not 0 <= ability < 6:

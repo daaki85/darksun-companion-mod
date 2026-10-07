@@ -32,6 +32,23 @@ TYPES = (  # as DSCLOG's EXTRA_TYPES has them
     # the Helm's (5), of bone, worn by those who can wear the bone scale armour (+10h, the classes:
     # 126Fh, no thieves, where the Helm has 166Fh) (bonescale.py)
     bytes.fromhex("000000000f00fa0001060000000000806f120000"),
+    # a bone short sword and a bone axe, a new warrior's (weaponchoice.py)
+    bytes.fromhex("010030000f00fa0001050101060100007817" "0001"),
+    bytes.fromhex("010010002300fa0001050101080100007817" "0001"),
+    # an obsidian short sword and an obsidian axe
+    bytes.fromhex("010030001e00fa0003050101060100007e17" "0001"),
+    bytes.fromhex("010010004600fa0003050101080100007e17" "0001"),
+    # a plain metal short sword (worldgear.py): the first's
+    bytes.fromhex("010030001e00fa00040501010601000072160001"),
+    # bracers of defense (bracers.py): the cloak of protection's, worn on the arms
+    bytes.fromhex("000000000a000a00400300000000008" "0ff1f0001"),
+    # metal versions (worldgear.py): the Dagger's, the Mace's, the Great Axe's, the pick's, the
+    # Polearm's, of metal, for the metal long sword's clerics
+    bytes.fromhex("010020000a00fa000405010104010000f21f0000"),
+    bytes.fromhex("010008006400fa00040501010601010072160001"),
+    bytes.fromhex("010010004600fa00040501010a01004062160002"),
+    bytes.fromhex("010020002800fa00040501010401010072170000"),
+    bytes.fromhex("010030009600fa00040501010a01004072160006"),
 )
 TSR_TYPES_OFF, TSR_TYPES_COUNT, TSR_TYPES_FIRST, TSR_TYPES_PTR = 208, 210, 212, 214
 BLOODWRATH = 0x9C  # the name entry of the Templar's sword: which Templar is Pehtucl
@@ -63,11 +80,13 @@ def _item(template: str, plus: int = 0, type_: Optional[int] = None, name: Optio
 SWORD = _item("0afc00000000f40100003f000000000006ff1c0000", type_=SHORT_SWORD_TYPE, name=SHORT_SWORD)
 HELM = _item("03fc000000000500000005000000000004ff060000")
 # priced as magic items (the templates have the plain ones' 10 and 20: the game's Drake Armor +1 is
-# 8000, Silk Armor +2 4000, Chain Chest Armor 1500, its magic rings 30000-50000)
-CHEST_ARMOR = _item("02fc000000000a00000006000000000004ff070000", plus=1, value=3000)
-CLOAK_ITEM = _item("e3fb000000001400000041003500000003ff0e0000", plus=1, type_=CLOAK_TYPE, name=CLOAK, value=5000)
+# 8000, Silk Armor +2 4000, Chain Chest Armor 1500, its magic rings 30000-50000, the Living Cloak
+# 20000): the leather +1 6000, the cloak 15000, as the Rings of Protection (ring.VALUE)
+CHEST_VALUE, CLOAK_VALUE = 6000, 15000
+CHEST_ARMOR = _item("02fc000000000a00000006000000000004ff070000", plus=1, value=CHEST_VALUE)
+CLOAK_ITEM = _item("e3fb000000001400000041003500000003ff0e0000", plus=1, type_=CLOAK_TYPE, name=CLOAK, value=CLOAK_VALUE)
 RING_ITEM = ring.RING[:game.ITEM_NAME] + struct.pack("<H", RING) + ring.RING[game.ITEM_NAME + 2:]
-PRICES = ((CHEST_ARMOR, 3000), (CLOAK_ITEM, 5000), (RING_ITEM, ring.VALUE), (ring.RING, ring.VALUE))
+PRICES = ((CHEST_ARMOR, CHEST_VALUE), (CLOAK_ITEM, CLOAK_VALUE), (RING_ITEM, ring.VALUE), (ring.RING, ring.VALUE))
 
 
 def reprice(gd: GameData) -> int:

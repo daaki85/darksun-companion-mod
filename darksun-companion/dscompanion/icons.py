@@ -105,7 +105,47 @@ def recolour(rows: Rows, colours: Dict[int, int]) -> Rows:
     return [[colours.get(p, p) if p is not None else None for p in r] for r in rows]
 
 
-BLADE = range(0xD1, 0xDA)  # a blade's greys, in the bone gythka's and the metal sword's icons
+GREAT_AXE_TYPE = 2
+MAGIC_KINDS = {18: "Club +1", 112: "Pick +1", 0: "Staff Sling +1"}  # (the game's types: none has a plus)
+BLADE = range(0xD1, 0xDA)
+# the Axe's metal head, shade for shade (by brightness), in the bone long sword's whites
+AXE_BONE = {208: 129, 209: 132, 210: 132, 211: 200, 212: 146, 213: 146, 214: 148, 215: 152}
+# ... and in the obsidian long sword's darker greys (it has 208-213, mostly 208-211)
+AXE_OBSIDIAN = {210: 208, 211: 209, 212: 210, 213: 210, 214: 211, 215: 212}
+MACE_OBSIDIAN = {210: 208, 211: 209, 212: 209, 213: 210, 214: 211, 215: 212, 217: 213}
+OBSIDIAN_MACE_TYPE, MACE_NAME = 46, 0x13  # (the Mace's name: Blackmace has its own)  # a blade's greys, in the bone gythka's and the metal sword's icons
+
+# Bracers of defense (bracers.py): drawn, a pair of steel cuffs (the Chameleon Gloves' blue-greys,
+# which no region changes) with gold rims and a stud in the fire colours
+STEEL = (22, 23, 24, 25, 26, 27, 28, 29, 30)  # dark to light
+# metal, as the game's metal long sword: light greys (209-217) and its blade's blues (160, 161).
+# Dark stone greys raised to them (the dagger's and pick's), light bone-white heads given the blues
+# in their middle shades (the mace's, polearm's), the great axe's teal head too
+STONE_TO_METAL = {208: 211, 209: 212, 210: 213, 211: 161, 212: 214, 213: 215, 214: 216, 215: 217}
+LIGHT_TO_METAL = {210: 209, 211: 210, 212: 160, 213: 161, 214: 213, 215: 215}
+TEAL_TO_METAL = {70: 160, 71: 161, 72: 215}
+GOLD = (64, 65, 45)
+
+
+def bracers_icon(_rows: Rows = None) -> Rows:
+    out: Rows = [[None] * 16 for _ in range(14)]
+    for left in (1, 8):  # two cuffs, each wider at the top (the forearm's thick end)
+        for y in range(1, 13):
+            taper = (y - 1) // 6  # 0 at the top, 1 below
+            x0, x1 = left + taper, left + 6 - taper
+            for x in range(x0, x1 + 1):
+                shade = STEEL[min(len(STEEL) - 1, 1 + (x - x0) * 7 // max(1, x1 - x0))]
+                if x == x0:
+                    shade = STEEL[0]
+                if y in (1, 12) or y in (2, 11) and x in (x0, x1):
+                    shade = GOLD[1] if (x - x0) % 2 else GOLD[0]
+                out[y][x] = shade
+        out[6][left + 3] = FIRE[2]
+        out[7][left + 3] = FIRE[4]
+        out[6][left + 4] = FIRE[6]
+        out[7][left + 2] = FIRE[0]
+    return out
+
 
 # (name, the plain item's picture, the new object's number, its icon's number, the icon made from
 # the plain one's)
@@ -120,6 +160,28 @@ ICONS: Tuple[Tuple[str, int, int, int, Callable[[Rows], Rows]], ...] = (
     ("Bone Helm", 0xFC03, 2437, 2438, lambda r: recolour(r, BONE)),
     ("Kreenfang", 0xFC0D, 2446, 2447, lambda r: glow(r, lambda p, x, y: p in BLADE, FIRE)),
     ("Shadowseeker", 0xFC0A, 2448, 2449, lambda r: glow(shorter_blade(r), lambda p, x, y: p in BLADE, NIGHT_STEEL)),
+    ("Bone Short Sword", 0xFC0C, 2419, 2420, shorter_blade),
+    ("Bone Axe", 0xFB61, 2421, 2422, lambda r: recolour(r, AXE_BONE)),
+    ("Obsidian Short Sword", 0xFC0B, 2488, 2489, shorter_blade),
+    ("Obsidian Axe", 0xFB61, 2490, 2491, lambda r: recolour(r, AXE_OBSIDIAN)),
+    # the game's only great axe is its Great Axe +3, its green gem (1, 2) the magic: a plain one's
+    # has the handle's mauves there
+    ("Great Axe", 0xFC06, 2492, 2493, lambda r: recolour(r, {1: 58, 2: 59})),
+    # the game's obsidian maces are its Blackmace alone: a plain one, the Mace's head in obsidian
+    ("Obsidian Mace", 0xFB5D, 2486, 2487, lambda r: recolour(r, MACE_OBSIDIAN)),
+    # magic weapons of kinds the game has none of (worldgear.py): the game's magic look, its fire
+    ("Club +1", 0xFB5F, 2494, 2495, lambda r: glow(r, lambda p, x, y: p >= 140 and p <= 143, FIRE)),
+    ("Pick +1", 0xFB46, 2496, 2497, lambda r: glow(r, lambda p, x, y: p in (209, 210) and (x + y) % 2 == 0, FIRE)),
+    ("Staff Sling +1", 0xFC08, 2498, 2499, lambda r: glow(r, lambda p, x, y: p in (59, 60, 61), FIRE)),
+    ("Short Sword +2", 0xFC0A, 2500, 2501, lambda r: glow(shorter_blade(r), lambda p, x, y: p in BLADE, FIRE)),
+    ("Bracers of Defense", 0xFC01, 2502, 2503, bracers_icon),  # (on the map: the leather Arm Armor)
+    # metal versions of the plain weapons the game has none of in metal: their heads and blades
+    # in the metal long sword's colours
+    ("Metal Dagger", 0xFB5A, 2504, 2505, lambda r: recolour(r, STONE_TO_METAL)),
+    ("Metal Mace", 0xFB5D, 2506, 2507, lambda r: recolour(r, LIGHT_TO_METAL)),
+    ("Metal Great Axe", 0xFC06, 2508, 2509, lambda r: recolour(r, {1: 58, 2: 59, **TEAL_TO_METAL})),
+    ("Metal Pick", 0xFB46, 2510, 2511, lambda r: recolour(r, STONE_TO_METAL)),
+    ("Metal Polearm", 0xFB5E, 2512, 2513, lambda r: recolour(r, LIGHT_TO_METAL)),
 )
 PICTURES: Dict[str, int] = {name: 0x10000 - number for name, _, number, _, _ in ICONS}  # an item's +0
 
@@ -281,6 +343,11 @@ def write_resources(source: str, dest: str) -> None:
         added.update(savepages.chunks(chunks))
     except (KeyError, ValueError, IndexError, struct.error):
         pass  # (no buttons: PgUp and PgDn still change the page)
+    from . import weaponpages
+    try:
+        added.update(weaponpages.chunks(chunks))
+    except (KeyError, ValueError, IndexError, StopIteration, struct.error):
+        pass  # (no weapon pages: the panel as the game has it, the choice through the Ledger)
     out = with_chunks(data, added)
     tmp = dest + ".tmp"
     with open(tmp, "wb") as f:
@@ -331,6 +398,16 @@ def ready(gd, tsr_hdr) -> bool:
     return struct.unpack("<H", gd.guest.read(tsr_hdr + TSR_OBJECTS_ON, 2))[0] == 1
 
 
+def _metal_types() -> Dict[int, str]:
+    from . import game
+    return {game.METAL_DAGGER_TYPE: "Metal Dagger", game.METAL_MACE_TYPE: "Metal Mace",
+            game.METAL_GREAT_AXE_TYPE: "Metal Great Axe", game.METAL_PICK_TYPE: "Metal Pick",
+            game.METAL_POLEARM_TYPE: "Metal Polearm"}
+
+
+METAL_TYPES = _metal_types()
+
+
 def which(rec: bytes) -> Optional[str]:
     """Which of the companion's items an item record is, if one: the Short Sword (Shadowseeker once +1) and the
     Cloak by their types, the rings by their names and plus, Leather Chest Armor +1 and Kreenfang (the Gythka
@@ -341,9 +418,29 @@ def which(rec: bytes) -> Optional[str]:
     kind, = struct.unpack_from("<H", rec, game.ITEM_TYPE)
     if kind == game.BONE_HELM_TYPE:
         return "Bone Helm"
+    if kind == game.BONE_SHORT_SWORD_TYPE:
+        return "Bone Short Sword"
+    if kind == game.BONE_AXE_TYPE:
+        return "Bone Axe"
+    if kind == game.OBSIDIAN_SHORT_SWORD_TYPE:
+        return "Obsidian Short Sword"
+    if kind == game.OBSIDIAN_AXE_TYPE:
+        return "Obsidian Axe"
     plus = struct.unpack("b", rec[game.ITEM_PLUS:game.ITEM_PLUS + 1])[0]
+    if kind == GREAT_AXE_TYPE and plus == 0:
+        return "Great Axe"
+    if kind == OBSIDIAN_MACE_TYPE and plus == 0 and struct.unpack_from("<H", rec, game.ITEM_NAME)[0] == MACE_NAME:
+        return "Obsidian Mace"
     if kind == game.SHORT_SWORD_TYPE:
         return "Shadowseeker" if plus == 1 else "Short Sword"
+    if kind == game.METAL_SHORT_SWORD_TYPE:
+        return "Short Sword +2" if plus == 2 else "Short Sword" if plus == 0 else None
+    if kind == game.BRACERS_TYPE:
+        return "Bracers of Defense"
+    if kind in METAL_TYPES and plus == 0:
+        return METAL_TYPES[kind]
+    if plus == 1 and kind in MAGIC_KINDS:
+        return MAGIC_KINDS[kind]
     if kind == game.GYTHKA_TYPE and plus == 1:
         return "Kreenfang"
     if kind == game.CLOAK_TYPE:

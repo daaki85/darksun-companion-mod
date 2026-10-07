@@ -827,6 +827,7 @@ ARMOUR: Dict[int, Tuple[str, Tuple[int, ...], str]] = {
     54: (ARMOUR_ARMS, METAL_SHADES, SCALES), 24: (ARMOUR_LEGS, METAL_SHADES, SCALES),  # Grey's Scale
     88: (ARMOUR_CHEST, METAL_SHADES, PLATE), 25: (ARMOUR_ARMS, METAL_SHADES, PLATE), 26: (ARMOUR_LEGS, METAL_SHADES, PLATE),
     79: (ARMOUR_CHEST, DRAKE_SHADES, SCALES), 82: (ARMOUR_CHEST, SHIMMER_SHADES, PLAIN), 90: (ARMOUR_CHEST, SILK_SHADES, PLAIN),
+    game.BRACERS_TYPE: (ARMOUR_ARMS, SHIMMER_SHADES, PLAIN),  # bracers of defense: steel at the wrists
 }
 # Each model's clothing colours, dark to light (by hand: not its skin, hair, eyes or wristbands;
 # black only inside the outline). The human and half-elf woman's green cloak stays as it is.

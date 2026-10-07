@@ -1,0 +1,201 @@
+"""New characters' weapon kinds and starting weapon (weapon specialization).
+
+A character is chosen its kinds on the creation panel (weaponpages.py); before it is first
+played (its status New) the Ledger makes them whole:
+
+- a fighter or ranger has one kind, the long sword if none was marked; a gladiator two, the
+  long sword and the club if none were; any other class none (marked as a warrior, then made
+  something else);
+- the game's starting weapon, the bone long sword in the right hand, becomes a plain weapon of
+  the first kind, of bone or obsidian where the game has one, in a material the character can use
+  (a fire cleric's long sword obsidian), with its picture and name; the short sword and the axe
+  are the Ledger's own, of bone (the game has no short sword but Kurzak's, Shadowseeker, and only
+  a metal axe). A bow, sling or staff sling goes to the missile slot, and a bow comes with
+  arrows; a weapon in both hands sends the starting shield to the backpack.
+"""
+
+import struct
+from typing import List, Optional, Tuple
+
+from . import game, restrict, specialize
+
+FIGHTER, GLADIATOR = 9, 10
+RANGERS = range(13, 17)
+START_TYPE, START_NAME = 81, 0x1C  # the bone long sword the game starts warriors with
+MISSILE_SLOT = game.EQUIP_SLOTS.index("missile")
+AMMO_SLOT = game.EQUIP_SLOTS.index("ammo")
+LEFT_HAND = game.EQUIP_SLOTS.index("left hand")
+MATERIALS = {0x00: "wooden ", 0x01: "bone ", 0x02: "stone ", 0x03: "obsidian ", 0x04: "metal ", 0x05: "leather "}  # (type +8)
+TWO_HANDED = 0x40  # a weapon type's +0Fh: it takes both hands (the inventory screen's test)
+ITEM_PICTURE, ITEM_COUNT, ITEM_VALUE = 0x00, 0x02, 0x06
+ARROWS = (0xFBD2, 62, 0x36, 1, 20)  # (picture, type, name, price, how many)
+
+# By kind (specialize.KINDS): the plain weapon's type, name entry, picture (an item's +0: the
+# object's number negated) and price
+PLAIN: Tuple[Tuple[int, int, int, int], ...] = (
+    (81, 0x1C, 0xFC0C, 45),    # long sword (bone)
+    (18, 0x11, 0xFB5F, 1),     # club
+    (17, 0x10, 0xFB60, 2),     # dagger (obsidian)
+    (game.BONE_SHORT_SWORD_TYPE, 0x144, 0x10000 - 2419, 10),  # short sword (the Ledger's, of bone)
+    (20, 0x13, 0xFB5D, 8),     # mace (bone)
+    (game.BONE_AXE_TYPE, 0x1A, 0x10000 - 2421, 8),  # axe (the Ledger's, of bone: the game's is metal)
+    (2, 0x03, 0x10000 - 2492, 12),  # great axe (the Ledger's picture: the game's only one is +3)
+    (112, 0xAD, 0xFB46, 8),    # pick (stone)
+    (3, 0x04, 0xFC05, 1),      # quarterstaff
+    (19, 0x12, 0xFB5E, 7),     # polearm (bone)
+    (44, 0x3A, 0xFC0D, 6),     # gythka (bone)
+    (21, 0x14, 0xFB5C, 10),    # cahulaks (bone)
+    (48, 0x39, 0xFC0E, 2),     # chatkcha (obsidian)
+    (1, 0x02, 0xFC07, 30),     # bow
+    (64, 0x00, 0xFC09, 1),     # sling
+    (0, 0x01, 0xFC08, 2),      # staff sling
+)
+# Other plain weapons of a kind in the game, for a character who can't use PLAIN's (a fire cleric's
+# long sword obsidian, an earth cleric's metal or obsidian; SEGOBJEX's templates)
+OTHERS = {
+    specialize.KINDS.index("long sword"): ((45, 0x1C, 0xFC0B, 75), (63, 0x1C, 0xFC0A, 500)),  # obsidian, metal
+    specialize.KINDS.index("dagger"): ((33, 0x10, 0xFB5A, 1),),  # stone
+    specialize.KINDS.index("mace"): ((46, 0x13, 0x10000 - 2486, 15),),  # obsidian (the game's type: Blackmace's)
+    specialize.KINDS.index("short sword"): ((game.OBSIDIAN_SHORT_SWORD_TYPE, 0x144, 0x10000 - 2488, 20),),
+    specialize.KINDS.index("axe"): ((game.OBSIDIAN_AXE_TYPE, 0x1A, 0x10000 - 2490, 15),
+                                    (22, 0x1A, 0xFB61, 100)),  # obsidian (a fire cleric's), metal
+    # the Ledger's metal ones (worldgear.py): an earth cleric's great axe and polearm
+    specialize.KINDS.index("great axe"): ((game.METAL_GREAT_AXE_TYPE, 0x03, 0x10000 - 2508, 300),),
+    specialize.KINDS.index("polearm"): ((game.METAL_POLEARM_TYPE, 0x12, 0x10000 - 2512, 250),),
+}
+MISSILE_KINDS = frozenset(specialize.KINDS.index(k) for k in ("bow", "sling", "staff sling"))
+BOW = specialize.KINDS.index("bow")
+
+
+def kinds_for(sheet: bytes, allowed: Optional[List[int]] = None) -> List[int]:
+    """The kinds (+1 each, as in the sheet) a new character ends up with; ALLOWED: the kinds its
+    classes let it choose (restrict.allowed_kinds; None: all), the first of them the default
+    where the long sword (and the club) isn't."""
+    allowed = list(range(len(PLAIN))) if allowed is None else allowed
+    ok = [k + 1 for k in allowed]
+    classes = set(sheet[game.SHEET_CLASSES:game.SHEET_CLASSES + 3])
+    chosen = [k if k in ok else 0 for k in sheet[game.SPEC_SLOTS:game.SPEC_SLOTS + game.SPEC_COUNT]]
+    if not ok:
+        return [0, 0, 0, 0]
+    defaults = [k for k in (1, 2) if k in ok] + [k for k in ok if k not in (1, 2)]
+    if GLADIATOR in classes:
+        first = chosen[0] or defaults[0]
+        seconds = [k for k in (2, 1) if k in ok] + defaults  # (the club, as the panel puts in)
+        second = chosen[1] if chosen[1] and chosen[1] != first else next((k for k in seconds if k != first), 0)
+        return [first, second, 0, 0]
+    if FIGHTER in classes or classes & set(RANGERS):
+        return [chosen[0] or defaults[0], 0, 0, 0]
+    return [0, 0, 0, 0]
+
+
+def start_weapon(sheet: bytes, kinds: List[int], type_record) -> Optional[Tuple[int, Tuple[int, int, int, int]]]:
+    """(kind, plain weapon) a new character starts with: of its first kind (KINDS as the sheet has
+    them), in a material it can use, else of the first of its kinds (then of any kind its classes
+    allow) that has one; None for none. TYPE_RECORD(type) gives an item type's record."""
+    from . import restrict
+    order = [k - 1 for k in kinds if k] + restrict.allowed_kinds(sheet, type_record)
+    for kind in order:
+        for weapon in (PLAIN[kind],) + OTHERS.get(kind, ()):
+            if restrict.usable(sheet, weapon[0], type_record(weapon[0])):
+                return kind, weapon
+    return None
+
+
+def plain_weapon(start: bytes, kind: int, weapon: Optional[Tuple[int, int, int, int]] = None) -> Tuple[bytes, Optional[int]]:
+    """The starting weapon's record made the kind's plain weapon (WEAPON, else PLAIN's), and the
+    slot it goes to (None: where it is)."""
+    type_, name, picture, price = weapon or PLAIN[kind]
+    rec = bytearray(start)
+    struct.pack_into("<H", rec, ITEM_PICTURE, picture)
+    struct.pack_into("<H", rec, ITEM_VALUE, price)
+    struct.pack_into("<H", rec, game.ITEM_TYPE, type_)
+    struct.pack_into("<H", rec, game.ITEM_NAME, name)
+    struct.pack_into("<H", rec, 0x0C, 0)  # (the game's cache of the item's icon: loaded anew)
+    rec[game.ITEM_PLUS] = 0
+    slot = MISSILE_SLOT if kind in MISSILE_KINDS else None
+    if slot is not None:
+        rec[game.ITEM_SLOT] = slot
+    return bytes(rec), slot
+
+
+def arrows(template: bytes) -> bytes:
+    picture, type_, name, price, count = ARROWS
+    rec = bytearray(template)
+    struct.pack_into("<HH", rec, ITEM_PICTURE, picture, count)
+    struct.pack_into("<H", rec, ITEM_VALUE, price)
+    struct.pack_into("<H", rec, game.ITEM_TYPE, type_)
+    struct.pack_into("<H", rec, game.ITEM_NAME, name)
+    struct.pack_into("<H", rec, 0x0C, 0)
+    rec[game.ITEM_PLUS] = 0
+    return bytes(rec)
+
+
+def two_handed(gd, sheet: bytes, type_: int) -> bool:
+    """Whether a weapon type takes both hands (its type's +0Fh, 40h), as the game has it, for this
+    character: not for a half-giant with RULE_HALF_GIANT."""
+    if sheet[game.SHEET_RACE] == game.RACE_HALF_GIANT and gd.rules & game.RULE_HALF_GIANT:
+        return False
+    types = game.far_pointer(gd.guest, gd.ds, game.ITEM_TYPES_PTR)
+    return bool(gd.guest.read(types + type_ * game.ITEM_TYPE_SIZE, game.ITEM_TYPE_SIZE)[0x0F] & TWO_HANDED)
+
+
+def _shield_off(gd, member: int, owned, items: int) -> List[str]:
+    """What the left hand holds (the game's starting shield) into a backpack cell, for a weapon
+    in both hands."""
+    from . import pickpocket, ring
+    for item_index, item, _ in owned:
+        if item[game.ITEM_SLOT] == LEFT_HAND:
+            cell = pickpocket.free_cell(gd, ring.Items(gd), member)
+            if cell is None:
+                return []
+            gd.guest.write(items + item_index * game.ITEM_SIZE + game.ITEM_SLOT, bytes((cell,)))
+            name = gd.item_name(struct.unpack_from("<H", item, game.ITEM_NAME)[0])
+            return [f"    {gd.creature_name(member)}'s {name} goes into the backpack: "
+                    f"the weapon takes both hands"]
+    return []
+
+
+def finish_new(gd) -> List[str]:
+    """The party's New characters' kinds made whole, and their starting weapons changed: lines
+    for the log."""
+    from . import npcitems
+    out: List[str] = []
+    sheets = game.far_pointer(gd.guest, gd.ds, game.SHEETS_PTR)
+    items = game.far_pointer(gd.guest, gd.ds, game.ITEMS_PTR)
+    for member in range(game.PARTY_SIZE):
+        rec = gd.creature(member)
+        if len(rec) < game.CREATURE_SIZE or not rec[game.CREATURE_NAME] or rec[game.CREATURE_STATUS] != game.STATUS_NEW:
+            continue
+        index = struct.unpack_from("<H", rec, game.CREATURE_SHEET_INDEX)[0]
+        sheet = gd.guest.read(sheets + index * game.SHEET_SIZE, game.SHEET_SIZE)
+        if len(sheet) < game.SHEET_SIZE:
+            continue
+        types = game.far_pointer(gd.guest, gd.ds, game.ITEM_TYPES_PTR)
+        kinds = kinds_for(sheet, restrict.allowed_kinds(
+            sheet, lambda t: gd.guest.read(types + t * game.ITEM_TYPE_SIZE, game.ITEM_TYPE_SIZE)))
+        if bytes(kinds) != sheet[game.SPEC_SLOTS:game.SPEC_SLOTS + game.SPEC_COUNT]:
+            gd.guest.write(sheets + index * game.SHEET_SIZE + game.SPEC_SLOTS, bytes(kinds))
+        read = lambda t: gd.guest.read(types + t * game.ITEM_TYPE_SIZE, game.ITEM_TYPE_SIZE)
+        start = start_weapon(sheet, kinds, read) if kinds[0] else None
+        if start is None or start[1][0] == START_TYPE:
+            continue  # (the game's bone long sword is the one)
+        kind, weapon = start
+        owned = list(gd._worn(member))
+        if any(struct.unpack_from("<H", item, game.ITEM_TYPE)[0] == weapon[0] for _, item, _ in owned):
+            continue  # (made already: a long sword handed over later stays one)
+        for item_index, item, _ in owned:
+            if struct.unpack_from("<H", item, game.ITEM_TYPE)[0] == START_TYPE \
+                    and struct.unpack_from("<H", item, game.ITEM_NAME)[0] == START_NAME \
+                    and item[game.ITEM_SLOT] in game.WEAPON_HANDS and item[game.ITEM_PLUS] == 0:
+                new, _ = plain_weapon(item, kind, weapon)
+                gd.guest.write(items + item_index * game.ITEM_SIZE, new)
+                if kind == BOW:
+                    npcitems.add_to(gd, member, arrows(new), AMMO_SLOT)
+                elif two_handed(gd, sheet, weapon[0]):
+                    out += _shield_off(gd, member, owned, items)
+                material = MATERIALS.get(read(weapon[0])[8] & 0x4F, "")
+                why = "" if kind == kinds[0] - 1 else f" (no {specialize.KINDS[kinds[0] - 1]} it can use to start with)"
+                out.append(f"{gd.creature_name(member)} starts with a plain {material}{specialize.KINDS[kind]} "
+                           f"for the weapon specialization chosen, in place of the bone long sword{why}")
+                break
+    return out

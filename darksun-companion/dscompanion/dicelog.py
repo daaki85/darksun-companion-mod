@@ -24,7 +24,7 @@ from collections import Counter, deque
 from dataclasses import dataclass
 from typing import Callable, Deque, Dict, List, NamedTuple, Optional, Tuple
 
-from . import arms, bonescale, dust, game, rings, targeting, icons, kalzith, monsters, names, npcitems, pickpocket, ring, scrolling, searches, semyon, shadows, sprites, stealth, tools, vulture
+from . import arms, bonescale, dust, game, rings, targeting, icons, kalzith, monsters, names, npcitems, pickpocket, ring, scrolling, searches, semyon, shadows, specialize, sprites, stealth, tools, vulture, weaponchoice, worldgear
 from .game import (CONVENTIONAL_AND_UPPER, CREATURE_ABILITIES, CREATURE_SIDE, CREATURE_THAC0, EFFECT_NAMES,
                    EFFECT_RULES, MATERIAL_TO_HIT, MATERIALS, SAVE_NAMES, STR_DAMAGE, GameData)
 from .guestmem import GuestMemory
@@ -140,6 +140,8 @@ CREATION_ABILITY_TRIES = 4
 # Then each class level's hit point die, through the level-up routine (its caller's
 # arguments are (sheet, class, level)); called from the creation screen, it returns here:
 LEVEL_HP_RETURN = bytes.fromhex("83c4048bc8c45efc268a")
+# (the same with DSCLOG's PROBE_HP_BEST in place of "mov cx,ax", as the patched game has it)
+LEVEL_HP_RETURNS = (LEVEL_HP_RETURN, bytes.fromhex("83c404cdbac45efc268a"))
 CREATION_HP_CALLER = 0x0232
 CREATION_HP_WAIT = 0.3  # seconds after the last hit point roll before the total is shown
 # ... and in the handler for spells with rules of their own (its arguments: caster, target, ...,
@@ -343,6 +345,8 @@ class DiceLog:
         self.show_dust = True  # dust raised by walkers on sand and dirt (dust.py)
         self.pens_gear = True  # the slave pens' gear for Kurzak, Legcrusher, Pehtucl, the bone scale set
         self.magic_arms = True  # the arena's dead body's gythka and Kurzak's short sword +1 (arms.py)
+        self.world_gear = True  # the new plain weapons in merchants' stock and people's packs (worldgear.py)
+        self.world_magic = True  # bracers of defense and magic weapons (worldgear.py)
         self.vulture_on = True  # the cooked vulture quest (vulture.py)
         self.stealth_gear = True  # a worn cloak's and boots' bonuses to hiding (stealth.py)
         self._dust = dust.Dust()
@@ -399,9 +403,11 @@ class DiceLog:
         self._break_first: Optional[int] = None  # the 0-7 roll of a break check in progress
         self._ability_tries: List[int] = []  # character creation: this ability's 4d4 totals so far
         self._ability_of: Optional[int] = None  # ... and which ability they are for
-        self._creation_hp: List[Tuple[int, int, int, str]] = []  # (sheet, class, hit points, text)
+        self._creation_hp: List[Tuple[int, int, int, str, int]] = []  # (sheet, class, hit points, text, level)
         self._creation_hp_at = 0.0
+        self._hp_first: Optional[Tuple[tuple, int]] = None  # RULE_HP_BEST: a hit die's first roll
         self._creation_con: Optional[int] = None  # the CON just rolled
+        self._creation_abilities: Dict[int, Tuple[int, str]] = {}  # ability: (value, line), this set's
         self._hp: Dict[int, int] = {}  # creature index -> HP at the last look
         self._spell_until = 0.0  # HP changes before this are a spell's doing
         self._spell_name = ""
@@ -643,6 +649,8 @@ class DiceLog:
         self.show_dust = bool(settings.get("dust", True))
         self.pens_gear = bool(settings.get("pens_gear", True))
         self.magic_arms = bool(settings.get("magic_arms", True))
+        self.world_gear = bool(settings.get("world_gear", True))
+        self.world_magic = bool(settings.get("world_magic", True))
         self.vulture_on = bool(settings.get("vulture", True))
         self.stealth_gear = bool(settings.get("stealth_gear", True))
         self.ring_mode = rings.mode(settings)
@@ -788,8 +796,14 @@ class DiceLog:
             cells = [f"{by_level.get(n, (0, 0))[0]}/{by_level.get(n, (0, 0))[1]}" for n in range(1, top + 1)]
             for i in range(0, len(cells), 6):
                 lines.append(("    " if i else f"{SLOT_KINDS.get(kind, kind[:3].upper())} ") + " ".join(cells[i:i + 6]))
+        if lines and self.game.no_spells(member):  # (a multiclass preserver in armour: class restrictions)
+            heading = "NO SPELLS IN ARMOUR"
+        else:
+            heading = "SPELLS LEFT BY LEVEL"
         if lines and len(lines) < SLOTS_LINES:
-            lines.insert(0, "SPELLS LEFT BY LEVEL")
+            lines.insert(0, heading)
+        elif lines and heading != "SPELLS LEFT BY LEVEL":
+            lines[-1] = heading
         return "|".join(lines[:SLOTS_LINES])
 
     def _write_slots(self) -> None:
@@ -1011,8 +1025,8 @@ class DiceLog:
         if self._initiative and now - self._initiative_at >= INITIATIVE_WAIT:
             out += self.initiative_lines()
         out += self.turn_lines()  # after the round's order and the last turn's XP
-        if self._creation_hp and now - self._creation_hp_at >= CREATION_HP_WAIT:
-            out += self.creation_hp_lines()
+        if (self._creation_hp or self._creation_abilities) and now - self._creation_hp_at >= CREATION_HP_WAIT:
+            out += self.creation_lines()
         out += self.flush(now)
         refused = getattr(self.guest, "refused", None)
         if refused:
@@ -1037,6 +1051,8 @@ class DiceLog:
             ring.name_items(self.game, self.rules)
             if not names.update(self.game, self.tsr_hdr):
                 return out  # no names for them yet: none given
+            if self.rules & game.RULE_SPECIALIZE:  # (new characters' weapon kinds and starting weapon)
+                out += weaponchoice.finish_new(self.game)
             if self.pens_gear and npcitems.types_ready(self.game, self.tsr_hdr):  # Kurzak's, Legcrusher's, Pehtucl's
                 before = set(self.tools_given)
                 out += npcitems.place(self.game, self.tools_given)
@@ -1047,6 +1063,13 @@ class DiceLog:
             if self.magic_arms and npcitems.types_ready(self.game, self.tsr_hdr):
                 before = set(self.tools_given)
                 out += arms.upgrade(self.game, self.tools_given)  # the gythka and the short sword +1
+                self._tools_new += sorted(self.tools_given - before)
+            if (self.world_gear or self.world_magic) and npcitems.types_ready(self.game, self.tsr_hdr):
+                before = set(self.tools_given)
+                if self.world_gear:  # the new weapons, in shops and packs
+                    out += worldgear.place(self.game, self.tools_given)
+                if self.world_magic:  # bracers of defense and magic weapons
+                    out += worldgear.place(self.game, self.tools_given, worldgear.MAGIC)
                 self._tools_new += sorted(self.tools_given - before)
             if self.stealth_gear:
                 stealth.reprice(self.game)  # (cloaks and boots: they help a thief hide and move silently)
@@ -1673,20 +1696,30 @@ class DiceLog:
         needs = ("hits on anything but a 1" if need <= 2 else "only a 20 hits" if need > 20 else f"needs {need}+")
         head = (f"{g.creature_name(attacker)} attacks {target}{how}{with_what}: d20 = {d20}{note}, "
                 f"{needs} ({chance}%), hits AC {thac0 - d20}, target AC {ac} -> {'HIT' if hit else 'miss'}")
-        breakdown = self._thac0_breakdown(e, thac0, attacker, attacker_combatant, target_combatant, weapon, mode)
+        skill = self.weapon_skill(attacker, item_type)
+        breakdown = self._thac0_breakdown(e, thac0, attacker, attacker_combatant, target_combatant, weapon, mode,
+                                          (specialize.SKILL_NAMES.get(skill, ""), specialize.to_hit(skill)))
         self._turn_attacks.setdefault(attacker, []).append(
             {"target": target, "d20": d20, "need": need, "hit": hit, "damage": None})
         return [head, "    " + breakdown]
 
+    def weapon_skill(self, attacker: Optional[int], item_type: Optional[int]) -> int:
+        """A creature's weapon specialization skill with a weapon (specialize.skill), with the rule on."""
+        if attacker is None or not self.game.rules & game.RULE_SPECIALIZE:
+            return specialize.NONE
+        sheet = self.game.sheet(attacker)
+        return specialize.skill(sheet, item_type) if len(sheet) >= game.SHEET_SIZE else specialize.NONE
+
     def _thac0_breakdown(self, e: Entry, thac0: int, attacker: int, attacker_combatant: int,
-                         target_combatant: int, weapon, mode: int) -> str:
-        """'THAC0 16, +6 STR, +1 Blessed, ... = 9', from the attack setup's locals and the game's rules."""
+                         target_combatant: int, weapon, mode: int, skill: Tuple[str, int] = ("", 0)) -> str:
+        """'THAC0 16, +6 STR, +1 Blessed, ... = 9', from the attack setup's locals and the game's rules
+        (and SKILL, weapon specialization's (name, to-hit), which DSCLOG takes off after them)."""
         g = self.game
         base = g.creature(attacker)[CREATURE_THAC0]
         after_f1, hit_bonus = e.parent_local(-0x20), e.parent_local(-8)
         rear, backstab = e.parent_local(-0x1A), e.parent_local(-0x24)
         parts: List[Tuple[str, int]] = []
-        if None in (after_f1, hit_bonus) or after_f1 - hit_bonus != thac0:
+        if None in (after_f1, hit_bonus) or after_f1 - hit_bonus != thac0 + skill[1]:
             return f"THAC0 {base} base, {signed(base - thac0)} in bonuses = {thac0}"
         if rear:
             parts.append(("from behind", 2))
@@ -1742,6 +1775,8 @@ class DiceLog:
                 rest -= difficulty
         if rest:
             parts.append(("off-hand and other", rest))
+        if skill[1]:
+            parts.append(skill)
         text = ", ".join(f"{signed(v)} {name}" for name, v in parts if v)
         return f"THAC0 {base}" + (f", {text}" if text else "") + f" = {thac0}"
 
@@ -1764,14 +1799,14 @@ class DiceLog:
                 return [f"    {self._name(attacker)}'s special effect on {self._name(target)}: d10 = {faces[0]}, "
                         f"works on a 1 -> {'it works' if faces[0] == 1 else 'no effect'}"]
             if e.parent_code.startswith(CREATION_ABILITY_RETURN):
-                return self._creation_ability(e, sum(faces))
-            if count == 1 and e.parent_code.startswith(LEVEL_HP_RETURN) and e.parent_arg(2) == CREATION_HP_CALLER:
+                return self._creation_ability(e, sum(faces), now)
+            if count == 1 and e.parent_code.startswith(LEVEL_HP_RETURNS) and e.parent_arg(2) == CREATION_HP_CALLER:
                 return self._creation_hp_roll(e, sides, faces[0], now)
             if count == 1 and any(e.parent_code.startswith(c) for c in RANDOM_NAME_RETURNS):
                 return [f"Character creation: a name picked at random, 1d{sides} = {faces[0]}"]
             if count == 1:
                 level_up = self._level_hp(e, sides, faces[0])
-                if level_up:
+                if level_up is not None:
                     return level_up
             if count == 1 and sides == 10 and e.parent_code.startswith(CONFUSION_ROLL_RETURN):
                 what = next(text for top, text in CONFUSION_RESULTS if faces[0] <= top)
@@ -1833,7 +1868,12 @@ class DiceLog:
         g = self.game
         attacker, mode = e.parent_arg(0x0E), e.parent_arg(0x16)
         total = max(sum(faces) + bonus, 1)
-        steps = f"{count}d{sides} = {faces_text}" + (f" {signed(bonus)} weapon" if bonus else "")
+        skill = self.weapon_skill(attacker, e.parent_arg(0x14))
+        extra = specialize.damage(skill)
+        steps = f"{count}d{sides} = {faces_text}" + (f" {signed(bonus - extra)} weapon" if bonus - extra else "") \
+            + (f" {signed(extra)} {specialize.SKILL_NAMES[skill]}" if extra else "")
+        if skill == specialize.GRAND:
+            steps += f" (d{sides} for d{sides - 2}: grand mastery)"
         if sum(faces) + bonus < 1:
             steps += " (raised to the minimum of 1)"
         if mode is not None and mode <= 1:  # melee: the game adds the attacker's STR bonus
@@ -2016,22 +2056,38 @@ class DiceLog:
         return [f"    {who}{name} nearly broke: {first_roll if first_roll is not None else 0} on 0-7, "
                 f"then {second} on 0-19 (needed 0)"]
 
-    def _level_hp(self, e: Entry, sides: int, roll: int) -> List[str]:
-        """The hit point roll of a new level: the caller's arguments are (party member, class, level)."""
+    def _hp_rolls(self, key: tuple, roll: int) -> Optional[Tuple[int, ...]]:
+        """A hit die's rolls: just ROLL, or with RULE_HP_BEST (DSCLOG's PROBE_HP_BEST: the game rolls
+        it twice) None for the first of the two (kept by KEY: who, class, level), then both."""
+        if not self.game.rules & game.RULE_HP_BEST:
+            return (roll,)
+        if self._hp_first is not None and self._hp_first[0] == key:
+            first, self._hp_first = self._hp_first[1], None
+            return first, roll
+        self._hp_first = (key, roll)
+        return None
+
+    def _level_hp(self, e: Entry, sides: int, roll: int) -> Optional[List[str]]:
+        """The hit point roll of a new level: the caller's arguments are (party member, class, level).
+        None if it isn't one."""
         member, cls, level = e.parent_arg(6), e.parent_arg(8), e.parent_arg(0x0A)
         if member is None or not 0 <= member < game.PARTY_SIZE or cls is None or level is None:
-            return []
+            return None
         sheet = self.game.sheet(member)
         if len(sheet) < game.SHEET_SIZE:
-            return []
+            return None
         slots = [i for i in range(3) if sheet[game.SHEET_CLASSES + i] == cls]
         if not slots or sheet[game.SHEET_LEVELS + slots[0]] != level:
-            return []
+            return None
         rule = self.game.level_hp_rule(cls)
         if rule is None or rule.sides != sides:
-            return []
+            return None
+        rolls = self._hp_rolls(("level", member, cls, level), roll)
+        if rolls is None:
+            return []  # (the first of two: the line comes with the second)
+        roll = max(rolls)
         con = sheet[game.SHEET_ABILITIES + 2]
-        text = f"d{sides} = {roll}"
+        text = f"d{sides} = {roll}" if len(rolls) == 1 else f"d{sides} = {rolls[0]} and {rolls[1]}, the better {roll}"
         gained = roll
         minimum = self.game.level_hp_minimum(con)
         if minimum > roll:
@@ -2040,12 +2096,16 @@ class DiceLog:
         if sheet[game.SHEET_RACE] == game.RACE_HALF_GIANT:
             gained *= 2
             text += f", doubled for a half-giant = {gained}"
+        classes = game.class_share(sheet)
+        if self.game.rules & game.RULE_MULTI_HP and classes > 1:
+            share = game.multiclass_gain(sheet, gained) // classes
+            text += f", / {classes} classes = {share}" + (" (at least 1)" if gained < classes else "")
         cls_name = game.CLASS_NAMES.get(cls, f"class {cls}")
         return [f"{self.game.creature_name(member)}'s {game.ordinal(level)} {cls_name} level: hit points {text}"]
 
     # character creation ----------------------------------------------------------------
 
-    def _creation_ability(self, e: Entry, roll: int) -> List[str]:
+    def _creation_ability(self, e: Entry, roll: int, now: float = 0.0) -> List[str]:
         """One of the four 4d4 rolls for an ability; the line comes with the fourth."""
         ability, class_count = e.parent_arg(8), e.parent_arg(0x0E)
         if self._ability_of != ability:  # a new ability (or rolls went missing)
@@ -2054,7 +2114,12 @@ class DiceLog:
         if len(self._ability_tries) < CREATION_ABILITY_TRIES:
             return []
         tries, self._ability_tries, self._ability_of = self._ability_tries, [], None
-        out = self.creation_hp_lines()  # the last character's, when the die is clicked again
+        # (the die rolls a whole character again and again while it tumbles: a set begun anew, or
+        # one whose hit points have come, gives way to the next; the last is logged when it stops)
+        if self._creation_hp or (ability is not None and any(a >= ability for a in self._creation_abilities)):
+            self._creation_hp, self._creation_abilities = [], {}
+        self._creation_hp_at = now
+        out: List[str] = []
         g = self.game
         if ability is None or not 0 <= ability < 6:
             return out + [f"Character creation: 4d4 four times: {', '.join(map(str, tries))}"]
@@ -2078,24 +2143,53 @@ class DiceLog:
                 value = least
         if ability == 2:
             self._creation_con = value
-        return out + [f"Character creation, {ABILITIES[ability]} {value}: {steps}"]
+        self._creation_abilities[ability] = (value, f"Character creation, {ABILITIES[ability]} {value}: {steps}")
+        return out
 
     def _creation_hp_roll(self, e: Entry, sides: int, roll: int, now: float) -> List[str]:
         """A class level's hit point die on the creation screen: (sheet, class, level)."""
         index, cls, level = e.parent_arg(6), e.parent_arg(8), e.parent_arg(0x0A)
         sheet = self.game.sheet_at(index) if index is not None and index >= 0 else b""
+        rolls = self._hp_rolls(("creation", index, cls, level), roll)
+        if rolls is None:
+            return []  # (the first of two)
+        roll = max(rolls)
+        best = "" if len(rolls) == 1 else f" (the better of {rolls[0]} and {rolls[1]})"
         if len(sheet) < game.SHEET_SIZE or cls is None:
-            return [f"Character creation: hit points d{sides} = {roll}"]
-        text, gained = str(roll), roll
+            return [f"Character creation: hit points d{sides} = {roll}{best}"]
+        text, gained = f"{roll}{best}", roll
         con = sheet[game.SHEET_ABILITIES + 2]
         minimum = self.game.level_hp_minimum(con)
         if minimum > roll:
-            text, gained = f"{roll} (raised to {minimum} for CON {con})", minimum
+            text, gained = f"{roll}{best} (raised to {minimum} for CON {con})", minimum
         if sheet[game.SHEET_RACE] == game.RACE_HALF_GIANT:
             gained *= 2
-        self._creation_hp.append((index, cls, gained, text))
+        if any(r[1] == cls and r[4] == level for r in self._creation_hp):
+            self._creation_hp = []  # (rolled again: a new set, the last one given way)
+        self._creation_hp.append((index, cls, gained, text, level))
         self._creation_hp_at = now
         return []
+
+    def creation_lines(self) -> List[str]:
+        """The character the die stopped on: its abilities as rolled, each checked against the one
+        the game shows (rolls that came too fast to record leave only the game's), and its hit
+        points."""
+        got, self._creation_abilities = self._creation_abilities, {}
+        shown = self.game.creation_abilities()
+        out = []
+        if got:
+            for ability in range(6):
+                line = got.get(ability)
+                if shown is not None and (line is None or line[0] != shown[ability]):
+                    out.append(f"Character creation, {ABILITIES[ability]} {shown[ability]} "
+                               f"(its rolls came too fast to record)")
+                    if ability == 2:
+                        self._creation_con = shown[ability]
+                elif line is not None:
+                    out.append(line[1])
+        if shown is not None:
+            self._creation_con = shown[2]
+        return out + self.creation_hp_lines()
 
     def creation_hp_lines(self) -> List[str]:
         """The new character's hit points, from the rolls collected. The game adds them up,
@@ -2108,7 +2202,7 @@ class DiceLog:
         index = rolls[-1][0]
         sheet = g.sheet_at(index)
         by_class: Dict[int, List[str]] = {}
-        for _, cls, _, text in rolls:
+        for _, cls, _, text, _ in rolls:
             by_class.setdefault(cls, []).append(text)
         parts = []
         for cls, texts in by_class.items():
@@ -2122,9 +2216,13 @@ class DiceLog:
         if sheet[game.SHEET_RACE] == game.RACE_HALF_GIANT:
             steps = f"({steps}) x2 half-giant"
         steps += f" = {rolled}"
-        classes = 1 if sheet[game.SHEET_RACE] == 1 else max(sum(1 for i in range(3) if sheet[game.SHEET_CLASSES + i]), 1)
+        classes = game.class_share(sheet)
+        multi = bool(g.rules & game.RULE_MULTI_HP) and classes > 1
         hp = rolled // classes
-        if classes > 1:
+        if multi:  # (RULE_MULTI_HP: each level's share, at least 1)
+            hp = sum(game.multiclass_gain(sheet, r[2]) for r in rolls) // classes
+            steps += f", each / {classes} classes (at least 1) = {hp}"
+        elif classes > 1:
             steps += f", / {classes} classes = {hp}" + (" (rounded down)" if rolled % classes else "")
         # CON's bonus counts levels that roll dice: a warrior's (group 1) at the full bonus, and
         # the rest of the highest class's up to +2
@@ -2132,18 +2230,25 @@ class DiceLog:
             else g.creature(index)[CREATURE_ABILITIES + 2]
         bonus_per_level = g.level_hp_con_bonus(con)
         levels = {}
-        for _, cls, _, _ in rolls:
+        for _, cls, _, _, _ in rolls:
             levels[cls] = levels.get(cls, 0) + 1
         warrior = max((n for c, n in levels.items() if g.level_hp_group(c) == 1), default=0)
         highest = max(levels.values())
         bonus = bonus_per_level * warrior + min(bonus_per_level, 2) * (highest - warrior)
+        if multi:
+            bonus = game.con_share(sheet, bonus)
         if bonus:
             hp += bonus
-            steps += f", {signed(bonus)} CON {con} = {hp}"
+            steps += f", {signed(bonus)} CON {con}" + (" shared" if multi else "") + f" = {hp}"
         least = sum(levels.values())
         if hp < least:
             hp = least
             steps += f", raised to {least} (at least 1 per level)"
+        shown = struct.unpack_from("<h", g.creation_sheet(), game.SHEET_MAX_HP)[0] \
+            if len(g.creation_sheet()) >= game.SHEET_SIZE else 0
+        if shown > 0 and shown != hp:  # (rolls missed: the game's own)
+            return [f"Character creation, hit points {shown} (some of its rolls came too fast to record; "
+                    f"those caught: {steps})"]
         return [f"Character creation, hit points {hp}: {steps}"]
 
     # saving throws -------------------------------------------------------------------

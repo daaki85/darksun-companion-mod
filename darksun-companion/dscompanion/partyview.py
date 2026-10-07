@@ -69,8 +69,8 @@ class Card(ttk.Frame):
             var = self.vars[score] = tk.StringVar()
             ttk.Label(sheet, textvariable=var, style="CardStat.TLabel").grid(row=i, column=1, sticky="w",
                                                                            padx=(4, 16))
-        right = ("who", "alignment", "classes", "xp", "ac", "thac0", "saves", "move", "attacks", "equipment", "slots",
-                 "thief")
+        right = ("who", "alignment", "classes", "xp", "ac", "thac0", "saves", "move", "attacks", "weapons",
+                 "equipment", "slots", "thief")
         labels = []
         for row, key in enumerate(right):
             var = self.vars[key] = tk.StringVar()
@@ -91,10 +91,13 @@ class Card(ttk.Frame):
             label.bind("<Configure>", lambda e: label.configure(wraplength=max(e.width, 120)))
 
     def show(self, name: str, fields: Dict[str, str], status: str, current_ac: Optional[int],
-             game_art: Optional["art.GameArt"], slots=(), thief=(), equipment=(), hits=(), saves=(), boots=False, skills_label: str = "Thief skills now") -> None:
+             game_art: Optional["art.GameArt"], slots=(), thief=(), equipment=(), hits=(), saves=(), boots=False, skills_label: str = "Thief skills now",
+             weapons=(), no_spells: bool = False) -> None:
         """`slots`: [(kind, [(spell level, left, most), ...]), ...], as GameData.spell_slots gives;
         `thief`: [(skill, percent), ...], as GameData.thief_skills gives; `hits` and `saves`,
-        THAC0 with each weapon and the saves as they stand now (GameData.weapon_hits, saves_now)."""
+        THAC0 with each weapon and the saves as they stand now (GameData.weapon_hits, saves_now);
+        `weapons`, the kinds chosen with weapon specialization (GameData.specializations);
+        `no_spells`, a multiclass preserver in armour (GameData.no_spells)."""
         get = fields.get
         self.vars["name"].set(name.upper() if name else f"SLOT {self.index + 1}")
         pair = lambda cur, top: f"{get(cur, '')}/{get(top, '')}" if get(cur) else ""
@@ -122,12 +125,15 @@ class Card(ttk.Frame):
         move = get("Move", "")
         fight = number(move) + 1 if boots and number(move) is not None else None
         self.vars["move"].set(f"Move: {move}" + (f" ({fight} in a fight: boots)" if fight else ""))
-        self.vars["attacks"].set(f"Attacks: {get('Attacks/round', '')} a round")
+        self.vars["attacks"].set(attacks_text(get("Attacks/round", ""), hits))
+        self.vars["weapons"].set(("Weapons: " + ", ".join(f"{kind} ({skill})" for kind, skill in weapons))
+                                 if weapons else "")
         self.vars["equipment"].set("\n".join(f"{slot.capitalize() if slot else 'Carried'}: {item}"
                                               for slot, item in equipment))
         self.vars["thief"].set((f"{skills_label}: " + ", ".join(f"{name} {n}%" for name, n in thief))
                                if thief else "")
-        self.vars["slots"].set("\n".join(f"{kind} spells left: {game.slots_text(levels)}" for kind, levels in slots))
+        self.vars["slots"].set("\n".join(f"{kind} spells left: {game.slots_text(levels)}"
+                                         + (" (no spells in armour)" if no_spells else "") for kind, levels in slots))
         key = (number(get("Race", "")) or 0, number(get("Gender", "")) or 0)
         zoom = 2 if theme.scale() >= 1.6 else 1
         if game_art and (key, zoom) != self.figure_key:
@@ -135,6 +141,27 @@ class Card(ttk.Frame):
             pixels = game_art.figure(*key)
             self.image = art.photo(self, pixels, zoom, background=theme.DEEP) if pixels else None
             self.figure.configure(image=self.image or "")
+
+
+def halves_text(halves: int) -> str:
+    return str(halves // 2) if halves % 2 == 0 else f"{halves}/2"
+
+
+def attacks_text(shown: str, hits) -> str:
+    """The attacks line: the game's attacks a round, or, with weapon specialization, each ready
+    weapon's where they differ (specialize.attacks)."""
+    from . import specialize
+    whole, _, half = shown.partition("/")
+    try:
+        halves = int(whole) if half else int(whole) * 2
+    except ValueError:
+        return f"Attacks: {shown} a round"
+    each = [(h.name, specialize.attacks(halves, h.skill, h.slot == game.MISSILE_SLOT)) for h in hits
+            if h.skill and h.item >= 0]
+    if not each or all(n == halves for _, n in each):
+        return f"Attacks: {shown} a round"
+    return "Attacks: " + ", ".join(f"{halves_text(n)} a round with {name}" if i == 0 else f"{halves_text(n)} with {name}"
+                                   for i, (name, n) in enumerate(each))
 
 
 class PartyCards(theme.ScrollArea):

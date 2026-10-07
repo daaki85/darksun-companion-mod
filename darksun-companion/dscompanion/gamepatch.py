@@ -49,6 +49,19 @@ VEC_SAVE_PAGE, VEC_SAVE_CLICK = 0xD8, 0xD7
 VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR = 0xD6, 0xD5, 0xD4  # (item saves)
 VEC_SCRIPT_RAND = 0xD3
 VEC_XP_NEXT = 0xD2
+VEC_ATTACKS = 0xD1
+VEC_SPEC_DAMAGE = 0xD0
+VEC_DAM_LINE = 0xCF
+VEC_VIEW_DAM = 0xCE
+VEC_CAN_USE = 0xCD
+VEC_NO_CAST = 0xCC
+VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON = 0xCB, 0xCA, 0xC9
+VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN = 0xC8, 0xC7, 0xC6, 0xC5, 0xC4
+VEC_WP_CLASS = 0xC3
+VEC_LV_PICK = 0xC2
+VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK = 0xC1, 0xC0, 0xBF, 0xBE, 0xBD, 0xBC
+VEC_EF_ROWS = 0xBB
+VEC_HP_BEST = 0xBA
 
 
 SCRIPT_BUFFER = 0x2E00  # the scripts' buffer, made bigger (the game's: 10000 bytes)
@@ -282,6 +295,40 @@ PATCHES = (
     # View Character's "EXP:10301 (16000)": "push 10F4h", the ")" after the next level's XP (DSCLOG
     # puts the class whose next level it is before it, for more than one class: "(16000 F)")
     Patch("xp_next", 0x67DBE, bytes.fromhex("68f410"), _interrupt(VEC_XP_NEXT, 3)),
+    # weapon specialization, in the routine that makes a weapon attack: "cbw / mov [bp-8],ax",
+    # its attacks a round (AD&D's plain rate for a warrior's weapon of a kind not chosen, one
+    # more for grand mastery; and the to-hit bonus), and "add [bp-12h],ax", the strength bonus
+    # added to its damage bonus (the damage bonus, and grand mastery's larger die)
+    Patch("attacks", 0x58892, bytes.fromhex("988946f8"), _interrupt(VEC_ATTACKS, 4)),
+    Patch("spec_damage", 0x588F2, bytes.fromhex("0146ee"), _interrupt(VEC_SPEC_DAMAGE, 3)),
+    # ... and the same on the "DAM: 1.5x1D8+4" line (View Character, the inventory screen): its
+    # "mov al,es:[bx+2Ah]", with the bonus, sides and count already pushed
+    Patch("dam_line", 0x72A77, bytes.fromhex("268a472a"), _interrupt(VEC_DAM_LINE, 4)),
+    # ... and on View Character's: "mov [bp-0Eh],dx", the damage bonus it stores
+    Patch("view_dam", 0x64EB6, bytes.fromhex("8956f2"), _interrupt(VEC_VIEW_DAM, 3)),
+    Patch("can_use", 0x6EF34, bytes.fromhex("26234712"), _interrupt(VEC_CAN_USE, 4)),
+    Patch("no_cast", 0x89B84, bytes.fromhex("83c404"), _interrupt(VEC_NO_CAST, 3)),
+    Patch("mc_roll", 0x8735E, bytes.fromhex("26014f0a"), _interrupt(VEC_MC_ROLL, 4)),
+    Patch("mc_con", 0x87523, bytes.fromhex("03f8"), _interrupt(VEC_MC_CON, 2)),
+    Patch("mc_uncon", 0x877DA, bytes.fromhex("2bd0"), _interrupt(VEC_MC_UNCON, 2)),
+    # the creation panel's weapon pages (weaponpages.py)
+    Patch("wp_disc_win", 0x67BFB, bytes.fromhex("68c40b"), _interrupt(VEC_WP_DISC_WIN, 3)),
+    Patch("wp_sphere_win", 0x6413B, bytes.fromhex("68c50b"), _interrupt(VEC_WP_SPHERE_WIN, 3)),
+    Patch("wp_disc_click", 0x64311, bytes.fromhex("8b5e08"), _interrupt(VEC_WP_DISC_CLICK, 3)),
+    Patch("wp_sphere_click", 0x642B0, bytes.fromhex("8b5e08"), _interrupt(VEC_WP_SPHERE_CLICK, 3)),
+    Patch("wp_shown", 0x6337A, bytes.fromhex("3d0800"), _interrupt(VEC_WP_SHOWN, 3)),
+    Patch("wp_class", 0x66406, bytes.fromhex("b90100"), _interrupt(VEC_WP_CLASS, 3)),
+    # the level-up's weapon picks, in the psionicists' pop-up (its routine, in weapon mode)
+    Patch("lv_pick", 0x87A9B, bytes.fromhex("837e080b"), _interrupt(VEC_LV_PICK, 4)),
+    Patch("pk_count", 0x85F01, bytes.fromhex("8bd00bd2"), _interrupt(VEC_PK_COUNT, 4)),
+    Patch("pk_win", 0x85FF4, bytes.fromhex("685d44"), _interrupt(VEC_PK_WIN, 3)),
+    Patch("pk_left", 0x8602D, bytes.fromhex("a0ec4a"), _interrupt(VEC_PK_LEFT, 3)),
+    Patch("pk_title", 0x860C3, bytes.fromhex("1e682630"), _interrupt(VEC_PK_TITLE, 4)),
+    Patch("pk_fill", 0x8610F, bytes.fromhex("33ff8bf7"), _interrupt(VEC_PK_FILL, 4)),
+    Patch("pk_click", 0x862D4, bytes.fromhex("8b4608"), _interrupt(VEC_PK_CLICK, 3)),
+    # the weapon kinds under the selected character's effects on the Effects screen
+    Patch("ef_rows", 0x7F13E, bytes.fromhex("5f5e"), _interrupt(VEC_EF_ROWS, 2)),
+    Patch("hp_best", 0x87319, bytes.fromhex("8bc8"), _interrupt(VEC_HP_BEST, 2)),
     # A bug of the game's own: the roster's DELETE (DSUN.EXE 54AC1h) picked the character by the
     # row clicked alone, where ADD takes the row plus how far the list is scrolled; with the list
     # scrolled, another character was deleted (the row's from the top). The same code, the scroll

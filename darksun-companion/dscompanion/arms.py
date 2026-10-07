@@ -40,7 +40,7 @@ MAP_ENTRIES, MAP_ENTRY_SIZE, MAP_XY = 0x6694, 32, 0x09
 SWORD_NAME, GYTHKA_NAME = 0x147, 0x148  # name entries DSCLOG adds
 NAMES = {SWORD_NAME: b"Shadowseeker", GYTHKA_NAME: b"Kreenfang"}  # as DSCLOG's EXTRA_NAMES has them
 # near the Bloodwrath's 20800 (the plain ones: 6 and 500); metal is the dearer, on Athas
-GYTHKA_VALUE, SWORD_VALUE = 18000, 22000
+GYTHKA_VALUE, SWORD_VALUE = 20800, 22000  # (the game's Gythka +1 and Bloodwrath +1: 20,800)
 ITEM_VALUE = 0x06  # an item's price (npcitems.ITEM_VALUE)
 ITEM_SPELL = 0x0F  # an item's spell, one past the spell's number (0: none)
 ITEM_SPELL_SHOWN = 0x02  # (a word) the spell whose icon its box shows, the same

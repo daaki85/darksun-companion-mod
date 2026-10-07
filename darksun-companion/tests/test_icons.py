@@ -123,7 +123,8 @@ class CopyTests(unittest.TestCase):
         self.assertEqual(len(ours), 2 * len(icons.ICONS))
         moved = set(range(kalzith.MOVED_ICONS, kalzith.MOVED_ICONS + len(kalzith.SCROLLS)))
         self.assertFalse(ours & moved)
-        self.assertLess(max(ours), sprites.SPRITE_BASE)
+        party = set(range(sprites.SPRITE_BASE, sprites.SPRITE_BASE + 2 * (sprites.SPARES[-1] + 1 - sprites.PARTY_OBJECTS[0])))
+        self.assertFalse(ours & party)
 
 
 class WhichTests(unittest.TestCase):
@@ -145,6 +146,29 @@ class WhichTests(unittest.TestCase):
         plain = bytearray(npcitems.CHEST_ARMOR)
         plain[game.ITEM_PLUS] = 0
         self.assertIsNone(icons.which(bytes(plain)))
+
+    def test_starting_weapons(self):
+        """The Ledger's bone and obsidian short swords and axes by their types, and a great axe
+        with no plus (the game's only one is +3: its picture's gem)."""
+        rec = bytearray(npcitems.SWORD)
+        for type_, name in ((game.BONE_SHORT_SWORD_TYPE, "Bone Short Sword"), (game.BONE_AXE_TYPE, "Bone Axe"),
+                            (game.OBSIDIAN_SHORT_SWORD_TYPE, "Obsidian Short Sword"),
+                            (game.OBSIDIAN_AXE_TYPE, "Obsidian Axe"), (icons.GREAT_AXE_TYPE, "Great Axe")):
+            struct.pack_into("<H", rec, game.ITEM_TYPE, type_)
+            self.assertEqual(icons.which(bytes(rec)), name)
+        rec[game.ITEM_PLUS] = 3
+        self.assertIsNone(icons.which(bytes(rec)))  # (the game's Great Axe +3)
+        rec[game.ITEM_PLUS] = 0
+        struct.pack_into("<H", rec, game.ITEM_TYPE, icons.OBSIDIAN_MACE_TYPE)
+        struct.pack_into("<H", rec, game.ITEM_NAME, icons.MACE_NAME)
+        self.assertEqual(icons.which(bytes(rec)), "Obsidian Mace")
+        struct.pack_into("<H", rec, game.ITEM_NAME, 55)
+        self.assertIsNone(icons.which(bytes(rec)))  # (Blackmace)
+        from dscompanion import weaponchoice
+        pictures = {t: p for t, _, p, _ in weaponchoice.PLAIN}
+        self.assertEqual(pictures[game.BONE_SHORT_SWORD_TYPE], icons.PICTURES["Bone Short Sword"])
+        self.assertEqual(pictures[game.BONE_AXE_TYPE], icons.PICTURES["Bone Axe"])
+        self.assertEqual(pictures[icons.GREAT_AXE_TYPE], icons.PICTURES["Great Axe"])
 
     def test_plain_without_the_copy(self):
         for name, number, _, _, _ in icons.ICONS:

@@ -6,7 +6,93 @@ Release **1.1.0** is pull requests #14 to #18; its notes are in
 requests #1 to #13; its notes are in
 [`release-notes/v1.0.0.md`](release-notes/v1.0.0.md).
 
-## Pull request #19 ([in review](https://github.com/daaki85/darksun-companion-mod/pull/19))
+## Pull request #20 ([merged 2026-10-07](https://github.com/daaki85/darksun-companion-mod/pull/20))
+
+**Added**
+- **The new plain weapons in the world** (a new content switch, on by default):
+  the Weapon Merchant and Jark sell the bone and obsidian short swords and axes,
+  the obsidian mace and (the Weapon Merchant) a plain metal short sword; Merzol,
+  Krikor and Chaero carry one, and every Tari in the warrens, Renegade and Wild
+  Mul has one as loot.
+- **Bracers of defense** (a new content switch with the magic weapons, on by
+  default): AC 6 on Mikquetzl, AC 5 on Wyrmias, AC 4 on Balkazar and AC 2 on
+  Dagolar, 20,000 to 40,000; worn on the arms, nothing while armour is worn on the arms, legs or
+  chest, and not armour to the class rules (a preserver casts in them).
+- **Magic weapons of the kinds the game has none of:** a Club +1 on Churrr
+  in the warrens, a stone Pick +1 on one of the Undermountain folk, a Staff
+  Sling +1 sold by the Bowyer and a metal Short Sword +2 on an Elite Guard,
+  each with an icon of its own and priced as the game prices its own: the
+  melee ones as its Obsidian Bloodwrath +1, 20,800 a plus; the staff sling as
+  its Sling +1, 2,800.
+- **Metal daggers, maces, great axes, picks and polearms** (the game has none
+  plain): one each on Tobrian, a Templar of the slavers' camp, Uskuye, Kwerin
+  and a Castle Guard; an earth cleric may now take the great axe and the
+  polearm, and starts with a metal one.
+- **Weapon specialization** (a new rule change, on by default): fighters and
+  gladiators specialize in kinds of weapon (+1 to hit, +2 damage), fighters
+  on to mastery at 5th level (+3, +3) and grand mastery at 9th (the damage
+  die a size larger and an attack more), rangers take expertise; a warrior
+  with a weapon of another kind attacks at AD&D's plain rate. Sixteen kinds,
+  chosen on the creation screen's new **WEAPON SPEC** pages (greyed as the
+  game's disciplines are, a multiclass warrior's limited to the kinds it may
+  use some weapon of, in any material: a fire cleric's obsidian long sword),
+  a new warrior starting with a plain weapon of its kind in a material it may
+  use (new bone short swords and axes, obsidian ones for fire and earth
+  clerics, as the game has only Kurzak's short sword and a metal axe; an
+  obsidian mace pictured without Blackmace's glow; a plain great axe pictured
+  without the Great Axe +3's gem; a two-handed weapon puts
+  the starting shield in the backpack); a
+  gladiator's 3rd and 4th (and any warrior's from before the rule) picked at
+  a level gained, in the game's own pop-up for a psionicist's new power; the
+  kinds listed on the **Effects** screen and counted on the DAM lines and in
+  the dice log. The Characters tab lists each character's kinds
+  (`Weapons: long sword (grand mastery)`) and gives the attacks a round with
+  each weapon held (`Attacks: 3/2 a round with Long Sword, 1 with Axe`).
+- **Class restrictions** (a new rule change, on by default): psionicists,
+  multiclass thieves, preservers, druids and clerics held to their own limits
+  on armour, shields and weapons whatever their other classes allow, the
+  strictest winning; a multiclass preserver casts no spells in armour (its
+  spell slots headed **NO SPELLS IN ARMOUR** on the USE screen, and
+  "(no spells in armour)" on the Characters tab).
+- **Multiclass hit points** (a new rule change, on by default): each level's
+  die and CON's bonus divided between a character's classes, as in AD&D, at
+  creation and at every level; the dice log shows the share. Meant for a new
+  game: ticked during one, a character's next level shares CON's bonus for
+  all its levels.
+- **Hit dice: the better of two** (a new rule change, on by default): every
+  character's hit die is rolled twice, at creation and at each level, and the
+  better roll kept; the dice log shows both.
+
+**Fixed**
+- **The Characters tab read the game as if every rule were off** (its
+  THAC0, attacks and specialization lines): it now uses the rules ticked.
+- **Character creation in the dice log:** one click on the die rolls a whole
+  character several times while it tumbles, and the log gave every one; when
+  rolls came too fast to record, the hit point line took CON from an earlier
+  one (37 logged where the game had 40). Now only the character the die stops
+  on is logged, each ability and the hit points checked against what the
+  screen shows (`DEX 19 (its rolls came too fast to record)`).
+- **"No hit point roll" on a level gained:** the dice log said the game rolls
+  hit points only when a character's highest class level rises. It rolls for
+  every new class level; a level that leaves the most hit points unchanged
+  only added a fraction (the game divides the whole total by the classes).
+
+**Changed**
+- **The Ledger's magic items are priced as the game's own:** the Rings and the
+  Cloak of Protection +1 15,000 (were 5,000), Leather Chest Armor +1 6,000
+  (was 3,000); ones already given are repriced. Kreenfang 20,800 (was
+  18,000), as the game's Gythka +1.
+- **The README is shorter** (2,974 lines to about 2,300): how each part works
+  (the helper's interrupts, the game's offsets and flags), how the dice log
+  works, what's known of the game's data and the development notes are in a
+  new `darksun-companion/DEVELOPMENT.md`, each README section linking to its
+  part; "What it does" is a short overview; the thieves' skills and backstabs,
+  and the saving throws, are each one section with their rule changes, and the
+  two-weapon rule sits with the dice log's two weapons; the new items are one
+  section with a table, Kalzith and Semyon one of new people told as a player
+  meets them; and the helms' and boots' rules are one.
+
+## Pull request #19 ([merged 2026-10-06](https://github.com/daaki85/darksun-companion-mod/pull/19))
 
 **Added**
 - **Which class levels up next, on View Character:** for a character of more

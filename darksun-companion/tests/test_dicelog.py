@@ -884,6 +884,17 @@ class NewLinesTests(unittest.TestCase):
         self.assertEqual(log.describe(e), ["Dag's 4th Fighter level: hit points d10 = 2, raised to 3 for CON 21, "
                                            "doubled for a half-giant = 6"])
 
+    def test_level_up_hit_points_best_of_two(self):
+        """RULE_HP_BEST: the game rolls the die twice (DSCLOG's PROBE_HP_BEST); the line comes with
+        the second, the better kept."""
+        log = make_game()
+        log.set_rules(game.RULE_HP_BEST)
+        first = entry(raw_for(2, 10), dicelog.DICE_SITE, words(0, 0, 1, 10), words(0, 0, 0, 9, 4))
+        second = entry(raw_for(7, 10), dicelog.DICE_SITE, words(0, 0, 1, 10), words(0, 0, 0, 9, 4))
+        self.assertEqual(log.describe(first), [])
+        self.assertEqual(log.describe(second), ["Dag's 4th Fighter level: hit points d10 = 2 and 7, the better 7, "
+                                                "doubled for a half-giant = 14"])
+
     def test_special_effect_roll(self):
         log = make_game()
         e = entry(raw_for(1, 10), dicelog.DICE_SITE, words(0, 0, 1, 10), words(0, 0, 0x29, 0),
@@ -1011,8 +1022,9 @@ class NewLinesTests(unittest.TestCase):
         self.assertEqual(tracker.check(1.0), [])
         m[SHEETS + game.SHEET_LEVELS + 1] = 2  # Preserver 2nd, still a 3rd level Gladiator
         self.assertEqual(tracker.check(2.0), ["Dag is now a 2nd level Preserver",
-                                              "    no hit point roll: that comes only when the highest class "
-                                              "level rises (still 3rd)"])
+                                              "    max HP unchanged: the game divides the hit point total by "
+                                              "the classes, and this level's roll left a fraction, which counts "
+                                              "at a later level"])
         m[SHEETS + game.SHEET_LEVELS] = 4
         struct.pack_into("<h", m, SHEETS + game.SHEET_MAX_HP, struct.unpack_from("<h", m, SHEETS + 8)[0] + 5)
         self.assertEqual(tracker.check(3.0)[0], "Dag is now a 4th level Gladiator")
@@ -1302,16 +1314,33 @@ class CreationTests(unittest.TestCase):
     def test_abilities(self):
         log = make_creation()
         # best of 7, 11, 9, 10 = 11, +4, +1 dwarf = 16: a Fighter's STR is at least 17
-        self.assertEqual(ability_rolls(log, 0, [(1, 2, 2, 2), (4, 4, 2, 1), (3, 3, 2, 1), (4, 3, 2, 1)]),
-                         ["Character creation, STR 17: best of four 4d4 (7, 11, 9, 10) = 11, +4, +1 dwarf = 16, "
-                          "raised to 17 (the Fighter's prime requisite)"])
+        self.assertEqual(ability_rolls(log, 0, [(1, 2, 2, 2), (4, 4, 2, 1), (3, 3, 2, 1), (4, 3, 2, 1)]), [])
         # CON: +2 dwarf, above the classes' least of 9
-        self.assertEqual(ability_rolls(log, 2, [(4, 4, 4, 1), (1, 1, 1, 1), (2, 2, 2, 2), (3, 3, 3, 3)]),
-                         ["Character creation, CON 19: best of four 4d4 (13, 4, 8, 12) = 13, +4, +2 dwarf = 19"])
+        ability_rolls(log, 2, [(4, 4, 4, 1), (1, 1, 1, 1), (2, 2, 2, 2), (3, 3, 3, 3)])
         # CHA: 4 + 4 - 2 dwarf = 6, raised to the least the Fighter and Thief allow
-        self.assertEqual(ability_rolls(log, 5, [(1, 1, 1, 1)] * 4),
-                         ["Character creation, CHA 9: best of four 4d4 (4, 4, 4, 4) = 4, +4, -2 dwarf = 6, "
+        ability_rolls(log, 5, [(1, 1, 1, 1)] * 4)
+        # (the lines come when the die stops)
+        self.assertEqual(log.creation_lines(),
+                         ["Character creation, STR 17: best of four 4d4 (7, 11, 9, 10) = 11, +4, +1 dwarf = 16, "
+                          "raised to 17 (the Fighter's prime requisite)",
+                          "Character creation, CON 19: best of four 4d4 (13, 4, 8, 12) = 13, +4, +2 dwarf = 19",
+                          "Character creation, CHA 9: best of four 4d4 (4, 4, 4, 4) = 4, +4, -2 dwarf = 6, "
                           "raised to 9 (the Thief's least)"])
+
+    def test_only_the_character_the_die_stops_on(self):
+        """The die rolls whole characters while it tumbles: only the last is logged, each ability
+        checked against the one the game shows (one whose rolls were missed, the game's)."""
+        log = make_creation()
+        ability_rolls(log, 0, [(4, 4, 4, 4)] * 4)  # a first character's STR 21...
+        ability_rolls(log, 2, [(4, 4, 4, 4)] * 4)  # ... and CON 22
+        ability_rolls(log, 0, [(1, 2, 2, 2), (4, 4, 2, 1), (3, 3, 2, 1), (4, 3, 2, 1)])  # the next: STR 17
+        shown = CREATION + game.SHEET_SIZE + game.CREATURE_ABILITIES
+        log.guest.mem[shown:shown + 6] = bytes((17, 12, 18, 10, 11, 9))  # its CON's rolls missed
+        self.assertEqual(log.creation_lines()[:3],
+                         ["Character creation, STR 17: best of four 4d4 (7, 11, 9, 10) = 11, +4, +1 dwarf = 16, "
+                          "raised to 17 (the Fighter's prime requisite)",
+                          "Character creation, DEX 12 (its rolls came too fast to record)",
+                          "Character creation, CON 18 (its rolls came too fast to record)"])
 
     def test_hit_points(self):
         log = make_creation()
@@ -1323,6 +1352,47 @@ class CreationTests(unittest.TestCase):
         self.assertEqual(log.creation_hp_lines(),
                          ["Character creation, hit points 18: Fighter d10 per level: 10 + 5; Thief d6 per level: "
                           "3 + 6 = 24, / 2 classes = 12, +6 CON 17 = 18"])
+
+    def test_hit_points_against_the_game(self):
+        """A hit point roll missed: the game's own total, with the rolls that were caught."""
+        log = make_creation()
+        for cls, sides, level, face in ((9, 10, 1, 10), (17, 6, 1, 3), (17, 6, 2, 6)):
+            e = entry(raw_for(face, sides), dicelog.DICE_SITE, words(0, 0, 1, sides),
+                      words(dicelog.CREATION_HP_CALLER, 0x54FA, 1, cls, level), parent_code=dicelog.LEVEL_HP_RETURN)
+            log.describe(e)
+        struct.pack_into("<h", log.guest.mem, CREATION + game.SHEET_MAX_HP, 21)
+        self.assertEqual(log.creation_hp_lines(),
+                         ["Character creation, hit points 21 (some of its rolls came too fast to record; those "
+                          "caught: Fighter d10 per level: 10; Thief d6 per level: 3 + 6 = 19, / 2 classes = 9 "
+                          "(rounded down), +5 CON 17 = 14)"])
+
+    def test_hit_points_shared(self):
+        """RULE_MULTI_HP: each level's die shared between the classes, at least 1, and CON's bonus too."""
+        log = make_creation()
+        log.set_rules(game.RULE_MULTI_HP)
+        for cls, sides, level, face in ((9, 10, 1, 10), (9, 10, 2, 5), (17, 6, 1, 1), (17, 6, 2, 6)):
+            e = entry(raw_for(face, sides), dicelog.DICE_SITE, words(0, 0, 1, sides),
+                      words(dicelog.CREATION_HP_CALLER, 0x54FA, 1, cls, level), parent_code=dicelog.LEVEL_HP_RETURN)
+            self.assertEqual(log.describe(e), [])
+        # 5 + 2 + 1 (the 1 at least) + 3 = 11, and CON 17's +6 / 2
+        self.assertEqual(log.creation_hp_lines(),
+                         ["Character creation, hit points 14: Fighter d10 per level: 10 + 5; Thief d6 per level: "
+                          "1 + 6 = 22, each / 2 classes (at least 1) = 11, +3 CON 17 shared = 14"])
+
+    def test_hit_points_best_of_two(self):
+        """RULE_HP_BEST: each level's die rolled twice, the better kept."""
+        log = make_creation()
+        log.set_rules(game.RULE_HP_BEST)
+        for cls, sides, level, faces in ((9, 10, 1, (2, 10)), (9, 10, 2, (5, 1)), (17, 6, 1, (3, 3)), (17, 6, 2, (1, 6))):
+            for face in faces:
+                e = entry(raw_for(face, sides), dicelog.DICE_SITE, words(0, 0, 1, sides),
+                          words(dicelog.CREATION_HP_CALLER, 0x54FA, 1, cls, level),
+                          parent_code=dicelog.LEVEL_HP_RETURNS[1])
+                self.assertEqual(log.describe(e), [])
+        self.assertEqual(log.creation_hp_lines(),
+                         ["Character creation, hit points 18: Fighter d10 per level: 10 (the better of 2 and 10) + "
+                          "5 (the better of 5 and 1); Thief d6 per level: 3 (the better of 3 and 3) + "
+                          "6 (the better of 1 and 6) = 24, / 2 classes = 12, +6 CON 17 = 18"])
 
     def test_random_name(self):
         log = make_creation()

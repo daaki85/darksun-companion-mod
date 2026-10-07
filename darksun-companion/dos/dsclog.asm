@@ -73,6 +73,30 @@ VEC_ITEM_SKIP equ 0xD5     ; PROBE_ITEM_SKIP
 VEC_ITEM_ARMOUR equ 0xD4   ; PROBE_ITEM_ARMOUR
 VEC_SCRIPT_RAND equ 0xD3   ; PROBE_SCRIPT_RAND
 VEC_XP_NEXT equ 0xD2       ; PROBE_XP_NEXT
+VEC_ATTACKS equ 0xD1       ; PROBE_ATTACKS
+VEC_SPEC_DAMAGE equ 0xD0   ; PROBE_SPEC_DAMAGE
+VEC_DAM_LINE equ 0xCF      ; PROBE_DAM_LINE
+VEC_VIEW_DAM equ 0xCE      ; PROBE_VIEW_DAM
+VEC_CAN_USE equ 0xCD       ; PROBE_CAN_USE
+VEC_NO_CAST equ 0xCC       ; PROBE_NO_CAST
+VEC_MC_ROLL equ 0xCB       ; PROBE_MC_ROLL
+VEC_MC_CON equ 0xCA        ; PROBE_MC_CON
+VEC_MC_UNCON equ 0xC9      ; PROBE_MC_UNCON
+VEC_WP_DISC_WIN equ 0xC8   ; PROBE_WP_DISC_WIN
+VEC_WP_SPHERE_WIN equ 0xC7 ; PROBE_WP_SPHERE_WIN
+VEC_WP_DISC_CLICK equ 0xC6 ; PROBE_WP_DISC_CLICK
+VEC_WP_SPHERE_CLICK equ 0xC5 ; PROBE_WP_SPHERE_CLICK
+VEC_WP_SHOWN equ 0xC4      ; PROBE_WP_SHOWN
+VEC_WP_CLASS equ 0xC3      ; PROBE_WP_CLASS
+VEC_LV_PICK equ 0xC2       ; PROBE_LV_PICK
+VEC_PK_COUNT equ 0xC1      ; PROBE_PK_COUNT
+VEC_PK_WIN equ 0xC0        ; PROBE_PK_WIN
+VEC_PK_LEFT equ 0xBF       ; PROBE_PK_LEFT
+VEC_PK_TITLE equ 0xBE      ; PROBE_PK_TITLE
+VEC_PK_FILL equ 0xBD       ; PROBE_PK_FILL
+VEC_PK_CLICK equ 0xBC      ; PROBE_PK_CLICK
+VEC_EF_ROWS equ 0xBB       ; PROBE_EF_ROWS
+VEC_HP_BEST equ 0xBA       ; PROBE_HP_BEST
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 128         ; entries in the ring
@@ -2284,6 +2308,16 @@ probe_ring_ac:
         jnz .off
         iret
 .other: pop ax
+        push ax                 ; bracers of defense: their plus counts, but not over armour
+        mov ax, cx              ; on the arms, legs or chest (AD&D's; a shield, a helm, rings and
+        call bracers_ax         ; cloaks go with them)
+        pop ax
+        jne .helm
+        call prot_here
+        jc .done
+        test byte [cs:p_flags], P_ARMOUR
+        jnz .off
+        iret
 .helm:  cmp cx, HELM_LEATHER    ; a helm: AC 1 with RULE_HELMS (the game's are all 0), 0 without
         je .is
         cmp cx, HELM_METAL
@@ -2441,7 +2475,12 @@ prot_scan:
         jne .on
         mov [cs:p_ring2], ah
         jmp .on
-.type:  les bx, [ITEM_TYPES]
+.type:  push ax
+        mov ax, si
+        call bracers_ax                 ; (bracers aren't armour)
+        pop ax
+        je .on
+        les bx, [ITEM_TYPES]
         imul si, si, 0x14
         add bx, si
         test byte [es:bx], 4            ; a shield (the flag the game's AC reads for one)
@@ -2462,7 +2501,10 @@ prot_scan:
         jne .on
 .armour: test byte [es:bx+0x0F], 0x80
         jz .on
-        cmp ah, 0
+        cmp al, HEAD_SLOT
+        je .plus
+        or byte [cs:p_flags], P_ARMOUR  ; (a helm isn't, to bracers)
+.plus:  cmp ah, 0
         jle .metal
         or byte [cs:p_flags], P_MAGIC_ARMOUR
 .metal: mov al, [es:bx+8]               ; its material (no material: 40h with 0)
@@ -2481,6 +2523,2056 @@ prot_scan:
 .out:   pop es
         popad
         ret
+
+; Weapon specialization (RULE_SPECIALIZE; dscompanion/specialize.py). A character's chosen weapon
+; kinds are in its sheet's +14h..+17h (SPEC_SLOTS: the kind + 1 each, 0 none); a character with
+; none there (monsters, and those who have not chosen) fights as the game has it. Two probes in
+; the routine that makes a weapon attack (its [BP+0Ah] the THAC0 the d20 is held against, [BP+10h]
+; the attacker's sheet, [BP+14h] the weapon's item type, [BP+16h] above 1 for a missile; its
+; locals [BP-8] the attacks a round in halves, [BP-0Eh] the damage dice and [BP-10h] their
+; sides, [BP-12h] the damage bonus):
+; PROBE_ATTACKS: INT VEC_ATTACKS replaces "cbw / mov [bp-8],ax" (4 bytes: INT + 2 NOPs; DSUN.EXE
+; 58892h), the attacks a round stored. The game gives every fighter, gladiator and ranger AD&D's
+; specialist's rate (3/2, then 2 from 7th level, 5/2 from 13th); in melee a warrior (more than 2
+; halves) with a weapon of a kind not chosen has AD&D's plain rate, half an attack less, and a
+; grand master one more. Specialization +1 to hit, mastery +3 (the THAC0 less).
+; PROBE_SPEC_DAMAGE: INT VEC_SPEC_DAMAGE replaces "add [bp-12h],ax" (3 bytes: INT + NOP; 588F2h),
+; the strength bonus added to the damage bonus: specialization +2, mastery +3, and grand mastery
+; the damage dice one size larger (2 more sides: d8 to d10, 2d4 to 2d6).
+SPEC_SLOTS equ 0x14
+SPEC_COUNT equ 4
+FIGHTER_CLASS equ 9
+GLADIATOR_CLASS equ 10
+MASTERY equ 5                   ; (the fighter levels)
+GRAND_MASTERY equ 9
+SPEC_NONE equ 0                 ; (SPEC_OF's levels)
+SPEC_PLAIN equ 1
+SPEC_EXPERT equ 2
+SPEC_SPECIAL equ 3
+SPEC_MASTER equ 4
+SPEC_GRAND equ 5
+probe_attacks:
+        cbw
+        test word [cs:rules], RULE_SPECIALIZE
+        jz .store
+        push dx
+        call spec_of
+        cmp word [bp + 0x16], 1
+        jg .hit                 ; (a missile: the game's rate of fire)
+        cmp ax, 2
+        jbe .hit                ; (not a warrior)
+        cmp dl, SPEC_PLAIN
+        jne .grand
+        dec ax
+        jmp .hit
+.grand: cmp dl, SPEC_GRAND
+        jne .hit
+        add ax, 2
+.hit:   cmp dl, SPEC_SPECIAL
+        jb .done
+        ja .three
+        dec word [bp + 0x0A]
+        jmp .done
+.three: sub word [bp + 0x0A], 3
+.done:  pop dx
+.store: mov [bp - 8], ax
+        iret
+
+probe_spec_damage:
+        add [bp - 0x12], ax
+        test word [cs:rules], RULE_SPECIALIZE
+        jz .done
+        push dx
+        call spec_of
+        cmp dl, SPEC_SPECIAL
+        jb .out
+        ja .three
+        add word [bp - 0x12], 2
+        jmp .out
+.three: add word [bp - 0x12], 3
+        cmp dl, SPEC_GRAND
+        jne .out
+        add word [bp - 0x10], 2
+.out:   pop dx
+.done:  iret
+
+; PROBE_DAM_LINE: INT VEC_DAM_LINE replaces "mov al,es:[bx+2Ah]" (4 bytes: INT + 2 NOPs; DSUN.EXE
+; 72A77h) in the routine that writes a melee weapon's "DAM: 1.5x1D8+4" (View Character, the
+; inventory screen), ES:BX the sheet, SI the weapon's item type, the damage bonus, the dice's sides
+; and their count pushed (under the INT's return, in that order up). With RULE_SPECIALIZE, the
+; attacks as PROBE_ATTACKS gives them, and the bonus and sides as PROBE_SPEC_DAMAGE does.
+probe_dam_line:
+        mov al, [es:bx + 0x2a]
+        test word [cs:rules], RULE_SPECIALIZE
+        jz .done
+        push bp
+        mov bp, sp              ; BP+8 the count, +0Ah the sides, +0Ch the bonus
+        push dx
+        call spec_of_sheet
+        cmp al, 2
+        jbe .bonus
+        cmp dl, SPEC_PLAIN
+        jne .grand
+        dec al
+        jmp .bonus
+.grand: cmp dl, SPEC_GRAND
+        jne .bonus
+        add al, 2
+.bonus: cmp dl, SPEC_SPECIAL
+        jb .out
+        ja .three
+        add word [bp + 0x0C], 2
+        jmp .out
+.three: add word [bp + 0x0C], 3
+        cmp dl, SPEC_GRAND
+        jne .out
+        add word [bp + 0x0A], 2
+.out:   pop dx
+        pop bp
+.done:  iret
+
+; PROBE_VIEW_DAM: INT VEC_VIEW_DAM replaces "mov [bp-0Eh],dx" (3 bytes: INT + NOP; DSUN.EXE 64EB6h)
+; in View Character's routine for its "DAM: 1.5x1D8+4": DX the damage bonus it stores, its [BP-6]
+; the attacks a round (halves), [BP-2] the dice's count, [BP-4] their sides, [BP-0Ah] the weapon's
+; item. With RULE_SPECIALIZE, the attacks (not a missile weapon's), the bonus and the sides as the
+; attack has them (PROBE_ATTACKS, PROBE_SPEC_DAMAGE), for the character on show: its number in
+; the segment the routine's "mov ax,seg" at 64E33h holds, +25Bh (as PROBE_VIEW's CH_WHO).
+VIEW_DAM_WHO equ 0x84           ; that operand, back from the INT's return
+probe_view_dam:
+        mov [bp - 0x0E], dx
+        test word [cs:rules], RULE_SPECIALIZE
+        jz .done
+        push ax
+        push bx
+        push dx
+        push si
+        push di
+        push es
+        mov ax, [bp - 0x0A]     ; the item, its type
+        imul ax, ax, 0x15
+        les bx, [0x165D]
+        add bx, ax
+        mov si, [es:bx + 0x0A]
+        mov di, sp
+        mov bx, [ss:di + 12]    ; (the INT's return, past the six pushes)
+        mov es, [ss:di + 14]
+        mov es, [es:bx - VIEW_DAM_WHO]
+        mov ax, [es:0x25B]      ; the character on show, its sheet
+        imul ax, ax, 0x47
+        les bx, [0x1661]
+        add bx, ax
+        call spec_of_sheet
+        mov ax, si              ; a missile weapon (the type's +0, 2) keeps its rate
+        imul ax, ax, 0x14
+        push es
+        push bx
+        les bx, [0x1669]
+        add bx, ax
+        test byte [es:bx], 2
+        pop bx
+        pop es
+        jnz .bonus
+        cmp word [bp - 6], 2
+        jbe .bonus
+        cmp dl, SPEC_PLAIN
+        jne .grand
+        dec word [bp - 6]
+        jmp .bonus
+.grand: cmp dl, SPEC_GRAND
+        jne .bonus
+        add word [bp - 6], 2
+.bonus: cmp dl, SPEC_SPECIAL
+        jb .out
+        ja .three
+        add word [bp - 0x0E], 2
+        jmp .out
+.three: add word [bp - 0x0E], 3
+        cmp dl, SPEC_GRAND
+        jne .out
+        add word [bp - 4], 2
+.out:   pop es
+        pop di
+        pop si
+        pop dx
+        pop bx
+        pop ax
+.done:  iret
+
+; PROBE_CAN_USE: INT VEC_CAN_USE replaces "and ax,[es:bx+12h]" (4 bytes: INT + 2 NOPs; DSUN.EXE
+; 6EF34h) in the routine that says whether a character may equip an item (its "Cannot use this
+; item" when not; its only caller, the equip routine): AX the item type's mask of the classes that
+; may use it, ES:BX the character's sheet, its +12h a bit for each of its classes, DX the item
+; type. With RULE_RESTRICT, an item the game allows that the character's classes keep it from
+; (CLASS_FORBIDS) is not allowed either.
+probe_can_use:
+        and ax, [es:bx + 0x12]
+        jz .done
+        test word [cs:rules], RULE_RESTRICT
+        jz .done
+        call class_forbids
+        jnc .done
+        xor ax, ax
+.done:  iret
+
+; CLASS_FORBIDS: carry set if the classes of the character whose sheet is at ES:BX keep it from
+; item type DX (dscompanion/restrict.py, which says why): a psionicist, a multiclass thief, a
+; preserver of that class alone, a druid, a cleric. A human's first class alone holds it (the one
+; it has now, if it has changed class); another race's every class. All registers kept.
+RESTRICT_TYPE equ 0x14          ; (the item type record's size)
+NO_MATERIAL equ 0xFF            ; (CU_MAT: none)
+LEATHER equ 5
+THIEF_BIT equ 0x400
+PSI_KINDS equ 0x701E            ; bits by kind: club, dagger, short sword, mace, chatkcha, bow, sling
+SPHERE_EARTH equ 0x1D           ; bits by material: stone, obsidian, metal, wood
+SPHERE_FIRE equ 0x08            ; obsidian
+SPHERE_WATER equ 0x03           ; bone, wood
+class_forbids:
+        push ax
+        push bx
+        push cx
+        push dx
+        push si
+        push di
+        push ds
+        mov ax, dx
+        imul ax, ax, RESTRICT_TYPE
+        lds si, [0x1669]
+        add si, ax
+        mov al, [si]                    ; the flags: 1 melee, 2 missile, 4 shield, 10h thrown
+        mov [cs:cu_flags], al
+        mov al, [si + 8]                ; the material (its low nibble; 40h and 0 none)
+        mov ah, al
+        and al, 0x0F
+        jnz .mat
+        test ah, 0x40
+        jz .mat
+        mov al, NO_MATERIAL
+.mat:   mov [cs:cu_mat], al
+        xor al, al                      ; armour: +0Fh 80h, and not a shield (nor bracers)
+        push ax
+        mov ax, dx
+        call bracers_ax
+        pop ax
+        je .armour
+        test byte [si + 0x0F], 0x80
+        jz .armour
+        test byte [cs:cu_flags], 4
+        jnz .armour
+        inc ax
+.armour:
+        mov [cs:cu_armour], al
+        mov ax, [si + 0x10]             ; the classes but thief that may use it
+        and ax, [es:bx + 0x12]
+        and ax, 0xFFFF - THIEF_BIT
+        mov [cs:cu_others], ax
+        mov byte [cs:cu_kind], 0xFF     ; a weapon's kind (0FFh none)
+        test byte [cs:cu_flags], 3
+        jz .kind
+        cmp dx, KIND_TYPES
+        jae .kind
+        mov si, dx
+        mov al, [cs:si + kind_of_type]
+        dec al
+        mov [cs:cu_kind], al
+.kind:  pop ds
+        call specialized_back   ; (a dual-classed warrior's own kinds: as the game has them)
+        jnc .holds0
+        mov byte [cs:cu_kind], 0xFF
+.holds0:
+        mov cx, 3                       ; CL the classes that hold, CH more than one (not human)
+        cmp byte [es:bx + 0x18], 1
+        jne .multi
+        mov cl, 1
+        jmp .holds
+.multi: cmp byte [es:bx + 0x22], 0
+        je .holds
+        inc ch
+.holds: xor di, di
+.each:  mov al, [es:bx + di + 0x21]
+        or al, al
+        jz .next
+        call class_forbids_one
+        jc .out
+.next:  inc di
+        cmp di, cx                      ; (CH 1: DI never reaches it, and the third slot ends it)
+        jae .out                        ; (CF clear)
+        cmp di, 3
+        jb .each
+        clc
+.out:   pop di
+        pop si
+        pop dx
+        pop cx
+        pop bx
+        pop ax
+        ret
+
+; SPECIALIZED_BACK: carry set if CU_KIND is a kind the character (sheet ES:BX) specialized in as a
+; fighter, gladiator or ranger, a human who has dual-classed and whose new class's level has
+; passed the old (restrict.specialized_back). All registers kept.
+specialized_back:
+        pusha
+        mov al, [cs:cu_kind]
+        cmp al, 0xFF
+        je .no
+        cmp byte [es:bx + 0x18], 1
+        jne .no
+        inc al
+        cmp [es:bx + SPEC_SLOTS], al
+        je .kind
+        cmp [es:bx + SPEC_SLOTS + 1], al
+        je .kind
+        cmp [es:bx + SPEC_SLOTS + 2], al
+        je .kind
+        cmp [es:bx + SPEC_SLOTS + 3], al
+        jne .no
+.kind:  mov si, 1
+.class: mov al, [es:bx + si + 0x21]
+        cmp al, FIGHTER_CLASS
+        je .warrior
+        cmp al, GLADIATOR_CLASS
+        je .warrior
+        cmp al, 13
+        jb .next
+        cmp al, 16
+        ja .next
+.warrior:
+        mov al, [es:bx + si + 0x24]
+        cmp al, [es:bx + 0x24]
+        jb .yes
+.next:  inc si
+        cmp si, 3
+        jb .class
+.no:    popa
+        clc
+        ret
+.yes:   popa
+        stc
+        ret
+
+; CLASS_FORBIDS_ONE: carry set if class AL keeps the character (sheet ES:BX, CH 1 if multiclass)
+; from the item CLASS_FORBIDS has described in CU_*.
+class_forbids_one:
+        cmp al, 12                      ; psionicist
+        jne .thief
+        call heavy
+        jc .ret
+        call shield_not_leather
+        jc .ret
+        mov dl, [cs:cu_kind]
+        cmp dl, 0xFF
+        je .ok
+        push cx
+        mov cl, dl
+        mov dx, 1
+        shl dx, cl
+        pop cx
+        test dx, PSI_KINDS
+        jnz .ok
+        stc
+        ret
+.thief: cmp al, 17
+        jne .pres
+        or ch, ch
+        jz .ok
+        call heavy
+        jc .ret
+        call shield_not_leather
+        jc .ret
+        test byte [cs:cu_flags], 4
+        jz .ok
+        cmp word [cs:cu_others], 0
+        jne .ok
+        stc
+        ret
+.pres:  cmp al, 11
+        jne .druid
+        or ch, ch
+        jnz .ok
+        jmp .bare
+.druid: cmp al, 5
+        jb .cleric
+        cmp al, 8
+        ja .ok
+.bare:  cmp byte [cs:cu_armour], 0      ; no armour, no shield
+        jne .no
+        test byte [cs:cu_flags], 4
+        jz .ok
+.no:    stc
+        ret
+.cleric:                                ; (1-4)
+        cmp byte [cs:cu_kind], 0xFF
+        je .ok
+        push si
+        xor si, si
+.sphere:
+        mov al, [es:bx + si + 0x21]     ; a cleric's or ranger's sphere: its class less 1 (13 a ranger's), mod 4
+        dec al
+        cmp al, 4
+        jb .is
+        sub al, 12
+        cmp al, 4
+        jae .nexts
+.is:    call sphere_allows
+        jnc .yes
+.nexts: inc si
+        cmp si, 3
+        jb .sphere
+        pop si
+        stc
+        ret
+.yes:   pop si
+.ok:    clc
+.ret:   ret
+
+; HEAVY: carry set for armour not light (not leather, and of a material)
+heavy:  cmp byte [cs:cu_armour], 0
+        je .light
+        cmp byte [cs:cu_mat], LEATHER
+        je .light
+        cmp byte [cs:cu_mat], NO_MATERIAL
+        je .light
+        stc
+        ret
+.light: clc
+        ret
+
+; SHIELD_NOT_LEATHER: carry set for a shield of a material not leather
+shield_not_leather:
+        test byte [cs:cu_flags], 4
+        jz .ok
+        cmp byte [cs:cu_mat], LEATHER
+        je .ok
+        stc
+        ret
+.ok:    clc
+        ret
+
+; SPHERE_ALLOWS: carry clear if sphere AL (0 air, 1 earth, 2 fire, 3 water) allows the weapon:
+; air, missile and thrown weapons and daggers; the others by material.
+sphere_allows:
+        push cx
+        or al, al
+        jnz .mat
+        test byte [cs:cu_flags], 0x12
+        jnz .yes
+        cmp byte [cs:cu_kind], 2        ; (a dagger)
+        je .yes
+        jmp .no
+.mat:   mov ah, SPHERE_EARTH
+        cmp al, 1
+        je .test
+        mov ah, SPHERE_FIRE
+        cmp al, 2
+        je .test
+        mov ah, SPHERE_WATER
+.test:  mov cl, [cs:cu_mat]
+        cmp cl, 8
+        jae .no
+        mov ch, 1
+        shl ch, cl
+        test ah, ch
+        jnz .yes
+.no:    pop cx
+        stc
+        ret
+.yes:   pop cx
+        clc
+        ret
+
+cu_flags   db 0
+cu_mat     db 0
+cu_armour  db 0
+
+; BRACERS_AX: ZF set if AX is the bracers of defense's type (TYPES_FIRST + BRACERS, once the
+; types are in). All registers kept.
+bracers_ax:
+        push bx
+        mov bx, [cs:types_first]
+        or bx, bx
+        jz .no
+        add bx, BRACERS
+        cmp ax, bx
+        pop bx
+        ret
+.no:    inc bx                  ; (ZF clear)
+        pop bx
+        ret
+cu_kind    db 0
+cu_others  dw 0
+
+; PROBE_NO_CAST: INT VEC_NO_CAST replaces "add sp,4" (3 bytes: INT + NOP; DSUN.EXE 89B84h) at the
+; end of the game's test of whether a character can't cast spells, which the USE screen asks
+; before it shows a spell as one to cast and before it casts one, wizard or priest (not a
+; psionic power), and so does a spell queued in a fight: DX the character, AX not 0 if it can't
+; (its "No spell use" effect). With RULE_RESTRICT, a multiclass preserver (not a human, who
+; dual-classes) can't either while it wears armour, a helm too (ARMOUR_WORN; a shield doesn't
+; count).
+PRESERVER_CLASS equ 11
+probe_no_cast:
+        push bp                 ; the replaced "add sp,4": move the interrupt frame (and BP)
+        mov bp, sp              ; up over the 4 bytes, so IRET returns with them gone
+        push ax
+        mov ax, [bp + 6]
+        mov [bp + 10], ax       ; flags
+        mov ax, [bp + 4]
+        mov [bp + 8], ax        ; CS
+        mov ax, [bp + 2]
+        mov [bp + 6], ax        ; IP
+        mov ax, [bp]
+        mov [bp + 4], ax        ; BP
+        pop ax
+        mov sp, bp
+        add sp, 4
+        pop bp
+        or ax, ax
+        jnz .done
+        test word [cs:rules], RULE_RESTRICT
+        jz .done
+        push bx
+        push cx
+        push es
+        mov bx, dx
+        imul bx, bx, 0x47
+        les cx, [0x1661]
+        add bx, cx
+        cmp byte [es:bx + 0x18], 1      ; a human: none
+        je .out
+        cmp byte [es:bx + 0x22], 0      ; one class: none
+        je .out
+        cmp byte [es:bx + 0x21], PRESERVER_CLASS
+        je .pres
+        cmp byte [es:bx + 0x22], PRESERVER_CLASS
+        je .pres
+        cmp byte [es:bx + 0x23], PRESERVER_CLASS
+        jne .out
+.pres:  call armour_worn
+        adc ax, 0                       ; (AX was 0)
+.out:   pop es
+        pop cx
+        pop bx
+.done:  iret
+
+; ARMOUR_WORN: carry set if creature DX (DS = the game's) wears armour, a helm too: an item of
+; a type the game marks armour (+0Fh 80h), not a shield, on its arms, legs, head or chest.
+; All registers kept.
+armour_worn:
+        pushad
+        push es
+        mov ax, ds
+        add ax, THINGS_SEG
+        mov [cs:r_things], ax
+        imul ax, dx, 0x3A
+        mov [cs:r_creature], ax
+        mov cx, 8               ; its item lists, each a thing: +8, +0Ah, +0Ch
+.list:  les bx, [CREATURES]
+        add bx, [cs:r_creature]
+        add bx, cx
+        mov dx, [es:bx]
+        cmp dx, NO_THING
+        jae .next
+        mov es, [cs:r_things]
+        mov bx, dx
+        imul bx, bx, 3
+        cmp byte [es:bx+THINGS], 1
+        jne .next               ; not an item
+        mov dx, [es:bx+THINGS+1]
+        mov byte [cs:r_left], 100
+.item:  cmp dx, NO_THING
+        jae .next
+        les bx, [ITEMS]
+        imul ax, dx, 0x15
+        add bx, ax
+        mov dx, [es:bx+4]       ; (the next)
+        mov al, [es:bx+0x11]    ; the slot
+        cmp al, ARM_SLOT
+        je .slot
+        cmp al, LEG_SLOT
+        je .slot
+        cmp al, HEAD_SLOT
+        je .slot
+        cmp al, CHEST_SLOT
+        jne .on
+.slot:  mov si, [es:bx+0x0A]
+        push ax
+        mov ax, si
+        call bracers_ax                 ; (bracers aren't armour)
+        pop ax
+        je .on
+        imul si, si, 0x14
+        les bx, [ITEM_TYPES]
+        add bx, si
+        test byte [es:bx], 4    ; a shield
+        jnz .on
+        test byte [es:bx+0x0F], 0x80
+        jz .on
+        pop es
+        popad
+        stc
+        ret
+.on:    dec byte [cs:r_left]
+        jnz .item
+.next:  add cx, 2
+        cmp cx, 0x0E
+        jb .list
+        pop es
+        popad
+        clc
+        ret
+
+; Weapon pages in the character creation panel (RULE_SPECIALIZE; dscompanion/weaponpages.py, which
+; puts the windows and their pictures in the Ledger's RESOURCE.GFF). The panel shows the psionic
+; disciplines' window (3012, DS:EA2h its window) or the clerical spheres' (3013, DS:EA6h), which
+; the game swaps through its routines at DSUN.EXE 640E4h (to the spheres) and 641B9h (back). For a
+; fighter, gladiator or ranger it gets windows with WEAPON SPEC for its button (3018 for the
+; disciplines if it has no sphere, 3019 for the spheres), and that opens the four weapon pages
+; (3014-3017; kept at DS:EA6h, as the spheres' window is, so that the game closes it as one),
+; each four kinds (specialize.KINDS), MORE SPECS to the next, the last's VIEW PSIONICS back.
+; The kind marked is the creation sheet's (DS:119Ch) first SPEC_SLOTS byte, which goes with the
+; sheet when DONE is pressed (the Ledger puts in the long sword for a warrior who marks none).
+; PROBE_WP_DISC_WIN: INT replaces "push 0BC4h" (3 bytes: INT + NOP; 67BFBh), the disciplines'
+; window being opened: pushes 3018's id instead for a warrior with no sphere.
+; PROBE_WP_SPHERE_WIN: INT replaces "push 0BC5h" (6413Bh), the spheres' window being opened:
+; 3019's id instead for a warrior.
+; PROBE_WP_SHOWN: INT replaces "cmp ax,8" (3 bytes: INT + NOP; 6337Ah) where a new class has been
+; picked and the game asks whether the spheres' window is up (AX 8 if it is, from the routine it
+; has just called, 118:C36h, with the window's id) to close it: 8 too if a warrior's spheres or a
+; weapon page is up. RETF 2 keeps the compare's flags.
+; PROBE_WP_DISC_CLICK, PROBE_WP_SPHERE_CLICK: INT replaces "mov bx,[bp+8]" (3 bytes: INT + NOP;
+; 64311h, 642B0h) in those windows' click routines, [BP+8] the button: WEAPON SPEC opens the
+; first page, and the routine goes on at its end (6433Fh, 642E2h: the redraw). Both read
+; the far addresses of the game's window routines from the calls in their own overlay, as the
+; loader has fixed them (WP_CALLS), for WP_HANDLER to call.
+WP_DISC_ID   equ 0xBC4              ; (windows' ids: 3012, 3013, 3014-3017, 3018, 3019)
+WP_SPHERE_ID equ 0xBC5
+WP_PAGE_ID   equ 0xBC6
+WP_WDISC_ID  equ 0xBCA
+WP_WSPHERE_ID equ 0xBCB
+WP_ROW       equ 0x840              ; (buttons: the kinds' rows, MORE SPECS, VIEW PSIONICS, WEAPON SPEC)
+WP_MORE      equ 0x850
+WP_BACK      equ 0x851
+WP_VIEW      equ 0x852
+WP_PAGES     equ 4
+WP_DISC      equ 0xEA2              ; DS: the panel's windows (far)
+WP_SPHERE    equ 0xEA6
+WP_DISC_MASK equ 0x4980             ; DS: the disciplines and spheres marked, kept while hidden
+WP_SPHERE_MASK equ 0x4982
+WP_CREATION  equ 0x119C             ; DS: the sheet being made (far; its classes numbered 1-8)
+WP_STUB      equ 0x421D - 0x4356    ; the creation overlay's stub, less DS: its entries
+WP_MARKED    equ 0x66               ; (63EFAh: the rows marked, as a mask)
+WP_TO_DISC   equ 0x7A               ; (641B9h: back to the disciplines)
+WP_X         equ 0xD2               ; (the panel's place)
+WP_Y         equ 0x58
+CR_CLERIC    equ 1                  ; (classes at creation)
+CR_DRUID     equ 2
+CR_FIGHTER   equ 3
+CR_GLADIATOR equ 4
+CR_RANGER    equ 7
+; WP_CALLS: the routines' far calls (9Ah) in the overlay, back from the click probes' return
+; (the overlay's 642B3h and 64314h; the calls at 64127h close, 6413Eh open, 6416Fh print,
+; 6417Dh set the text colour, 641AFh the panel's help line, 6422Fh set a button, 642E2h redraw)
+WP_CALL_CLOSE  equ 0x64127
+WP_CALL_OPEN   equ 0x6413E
+WP_CALL_PRINT  equ 0x6416F
+WP_CALL_COLOUR equ 0x6417D
+WP_CALL_HELP   equ 0x641AF
+WP_CALL_BUTTON equ 0x6422F
+WP_CALL_REDRAW equ 0x642E2
+WP_CALL_MARK   equ 0x63FC4          ; (the row's mark: A0:3180h, as 63FEEh draws it)
+WP_MARK_SEG    equ 0x63FB2          ; ("mov ax,338h": the marks' table's segment, +1ABh)
+WP_MARK_WIN    equ 0xF32            ; DS: the window the marks are drawn through (far)
+WP_SPHERE_SEG  equ 0x6412F          ; ("push 538h": the spheres' routine's stub segment, as fixed)
+WP_SPHERE_ENTRY equ 0x57            ; (its entry there)
+WP_SPHERE_RET  equ 0x642B2          ; (the click probes' return, and where they go on to)
+WP_SPHERE_END  equ 0x642E2
+WP_DISC_RET    equ 0x64313
+WP_DISC_END    equ 0x6433F
+WP_SHOWN_CALL  equ 0x63372          ; (118:C36h's call, and PROBE_WP_SHOWN's return)
+WP_SHOWN_RET   equ 0x6337C
+
+probe_wp_disc_win:
+        sub sp, 2               ; push the window's id: the frame down a word
+        push bp
+        mov bp, sp
+        push ax
+        mov ax, [bp + 4]
+        mov [bp + 2], ax
+        mov ax, [bp + 6]
+        mov [bp + 4], ax
+        mov ax, [bp + 8]
+        mov [bp + 6], ax
+        mov word [bp + 8], WP_DISC_ID
+        test word [cs:rules], RULE_SPECIALIZE
+        jz .out
+        call wp_classes         ; AL a warrior, AH a sphere
+        or al, al
+        jz .out
+        or ah, ah
+        jnz .out
+        mov word [bp + 8], WP_WDISC_ID
+.out:   pop ax
+        pop bp
+        iret
+
+probe_wp_sphere_win:
+        sub sp, 2
+        push bp
+        mov bp, sp
+        push ax
+        mov ax, [bp + 4]
+        mov [bp + 2], ax
+        mov ax, [bp + 6]
+        mov [bp + 4], ax
+        mov ax, [bp + 8]
+        mov [bp + 6], ax
+        mov word [bp + 8], WP_SPHERE_ID
+        test word [cs:rules], RULE_SPECIALIZE
+        jz .out
+        call wp_classes
+        or al, al
+        jz .out
+        mov word [bp + 8], WP_WSPHERE_ID
+.out:   pop ax
+        pop bp
+        iret
+
+; WP_ALLOWED: AX the kinds (bit 0 the long sword) the sheet being made can choose: those whose
+; plain weapon (WP_PLAIN) the game's class lists and CLASS_FORBIDS let it use, its classes as the
+; sheet numbers them (a cleric's or ranger's by the sphere marked). restrict.allowed_kinds.
+wp_allowed:
+        push bx
+        push cx
+        push dx
+        push si
+        push di
+        push es
+        les bx, [WP_CREATION]
+        push ds
+        push cs
+        pop ds
+        mov di, wp_sheet
+        mov cx, 0x47 / 2 + 1
+        xor ax, ax
+.zero:  mov [di], ax
+        add di, 2
+        loop .zero
+        pop ds
+        mov al, [es:bx + 0x18]
+        mov [cs:wp_sheet + 0x18], al
+        xor si, si
+        xor dx, dx              ; DX the class flags
+.class: mov al, [es:bx + si + 0x24]
+        mov [cs:wp_sheet + si + 0x24], al
+        movzx di, byte [es:bx + si + 0x21]
+        cmp di, 8
+        ja .next
+        shl di, 2
+        mov al, [cs:di + wp_class_map]
+        mov cx, [cs:di + wp_class_map + 2]
+        cmp byte [cs:di + wp_class_map + 1], 0  ; (a sphere to add: 0-3 by the mark)
+        je .put
+        mov ah, 0x80
+.sphere:
+        test [WP_SPHERE_MASK], ah
+        jnz .put
+        inc al
+        shl cx, 1
+        shr ah, 1
+        cmp ah, 0x08
+        ja .sphere
+        sub al, 4               ; (none marked: the first)
+        shr cx, 4
+.put:   mov [cs:wp_sheet + si + 0x21], al
+        cmp byte [cs:di + wp_class_map + 1], 2  ; (a ranger's sphere doesn't change its flag)
+        jne .flag
+        mov cx, 0x200
+.flag:  or dx, cx
+.next:  inc si
+        cmp si, 3
+        jb .class
+        mov [cs:wp_sheet + 0x12], dx
+        push cs
+        pop es
+        mov bx, wp_sheet
+        call kinds_allowed
+        pop es
+        pop di
+        pop si
+        pop dx
+        pop cx
+        pop bx
+        ret
+
+; KINDS_ALLOWED: AX the kinds (bit 0 the long sword) the character whose sheet is at ES:BX can
+; choose: those with an item type (KIND_OF_TYPE) the game's class lists and CLASS_FORBIDS let it
+; use (a fire cleric's long sword the obsidian one, not the plain bone one).
+; DS = the game's. Others kept.
+kinds_allowed:
+        push cx
+        push dx
+        push si
+        push di
+        xor dx, dx              ; DX each item type of a kind, CL its kind
+        xor di, di
+.type:  mov si, dx
+        mov cl, [cs:si + kind_of_type]
+        sub cl, 1
+        jc .no
+        bt di, cx
+        jc .no                  ; (one of its types already let in)
+        push es
+        push bx
+        imul ax, dx, 0x14
+        les bx, [0x1669]
+        add bx, ax
+        mov ax, [es:bx + 0x10]
+        pop bx
+        pop es
+        and ax, [es:bx + 0x12]
+        jz .no
+        call class_forbids
+        jc .no
+        movzx cx, cl
+        bts di, cx
+.no:    inc dx
+        cmp dx, KIND_TYPES
+        jb .type
+        mov ax, di
+        pop di
+        pop si
+        pop dx
+        pop cx
+        ret
+
+; PROBE_LV_PICK: INT VEC_LV_PICK replaces "cmp word [bp+8],0Bh" (4 bytes: INT + 2 NOPs, then the
+; game's "jnz +7"; DSUN.EXE 87A9Bh) in the routine that raises a character a level in a class
+; ([BP+8] the class, SI the character), where it goes on to have a preserver pick a new spell and a
+; psionicist a new power. With weapon specialization, a fighter, gladiator or ranger with fewer
+; weapon kinds than it is due (LV_DUE: a gladiator two, a third at 6th level and a fourth at 9th;
+; a fighter or ranger one) picks the rest the way a psionicist picks a power: the game's own
+; routine for that (its far call a little further on, 620:57h) is called in weapon mode (LV_MODE),
+; in which the PROBE_PK_* probes in it show the weapon window (weaponpages.PICKER) in place of the
+; powers' and take its clicks. Then on as the compare and the JNZ would have gone. The level-up
+; routine is overlay code: the way back is put in a frame the overlay manager can fix up, as for
+; PROBE_NEXT.
+LV_SHEETS   equ 0x1661          ; DS: the sheets (far, 47h bytes each) and creatures (3Ah each)
+LV_PARTY    equ 4
+LV_PSI_CALL equ 0x87AB0 - 0x87A9D  ; the psionicists' pop-up's far call's address, less the INT's
+probe_lv_pick:
+        sti
+        pushad
+        push es
+        mov bx, sp              ; the interrupt frame at BX+34: IP, CS, flags
+        push ds
+        push si
+        lds si, [ss:bx + 34]
+        mov eax, [si + LV_PSI_CALL]
+        mov [cs:lv_psi], eax
+        pop si
+        pop ds
+        mov ax, [ss:bx + 34]
+        add ax, 4               ; past the NOPs and the JNZ for a preserver ...
+        cmp word [bp + 8], 0x0B
+        je .frame
+        add ax, 7               ; ... and to its target for any other class
+.frame: push word [ss:bx + 36]
+        push ax
+        push bp
+        mov bp, sp
+        call lv_check
+        pop bp
+        pop ax                  ; the way back, as the overlay manager has left it
+        pop dx
+        mov bx, sp
+        mov [ss:bx + 34], ax
+        mov [ss:bx + 36], dx
+        pop es
+        popad
+        iret
+
+; Character SI (DS the game's) asked for weapon kinds while it has fewer than it is due
+lv_check:
+        test word [cs:rules], RULE_SPECIALIZE
+        jz .ret
+        cmp si, LV_PARTY
+        jae .ret
+        cmp byte [cs:showing], 0
+        jne .ret
+        les bx, [LV_SHEETS]
+        imul ax, si, 0x47
+        add bx, ax
+        call lv_due
+        xor dx, dx              ; DX the kinds it has, DI the first slot empty
+        mov di, SPEC_COUNT
+        push si
+        mov si, SPEC_COUNT - 1
+.have:  movzx ax, byte [es:bx + si + SPEC_SLOTS]
+        or ax, ax
+        jnz .has
+        mov di, si
+        jmp .next
+.has:   inc dx
+.next:  dec si
+        jns .have
+        pop si
+        cmp dx, cx
+        jae .ret
+        cmp di, SPEC_COUNT
+        jae .ret
+        mov [cs:lv_have], dl
+        sub cl, dl              ; (the kinds due less those it has: those left)
+        mov [cs:lv_left], cl
+        call kinds_allowed
+        push si
+        xor si, si              ; less those it has
+.mine:  movzx cx, byte [es:bx + si + SPEC_SLOTS]
+        jcxz .mine_next
+        dec cx
+        btr ax, cx
+.mine_next:
+        inc si
+        cmp si, SPEC_COUNT
+        jb .mine
+        pop si
+        or ax, ax
+        jz .ret
+        mov cl, [cs:lv_left]    ; (no more than there are to pick)
+        xor dx, dx
+        xor di, di
+.count: bt ax, di
+        adc dl, 0
+        inc di
+        cmp di, 16
+        jb .count
+        cmp dl, cl
+        jae .left
+        mov cl, dl
+.left:  mov [cs:lv_left], cl
+        call lv_ask
+.ret:   ret
+
+; LV_DUE: CX the weapon kinds the character whose sheet is ES:BX is due: a gladiator 2, 3 from 6th
+; level, 4 from 9th; a fighter or ranger 1; 0 for others. A human's earlier classes (dual-classed)
+; count only once its first class's level has passed theirs. Others kept.
+lv_due:
+        push ax
+        push si
+        xor cx, cx
+        xor si, si
+.class: mov al, [es:bx + si + 0x21]
+        mov ah, [es:bx + si + 0x24]
+        or si, si
+        jz .on
+        cmp byte [es:bx + 0x18], 1
+        jne .on
+        cmp ah, [es:bx + 0x24]
+        jae .next
+.on:    cmp al, GLADIATOR_CLASS
+        jne .warrior
+        mov al, 2
+        cmp ah, 6
+        jb .most
+        inc al
+        cmp ah, 9
+        jb .most
+        inc al
+        jmp .most
+.warrior:
+        cmp al, FIGHTER_CLASS
+        je .one
+        cmp al, 13
+        jb .next
+        cmp al, 16
+        ja .next
+.one:   mov al, 1
+.most:  cmp cl, al
+        jae .next
+        mov cl, al
+.next:  inc si
+        cmp si, 3
+        jb .class
+        pop si
+        pop ax
+        ret
+
+; LV_ASK: the psionicists' pop-up (LV_PSI) in weapon mode for character SI (DS the game's): the
+; kinds AX to pick from, LV_LEFT of them to pick. Each kind clicked goes in the sheet's first empty
+; SPEC_SLOTS byte (PK_TAKE); the window closes once LV_LEFT are picked, or with EXIT.
+lv_ask:
+        pusha
+        push es
+        mov [cs:lv_avail], ax
+        mov [cs:lv_member], si
+        mov byte [cs:lv_mode], 1
+        mov byte [cs:showing], 1
+        push si
+        call far [cs:lv_psi]
+        add sp, 2
+        mov byte [cs:lv_mode], 0
+        mov byte [cs:showing], 0
+        pop es
+        popa
+        ret
+
+; The PROBE_PK_* probes, in the psionicists' pop-up (DSUN.EXE 85EECh, its window routine 85F6Eh,
+; the window's drawing 86107h and clicks 862B6h); outside weapon mode each does what it replaced.
+; PROBE_PK_COUNT: "mov dx,ax / or dx,dx" (85F01h; 4 bytes), the powers it has to pick: some.
+; PROBE_PK_WIN: "push 445Dh" (85FF4h; 3 bytes), the window: the weapon window.
+; PROBE_PK_LEFT: "mov al,[4AECh]" (8602Dh; 3 bytes), the number shown: the kinds left to pick.
+; PROBE_PK_TITLE: "push ds / push 3026h" (860C3h; 4 bytes), "PICK A PSIONIC POWER,": the weapons',
+;   and its colours near-white on black (the next pushes' bytes; the game's own put back otherwise).
+; PROBE_PK_FILL: "xor di,di / mov si,di" (8610Fh; 4 bytes), at the start of the powers' pictures
+;   put in: none; the rows of the kinds it can't pick out of use (the routine's end, 862A7h).
+; PROBE_PK_CLICK: "mov ax,[bp+8]" (862D4h; 3 bytes), a button clicked: a row it can pick taken
+;   (PK_TAKE), then the window closed (as for a close, 86370h) once none are left to pick, or left up
+;   (86367h).
+PICK_WIN      equ 0xBCD             ; (weaponpages.PICKER: 3021)
+PICK_FIRST    equ 0x860             ; (weaponpages.PICK_FIRST: its rows)
+PICK_COUNT_BUTTON equ 0x2C37
+PK_FILL_DONE  equ 0x862A7 - 0x86111 ; (the drawing routine's end, less the address after the INT)
+PK_STAY       equ 0x86367 - 0x862D6 ; (the click handler's way out, and its close's)
+PK_CLOSE      equ 0x86370 - 0x862D6
+PK_OP_CALL    equ 0x86069 - 0x86111 ; (140:71Ah's far address, in a call, less the address after
+PK_LABEL_CALL equ 0x86054 - 0x86111 ;   PROBE_PK_FILL's INT; and 140:7FAh's)
+PK_WINDOW     equ 0x11A4            ; DS: the window up (far)
+PK_TITLE_SECOND equ 0x860CB - 0x860C5 ; ("push 0D000FEh" and "push 0D3009Fh", after PROBE_PK_TITLE's
+PK_TITLE_INK  equ 0x860D1 - 0x860C5 ;   INT: their colour bytes, less the address after it)
+PK_GAME_SECOND equ 0xD0
+PK_GAME_INK   equ 0xD3              ; (dark grey)
+PK_PICK_SECOND equ 0xD0             ; (as the game has it)
+PK_PICK_INK   equ 0xD9              ; (near-white: 234, 234, 234)
+probe_pk_count:
+        mov dx, ax
+        cmp byte [cs:lv_mode], 0
+        je .flags
+        mov dx, 2               ; (2: [4AECh] 1, as the routine counts; PROBE_PK_LEFT shows ours)
+.flags: push bp
+        mov bp, sp
+        push ax
+        or dx, dx
+        pushf
+        pop ax
+        and ax, 0x08D5
+        and word [bp + 6], 0xFFFF - 0x08D5
+        or [bp + 6], ax
+        pop ax
+        pop bp
+        iret
+
+probe_pk_win:
+        sub sp, 2               ; push the window's id: the frame down a word
+        push bp
+        mov bp, sp
+        push ax
+        mov ax, [bp + 4]
+        mov [bp + 2], ax
+        mov ax, [bp + 6]
+        mov [bp + 4], ax
+        mov ax, [bp + 8]
+        mov [bp + 6], ax
+        mov word [bp + 8], 0x445D
+        cmp byte [cs:lv_mode], 0
+        je .out
+        mov word [bp + 8], PICK_WIN
+.out:   pop ax
+        pop bp
+        iret
+
+probe_pk_left:
+        mov al, [0x4AEC]
+        cmp byte [cs:lv_mode], 0
+        je .out
+        mov al, [cs:lv_left]
+.out:   iret
+
+probe_pk_title:
+        sub sp, 4               ; push a far pointer: the frame down two words
+        push bp
+        mov bp, sp
+        push ax
+        mov ax, [bp + 6]
+        mov [bp + 2], ax
+        mov ax, [bp + 8]
+        mov [bp + 4], ax
+        mov ax, [bp + 10]
+        mov [bp + 6], ax
+        mov [bp + 10], ds
+        mov word [bp + 8], 0x3026
+        push ds
+        push bx
+        lds bx, [bp + 2]        ; the line's colours, in the pushes that come next: the game's ...
+        mov byte [bx + PK_TITLE_SECOND], PK_GAME_SECOND
+        mov byte [bx + PK_TITLE_INK], PK_GAME_INK
+        cmp byte [cs:lv_mode], 0
+        je .out
+        mov byte [bx + PK_TITLE_SECOND], PK_PICK_SECOND  ; ... or near-white on black, as the rows
+        mov byte [bx + PK_TITLE_INK], PK_PICK_INK
+        mov [bp + 10], cs
+        mov word [bp + 8], lv_title
+.out:   pop bx
+        pop ds
+        pop ax
+        pop bp
+        iret
+
+probe_pk_fill:
+        xor di, di
+        mov si, di
+        cmp byte [cs:lv_mode], 0
+        je .out
+        push bp
+        mov bp, sp
+        push ds
+        push bx
+        lds bx, [bp + 2]        ; the code after the INT: the far calls' addresses, as fixed up
+        mov eax, [bx + PK_OP_CALL]
+        mov [cs:lv_op_call], eax
+        mov eax, [bx + PK_LABEL_CALL]
+        mov [cs:lv_label_call], eax
+        pop bx
+        pop ds
+        add word [bp + 2], PK_FILL_DONE
+        pop bp
+        call pk_ops
+.out:   iret
+
+; every row in use if its kind is in LV_AVAIL, out of use if not (DS the game's)
+pk_ops:
+        pusha
+        push es
+        xor si, si
+.row:   xor ax, ax
+        bt [cs:lv_avail], si
+        jc .op
+        inc ax
+.op:    push ax
+        push word 0
+        lea bx, [si + PICK_FIRST]
+        push bx
+        push dword [PK_WINDOW]
+        call far [cs:lv_op_call]
+        add sp, 10
+        inc si
+        cmp si, 16
+        jb .row
+        pop es
+        popa
+        ret
+
+probe_pk_click:
+        push bp
+        mov bp, sp              ; ([BP]: the click handler's BP)
+        push bx
+        mov bx, [bp]
+        mov ax, [ss:bx + 8]     ; the replaced "mov ax,[bp+8]": the button
+        cmp byte [cs:lv_mode], 0
+        je .out
+        sub ax, PICK_FIRST
+        cmp ax, 16
+        jae .back
+        bt [cs:lv_avail], ax
+        jnc .back
+        btr [cs:lv_avail], ax
+        call pk_take
+        dec byte [cs:lv_left]
+        mov ax, PK_STAY
+        jnz .go
+        mov ax, PK_CLOSE
+.go:    add [bp + 2], ax
+        jmp .out
+.back:  add ax, PICK_FIRST
+.out:   pop bx
+        pop bp
+        iret
+
+; PK_TAKE: kind AX into the sheet of LV_MEMBER (its first empty SPEC_SLOTS byte), its row out of
+; use, and the number shown one less (DS the game's)
+pk_take:
+        pusha
+        push es
+        mov dx, ax
+        les bx, [LV_SHEETS]
+        imul ax, [cs:lv_member], 0x47
+        add bx, ax
+        xor si, si
+.slot:  cmp byte [es:bx + si + SPEC_SLOTS], 0
+        je .put
+        inc si
+        cmp si, SPEC_COUNT
+        jb .slot
+        jmp .shown
+.put:   mov al, dl
+        inc al
+        mov [es:bx + si + SPEC_SLOTS], al
+.shown: push word 1
+        push word 0
+        add dx, PICK_FIRST
+        push dx
+        push dword [PK_WINDOW]
+        call far [cs:lv_op_call]
+        add sp, 10
+        mov al, [cs:lv_left]
+        dec al
+        add al, '0'
+        mov [cs:lv_count_text + 2], al
+        push cs
+        push word lv_count_text
+        push dword PICK_COUNT_BUTTON
+        push dword [PK_WINDOW]
+        call far [cs:lv_label_call]
+        add sp, 12
+        pop es
+        popa
+        ret
+
+lv_psi    dd 0                  ; the psionicists' pop-up (620:57h, as fixed up)
+lv_op_call dd 0                 ; 140:71Ah, a button's state (0 in use, 1 out of use)
+lv_label_call dd 0              ; 140:7FAh, a button's text
+lv_mode   db 0                  ; 1 while LV_ASK has the pop-up up for weapons
+lv_left   db 0
+lv_have   db 0
+lv_avail  dw 0
+lv_member dw 0
+lv_count_text db '  0', 0
+lv_title  db 'PICK A WEAPON SPECIALTY,', 0
+
+; PROBE_EF_ROWS: INT VEC_EF_ROWS replaces "pop di / pop si" (2 bytes; DSUN.EXE 7F13Eh) at the end of
+; the Effects screen's routine that puts the selected character's effects in their cells (7EDFAh,
+; run when the screen opens and when another character is picked; [BP-4] the cells it has used).
+; With weapon specialization, and the lower panel free (the game puts effects there only past 21),
+; the character's weapon kinds are listed there, in the game's text as the USE screen's spell slots
+; are (C_DRAW_LINE, at the same place): a line for the skill, then a line a kind. Then the pops,
+; from under the interrupt frame.
+EF_SEL_SEG   equ 0x7EE07 - 0x7F140  ; ("mov ax,348h": the selected character's number's segment,
+EF_SELECTED  equ 0x25B              ;   at +25Bh there; less the address after the INT)
+EF_CELLS     equ 21                 ; (the upper panel's)
+EF_LINES     equ 5
+probe_ef_rows:
+        sti
+        pushad
+        push es
+        test word [cs:rules], RULE_SPECIALIZE
+        jz .pops
+        cmp word [bp - 4], EF_CELLS
+        jg .pops
+        mov bx, sp
+        les di, [ss:bx + 34]    ; the code after the INT
+        mov es, [es:di + EF_SEL_SEG]
+        mov ax, [es:EF_SELECTED]
+        cmp ax, LV_PARTY
+        jae .pops
+        mov dx, ds
+        add dx, USE_TEXT_SEG
+        mov [cs:c_draw + 2], dx
+        mov word [cs:c_draw], USE_TEXT_OFF
+        mov edx, [PK_WINDOW]
+        mov [cs:c_winptr], edx
+        call ef_draw
+.pops:  pop es
+        popad
+        push bp                 ; the replaced pops: DI and SI from under the interrupt frame,
+        mov bp, sp              ;   the frame (and BP) moved up over them
+        push ax
+        mov di, [bp + 8]
+        mov si, [bp + 10]
+        mov ax, [bp + 6]
+        mov [bp + 10], ax       ; flags
+        mov ax, [bp + 4]
+        mov [bp + 8], ax        ; CS
+        mov ax, [bp + 2]
+        mov [bp + 6], ax        ; IP
+        mov ax, [bp]
+        mov [bp + 4], ax        ; BP
+        pop ax
+        mov sp, bp
+        add sp, 4
+        pop bp
+        iret
+
+; the kinds of party member AX (DS the game's): the skill's line where it changes, then the kind's
+ef_draw:
+        les bx, [LV_SHEETS]
+        imul ax, ax, 0x47
+        add bx, ax
+        mov word [cs:ef_y], USE_FIRST_Y
+        mov byte [cs:ef_last], 0xFF
+        xor di, di
+.slot:  movzx si, byte [es:bx + di + SPEC_SLOTS]
+        or si, si
+        jz .next
+        dec si
+        mov [cs:ef_kind], si
+        shl si, 1
+        mov si, [cs:si + wp_plain]  ; (its plain weapon's type: SPEC_OF_SHEET's skill with it)
+        call spec_of_sheet
+        mov al, 3
+        cmp dl, SPEC_EXPERT
+        je .skill
+        cmp dl, SPEC_SPECIAL
+        jb .next                ; (a warrior class not back yet: none)
+        mov al, dl
+        sub al, SPEC_SPECIAL
+.skill: cmp al, [cs:ef_last]
+        je .kind
+        mov [cs:ef_last], al
+        movzx si, al
+        shl si, 1
+        mov si, [cs:si + ef_skills]
+        call ef_line
+.kind:  mov si, [cs:ef_kind]
+        shl si, 1
+        mov si, [cs:si + ef_kinds]
+        call ef_line
+.next:  inc di
+        cmp di, SPEC_COUNT
+        jb .slot
+        ret
+
+; CS:SI on the panel's next line (all registers kept: the game's text routine changes ES)
+ef_line:
+        pusha
+        push es
+        cmp word [cs:ef_y], USE_FIRST_Y + (EF_LINES - 1) * USE_STEP
+        ja .out
+        push word [cs:ef_y]
+        push word USE_X
+        push cs
+        push si
+        call c_draw_line
+.out:   add word [cs:ef_y], USE_STEP
+        pop es
+        popa
+        ret
+
+ef_y         dw 0
+ef_kind      dw 0
+ef_last      db 0
+ef_skills    dw .s0, .s1, .s2, .s3
+.s0     db 'SPECIALIZED IN', 0
+.s1     db 'MASTER OF', 0
+.s2     db 'GRAND MASTER OF', 0
+.s3     db 'EXPERT IN', 0
+ef_kinds     dw .k0, .k1, .k2, .k3, .k4, .k5, .k6, .k7, .k8, .k9, .k10, .k11, .k12, .k13, .k14, .k15
+.k0     db '  LONG SWORD', 0
+.k1     db '  CLUB', 0
+.k2     db '  DAGGER', 0
+.k3     db '  SHORT SWORD', 0
+.k4     db '  MACE', 0
+.k5     db '  AXE', 0
+.k6     db '  GREAT AXE', 0
+.k7     db '  PICK', 0
+.k8     db '  QUARTERSTAFF', 0
+.k9     db '  POLEARM', 0
+.k10    db '  GYTHKA', 0
+.k11    db '  CAHULAKS', 0
+.k12    db '  CHATKCHA', 0
+.k13    db '  BOW', 0
+.k14    db '  SLING', 0
+.k15    db '  STAFF SLING', 0
+
+; By class as the creation screen numbers it (0-8): the sheet's number (the first of four, by
+; sphere), 1 if a sphere is added (2 for a ranger, whose flag is one), the class's flag
+wp_class_map db 0, 0
+             dw 0
+             db 1, 1
+             dw 0x01            ; cleric (air, earth, fire, water: flags 1, 2, 4, 8)
+             db 5, 0
+             dw 0x10            ; druid
+             db 9, 0
+             dw 0x20            ; fighter
+             db 10, 0
+             dw 0x40            ; gladiator
+             db 11, 0
+             dw 0x80            ; preserver
+             db 12, 0
+             dw 0x100           ; psionicist
+             db 13, 2
+             dw 0x200           ; ranger
+             db 17, 0
+             dw 0x400           ; thief
+wp_plain   dw 81, 18, 17, 115, 20, 22, 2, 112, 3, 19, 44, 21, 48, 1, 64, 0   ; (weaponchoice.PLAIN's types, by kind)
+wp_ok      dw 0
+wp_sheet   times 0x48 db 0
+
+; WP_GLADIATOR: ZF clear if the sheet being made (ES:BX) is a gladiator's (two kinds to choose).
+; All registers kept.
+wp_gladiator:
+        cmp byte [es:bx + 0x21], CR_GLADIATOR
+        je .yes
+        cmp byte [es:bx + 0x22], CR_GLADIATOR
+        je .yes
+        cmp byte [es:bx + 0x23], CR_GLADIATOR
+        je .yes
+        cmp al, al              ; (ZF set)
+        ret
+.yes:   push ax
+        or al, 1                ; (ZF clear)
+        pop ax
+        ret
+
+; WP_CLASSES: AL 1 if the sheet being made has a fighter, gladiator or ranger class, AH 1 if a
+; cleric, druid or ranger one (a sphere). Others kept.
+wp_classes:
+        push bx
+        push cx
+        push es
+        les bx, [WP_CREATION]
+        xor ax, ax
+        mov cx, 3
+.class: mov ch, [es:bx + 0x21]
+        cmp ch, CR_FIGHTER
+        je .warrior
+        cmp ch, CR_GLADIATOR
+        je .warrior
+        cmp ch, CR_RANGER
+        jne .sphere
+        mov ax, 0x0101
+        jmp .next
+.warrior:
+        mov al, 1
+        jmp .next
+.sphere:
+        cmp ch, CR_CLERIC
+        je .has
+        cmp ch, CR_DRUID
+        jne .next
+.has:   mov ah, 1
+.next:  inc bx
+        dec cl
+        jnz .class
+        pop es
+        pop cx
+        pop bx
+        ret
+
+probe_wp_shown:
+        sti
+        cmp ax, 8
+        je .ret
+        test word [cs:rules], RULE_SPECIALIZE
+        jz .ret
+        push bp
+        mov bp, sp
+        push bx
+        push cx
+        push dx
+        push es
+        mov es, [bp + 4]        ; 118:C36h's far address, from the call just made
+        mov bx, [bp + 2]
+        add bx, (WP_SHOWN_CALL + 1 - WP_SHOWN_RET) & 0xFFFF
+        mov ax, [es:bx]
+        mov [cs:wp_far], ax
+        mov ax, [es:bx + 2]
+        mov [cs:wp_far + 2], ax
+        mov bx, wp_mine
+.one:   push word 0
+        push word [cs:bx]
+        call far [cs:wp_far]
+        add sp, 4
+        cmp ax, 8
+        je .out
+        add bx, 2
+        cmp bx, wp_mine_end
+        jb .one
+.out:   pop es
+        pop dx
+        pop cx
+        pop bx
+        pop bp
+.ret:   cmp ax, 8
+        retf 2
+
+; PROBE_WP_CLASS: INT replaces "mov cx,1" (3 bytes: INT + NOP; 66406h) at the start of the routine
+; that runs after each click on a class (it puts DONE in or out of use): the disciplines' window
+; up is opened again if it is the other one for the class now (WEAPON SPEC or VIEW SPHERES); a
+; weapon page up is marked again for the class now (a gladiator's two), or, for one with no
+; weapon to choose, goes back to the disciplines.
+probe_wp_class:
+        mov cx, 1
+        test word [cs:rules], RULE_SPECIALIZE
+        jz .ret
+        push eax                ; (the classes changed: their defaults, until a kind is clicked;
+        push es                 ;   the routine runs after every click on the screen)
+        push bx
+        les bx, [WP_CREATION]
+        mov eax, [es:bx + 0x21]
+        and eax, 0x00FFFFFF
+        cmp eax, [cs:wp_classes_seen]
+        je .same
+        mov [cs:wp_classes_seen], eax
+        mov byte [cs:wp_touched], 0
+.same:  pop bx
+        pop es
+        pop eax
+        push ax
+        push bx
+        push es
+        mov ax, [WP_DISC]       ; the disciplines up: the right window for the class now?
+        or ax, [WP_DISC + 2]
+        jz .page
+        call wp_classes
+        mov bx, WP_DISC_ID
+        or al, al
+        jz .want
+        or ah, ah
+        jnz .want
+        mov bx, WP_WDISC_ID
+.want:  mov [cs:wp_button], bx
+        les bx, [WP_DISC]
+        mov ax, [es:bx + 8]
+        cmp ax, [cs:wp_button]
+        je .out
+        sti
+        pushad
+        push es
+        push word 0x7F8         ; (its marks kept, as 640E4h keeps them)
+        push word 0x7F6
+        push dword [WP_DISC]
+        call wp_marked
+        add sp, 8
+        mov [WP_DISC_MASK], ax
+        mov ax, ds              ; and the game opens it again (641B9h), as for the class now
+        add ax, WP_STUB
+        mov [cs:wp_far + 2], ax
+        mov word [cs:wp_far], WP_TO_DISC
+        call far [cs:wp_far]
+        jmp .done
+.page:  mov ax, [WP_SPHERE]     ; a weapon page up: the window's id (+8)
+        or ax, [WP_SPHERE + 2]
+        jz .out
+        les bx, [WP_SPHERE]
+        mov ax, [es:bx + 8]
+        sub ax, WP_PAGE_ID
+        cmp ax, WP_PAGES
+        jae .out
+        mov [cs:wp_page], al
+        sti
+        pushad
+        push es
+        call wp_classes
+        or al, al
+        jz .back
+        call wp_marks
+        jmp .done
+.back:  mov ax, WP_BACK
+        call wp_page_button
+.done:  pop es
+        popad
+.out:   pop es
+        pop bx
+        pop ax
+.ret:   iret
+
+probe_wp_disc_click:
+        push bp
+        mov bp, sp
+        push ax
+        mov word [cs:wp_ret_file], WP_DISC_RET & 0xFFFF
+        mov word [cs:wp_end_file], WP_DISC_END & 0xFFFF
+        mov byte [cs:wp_from], 0
+        jmp wp_click
+
+probe_wp_sphere_click:
+        push bp
+        mov bp, sp
+        push ax
+        mov word [cs:wp_ret_file], WP_SPHERE_RET & 0xFFFF
+        mov word [cs:wp_end_file], WP_SPHERE_END & 0xFFFF
+        mov byte [cs:wp_from], 1
+; (BP: the frame, [BP] the game's BP, [BP+2] the return; AX pushed)
+wp_click:
+        push bx
+        mov bx, [bp]
+        mov bx, [ss:bx + 8]     ; the button
+        mov [cs:wp_button], bx
+        pop bx
+        test word [cs:rules], RULE_SPECIALIZE
+        jz .game
+        call wp_harvest
+        mov ax, [cs:wp_button]
+        cmp ax, WP_VIEW
+        je .view
+        cmp byte [cs:wp_from], 1    ; (a weapon page's button, in the spheres' routine)
+        jne .game
+        cmp ax, WP_ROW
+        jb .game
+        cmp ax, WP_VIEW
+        ja .game
+        sti
+        pushad
+        push es
+        call wp_page_button
+        pop es
+        popad
+        jmp .end
+.view:  sti
+        pushad
+        push es
+        xor al, al
+        call wp_open
+        pop es
+        popad
+.end:
+        mov ax, [cs:wp_end_file]  ; go on at the routine's end
+        sub ax, [cs:wp_ret_file]
+        add [bp + 2], ax
+.game:  pop ax
+        pop bp
+        mov bx, [cs:wp_button]
+        iret
+
+; WP_HARVEST: the window routines' far addresses from the overlay's calls (WP_CALLS), the
+; probe's frame at BP.
+wp_harvest:
+        push ax
+        push bx
+        push cx
+        push si
+        push es
+        mov es, [bp + 4]
+        mov si, wp_calls
+        mov bx, (WP_MARK_SEG + 1) & 0xFFFF
+        sub bx, [cs:wp_ret_file]
+        add bx, [bp + 2]
+        mov ax, [es:bx]
+        mov [cs:wp_mark_seg], ax
+        mov bx, (WP_SPHERE_SEG + 1) & 0xFFFF
+        sub bx, [cs:wp_ret_file]
+        add bx, [bp + 2]
+        mov ax, [es:bx]
+        mov [cs:wp_sphere_seg], ax
+        mov cx, 8
+.one:   mov bx, [cs:si]         ; a call's file offset (low word), less the return's
+        sub bx, [cs:wp_ret_file]
+        add bx, [bp + 2]
+        mov ax, [es:bx + 1]
+        mov [cs:si + 2], ax
+        mov ax, [es:bx + 3]
+        mov [cs:si + 4], ax
+        add si, 6
+        loop .one
+        pop es
+        pop si
+        pop cx
+        pop bx
+        pop ax
+        ret
+
+; WP_OPEN: page AL of the weapons in the panel, after closing what it shows (WP_FROM: 0 the
+; disciplines, 1 the spheres, 2 a weapon page), as 640E4h opens the spheres. DS = the game's.
+wp_open:
+        mov [cs:wp_page], al
+        cmp byte [cs:wp_from], 0
+        jne .sphere
+        push word 0x7F8         ; the disciplines marked, kept as the game keeps them
+        push word 0x7F6
+        push dword [WP_DISC]
+        call wp_marked
+        add sp, 8
+        mov [WP_DISC_MASK], ax
+        push dword [WP_DISC]
+        call far [cs:wp_close]
+        add sp, 4
+        mov dword [WP_DISC], 0
+        jmp .open
+.sphere:
+        cmp byte [cs:wp_from], 1
+        jne .page
+        push word 0x7FD
+        push word 0x7FA
+        push dword [WP_SPHERE]
+        call wp_marked
+        add sp, 8
+        mov [WP_SPHERE_MASK], ax
+.page:  mov ax, [WP_SPHERE]
+        or ax, [WP_SPHERE + 2]
+        jz .open
+        push dword [WP_SPHERE]
+        call far [cs:wp_close]
+        add sp, 4
+        mov dword [WP_SPHERE], 0
+.open:  push word [cs:wp_sphere_seg] ; the spheres' own routine (538h:57h), whose click probe
+        push word WP_SPHERE_ENTRY   ; (PROBE_WP_SPHERE_CLICK) answers the pages' buttons
+        push word WP_Y
+        push word WP_X
+        movzx ax, byte [cs:wp_page]
+        add ax, WP_PAGE_ID
+        push ax
+        call far [cs:wp_open_fn]
+        add sp, 10
+        mov [WP_SPHERE], ax
+        mov [WP_SPHERE + 2], dx
+        push cs                 ; its title, as the spheres' ("%C%C%C%s" at DS:E11h)
+        movzx bx, byte [cs:wp_page]
+        imul bx, bx, WP_TITLE_SIZE
+        add bx, wp_titles
+        push bx
+        push dword 0x3C0014
+        push dword 0xFE00FE
+        push dword 0xFF0000
+        push ds
+        push word 0xE11
+        push dword 0x6000E
+        push dx
+        push ax
+        call far [cs:wp_print]
+        add sp, 0x1C
+        push dword 0x3400FE
+        call far [cs:wp_colour]
+        add sp, 4
+        push word [0x3270]
+        push word 0x14
+        call far [cs:wp_colour]
+        add sp, 4
+        call wp_marks
+        push dword 0x11771
+        call far [cs:wp_help]
+        add sp, 4
+        ret
+
+; WP_MARKED: the game's 63EFAh through its stub (the window, the first and last row on the stack
+; as for it): AX the rows marked.
+wp_marked:
+        push bp
+        mov bp, sp
+        push word [bp + 10]
+        push word [bp + 8]
+        push dword [bp + 4]
+        mov ax, ds
+        add ax, WP_STUB
+        mov [cs:wp_far + 2], ax
+        mov word [cs:wp_far], WP_MARKED
+        call far [cs:wp_far]
+        add sp, 8
+        pop bp
+        ret
+
+; WP_MARKS: the page's rows, the kinds marked (the creation sheet's: a gladiator's two, anyone
+; else's one; none yet: the long sword, and a gladiator's club, put in) chosen and the rest not,
+; as 63FEEh marks the spheres.
+wp_marks:
+        push es
+        push bx
+        call wp_allowed
+        mov [cs:wp_ok], ax
+        les bx, [WP_CREATION]
+        movzx cx, byte [es:bx + SPEC_SLOTS]     ; none yet, or one its classes don't allow: the
+        jcxz .none                              ; long sword, or else the first allowed (unless
+        dec cx                                  ; the player has taken it back: WP_TOUCHED)
+        bt ax, cx
+        jc .first
+        mov word [es:bx + SPEC_SLOTS], 0
+.none:  cmp byte [cs:wp_touched], 0
+        jne .first
+        xor cx, cx
+        bt ax, 0
+        jc .put
+        bsf cx, ax
+        jnz .put
+        mov cx, -1                              ; (none at all)
+.put:   inc cx
+        mov [es:bx + SPEC_SLOTS], cl
+.first: mov word [es:bx + SPEC_SLOTS + 2], 0
+        call wp_gladiator
+        jz .one
+        cmp byte [es:bx + SPEC_SLOTS + 1], 0
+        jne .marked
+        cmp byte [cs:wp_touched], 0
+        jne .marked
+        mov al, 2                               ; (the club; or the long sword, if the club is first)
+        cmp byte [es:bx + SPEC_SLOTS], al
+        jne .second
+        dec al
+.second:
+        mov [es:bx + SPEC_SLOTS + 1], al
+        jmp .marked
+.one:   mov byte [es:bx + SPEC_SLOTS + 1], 0
+.marked:
+        mov ax, [es:bx + SPEC_SLOTS]
+        mov [cs:wp_kind], ax
+        mov byte [cs:wp_full], 0                ; all its picks made (a gladiator's two, another's
+        or al, al                               ;   one): the other kinds out of use until one is
+        jz .count                               ;   taken back, as the game's classes and disciplines
+        call wp_gladiator
+        jz .full
+        or ah, ah
+        jz .count
+.full:  mov byte [cs:wp_full], 1
+.count:
+        movzx bx, byte [cs:wp_page]
+        shl bx, 2               ; (four to a page)
+        mov cx, 4
+.row:   inc bx                  ; (the kind + 1)
+        lea ax, [bx + WP_ROW - 1]
+        lea dx, [bx - 1]
+        bt [cs:wp_ok], dx
+        jc .open
+        push 3                  ; a kind its other class doesn't allow: out of use
+        call wp_button_op
+        push 1
+        call wp_button_op
+        push 0
+        jmp .next
+.open:  cmp bl, [cs:wp_kind]
+        je .chosen
+        cmp bl, [cs:wp_kind + 1]
+        je .chosen
+        push 3                  ; one not chosen: in use, or greyed once all are picked
+        call wp_button_op
+        movzx dx, byte [cs:wp_full]
+        push dx
+        call wp_button_op
+        push 0
+        jmp .next
+.chosen:
+        push 0
+        call wp_button_op
+        push 2
+        call wp_button_op
+        push 1
+.next:  call wp_mark
+        loop .row
+        pop bx
+        pop es
+        ret
+
+; WP_BUTTON_OP: the game's 140:71Ah on button AX of the page (DS:EA6h), with the operation pushed
+; (0 in use, 1 out of use, 2 marked, 3 not marked); takes it off the stack. AX, BX, CX kept.
+wp_button_op:
+        push bp
+        mov bp, sp
+        pusha
+        push word [bp + 4]
+        push word 0
+        push ax
+        push dword [WP_SPHERE]
+        call far [cs:wp_button_fn]
+        add sp, 10
+        popa
+        pop bp
+        ret 2
+
+; WP_MARK: the mark (pushed: 1) or none (0) at the page's row 4 - CX, as 63FEEh draws it; takes
+; the flag off the stack. AX, BX, CX kept.
+wp_mark:
+        push bp
+        mov bp, sp
+        pusha
+        push es
+        push word [bp + 4]
+        push dword [WP_MARK_WIN]
+        push word 0
+        mov bx, 4
+        sub bx, cx
+        shl bx, 1
+        mov es, [cs:wp_mark_seg]
+        mov ax, [es:bx + 0x1AB]
+        inc ax
+        push ax
+        push dword 0xDA0001
+        call far [cs:wp_mark_fn]
+        add sp, 0x0E
+        pop es
+        popa
+        pop bp
+        ret 2
+
+; WP_PAGE_BUTTON: button AX of a weapon page, clicked: a kind's row marked (on the creation sheet),
+; MORE SPECS the next page, VIEW PSIONICS back to the disciplines (641B9h). DS = the game's.
+wp_page_button:
+        cmp ax, WP_MORE
+        je .more
+        cmp ax, WP_BACK
+        je .back
+        sub ax, WP_ROW
+        cmp ax, 16
+        jae .ret
+        bt [cs:wp_ok], ax       ; (one its classes don't allow: nothing)
+        jnc .ret
+        inc ax
+        mov byte [cs:wp_touched], 1
+        les bx, [WP_CREATION]
+        cmp al, [es:bx + SPEC_SLOTS]            ; a kind chosen: taken back (a gladiator's second
+        je .first_off                           ;   moving up), as the game's classes are
+        cmp al, [es:bx + SPEC_SLOTS + 1]
+        je .second_off
+        cmp byte [es:bx + SPEC_SLOTS], 0        ; another: chosen, where a pick is free
+        je .put_first
+        call wp_gladiator
+        jz .ret
+        cmp byte [es:bx + SPEC_SLOTS + 1], 0
+        jne .ret
+        mov [es:bx + SPEC_SLOTS + 1], al
+        jmp wp_marks
+.put_first:
+        mov [es:bx + SPEC_SLOTS], al
+        jmp wp_marks
+.first_off:
+        mov al, [es:bx + SPEC_SLOTS + 1]
+        mov [es:bx + SPEC_SLOTS], al
+.second_off:
+        mov byte [es:bx + SPEC_SLOTS + 1], 0
+        jmp wp_marks
+.more:  mov byte [cs:wp_from], 2
+        mov al, [cs:wp_page]
+        inc al
+        cmp al, WP_PAGES
+        jb .open
+        xor al, al
+.open:  jmp wp_open
+.back:  push dword [WP_SPHERE]
+        call far [cs:wp_close]
+        add sp, 4
+        mov dword [WP_SPHERE], 0
+        mov ax, ds
+        add ax, WP_STUB
+        mov [cs:wp_far + 2], ax
+        mov word [cs:wp_far], WP_TO_DISC
+        call far [cs:wp_far]
+.ret:   ret
+
+WP_TITLE_SIZE equ 16
+wp_titles  db 'WEAPONS 1 OF 4', 0, 0
+           db 'WEAPONS 2 OF 4', 0, 0
+           db 'WEAPONS 3 OF 4', 0, 0
+           db 'WEAPONS 4 OF 4', 0, 0
+wp_page    db 0
+wp_from    db 0
+wp_kind    db 0, 0
+wp_full    db 0
+wp_touched db 0                 ; 1 once the player has clicked a kind (no defaults put back after)
+wp_classes_seen dd 0xFFFFFFFF   ; the classes being made, when WP_TOUCHED was last cleared
+wp_button  dw 0
+wp_ret_file dw 0
+wp_end_file dw 0
+wp_far     dd 0
+wp_mine    dw WP_WSPHERE_ID, WP_PAGE_ID, WP_PAGE_ID + 1, WP_PAGE_ID + 2, WP_PAGE_ID + 3
+wp_mine_end:
+wp_calls:                   ; each: the call's file offset (low word), then its far address
+           dw WP_CALL_CLOSE & 0xFFFF
+wp_close   dd 0
+           dw WP_CALL_OPEN & 0xFFFF
+wp_open_fn dd 0
+           dw WP_CALL_PRINT & 0xFFFF
+wp_print   dd 0
+           dw WP_CALL_COLOUR & 0xFFFF
+wp_colour  dd 0
+           dw WP_CALL_HELP & 0xFFFF
+wp_help    dd 0
+           dw WP_CALL_BUTTON & 0xFFFF
+wp_button_fn dd 0
+           dw WP_CALL_REDRAW & 0xFFFF
+wp_redraw  dd 0
+           dw WP_CALL_MARK & 0xFFFF
+wp_mark_fn dd 0
+wp_mark_seg dw 0
+wp_sphere_seg dw 0
+
+; SPEC_OF: DL the attacker's skill with the attack's weapon (SPEC_OF_SHEET, for the attack
+; routine's [BP+10h] sheet and [BP+14h] item type).
+spec_of:
+        push bx
+        push si
+        push es
+        mov si, [bp + 0x10]
+        imul si, si, 0x47
+        les bx, [0x1661]
+        add bx, si
+        mov si, [bp + 0x14]
+        call spec_of_sheet
+        pop es
+        pop si
+        pop bx
+        ret
+
+; SPEC_OF_SHEET: DL the skill with item type SI of the character whose sheet is at ES:BX:
+; SPEC_NONE (it has chosen no kinds), SPEC_PLAIN (not this kind), SPEC_EXPERT (a ranger's: no
+; fighter or gladiator class), SPEC_SPECIAL, SPEC_MASTER (a fighter's own kind, the first, from
+; 5th level), SPEC_GRAND (9th).
+spec_of_sheet:
+        push ax
+        push cx
+        push si
+        mov dl, SPEC_NONE
+        mov al, [es:bx + SPEC_SLOTS]
+        or al, [es:bx + SPEC_SLOTS + 1]
+        or al, [es:bx + SPEC_SLOTS + 2]
+        or al, [es:bx + SPEC_SLOTS + 3]
+        jz .ret
+        mov dl, SPEC_PLAIN
+        cmp si, KIND_TYPES
+        jae .ret
+        mov cl, [cs:si + kind_of_type]
+        or cl, cl
+        jz .ret
+        xor si, si
+.slot:  cmp [es:bx + si + SPEC_SLOTS], cl
+        je .found
+        inc si
+        cmp si, SPEC_COUNT
+        jb .slot
+        jmp .ret
+.found: mov dl, SPEC_EXPERT
+        xor ax, ax              ; AH a fighter or gladiator, AL any warrior, CH the fighter level
+        xor ch, ch
+        push si
+        xor si, si
+.class: mov cl, [es:bx + si + 0x21]
+        or si, si               ; a human's earlier classes (dual-classed) count only once the
+        jz .on                  ; first's level has passed theirs
+        cmp byte [es:bx + 0x18], 1
+        jne .on
+        push ax
+        mov al, [es:bx + si + 0x24]
+        cmp al, [es:bx + 0x24]
+        pop ax
+        jae .next
+.on:    cmp cl, FIGHTER_CLASS
+        jne .glad
+        mov ax, 0x0101
+        mov ch, [es:bx + si + 0x24]
+.glad:  cmp cl, GLADIATOR_CLASS
+        jne .ranger
+        mov ax, 0x0101
+.ranger:
+        cmp cl, 13
+        jb .next
+        cmp cl, 16
+        ja .next
+        mov al, 1
+.next:  inc si
+        cmp si, 3
+        jb .class
+        pop si
+        or al, al
+        jnz .warrior
+        mov dl, SPEC_PLAIN      ; (a warrior class not back yet)
+        jmp .ret
+.warrior:
+        or ah, ah
+        jz .ret
+        mov dl, SPEC_SPECIAL
+        or si, si
+        jnz .ret
+        cmp ch, MASTERY
+        jb .ret
+        mov dl, SPEC_MASTER
+        cmp ch, GRAND_MASTERY
+        jb .ret
+        mov dl, SPEC_GRAND
+.ret:   pop si
+        pop cx
+        pop ax
+        ret
+
+; By item type (the game's 115, then the companion's own: 115 its short sword), the weapon kind
+; + 1 (dscompanion/specialize.py's KIND_OF_TYPE; 0 none)
+KIND_TYPES equ 136
+kind_of_type  db 16, 14, 7, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 2, 10, 5, 12, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0
+              db 0, 3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 11, 1, 5, 1, 13, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1
+              db 15, 0, 0, 0, 0, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 1, 0, 0, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0
+              db 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 8, 0, 0, 4, 0, 0, 4, 6, 4, 6, 4, 0, 3, 5, 7, 8
+              db 10, 0, 0, 0, 0, 0, 0, 0
 
 ; PROBE_XP_NEXT: INT VEC_XP_NEXT replaces "push 10F4h" (3 bytes: INT + NOP; DSUN.EXE 67DBEh) in
 ; View Character's line "EXP:10301 (16000)", where the game adds ")" (DS:10F4h) after the XP the
@@ -2803,6 +4895,7 @@ acid_saves db 8, 11, 5, 5, 13, 10, 12   ; wood, bone, stone, obsidian, metal, le
 P_MAGIC_ARMOUR equ 1
 P_METAL_ARMOUR equ 2
 P_SHIELD       equ 4
+P_ARMOUR       equ 8                    ; any armour on the arms, legs or chest
 ARM_SLOT       equ 0                    ; the item slots of armour (the game's: arm, legs,
 LEG_SLOT       equ 6                    ; head, chest)
 HEAD_SLOT      equ 7
@@ -2902,6 +4995,10 @@ RULE_THIEF_TABLE equ 256        ; thief skills from AD&D's table and Dark Sun's 
 RULE_HALF_GIANT equ 512         ; half-giants wield two-handed weapons in one hand
 RULE_PROTECTION equ 1024        ; AD&D's rings and cloaks of protection (PROBE_RING_AC, RING_PLUS)
 RULE_ITEM_SAVES equ 2048        ; items save against acid as in AD&D where better (PROBE_ITEM_*)
+RULE_SPECIALIZE equ 4096        ; weapon specialization (PROBE_ATTACKS, PROBE_SPEC_DAMAGE)
+RULE_RESTRICT equ 8192          ; class restrictions on armour, shields and weapons (PROBE_CAN_USE)
+RULE_MULTI_HP equ 16384         ; multiclass hit points as in AD&D (PROBE_MC_*)
+RULE_HP_BEST equ 32768          ; a hit die rolled twice, the better kept (PROBE_HP_BEST)
 FOOT       equ 13               ; the item's slot byte while worn on the feet
 THINGS_SEG equ 0x3972 - 0x4356  ; the things table's segment, relative to DS
 
@@ -3071,6 +5168,117 @@ probe_hd_con:
 .cmp:   cmp al, dl
         pop dx
         retf 2
+
+; Multiclass hit points as in AD&D (RULE_MULTI_HP). The game adds each new level's die (or fixed
+; gain) to a sheet's base (+0Ah), and a character's most hit points are that base divided by its
+; number of classes (a human's, who dual-classes, counts one), plus CON's bonus for its levels:
+; the warrior's full bonus, the rest's up to +2, undivided. With the rule, of a character of more
+; than one class (not a human) each level's die counts its share, at least 1 (the base gains
+; that times the classes, which the game divides again), and CON's bonus is shared out too.
+; PROBE_MC_ROLL: INT VEC_MC_ROLL replaces "add es:[bx+0Ah],cx" (4 bytes: INT + 2 NOPs; DSUN.EXE
+; 8735Eh) where a new level's hit points go into the base: ES:BX the sheet, CX the gain.
+; PROBE_MC_CON: INT VEC_MC_CON replaces "add di,ax" (2 bytes; 87523h) where the most hit points
+; get CON's bonus: AX the bonus, SI the sheet's number.
+; PROBE_MC_UNCON: INT VEC_MC_UNCON replaces "sub dx,ax" (2 bytes; 877DAh) where the game takes
+; CON's bonus off the hit points to work back to the base (when CON changes): AX, SI as above.
+probe_mc_roll:
+        test word [cs:rules], RULE_MULTI_HP
+        jz .add
+        push ax
+        push dx
+        call class_share        ; AX the classes sharing, 1 for none
+        cmp ax, 1
+        jbe .out
+        xchg ax, cx             ; CX the classes, AX the gain
+        cwd
+        idiv cx
+        cmp ax, 1
+        jge .share
+        mov ax, 1
+.share: imul cx                 ; (the classes' times the share: the game divides it back)
+        mov cx, ax
+.out:   pop dx
+        pop ax
+.add:   add [es:bx + 0x0A], cx
+        iret
+
+; PROBE_HP_BEST: INT VEC_HP_BEST replaces "mov cx,ax" (2 bytes; DSUN.EXE 87319h) after the game's
+; roll of a level's hit die (at creation too), AX the roll. With RULE_HP_BEST the game rolls it
+; twice and keeps the better: the first time the roll is kept and the INT returns to the start of
+; the game's roll (872FDh: the die from the class's table, then the call), so the dice log sees
+; both rolls as the game's; the second time CX gets the better of the two.
+HP_BEST_BACK equ 0x8731B - 0x872FD
+probe_hp_best:
+        test word [cs:rules], RULE_HP_BEST
+        jz .game
+        cmp byte [cs:hp_again], 0
+        jne .second
+        mov [cs:hp_first], ax
+        mov byte [cs:hp_again], 1
+        push bp
+        mov bp, sp
+        sub word [bp + 2], HP_BEST_BACK ; (the INT's return IP)
+        pop bp
+        iret
+.second:
+        mov byte [cs:hp_again], 0
+        cmp ax, [cs:hp_first]
+        jge .game
+        mov ax, [cs:hp_first]
+.game:  mov cx, ax
+        iret
+
+hp_first dw 0
+hp_again db 0
+
+probe_mc_con:
+        call con_share
+        add di, ax
+        iret
+
+probe_mc_uncon:
+        call con_share
+        sub dx, ax
+        iret
+
+; CON_SHARE: AX (CON's hit point bonus) divided by the classes of sheet SI (dropping fractions)
+; with RULE_MULTI_HP. Other registers kept.
+con_share:
+        test word [cs:rules], RULE_MULTI_HP
+        jz .ret
+        push bx
+        push cx
+        push dx
+        push es
+        push ax
+        les bx, [0x1661]
+        imul ax, si, 0x47
+        add bx, ax
+        call class_share
+        mov cx, ax
+        pop ax
+        cmp cx, 1
+        jbe .out
+        cwd
+        idiv cx
+.out:   pop es
+        pop dx
+        pop cx
+        pop bx
+.ret:   ret
+
+; CLASS_SHARE: AX the number of classes of the sheet at ES:BX, 1 for a human's. Others kept.
+class_share:
+        mov ax, 1
+        cmp byte [es:bx + 0x18], 1
+        je .ret
+        cmp byte [es:bx + 0x22], 0
+        je .ret
+        inc ax
+        cmp byte [es:bx + 0x23], 0
+        je .ret
+        inc ax
+.ret:   ret
 
 ; PROBE_THIEF_SKILL: INT VEC_THIEF_SKILL, then "jc" past the game's DEX formula, replaces
 ; "mov ax,si / shl ax,2 / add dx,ax / mov si,dx" (9 bytes) in the game's thief skill routine,
@@ -3516,8 +5724,9 @@ n_fl    dw 0
 ; companion's own items that no type of the game's fits (a metal short sword, a cloak of
 ; protection). Nothing in the game limits the numbers to its own.
 TYPE_SIZE   equ 20
-TYPES_EXTRA equ 8
+TYPES_EXTRA equ 14
 TYPES_PTR   equ 0x1669          ; DS: far pointer to the item types
+BRACERS     equ 8               ; (the bracers of defense: the ninth of them)
 
 ; PROBE_TYPES_SIZE: INT VEC_TYPES_SIZE replaces "push dword 1" (3 bytes: INT + NOP) before the
 ; game reserves memory for the IT1R chunk, its size the dword at [BP-4]: adds the room.
@@ -3591,7 +5800,45 @@ extra_types:
         ; it for the classes that can wear it (+10h: no thieves, where the Helm allows them)
         db 0x00, 0x00, 0x00, 0x00, 0x0F, 0x00, 0xFA, 0x00, 0x01, 0x06, 0x00, 0x00
         db 0x00, 0x00, 0x00, 0x80, 0x6F, 0x12, 0x00, 0x00
-        times (TYPES_EXTRA - 3) * TYPE_SIZE db 0
+        ; a bone short sword (a new warrior's, weaponchoice.py): the short sword's, of bone (+8),
+        ; half its weight (+4), for the classes of the bone long sword and psionicists (+10h)
+        db 0x01, 0x00, 0x30, 0x00, 0x0F, 0x00, 0xFA, 0x00, 0x01, 0x05, 0x01, 0x01
+        db 0x06, 0x01, 0x00, 0x00, 0x78, 0x17, 0x00, 0x01
+        ; a bone axe: the Axe's (22), of bone, half its weight, for the bone weapons' classes (a
+        ; water cleric's, not an earth cleric's)
+        db 0x01, 0x00, 0x10, 0x00, 0x23, 0x00, 0xFA, 0x00, 0x01, 0x05, 0x01, 0x01
+        db 0x08, 0x01, 0x00, 0x00, 0x78, 0x17, 0x00, 0x01
+        ; an obsidian short sword: the short sword's, of obsidian, for the obsidian long sword's
+        ; classes and psionicists
+        db 0x01, 0x00, 0x30, 0x00, 0x1E, 0x00, 0xFA, 0x00, 0x03, 0x05, 0x01, 0x01
+        db 0x06, 0x01, 0x00, 0x00, 0x7E, 0x17, 0x00, 0x01
+        ; an obsidian axe: the Axe's, of obsidian, for the obsidian weapons' classes
+        db 0x01, 0x00, 0x10, 0x00, 0x46, 0x00, 0xFA, 0x00, 0x03, 0x05, 0x01, 0x01
+        db 0x08, 0x01, 0x00, 0x00, 0x7E, 0x17, 0x00, 0x01
+        ; a plain metal short sword: the first's (Kurzak's, which is his alone: Shadowseeker)
+        db 0x01, 0x00, 0x30, 0x00, 0x1E, 0x00, 0xFA, 0x00, 0x04, 0x05, 0x01, 0x01
+        db 0x06, 0x01, 0x00, 0x00, 0x72, 0x16, 0x00, 0x01
+        ; bracers of defense (BRACERS): the cloak of protection's, worn on the arms (+9: 3, the
+        ; arm armour's slot), their plus counting for AC; not armour to anything else here
+        db 0x00, 0x00, 0x00, 0x00, 0x0A, 0x00, 0x0A, 0x00, 0x40, 0x03, 0x00, 0x00
+        db 0x00, 0x00, 0x00, 0x80, 0xFF, 0x1F, 0x00, 0x01
+        ; metal versions of the game's plain weapons that have none (dscompanion/worldgear.py):
+        ; each its type of metal (+8: 4), for the metal long sword's clerics (+10h's low nibble:
+        ; 2, earth's): the Dagger's (33)
+        db 0x01, 0x00, 0x20, 0x00, 0x0A, 0x00, 0xFA, 0x00, 0x04, 0x05, 0x01, 0x01
+        db 0x04, 0x01, 0x00, 0x00, 0xF2, 0x1F, 0x00, 0x00
+        ; the Mace's (20)
+        db 0x01, 0x00, 0x08, 0x00, 0x64, 0x00, 0xFA, 0x00, 0x04, 0x05, 0x01, 0x01
+        db 0x06, 0x01, 0x01, 0x00, 0x72, 0x16, 0x00, 0x01
+        ; the Great Axe's (2)
+        db 0x01, 0x00, 0x10, 0x00, 0x46, 0x00, 0xFA, 0x00, 0x04, 0x05, 0x01, 0x01
+        db 0x0A, 0x01, 0x00, 0x40, 0x62, 0x16, 0x00, 0x02
+        ; the pick's (112)
+        db 0x01, 0x00, 0x20, 0x00, 0x28, 0x00, 0xFA, 0x00, 0x04, 0x05, 0x01, 0x01
+        db 0x04, 0x01, 0x01, 0x00, 0x72, 0x17, 0x00, 0x00
+        ; the Polearm's (19)
+        db 0x01, 0x00, 0x30, 0x00, 0x96, 0x00, 0xFA, 0x00, 0x04, 0x05, 0x01, 0x01
+        db 0x0A, 0x01, 0x00, 0x40, 0x72, 0x16, 0x00, 0x06
 ; the names, numbered from NAMES_OWN (322): the companion's items' (the same as the companion's
 ; NAMES in dscompanion/names.py), the rest blank until it writes more
 extra_names:
@@ -3609,7 +5856,9 @@ extra_names:
         times NAME_SIZE - 12 db 0
         db "Kreenfang"                  ; (the arena's Bone Gythka made +1)
         times NAME_SIZE - 9 db 0
-        times (NAMES_EXTRA - 7) * NAME_SIZE db 0
+        db "Bracers/Defense"            ; (bracers of defense: BRACERS, dscompanion/worldgear.py)
+        times NAME_SIZE - 15 db 0
+        times (NAMES_EXTRA - 8) * NAME_SIZE db 0
 
 ; STEALTH (RULE_STEALTH): a thief who starts a turn with no enemy next to them may hide in
 ; shadows and move silently up to someone; the companion rolls both and, when both succeed,
@@ -5920,6 +8169,78 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_XP_NEXT
         mov dx, probe_xp_next
         int 21h
+        mov ax, 2500h + VEC_ATTACKS
+        mov dx, probe_attacks
+        int 21h
+        mov ax, 2500h + VEC_SPEC_DAMAGE
+        mov dx, probe_spec_damage
+        int 21h
+        mov ax, 2500h + VEC_DAM_LINE
+        mov dx, probe_dam_line
+        int 21h
+        mov ax, 2500h + VEC_VIEW_DAM
+        mov dx, probe_view_dam
+        int 21h
+        mov ax, 2500h + VEC_CAN_USE
+        mov dx, probe_can_use
+        int 21h
+        mov ax, 2500h + VEC_NO_CAST
+        mov dx, probe_no_cast
+        int 21h
+        mov ax, 2500h + VEC_MC_ROLL
+        mov dx, probe_mc_roll
+        int 21h
+        mov ax, 2500h + VEC_MC_CON
+        mov dx, probe_mc_con
+        int 21h
+        mov ax, 2500h + VEC_MC_UNCON
+        mov dx, probe_mc_uncon
+        int 21h
+        mov ax, 2500h + VEC_WP_DISC_WIN
+        mov dx, probe_wp_disc_win
+        int 21h
+        mov ax, 2500h + VEC_WP_SPHERE_WIN
+        mov dx, probe_wp_sphere_win
+        int 21h
+        mov ax, 2500h + VEC_WP_DISC_CLICK
+        mov dx, probe_wp_disc_click
+        int 21h
+        mov ax, 2500h + VEC_WP_SPHERE_CLICK
+        mov dx, probe_wp_sphere_click
+        int 21h
+        mov ax, 2500h + VEC_WP_SHOWN
+        mov dx, probe_wp_shown
+        int 21h
+        mov ax, 2500h + VEC_WP_CLASS
+        mov dx, probe_wp_class
+        int 21h
+        mov ax, 2500h + VEC_LV_PICK
+        mov dx, probe_lv_pick
+        int 21h
+        mov ax, 2500h + VEC_PK_COUNT
+        mov dx, probe_pk_count
+        int 21h
+        mov ax, 2500h + VEC_PK_WIN
+        mov dx, probe_pk_win
+        int 21h
+        mov ax, 2500h + VEC_PK_LEFT
+        mov dx, probe_pk_left
+        int 21h
+        mov ax, 2500h + VEC_PK_TITLE
+        mov dx, probe_pk_title
+        int 21h
+        mov ax, 2500h + VEC_PK_FILL
+        mov dx, probe_pk_fill
+        int 21h
+        mov ax, 2500h + VEC_PK_CLICK
+        mov dx, probe_pk_click
+        int 21h
+        mov ax, 2500h + VEC_HP_BEST
+        mov dx, probe_hp_best
+        int 21h
+        mov ax, 2500h + VEC_EF_ROWS
+        mov dx, probe_ef_rows
+        int 21h
         mov ax, 3516h           ; the keyboard's (TARGETING)
         int 21h
         mov [old16], bx
@@ -5960,8 +8281,8 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or D2h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
-all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT
+busy    db 'DSCLOG: interrupts 60h-65h or BAh-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS, VEC_LV_PICK, VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK, VEC_EF_ROWS, VEC_HP_BEST
 all_vectors_end:
 
         align 16, db 0
