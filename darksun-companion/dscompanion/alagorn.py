@@ -1,8 +1,8 @@
 """Alagorn tells of the Ledger's magic items: Kreenfang and Shadowseeker (arms.py), Gutterknot,
 Deepbiter, Windlash, Greenbright and the Flame Blade, the Warden's Plate, the Cloak and Boots of
 Elvenkind, the Bracers of Defense, Arrowbane and the Sunking Crown (worldgear.py), and the Tome of
-Understanding (tome.py): each named, or a kind of its own, as the game's are (its plain "+1" items
-he doesn't tell of).
+Understanding (tome.py), and the Rings and Cloak of Protection (ring.py, npcitems.py): one story
+for each kind, whichever of it the party carries, as the game's own.
 
 Alagorn, the wizard wandering the Painted Badlands, identifies magic items from menus by kind:
 magic swords, magic weapons, fruit and wands (script 213); rings, armour, shields, necklaces,
@@ -13,8 +13,9 @@ when none is left (a local of the script's: DONE) the menu's loop ends.
 
 With the Ledger, Shadowseeker, Greenbright and the Flame Blade join the swords, Kreenfang,
 Gutterknot, Deepbiter and Windlash the weapons, the Warden's Plate's four pieces the armour, the
-Cloak and Boots of Elvenkind, the bracers, Arrowbane and the crown the clothes (where the game
-has its Helm of Contemplation and Chameleon Gloves), and the tome the other items, by their
+Cloak and Boots of Elvenkind, the bracers, Arrowbane, the crown and the cloak of protection the
+clothes (where the game has its Helm of Contemplation and Chameleon Gloves), the rings of
+protection the rings, and the tome the other items, by their
 pictures of their own (icons.py: without the icons' copy he doesn't know them; the tome's, its
 object's), each only with its content switch on. As pensasks.py does, nothing
 of the game's script moves: commands of it become jumps (64h) to code put after the script's end,
@@ -54,15 +55,17 @@ SWORDS, WEAPONS = ("  Darkflame", "It's too bad that you have no magic swords I 
     ("  Balkazar's Staff", "I don't see any magic weapons that I know anything about. ")
 ARMOUR, CLOTHES = ("  Tanelyv's Armor", "You have no magic armor that I know anything about. "), \
     ("  Belt of Might", "Unfortunately, you have no magic clothes that I know anything about. ")
-OTHER = ("  Orb of Knowledge", "You have no other magic items that I know anything about. ")
-OTHER_SCRIPT = 212  # (armour, clothes and other items: Alagorn's other menus)
-SCRIPT_OF = {SWORDS: SCRIPT, WEAPONS: SCRIPT, ARMOUR: OTHER_SCRIPT, CLOTHES: OTHER_SCRIPT, OTHER: OTHER_SCRIPT}
-# Script 212 with every story would be longer than the scripts' buffer: its clothes, and its other
-# items, are told by copies of it, each with only those (the Ledger's scripts; Kalzith's 218,
-# Semyon's 219). His talk (script 211) calls each part by its place in 212 (14h): the call for
+RINGS, OTHER = ("  Light of Dawn", "However, you have no magic rings that I know anything about. "), \
+    ("  Orb of Knowledge", "You have no other magic items that I know anything about. ")
+OTHER_SCRIPT = 212  # (rings, armour, clothes and other items: Alagorn's other menus)
+SCRIPT_OF = {SWORDS: SCRIPT, WEAPONS: SCRIPT, RINGS: OTHER_SCRIPT, ARMOUR: OTHER_SCRIPT, CLOTHES: OTHER_SCRIPT,
+             OTHER: OTHER_SCRIPT}
+# Script 212 with every story would be longer than the scripts' buffer: its clothes, and its rings
+# and other items, are told by copies of it, each with only those (the Ledger's scripts; Kalzith's
+# 218, Semyon's 219). His talk (script 211) calls each part by its place in 212 (14h): the call for
 # those parts names the copy instead, its places the same.
 TALK = 211
-COPY_OF = {CLOTHES: 220, OTHER: 221}
+COPY_OF = {CLOTHES: 220, RINGS: 221, OTHER: 221}
 CALL, START = 0x14, 0x19
 # (item, story): the slave pens' two (arms.py)
 ARMS = {
@@ -76,6 +79,20 @@ ARMS = {
                "elder blessed this one before the hunt. It strikes truer and deeper than any common "
                "gythka. A kreen does not part with such a weapon while it lives; whoever carried it "
                "into the arena died with it in hand."),),
+}
+# ... the rings and cloak of protection (the arena prisoner's ring, ring.py; Pehtucl's ring and cloak,
+# npcitems.py): plain "+1" items, told of as a kind, as the bracers are (one story for all, as the
+# game's own of a kind)
+PROTECTION = {
+    RINGS: (("Ring of Protection",
+             "A Ring of Protection! Every apprentice of the old schools made one as a first work, "
+             "before the sorcerer-kings closed the schools; few are left now. It turns aside a blow "
+             "that should have landed, and a curse that should have taken hold. The templars take "
+             "them from those they arrest, and wear them themselves."),),
+    CLOTHES: (("Cloak of Protection",
+               "A Cloak of Protection! Its weave turns aside blades and spells alike: only a little, "
+               "but a little is often enough. The tailors who know the craft sell to the templars by "
+               "day and to the Veiled Alliance by night, and neither asks the other's business."),),
 }
 # ... and the world's (worldgear.py; the tome, tome.py)
 MAGIC = {
@@ -162,13 +179,14 @@ MAGIC = {
 }
 
 
-def kinds(arms: bool = True, magic: bool = True, script: int = SCRIPT) -> Tuple[Kind, ...]:
+def kinds(arms: bool = True, magic: bool = True, script: int = SCRIPT, protection: bool = True) -> Tuple[Kind, ...]:
     """Each kind of the script's with the new items of the switches on."""
     out = []
-    for kind in (SWORDS, WEAPONS, ARMOUR, CLOTHES, OTHER):
+    for kind in (SWORDS, WEAPONS, RINGS, ARMOUR, CLOTHES, OTHER):
         if SCRIPT_OF[kind] != script:
             continue
-        items = (ARMS.get(kind, ()) if arms else ()) + (MAGIC.get(kind, ()) if magic else ())
+        items = (ARMS.get(kind, ()) if arms else ()) + (PROTECTION.get(kind, ()) if protection else ()) \
+            + (MAGIC.get(kind, ()) if magic else ())
         if items:
             out.append(Kind(kind[0], kind[1], items))
     return tuple(out)
@@ -177,12 +195,33 @@ def kinds(arms: bool = True, magic: bool = True, script: int = SCRIPT) -> Tuple[
 KINDS = kinds()
 
 
-def _picture(name: str) -> int:
-    """The item's picture of its own, as an item has it (negative): icons.py's, or the tome's
+# (a menu line for items of more than one picture: icons.py's names)
+PICTURES_OF = {"Ring of Protection": ("Ring of Protection +1", "Pehtucl's Ring of Protection +1"),
+               "Cloak of Protection": ("Cloak of Protection +1",)}
+
+
+def _pictures(name: str) -> List[int]:
+    """The item's pictures of its own, as an item has them (negative): icons.py's, or the tome's
     object's."""
     if name == "Tome of Understanding":
-        return -TOME_OBJECT
-    return icons.PICTURES[name] - 0x10000
+        return [-TOME_OBJECT]
+    return [icons.PICTURES[n] - 0x10000 for n in PICTURES_OF.get(name, (name,))]
+
+
+def _picture(name: str) -> int:
+    return _pictures(name)[0]
+
+
+def _carried(name: str) -> tuple:
+    """The party carries an item of the name's pictures (as the game's queries; of more than one,
+    any of them: "or", as the game's own tests join queries)."""
+    queries = [("op", gpl.Op(0, QUERY, [("n", PARTY), 77, 80, [(HAS_PICTURE, 4, ("n", p))]])) for p in _pictures(name)]
+    if len(queries) == 1:
+        return queries[0]
+    out: list = []
+    for q in queries:
+        out += (["or"] if out else []) + ["(", q, ")"]
+    return ("expr", out)
 
 
 def _zero(locals_: List[int]) -> tuple:
@@ -263,8 +302,7 @@ def with_items(script: bytes, field_types: bytes, kinds=KINDS) -> bytes:
         entry = f"entry {k}"
         s.label(entry)
         for (item, _), n in zip(kind.items, mine):
-            s.op(SET, ("op", gpl.Op(0, QUERY, [("n", PARTY), 77, 80, [(HAS_PICTURE, 4, ("n", _picture(item)))]])),
-                 ("var", LOCAL_SET, n))
+            s.op(SET, _carried(item), ("var", LOCAL_SET, n))
         # the game's tests again, each to its own place (the game keeps its ifs and elses
         # nested: skipping one, an else further on goes the wrong way), the new items in the last
         for t, (names, target) in enumerate(chain):
@@ -339,17 +377,18 @@ def _called_from(talk: bytes, field_types: bytes, entry: int, number: int) -> Op
     return bytes(out)
 
 
-def script_chunks(chunks, field_types: bytes, arms: bool = True, magic: bool = True) -> Dict[Tuple[str, int], bytes]:
+def script_chunks(chunks, field_types: bytes, arms: bool = True, magic: bool = True,
+                  protection: bool = True) -> Dict[Tuple[str, int], bytes]:
     """For the Ledger's copy of GPLDATA: Alagorn's talks (his two scripts, and the copies of 212:
-    COPY_OF) with the magic items of the switches on (ARMS: Kreenfang and Shadowseeker; MAGIC:
-    the world's and the tome)."""
+    COPY_OF) with the magic items of the switches on (ARMS: Kreenfang and Shadowseeker; PROTECTION:
+    the rings and cloak of protection; MAGIC: the world's and the tome)."""
     out: Dict[Tuple[str, int], bytes] = {}
     for number in (SCRIPT, OTHER_SCRIPT):
         key = ("GPL ", number)
         if key not in chunks:
             continue
         groups: Dict[int, List[Kind]] = {}
-        for kind in kinds(arms, magic, number):
+        for kind in kinds(arms, magic, number, protection):
             first = (kind.first_reply, kind.none_text)
             groups.setdefault(COPY_OF.get(first, number), []).append(kind)
         for target, chosen in groups.items():

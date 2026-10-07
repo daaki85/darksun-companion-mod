@@ -41,11 +41,14 @@ Released pull requests are summarised in a line or two each; the release notes
 - **Alagorn tells of the Warden's Plate** (Haldren's, the last of the Wardens:
   a part of his story for each piece) among his magic armor, and of the Cloak
   and Boots of Elvenkind among his magic clothes.
-- **Alagorn tells of the Tome of Understanding** (among his other items) and
-  of the Bracers of Defense, Arrowbane and the Sunking Crown (among his magic
-  clothes). Plain +1 items get no story, as in the game.
-  - His clothes and other items are told by copies of his script 212 (220,
-    221), so no script overflows the game's buffer.
+- **Alagorn tells of the Tome of Understanding** (among his other items), of
+  the Bracers of Defense, Arrowbane, the Sunking Crown and the Cloak of
+  Protection (among his magic clothes), and of the Rings of Protection (among
+  his magic rings).
+  - One story for each kind, as with the game's own items: the four pairs of
+    bracers share one, and so do both rings.
+  - His clothes, rings and other items are told by copies of his script 212
+    (220, 221), so no script overflows the game's buffer.
 
 **Fixed**
 - **Alagorn's clothes with none carried:** he said "no magic clothes", then

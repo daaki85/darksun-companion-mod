@@ -1942,10 +1942,12 @@ of its own: Shadowseeker, Greenbright and the Flame Blade among his magic swords
 Gutterknot, Deepbiter and Windlash among his magic weapons, the Warden's Plate's
 four pieces (each a part of Haldren's story, the last of the Wardens) among his
 magic armor, the Cloak and Boots of Elvenkind, the Bracers of Defense,
-Arrowbane and the Sunking Crown among his magic clothes, and the Tome of
-Understanding among his other items, before his menus' "Nothing". As in the
-game, he tells only of named magic items and kinds with a power of their own:
-the plain +1 rings, cloak and leather have no story.
+Arrowbane, the Sunking Crown and the Cloak of Protection among his magic
+clothes, the Rings of Protection among his magic rings, and the Tome of
+Understanding among his other items, before his menus' "Nothing". As with the
+game's own, he has one story for each kind: all four pairs of bracers, and
+both rings of protection, share one line and one story. Plain +1 gear such as
+Legcrusher's leather has none.
 
 ![Dream's pack with the bone scale set: the chest, arm and leg pieces, and the Bone Helm under the pointer with its name](docs/bonescale.png)
 
