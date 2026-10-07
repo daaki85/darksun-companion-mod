@@ -72,7 +72,7 @@ double-click, with the options as last set.)
 ## What's new
 
 In [pull request #23](https://github.com/daaki85/darksun-companion-mod/pull/23)
-(in review):
+(merged 2026-10-07):
 - **Three magic axes:** **Drakejaw**, a bone axe +1, on a Magera guarding the
   wagon's prisoners; **Glasshewer**, an obsidian axe +2, on the elven slavers'
   Templar; and **Headsman**, a metal great axe +2, in the arena Announcer's
