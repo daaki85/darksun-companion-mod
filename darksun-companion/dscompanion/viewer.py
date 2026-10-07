@@ -322,17 +322,19 @@ class Viewer:
         ttk.Checkbutton(in_game, text="Describe monsters when you Look at them in a fight (defences, then a window)",
                         variable=self.monster_info, command=self._popups_changed).pack(anchor="w", pady=(4, 0))
         rules = section("rules", "Rule changes (in games started with the dice log)")
+        # the thieves' rules and picking pockets together, as the guide's Thieves section has them
+        thieves = section("thieves", "Thieves (in games started with the dice log)")
+        thief_rules = ("thief_table", "stealth")
         # one switch for each of game.RULE_SETTINGS
         self.rule_vars: Dict[str, tk.BooleanVar] = {}
         self.stealth_gear = tk.BooleanVar(value=settings.get("stealth_gear", True) is not False)
         # (in the order the README's Rule changes has them: the ones that change most first)
         for n, (key, text) in enumerate((
                 ("weapon_specialization", "Weapon specialization: fighters and gladiators specialize (+1 to hit, +2 "
-                                          "damage), fighters on to mastery at 5th level and grand mastery at 9th, "
-                                          "rangers' expertise (every ranger's with the bow too); specialists "
-                                          "and rangers shoot missiles faster; warriors without it attack as AD&D's (chosen on the "
-                                          "creation panel's WEAPON SPEC pages, a gladiator's later ones at "
-                                          "a level gained; listed on the Effects screen)"),
+                                          "damage), fighters on to mastery at 5th level and grand mastery at 9th; "
+                                          "rangers have expertise, every ranger with the bow; specialists and "
+                                          "rangers shoot missiles faster; other weapons at AD&D's plain rate "
+                                          "(chosen on the creation panel's WEAPON SPEC pages)"),
                 ("class_restrictions", "Class restrictions on armour, shields and weapons, the strictest class "
                                        "winning (psionicists, multiclass thieves, preservers, druids, clerics' "
                                        "spheres); a multiclass preserver casts no spells in armour"),
@@ -362,14 +364,15 @@ class Viewer:
                 ("helm_ac", "Helms give AC 1 (the game's helms give none)"),
                 ("boots_move", "Boots give movement in a fight (1 more move each round)"))):
             self.rule_vars[key] = tk.BooleanVar(value=bool(settings.get(key, True)))
-            ttk.Checkbutton(rules, text=text, variable=self.rule_vars[key],
-                            command=self._popups_changed).pack(anchor="w", pady=(4 if n else 0, 0))
+            parent = thieves if key in thief_rules else rules
+            ttk.Checkbutton(parent, text=text, variable=self.rule_vars[key],
+                            command=self._popups_changed).pack(anchor="w", pady=(4 if parent.winfo_children()[:-1] else 0, 0))
             if key == "stealth":  # (under it: what worn gear adds)
-                ttk.Checkbutton(rules, text="... a worn cloak adds 10 to hiding, worn boots 10 to moving silently; "
+                ttk.Checkbutton(thieves, text="... a worn cloak adds 10 to hiding, worn boots 10 to moving silently; "
                                             "a worn belt adds 5 to picking pockets and opening locks (hiding or not)",
                                 variable=self.stealth_gear, command=self._popups_changed).pack(anchor="w", padx=(20, 0))
 
-        # the companion's own content: people, a quest and items in the game, and thief play. Some
+        # the companion's own content: people, a quest and items in the game. Some
         # are written into the game's files when it is started; what a save already has stays
         new = section("new_content", "New content")
         ttk.Label(new, text="Kalzith, Semyon, the vulture and the new items: from the next time "
@@ -389,16 +392,16 @@ class Viewer:
             self.content_vars[key] = tk.BooleanVar(value=settings.get(key, True) is not False)
             ttk.Checkbutton(new, text=text, variable=self.content_vars[key],
                             command=self._popups_changed).pack(anchor="w", pady=(4, 0))
-        # a Ring +1 on the Tied-up Prisoner in the arena (ring.py), picking pockets, and the tools
+        # a Ring +1 on the Tied-up Prisoner in the arena (ring.py)
         self.arena_ring = tk.BooleanVar(value=bool(settings.get("arena_ring", True)))
         ttk.Checkbutton(new, text="A Ring of Protection +1 on the arena's Tied-up Prisoner (search his body)",
                         variable=self.arena_ring, command=self._popups_changed).pack(anchor="w", pady=(4, 0))
         self.pickpockets = tk.BooleanVar(value=bool(settings.get("pickpockets", True)))
-        ttk.Checkbutton(new, text="Picking pockets: a thief uses Thieves' Tools on someone in sight (each "
+        ttk.Checkbutton(thieves, text="Picking pockets: a thief uses Thieves' Tools on someone in sight (each "
                         "thief gets a set), until caught", variable=self.pickpockets,
                         command=self._popups_changed).pack(anchor="w", pady=(4, 0))
         self.pick_key = tk.BooleanVar(value=bool(settings.get("pick_key", False)))
-        ttk.Checkbutton(new, text="... or the leader, a thief, presses P in a conversation",
+        ttk.Checkbutton(thieves, text="... or the leader, a thief, presses P in a conversation",
                         variable=self.pick_key, command=self._popups_changed).pack(anchor="w", padx=(20, 0))
 
         # how the game looks

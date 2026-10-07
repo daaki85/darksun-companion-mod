@@ -7,6 +7,12 @@ Released pull requests are summarised in a line or two each; the release notes
 
 ## Pull request #28 (in progress)
 
+**Changed**
+- **Options tab:** a **Thieves** section of its own, after Rule changes, with
+  AD&D's thief skills, hiding to backstab (and the cloak, boots and belt) and
+  picking pockets (and the P key), as the guide's Thieves section has them;
+  the weapon specialization box is shorter.
+
 **Documentation**
 - **Guide reorganised:** Every magic item and Every mundane weapon in a section
   of their own, Item tables (they list the game's items too, not only new

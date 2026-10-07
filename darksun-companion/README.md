@@ -305,6 +305,8 @@ sections are open is remembered. The sections:
 - **In the game**: each turn's rolls and how much they say, monster
   descriptions ([In the game](#in-the-game)).
 - **Rule changes** ([Rule changes](#rule-changes)).
+- **Thieves** ([Thieves](#thieves)): AD&D's thief skills, hiding to
+  backstab, and picking pockets.
 - **New content** ([New content](#new-content)). The new people, the vulture and Alagorn's
   stories go into the game's copies the next time it is started; what a saved
   game already has stays in it.
@@ -316,7 +318,7 @@ P in a conversation and the right button, and are remembered for next time.
 In a window too small to show the open sections, the tab scrolls (scrollbar,
 mouse wheel, or arrow and page keys once it has the focus).
 
-![The Options tab with Rule changes open and the other sections closed](docs/options.png)
+![The Options tab with Rule changes and Thieves open and the other sections closed](docs/options.png)
 
 **Spell slots.** `Priest spells left: 1st 5/5, 2nd 3/3, 3rd 2/2`
 means five first-level priest spells can still be cast out of five, and so
@@ -813,9 +815,9 @@ damage as any other. A backstab is the only thing that multiplies damage.
 ## Thieves
 
 What the game does with thieves' skills and attacks from behind, what the two
-rule changes for them do (each its own box on the Options tab), and picking
-pockets, the Ledger's use for a thief's pick pockets skill (its box is in the
-Options tab's New content group).
+rule changes for them do, and picking pockets, the Ledger's use for a thief's
+pick pockets skill. All three have their boxes in the Options tab's **Thieves**
+section.
 
 ### How the game works out thief skills
 
@@ -1475,8 +1477,8 @@ How it works: [DEVELOPMENT.md](DEVELOPMENT.md#no-manual-check).
 
 ## Rule changes
 
-Fifteen changes to the game's rules, each with its own box under **Rule changes**
-on the Options tab (all on by default; they take effect in games started with
+Fifteen changes to the game's rules, each with its own box on the Options tab
+(under **Rule changes**, or **Thieves** for the two thief rules) (all on by default; they take effect in games started with
 the dice log, while the Ledger runs or with **Play Dark Sun (in-game rolls)**,
 which uses the Options as last set). Untick one and the game's own rule is back
 at once. The rules for two weapons, thieves and saving throws are described with

@@ -28,11 +28,12 @@ can be switched off on its Options tab.
   ([In the game](darksun-companion/README.md#in-the-game))
 - **Changes rules, each one switchable:** fifteen of AD&D's, among them weapon
   specialization, class restrictions, thief skills from AD&D's table, saving
-  throws and levels up to 10.
-  ([Rule changes](darksun-companion/README.md#rule-changes))
+  throws and levels up to 10; and picking pockets for thieves.
+  ([Rule changes](darksun-companion/README.md#rule-changes),
+  [Thieves](darksun-companion/README.md#thieves))
 - **Adds to the game:** new weapons, armour and magic items across Athas, with
   stories Alagorn tells; Kalzith, a defiler slave who sells scrolls; Semyon
-  keeping his word; picking pockets; a use for the cooked vulture.
+  keeping his word; a use for the cooked vulture.
   ([New content](darksun-companion/README.md#new-content))
 - **On the screen and at hand:** the party's gear drawn on their figures,
   shadows and dust on the map, choosing an enemy with Tab, and scrolling with
