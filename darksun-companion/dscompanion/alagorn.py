@@ -90,10 +90,11 @@ PENS = {
              "that should have landed, and a curse that should have taken hold. The templars take "
              "them from those they arrest, and wear them themselves."),),
     ARMOUR: (("Inixhide",
-              "Inixhide! Legcrusher cut it from the hide of an inix that threw its rider in the "
-              "arena and charged the crowd; he caught it by the neck and held on until it died. "
-              "A templar's preserver, deep in debt to him, enchanted it. It turns blows better than "
-              "any common leather; small wonder he lasted so long in the pens."),),
+              "Inixhide! The monster trainers of Draj have passed it down, one to the next, since "
+              "the arena was young. It was cut from the first inix ever broken to the harness, and "
+              "every trainer since has had a templar's preserver work a little more strength into "
+              "it. Claws and teeth turn on it as on no common leather. Legcrusher was only the last "
+              "to wear it."),),
     CLOTHES: (("Cloak of Protection",
                "A Cloak of Protection! Its weave turns aside blades and spells alike: only a little, "
                "but a little is often enough. The tailors who know the craft sell to the templars by "
