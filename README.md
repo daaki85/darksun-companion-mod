@@ -71,7 +71,7 @@ double-click, with the options as last set.)
 
 ## What's new
 
-In pull request #27 (in progress): a ranger no longer has the bow to choose at
+In pull request #27 (merged 2026-10-07): a ranger no longer has the bow to choose at
 creation, since every ranger has expertise with the bow already.
 
 Earlier changes, pull request by pull request, are in
