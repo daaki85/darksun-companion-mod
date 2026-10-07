@@ -1219,6 +1219,9 @@ class KindsAllowedTests(unittest.TestCase):
                 got = mu.reg_read(r.UC_X86_REG_AX)
                 want = restrict.allowed_kinds(s, self.record)
                 self.assertEqual([k for k in range(16) if got >> k & 1], want)
+        ranger = restrict.allowed_kinds(sheet(13), self.record)  # (no bow: a ranger's expertise already)
+        self.assertNotIn(specialize.KINDS.index("bow"), ranger)
+        self.assertIn(specialize.KINDS.index("bow"), restrict.allowed_kinds(sheet(9), self.record))
         fire = restrict.allowed_kinds(sheet(9, 3), self.record)
         self.assertEqual([specialize.KINDS[k] for k in fire],
                          ["long sword", "dagger", "short sword", "mace", "axe", "great axe", "chatkcha"])

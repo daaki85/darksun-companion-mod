@@ -1406,7 +1406,7 @@ and [Saving throws](#saving-throws).
 
 | Rule (its box on the Options tab) | What it changes |
 |---|---|
-| [Weapon specialization](#weapon-specialization) | fighters and gladiators specialize in kinds of weapon, fighters on to mastery and grand mastery, rangers take expertise; other weapons at AD&D's plain attack rate |
+| [Weapon specialization](#weapon-specialization) | fighters and gladiators specialize in kinds of weapon, fighters on to mastery and grand mastery, rangers take expertise (and every ranger the bow); specialists and rangers shoot missiles faster; other weapons at AD&D's plain attack rate |
 | [Class restrictions](#class-restrictions) | each class's limits on armour, shields and weapons hold, the strictest winning; a multiclass preserver casts no spells in armour |
 | [Multiclass hit points](#multiclass-hit-points) | each level's die and CON's bonus shared between a character's classes |
 | [Hit dice: the better of two](#hit-dice-the-better-of-two) | each hit die rolled twice, the better kept, for every character |
@@ -1432,7 +1432,7 @@ in chosen kinds of weapon, as in AD&D:
 |---|---|---|
 | **Fighter** (one class or more) | 1 kind | specialized: +1 to hit, +2 damage; **mastery** from 5th fighter level (+3 to hit, +3 damage); **grand mastery** from 9th (the same, the damage die a size larger, d8 to d10, and one more attack a round) |
 | **Gladiator** | 2 kinds at creation, a 3rd at 6th level and a 4th at 9th | specialized in each: +1 to hit, +2 damage |
-| **Ranger** (one class or more) | 1 kind, and the bow always | expertise: the game's attacks a round in melee, a specialist's rate of fire with a missile weapon, no other bonus |
+| **Ranger** (one class or more) | 1 kind (not the bow), and the bow always | expertise: the game's attacks a round in melee, a specialist's rate of fire with a missile weapon, no other bonus |
 
 The game already gives every fighter, gladiator and ranger the specialist's
 attacks in melee (3/2 a round, 2 from 7th level). With the rule, a warrior
@@ -1494,7 +1494,8 @@ character may use, in any material. The rest stay greyed:
 | …with water cleric (bone, wood) | long sword, club, dagger, short sword, mace, axe, great axe, quarterstaff, polearm, gythka, cahulaks, bow | the game's bone long sword |
 
 (The starting weapon is for the kind marked first; the next table has the
-rest.)
+rest. A ranger never has the bow to choose: its expertise with the bow comes
+anyway.)
 
 ![The creation screen: a gladiator's WEAPON SPEC page, the long sword and the club marked, the others greyed](docs/creation-weapons.png)
 
@@ -1534,9 +1535,12 @@ with picks unmade: they're offered again at the next level).
 kinds under its effects ("SPECIALIZED IN", "MASTER OF", "GRAND MASTER OF",
 "EXPERT IN"); View Character's DAM line counts it; the Characters tab lists
 the kinds (**Weapons: long sword (grand mastery)**) and gives the attacks a
-round with each weapon held (**Attacks: 3/2 a round with Long Sword, 1 with
-Axe**); and the dice log names it on each attack (`+1 specialized`, `+3 grand mastery`,
-`(d10 for d8: grand mastery)`).
+round with each weapon ready, a missile weapon's its own (**Attacks: 3/2 a
+round with Long Sword, 1 with Axe, 3 with Bow**); and the dice log names it on
+each attack (`+1 specialized`, `+3 grand mastery`, `(d10 for d8: grand
+mastery)`). A ranger's expertise with the bow isn't a chosen kind, so neither
+list shows it, but it counts; and View Character, as the game has it, gives a
+character's melee rate whatever weapon is ready.
 
 ![The Effects screen: Daaki, a 9th-level fighter, GRAND MASTER OF LONG SWORD](docs/effects-weapons.png)
 
