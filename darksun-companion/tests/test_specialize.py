@@ -186,5 +186,108 @@ class NewCharacterTests(unittest.TestCase):
         self.assertEqual(len(weaponchoice.PLAIN), len(specialize.KINDS))
 
 
+
+class FinishNewTests(unittest.TestCase):
+    """weaponchoice.finish_new on a party of one New character (a fake of the game's memory)."""
+    DS, SHEETS, ITEMS, TYPES = 0x100, 0x2000, 0x3000, 0x4000
+
+    def setUp(self):
+        from unittest import mock
+        self.mem = bytearray(0x10000)
+        for ptr, at in ((game.SHEETS_PTR, self.SHEETS), (game.ITEMS_PTR, self.ITEMS), (game.ITEM_TYPES_PTR, self.TYPES)):
+            struct.pack_into("<HH", self.mem, self.DS * 16 + ptr, at, 0)
+        test = self
+
+        class Guest:
+            def read(self, at, n):
+                return bytes(test.mem[at:at + n])
+
+            def write(self, at, data):
+                test.mem[at:at + len(data)] = data
+
+        class Gd:
+            guest, ds, rules = Guest(), self.DS, 0
+
+            def creature(self, i):
+                rec = bytearray(game.CREATURE_SIZE)
+                if i == 0:
+                    rec[game.CREATURE_NAME] = ord("G")
+                    rec[game.CREATURE_STATUS] = game.STATUS_NEW
+                return bytes(rec)
+
+            def creature_name(self, i):
+                return "Grog"
+
+            def item_name(self, n):
+                return "Leather Shield"
+
+            def _worn(self, i):
+                for n in range(test.items):
+                    item = test.mem[test.ITEMS + n * game.ITEM_SIZE:test.ITEMS + (n + 1) * game.ITEM_SIZE]
+                    yield n, bytes(item), b""
+        self.gd = Gd()
+        self.items = 0
+        for patch in (mock.patch("dscompanion.pickpocket.free_cell", lambda gd, it, m: 30),
+                      mock.patch("dscompanion.ring.Items", lambda gd: None),
+                      mock.patch("dscompanion.restrict.allowed_kinds", lambda sheet, read: None)):
+            patch.start()
+            self.addCleanup(patch.stop)
+
+    def give(self, type_, name, slot):
+        rec = bytearray(game.ITEM_SIZE)
+        struct.pack_into("<H", rec, game.ITEM_TYPE, type_)
+        struct.pack_into("<H", rec, game.ITEM_NAME, name)
+        rec[game.ITEM_SLOT] = slot
+        at = self.ITEMS + self.items * game.ITEM_SIZE
+        self.mem[at:at + game.ITEM_SIZE] = rec
+        self.items += 1
+
+    def item(self, n):
+        at = self.ITEMS + n * game.ITEM_SIZE
+        return (struct.unpack_from("<H", self.mem, at + game.ITEM_TYPE)[0], self.mem[at + game.ITEM_SLOT])
+
+    def setup_character(self, kind, classes=(9, 0, 0), race=7):
+        from dscompanion import weaponchoice
+        s = bytearray(sheet((specialize.KINDS.index(kind),), classes=classes))
+        s[game.SHEET_RACE] = race
+        self.mem[self.SHEETS:self.SHEETS + game.SHEET_SIZE] = s
+        right, left = game.WEAPON_HANDS
+        self.give(weaponchoice.START_TYPE, weaponchoice.START_NAME, right)
+        self.give(36, 0x40, left)  # (a shield)
+        great_axe = weaponchoice.PLAIN[specialize.KINDS.index("great axe")][0]
+        self.mem[self.TYPES + great_axe * game.ITEM_TYPE_SIZE + 0x0F] = weaponchoice.TWO_HANDED
+        return right, left
+
+    def test_two_handed_takes_the_shield_off(self):
+        from dscompanion import weaponchoice
+        right, left = self.setup_character("great axe")
+        out = weaponchoice.finish_new(self.gd)
+        self.assertEqual(self.item(0), (weaponchoice.PLAIN[specialize.KINDS.index("great axe")][0], right))
+        self.assertEqual(self.item(1), (36, 30))  # (into a backpack cell)
+        self.assertIn("goes into the backpack", out[0])
+
+    def test_one_hand_keeps_the_shield(self):
+        from dscompanion import weaponchoice
+        right, left = self.setup_character("axe")
+        weaponchoice.finish_new(self.gd)
+        self.assertEqual(self.item(1), (36, left))
+
+    def test_a_half_giant_keeps_the_shield(self):
+        from dscompanion import weaponchoice
+        right, left = self.setup_character("great axe", race=game.RACE_HALF_GIANT)
+        self.gd.rules = game.RULE_HALF_GIANT
+        weaponchoice.finish_new(self.gd)
+        self.assertEqual(self.item(1), (36, left))
+
+    def test_made_once(self):
+        """A long sword handed over later stays one: the character has its kind's weapon."""
+        from dscompanion import weaponchoice
+        right, left = self.setup_character("club", classes=(10, 0, 0))
+        weaponchoice.finish_new(self.gd)
+        self.give(weaponchoice.START_TYPE, weaponchoice.START_NAME, left)
+        self.assertEqual(weaponchoice.finish_new(self.gd), [])
+        self.assertEqual(self.item(2)[0], weaponchoice.START_TYPE)
+
+
 if __name__ == "__main__":
     unittest.main()

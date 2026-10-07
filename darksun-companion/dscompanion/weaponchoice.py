@@ -22,6 +22,8 @@ RANGERS = range(13, 17)
 START_TYPE, START_NAME = 81, 0x1C  # the bone long sword the game starts warriors with
 MISSILE_SLOT = game.EQUIP_SLOTS.index("missile")
 AMMO_SLOT = game.EQUIP_SLOTS.index("ammo")
+LEFT_HAND = game.EQUIP_SLOTS.index("left hand")
+TWO_HANDED = 0x40  # a weapon type's +0Fh: it takes both hands (the inventory screen's test)
 ITEM_PICTURE, ITEM_COUNT, ITEM_VALUE = 0x00, 0x02, 0x06
 ARROWS = (0xFBD2, 62, 0x36, 1, 20)  # (picture, type, name, price, how many)
 
@@ -99,6 +101,31 @@ def arrows(template: bytes) -> bytes:
     return bytes(rec)
 
 
+def two_handed(gd, sheet: bytes, type_: int) -> bool:
+    """Whether a weapon type takes both hands (its type's +0Fh, 40h), as the game has it, for this
+    character: not for a half-giant with RULE_HALF_GIANT."""
+    if sheet[game.SHEET_RACE] == game.RACE_HALF_GIANT and gd.rules & game.RULE_HALF_GIANT:
+        return False
+    types = game.far_pointer(gd.guest, gd.ds, game.ITEM_TYPES_PTR)
+    return bool(gd.guest.read(types + type_ * game.ITEM_TYPE_SIZE, game.ITEM_TYPE_SIZE)[0x0F] & TWO_HANDED)
+
+
+def _shield_off(gd, member: int, owned, items: int) -> List[str]:
+    """What the left hand holds (the game's starting shield) into a backpack cell, for a weapon
+    in both hands."""
+    from . import pickpocket, ring
+    for item_index, item, _ in owned:
+        if item[game.ITEM_SLOT] == LEFT_HAND:
+            cell = pickpocket.free_cell(gd, ring.Items(gd), member)
+            if cell is None:
+                return []
+            gd.guest.write(items + item_index * game.ITEM_SIZE + game.ITEM_SLOT, bytes((cell,)))
+            name = gd.item_name(struct.unpack_from("<H", item, game.ITEM_NAME)[0])
+            return [f"    {gd.creature_name(member)}'s {name} goes into the backpack: "
+                    f"the weapon takes both hands"]
+    return []
+
+
 def finish_new(gd) -> List[str]:
     """The party's New characters' kinds made whole, and their starting weapons changed: lines
     for the log."""
@@ -121,15 +148,20 @@ def finish_new(gd) -> List[str]:
             gd.guest.write(sheets + index * game.SHEET_SIZE + game.SPEC_SLOTS, bytes(kinds))
         if not kinds[0] or kinds[0] == 1:
             continue
-        for item_index, item, _ in gd._worn(member):
+        kind = kinds[0] - 1
+        owned = list(gd._worn(member))
+        if any(struct.unpack_from("<H", item, game.ITEM_TYPE)[0] == PLAIN[kind][0] for _, item, _ in owned):
+            continue  # (made already: a long sword handed over later stays one)
+        for item_index, item, _ in owned:
             if struct.unpack_from("<H", item, game.ITEM_TYPE)[0] == START_TYPE \
                     and struct.unpack_from("<H", item, game.ITEM_NAME)[0] == START_NAME \
                     and item[game.ITEM_SLOT] in game.WEAPON_HANDS and item[game.ITEM_PLUS] == 0:
-                kind = kinds[0] - 1
                 new, _ = plain_weapon(item, kind)
                 gd.guest.write(items + item_index * game.ITEM_SIZE, new)
                 if kind == BOW:
                     npcitems.add_to(gd, member, arrows(new), AMMO_SLOT)
+                elif two_handed(gd, sheet, PLAIN[kind][0]):
+                    out += _shield_off(gd, member, owned, items)
                 out.append(f"{gd.creature_name(member)} starts with a plain {specialize.KINDS[kind]} "
                            f"for the weapon specialization chosen, in place of the long sword")
                 break
