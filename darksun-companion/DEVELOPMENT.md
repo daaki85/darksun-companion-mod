@@ -179,7 +179,7 @@ types 20-byte ones (`DS:0x1669`, 115 of them, from GPLDATA.GFF):
 
 Free item records and free objects are kept in lists (`DS:0x4D76`,
 `DS:0x4D72`), which is how the Ledger adds [the Ring +1](README.md#new-items) and
-[the slave pens' gear](README.md#new-items) as the game would.
+Kalzith's scrolls as the game would.
 
 Also seen: per-region `RGnn` chunks hold a combined creature record, sheet and
 inventory for each character. Region *nn* uses `SAVE` chunks *nn*×60+1 and up
@@ -438,13 +438,15 @@ the screen shows only effects with an icon; with the rule on, the Ledger gives
 
 ([In the README](README.md#new-items).)
 
-How: the slave pens' items, the Ledger puts in their owners' things, a record
-from the game's free list. The world's (and the bone scale set) are in the
-game's data instead (`dscompanion/dataitems.py`, `worldgear.py`): in the
+How: the new items (the slave pens' and the world's, the bone scale set,
+Kreenfang) are in the game's data (`dscompanion/dataitems.py`, `worldgear.py`,
+`npcitems.py`, `arms.py`): in the
 Ledger's copy of `SEGOBJEX.GFF`, each person's or chest's object (its RDFF: the
 object's record, then its items, each a child or the next of the one before,
 with its type and name as attributes) has the new items after its own, so the
-game makes them where it makes the object. One Castle Guard and one
+game makes them where it makes the object. Kreenfang is the arena's dead
+body's (object 1204) own gythka made +1 and renamed, its name attribute with
+it. One Castle Guard and one
 Undermountain miner have an object of their own (2560, 2561: copies of their
 kind's, their record renumbered), their entity in the Ledger's copies of
 `RGN1C.GFF` and `RGN1E.GFF` pointing to it. The Elven Leader's script (46, in
@@ -492,7 +494,7 @@ originals:
 His state is in the game's own flags (760 to 763: met, friendly, cold, his
 scrolls given; the game uses flags up to 755), so a save keeps it. The first
 time the party is in the pens, the Ledger puts his six scrolls among his
-things (from the game's free list, as for [the slave pens' gear](README.md#new-items)),
+things (from the game's free list, as for [the arena's ring](README.md#new-items)),
 once a game. If he is killed, the Ledger marks it (flag 772) and the others
 speak of him as dead (see
 [Dinos and the Trustee](README.md#what-dinos-and-the-trustee-say-about-them)); after

@@ -39,7 +39,9 @@ requests #1 to #13; its notes are in
 **Changed**
 - **The world's new items are in the game's own data,** not added while you
   play: the launcher writes them into their people's and chests' objects, so a
-  new game makes them where they belong. The Boots of Elvenkind are in the
+  new game makes them where they belong. The slave pens' items (Kurzak's
+  Shadowseeker and helm, Legcrusher's armour, Pehtucl's cloak and ring) and
+  Kreenfang (the arena's dead body's gythka) are in the data too. The Boots of Elvenkind are in the
   buried chest when it is dug up; the bone scale set's arm and leg pieces and
   helm are in the slave pens' chest with its chest piece; one Castle Guard and
   one Undermountain miner have objects of their own for their items. The

@@ -96,6 +96,23 @@ def with_items(rdff: bytes, items: Sequence[bytes], numbers: Optional[Dict[int, 
     return chunk(recs, end)
 
 
+def with_item_changed(rdff: bytes, test, change) -> bytes:
+    """The object's record with each of its own items for which TEST(record) holds made
+    CHANGE(record) (its name attribute following the record's name)."""
+    recs, end = records(rdff)
+    recs = list(recs)
+    for i in top_items(recs):
+        if not test(recs[i].data):
+            continue
+        data = change(recs[i].data)
+        recs[i] = recs[i]._replace(data=data)
+        name, = struct.unpack_from("<H", data, game.ITEM_NAME)
+        for j, r in enumerate(recs):
+            if r.level == ATTRIBUTE and r.of == i and r.kind == NAME:
+                recs[j] = r._replace(number=name)
+    return chunk(recs, end)
+
+
 def items_of(rdff: bytes) -> List[bytes]:
     """The item records of the object's own items."""
     recs, _ = records(rdff)

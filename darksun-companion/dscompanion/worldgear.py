@@ -273,19 +273,23 @@ def object_chunks(chunks, gifts: Sequence[Gift], extra: Sequence[Tuple[int, Sequ
 def data_chunks(chunks, on: Dict[str, bool]) -> Dict[Tuple[str, int], bytes]:
     """The objects with the new items of the content switched ON (on unless False): the plain
     weapons (world_gear), the magic ones and the rest (world_magic: with the cloak's own object,
-    for the Elven Leader's script), the bone scale set (pens_gear: with the chest piece in the
-    slave pens' chest)."""
-    from . import bonescale
+    for the Elven Leader's script), the slave pens' people's and the bone scale set (pens_gear:
+    the set with the chest piece in the pens' chest), Kreenfang and Shadowseeker (magic_arms)."""
+    from . import arms, bonescale, npcitems
     gifts: List[Gift] = []
     extra: List[Tuple[int, Sequence[bytes]]] = []
     if on.get("world_gear", True) is not False:
         gifts += GIFTS
     if on.get("world_magic", True) is not False:
         gifts += MAGIC
+    magic_arms = on.get("magic_arms", True) is not False
     if on.get("pens_gear", True) is not False:
         extra.append((bonescale.CHEST_OBJECT, bonescale.PIECES))
+        extra += npcitems.pens(magic_arms)
     try:
         out = object_chunks(chunks, gifts, extra)
+        if magic_arms:
+            out.update(arms.kreenfang_chunks(chunks))
     except (ValueError, struct.error):
         return {}
     if on.get("world_magic", True) is not False:

@@ -1823,11 +1823,8 @@ Alagorn's stories from the next time the game is started.
 
 ### New items
 
-Items the game never had, or never placed. The slave pens' (the rings, the
-cloak and armour, Shadowseeker, Kreenfang) are given once a game, where they
-belong (never where they are already, as in a game saved after they were given,
-and not to anyone already dead). The rest are in the game's own data: the
-launcher writes them into their people's and chests' objects in its copy of the
+Items the game never had, or never placed. All but the arena's ring are in
+the game's own data: the launcher writes them into their people's and chests' objects in its copy of the
 game's objects (see [the world's new items](#the-worlds-new-items)), so the game
 makes them with those people and chests. From then on the game keeps and saves
 them like its own. The log doesn't say: they're there to be found.
@@ -1897,12 +1894,13 @@ leg armour is AC 3 each (the game's is 2).
 
 #### The world's new items
 
-All but the slave pens' are in the game's data, written by the launcher each
+The new items are in the game's data, written by the launcher each
 time it starts the game, by these switches: a switch changed takes effect from
 the next start, in the regions the party hasn't yet been to (a save keeps the
 regions visited as they were). Start a new game for them all.
 
-- People's items are in their objects (the game makes them carrying them); the
+- People's items are in their objects (the game makes them carrying them:
+  Kurzak, Legcrusher and Pehtucl in the slave pens too); the
   chests' in the chests' objects (the caravan's buried chest is one the dig's
   script makes, with the Boots of Elvenkind in it).
 - People of a kind share an object: every Tari, Renegade and Wild Mul carries
@@ -1910,6 +1908,8 @@ regions visited as they were). Start a new game for them all.
   object of their own for their metal polearm and Deepbiter (a copy of their
   kind's: the same look, name and fighting), their region's entity pointing to
   it in the Ledger's copies of `RGN1C.GFF` and `RGN1E.GFF`.
+- Kreenfang is the gythka in the arena's dead body's object (the gythka lying
+  loose in the arena stays plain).
 - The Elven Leader's script gives the Cloak of Elvenkind of its own object,
   after the Gythka +1, in the Ledger's copy of the scripts.
 

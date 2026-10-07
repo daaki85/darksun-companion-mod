@@ -154,11 +154,6 @@ class WorldGearTests(unittest.TestCase):
         self.assertFalse(restrict.is_bracers(arm))
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
-
 def rdff(head: bytes, items=()) -> bytes:
     """An object's record (as the game's): HEAD (a person, 58 bytes, naming itself object 55;
     or an item, a chest) and ITEMS, each with its type and name, then the end."""

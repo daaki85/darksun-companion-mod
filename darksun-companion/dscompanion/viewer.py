@@ -371,7 +371,7 @@ class Viewer:
         # the companion's own content: people, a quest and items in the game, and thief play. Some
         # are written into the game's files when it is started; what a save already has stays
         new = section("new_content", "New content")
-        ttk.Label(new, text="Kalzith, Semyon, the vulture and the world's new items: from the next time "
+        ttk.Label(new, text="Kalzith, Semyon, the vulture and the new items: from the next time "
                   "you start the game, in places not yet visited. What a saved game already has "
                   "(people met, items given) stays in it.",
                   wraplength=460).pack(anchor="w")
@@ -791,8 +791,6 @@ class Viewer:
                 self.dice.use_targeting = self.use_targeting.get()
                 self.dice.scroll_map = self.scroll_map.get()
                 self.dice.scroll_right = self.scroll_right.get()
-                self.dice.pens_gear = self.content_vars["pens_gear"].get()
-                self.dice.magic_arms = self.content_vars["magic_arms"].get()
                 self.dice.vulture_on = self.content_vars["vulture"].get()
                 self.dice.stealth_gear = self.stealth_gear.get()
                 self.dice.load_picked(launch.pickpocketed())
@@ -912,8 +910,6 @@ class Viewer:
             self.dice.use_targeting = self.use_targeting.get()
             self.dice.scroll_map = self.scroll_map.get()
             self.dice.scroll_right = self.scroll_right.get()
-            self.dice.pens_gear = self.content_vars["pens_gear"].get()
-            self.dice.magic_arms = self.content_vars["magic_arms"].get()
             self.dice.vulture_on = self.content_vars["vulture"].get()
             self.dice.stealth_gear = self.stealth_gear.get()
             self.dice.set_rules(self._rules())
