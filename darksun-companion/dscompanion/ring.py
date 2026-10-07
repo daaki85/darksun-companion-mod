@@ -199,3 +199,32 @@ def with_xp(script: bytes, field_types: bytes = b"", original: Optional[bytes] =
     out[BODY_AT:BODY_AT + len(jump)] = jump
     return bytes(out)
 
+
+def unlink(gd: GameData, it: "Items", item: int, what: str, empty: bool = False) -> bool:
+    """ITEM taken out of whatever list holds it and given back to the game's free list of item
+    records; the only one in its list only with EMPTY (a character's list may be empty, as a new
+    one is; a container's not)."""
+    for thing in range(THING_COUNT):
+        kind, first = it.thing(thing)
+        if kind != game.THING_ITEM:
+            continue
+        before, index = None, first
+        for _ in range(MAX_ITEMS):
+            if not 0 <= index < game.NO_ITEM:
+                break
+            rec = it.item(index)
+            after = struct.unpack_from("<h", rec, game.ITEM_NEXT)[0]
+            if index == item:
+                if before is None:
+                    if not 0 <= after < game.NO_ITEM and not empty:
+                        return False  # (the only one: left)
+                    gd.guest.write(it.things + thing * 3 + 1, struct.pack("<h", after))
+                else:
+                    gd.guest.write(it.items + before * game.ITEM_SIZE + game.ITEM_NEXT, struct.pack("<h", after))
+                gd.guest.write(it.items + item * game.ITEM_SIZE + game.ITEM_NEXT,
+                               struct.pack("<H", it.word(FREE_ITEMS)))
+                gd.guest.write(gd.ds * 16 + FREE_ITEMS, struct.pack("<H", item))
+                took(item, what)
+                return True
+            before, index = index, after
+    return False

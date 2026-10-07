@@ -14,14 +14,14 @@ and the entries go back to what the game has there (restore).
 
 import struct
 
-from . import arms, game, npcitems, ring, tools, worldgear
+from . import arms, game, npcitems, ring, tome, tools, worldgear
 from .game import GameData
 
 OWN = 0x142  # the game's own names: 0-321
 EXTRA = 32  # how many DSCLOG adds (its NAMES_EXTRA)
 RING, TOOLS = ring.NAME_ENTRY, tools.NAME_ENTRY  # 0x142, 0x143
 NAMES = {RING: ring.NAME, TOOLS: tools.NAME, **npcitems.NAMES, **arms.NAMES,
-         worldgear.BRACERS_NAME: b"Bracers/Defense"}  # as DSCLOG's EXTRA_NAMES has them
+         worldgear.BRACERS_NAME: b"Bracers/Defense", **worldgear.NAMES, **tome.NAMES}  # as DSCLOG's EXTRA_NAMES has them
 TSR_NAMES_OFF, TSR_NAMES_COUNT, TSR_NAMES_PTR = 196, 198, 200  # in DSCLOG's header
 # the entries earlier versions borrowed: what the game has there, and what they wrote over it
 BORROWED = ((0x95, b"", (b"Ring/Protection", b"Ring +1", b"Ring of Protection")),

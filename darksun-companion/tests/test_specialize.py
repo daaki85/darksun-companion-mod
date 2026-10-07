@@ -297,6 +297,17 @@ class FinishNewTests(unittest.TestCase):
         weaponchoice.finish_new(self.gd)
         self.assertEqual(self.item(1), (36, left))
 
+    def test_missile_slot_keeps_the_shield(self):
+        """A staff sling (two-handed, as the bow) goes in the missile slot, not a hand: the game asks
+        nothing of the hands for it, so the shield stays."""
+        from dscompanion import weaponchoice
+        right, left = self.setup_character("staff sling")
+        staff_sling = weaponchoice.PLAIN[specialize.KINDS.index("staff sling")][0]
+        self.mem[self.TYPES + staff_sling * game.ITEM_TYPE_SIZE + 0x0F] = weaponchoice.TWO_HANDED
+        weaponchoice.finish_new(self.gd)
+        self.assertEqual(self.item(0), (staff_sling, weaponchoice.MISSILE_SLOT))
+        self.assertEqual(self.item(1), (36, left))
+
     def test_a_half_giant_keeps_the_shield(self):
         from dscompanion import weaponchoice
         right, left = self.setup_character("great axe", race=game.RACE_HALF_GIANT)

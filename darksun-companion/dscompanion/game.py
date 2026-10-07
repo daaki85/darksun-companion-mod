@@ -92,6 +92,11 @@ BRACERS_TYPE = GAME_TYPES + 8  # bracers of defense: worn on the arms, their plu
 # metal versions of the game's plain weapons that have none (worldgear.py)
 METAL_DAGGER_TYPE, METAL_MACE_TYPE, METAL_GREAT_AXE_TYPE = GAME_TYPES + 9, GAME_TYPES + 10, GAME_TYPES + 11
 METAL_PICK_TYPE, METAL_POLEARM_TYPE = GAME_TYPES + 12, GAME_TYPES + 13
+CIRCLET_TYPE, CROWN_TYPE = GAME_TYPES + 14, GAME_TYPES + 15  # worn on the head, not armour (worldgear.py)
+# plate mail's chest, arm and leg armour (worldgear.py's Warden's Plate): AC 3, 2, 2
+PLATE_CHEST_TYPE, PLATE_ARMS_TYPE, PLATE_LEGS_TYPE = GAME_TYPES + 16, GAME_TYPES + 17, GAME_TYPES + 18
+# the Cloak and Boots of Elvenkind (worldgear.py; their stealth: stealth.py)
+ELVEN_CLOAK_TYPE, ELVEN_BOOTS_TYPE = GAME_TYPES + 19, GAME_TYPES + 20
 GYTHKA_TYPE = 0x2C  # the game's gythka ("2 handed Bone Gythka")
 # The companion's rule changes (DSCLOG's RULES): helms count AC 1, boots add a move in a fight;
 # AD&D's two-weapon penalties; spells saved against with the spell save; no doubled d20
@@ -217,6 +222,7 @@ EVENT_QUEUE, EVENT_COUNT, EVENT_SIZE, EVENT_EFFECT_ENDS = 0x2FBE, 0x2FC6, 0x11, 
 INITIATIVE_SEG, INITIATIVE_OFF = 0x37BD, 0xD9
 # Wizard and cleric spells, 7 bytes each from id 1: level, ..., DS offset of the name (+5)
 SPELL_INFO_OFF, SPELL_INFO_SIZE, SPELL_COUNT = 0x3FD33, 7, 137
+SPELL_FIRST = 0  # Armor, the first wizard spell: spells are 0 to SPELL_COUNT (Old One-Eye's scroll is 0's)
 # Psionic powers are numbered after the spells (Detonate 138 ... Thought Shield 171) and share
 # the spells' records and casting code; higher numbers are monsters' own powers
 PSIONIC_FIRST, PSIONIC_COUNT = 138, 34
@@ -839,7 +845,7 @@ class GameData:
             return ITEM_ATTACKS[spell].capitalize()
         if spell > SPELL_COUNT:  # monsters' powers, such as a paralysing touch
             return f"special attack {spell}"
-        if 1 <= spell <= SPELL_COUNT:
+        if SPELL_FIRST <= spell <= SPELL_COUNT:
             info = self.load_seg * 16 + SPELL_INFO_OFF + (spell - 1) * SPELL_INFO_SIZE
             name = struct.unpack("<H", self.guest.read(info + 5, 2))[0]
             if SPELL_NAMES <= name < SPELL_NAMES_END:
@@ -864,7 +870,7 @@ class GameData:
         """Mark the fire, cold and electricity spells for DEX on their saves (CATEGORY_DODGE),
         or unmark them. Returns how many records changed."""
         changed = 0
-        for spell in range(1, 256):
+        for spell in range(SPELL_FIRST, 256):
             at = (self.load_seg + SPELLS_SEG) * 16 + SPELLS_OFF + spell * SPELL_SIZE
             rec = self.guest.read(at, SPELL_SIZE)
             if len(rec) < SPELL_SIZE:

@@ -9,6 +9,12 @@ a weapon that can backstab; attacking gives them away, and the turn ending ends 
 Worn, a cloak adds CLOAK_HIDE to hiding in shadows and boots BOOTS_QUIET to moving silently
 (at most MOST), before the light halves it.
 
+The Cloak and Boots of Elvenkind (worldgear.py, worn by thieves and rangers only) do more: the
+cloak makes its wearer all but invisible, ELVEN_HIDE_OUT under the open sky and ELVEN_HIDE_IN
+under a roof, whatever the light (AD&D's: 95-100% in the wild, 90% among buildings, 95%
+underground by torchlight), unless their own chance is better; the boots make them silent,
+ELVEN_QUIET (AD&D's 95% in the worst conditions).
+
 Rangers do it too, with AD&D's chances for a ranger (the game gives them no thief skills;
 game.ranger_skill_parts), but the other way round for the light: outdoorsmen, they hide with
 the full chance under the open sky and half of it indoors. Their attack from behind is no
@@ -103,6 +109,7 @@ def ranger_chance(gd: GameData, creature: int, skill: int) -> Optional[int]:
 
 CLOAK_HIDE, BOOTS_QUIET = 10, 10  # worn, a cloak helps hide in shadows and boots move silently
 MOST = 95  # (AD&D's most for a thief skill)
+ELVEN_HIDE_OUT, ELVEN_HIDE_IN, ELVEN_QUIET = 95, 90, 95  # the Cloak and Boots of Elvenkind
 # what's worn as a cloak, on the feet and as a belt (an item type's +09h); the plain ones cost
 # GEAR_VALUE while they help (the game's Leather Cloak is 20). Magic ones (a plus, or a price above
 # PLAIN_MOST: the game's own magic gear) keep theirs; PLAIN_MOST takes in what an earlier version
@@ -137,10 +144,15 @@ def worn_bonus(gd: GameData, creature: int, slot: int, bonus: int, name: str) ->
     return 0, ""
 
 
+def wears(gd: GameData, creature: int, type_: int, slot: int) -> bool:
+    return any(item[game.ITEM_SLOT] == slot and struct.unpack_from("<H", item, game.ITEM_TYPE)[0] == type_
+               for _, item, _ in gd._worn(creature))
+
+
 def turn(gd: GameData, combatant: int, roll: Callable[[], int], gear: bool = True) -> Tuple[List[str], bool]:
     """A party member's turn has come in a fight: if a thief or a ranger, the hiding and moving
-    silently, with a worn cloak's and boots' bonuses if GEAR. (log lines, whether their next
-    attack is from behind)."""
+    silently, with a worn cloak's and boots' bonuses if GEAR.
+    (log lines, whether their next attack is from behind)."""
     creature = gd.combatant_creature(combatant)
     if creature is None or creature >= game.PARTY_SIZE:
         return [], False
@@ -151,7 +163,9 @@ def turn(gd: GameData, combatant: int, roll: Callable[[], int], gear: bool = Tru
         hide, of = ranger_chance(gd, creature, HIDE), ranger_chance
     if hide is None:
         return [], False
-    extra, note = worn_bonus(gd, creature, game.CLOAK_SLOT, CLOAK_HIDE, "cloak") if gear else (0, "")
+    elven_cloak = wears(gd, creature, game.ELVEN_CLOAK_TYPE, game.CLOAK_SLOT)
+    extra, note = worn_bonus(gd, creature, game.CLOAK_SLOT, CLOAK_HIDE, "cloak") \
+        if gear and not elven_cloak else (0, "")
     shown = f"{hide}{note} = {min(MOST, hide + extra)}" if extra else f"{hide}"
     hide = min(MOST, hide + extra)
     who = gd.creature_name(creature)
@@ -165,6 +179,9 @@ def turn(gd: GameData, combatant: int, roll: Callable[[], int], gear: bool = Tru
     else:
         need = hide // 2 if sun else hide
         why = f"{shown}, halved in daylight" if sun else f"{shown}, out of the sun"
+    elven = ELVEN_HIDE_OUT if sun else ELVEN_HIDE_IN
+    if elven_cloak and elven > need:  # all but invisible, whatever the light
+        need, why = elven, f"Cloak of Elvenkind, {'under the open sky' if sun else 'under a roof'}"
     d100 = roll()
     hidden = d100 <= need
     lines = [f"{who} hides in shadows: d100 = {d100}, needs {need} or less ({why}) -> "
@@ -172,9 +189,13 @@ def turn(gd: GameData, combatant: int, roll: Callable[[], int], gear: bool = Tru
     if not hidden:
         return lines, False
     quiet = of(gd, creature, MOVE) or 0
-    extra, note = worn_bonus(gd, creature, game.FOOT, BOOTS_QUIET, "boots") if gear else (0, "")
-    boots = f" ({quiet}{note})" if extra else ""
-    quiet = min(MOST, quiet + extra)
+    if wears(gd, creature, game.ELVEN_BOOTS_TYPE, game.FOOT):
+        boots = " (Boots of Elvenkind)"
+        quiet = max(quiet, ELVEN_QUIET)
+    else:
+        extra, note = worn_bonus(gd, creature, game.FOOT, BOOTS_QUIET, "boots") if gear else (0, "")
+        boots = f" ({quiet}{note})" if extra else ""
+        quiet = min(MOST, quiet + extra)
     d100 = roll()
     unheard = d100 <= quiet
     behind = "from behind" if ranger else "from behind (a backstab with a weapon that can)"

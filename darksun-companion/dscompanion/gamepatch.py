@@ -62,6 +62,7 @@ VEC_LV_PICK = 0xC2
 VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK = 0xC1, 0xC0, 0xBF, 0xBE, 0xBD, 0xBC
 VEC_EF_ROWS = 0xBB
 VEC_HP_BEST = 0xBA
+VEC_TOME = 0xB9
 
 
 SCRIPT_BUFFER = 0x2E00  # the scripts' buffer, made bigger (the game's: 10000 bytes)
@@ -329,6 +330,8 @@ PATCHES = (
     # the weapon kinds under the selected character's effects on the Effects screen
     Patch("ef_rows", 0x7F13E, bytes.fromhex("5f5e"), _interrupt(VEC_EF_ROWS, 2)),
     Patch("hp_best", 0x87319, bytes.fromhex("8bc8"), _interrupt(VEC_HP_BEST, 2)),
+    # the Tome of Understanding (tome.py), clicked as a scroll: a point of WIS
+    Patch("tome", 0x8B80C, bytes.fromhex("1e684034"), _interrupt(VEC_TOME, 4)),
     # A bug of the game's own: the roster's DELETE (DSUN.EXE 54AC1h) picked the character by the
     # row clicked alone, where ADD takes the row plus how far the list is scrolled; with the list
     # scrolled, another character was deleted (the row's from the top). The same code, the scroll

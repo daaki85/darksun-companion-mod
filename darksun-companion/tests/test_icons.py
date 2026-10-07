@@ -130,7 +130,7 @@ class CopyTests(unittest.TestCase):
 class WhichTests(unittest.TestCase):
     def test_items(self):
         self.assertEqual(icons.which(npcitems.SWORD), "Short Sword")
-        self.assertEqual(icons.which(npcitems.CHEST_ARMOR), "Leather Chest Armor +1")
+        self.assertEqual(icons.which(npcitems.CHEST_ARMOR), "Inixhide")
         self.assertEqual(icons.which(npcitems.CLOAK_ITEM), "Cloak of Protection +1")
         self.assertEqual(icons.which(ring.RING), "Ring of Protection +1")
         self.assertEqual(icons.which(npcitems.RING_ITEM), "Pehtucl's Ring of Protection +1")

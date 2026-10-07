@@ -27,12 +27,12 @@ Every roll in the game goes through one function, Borland C++'s `rand()`.
    movement `INT FBh` (for boots), a key the conversation window doesn't know
    `INT FCh` and an item used on the map `INT FDh` (for
    [picking pockets](README.md#picking-pockets)), the two-weapon adjustment `INT FEh`
-   and the doubling of a save's d20 `INT F0h`, Cat's Grace `INT EDh`-`INT EFh` and a hidden thief's attack `INT EAh` and the class level cap `INT E7h` and a thief's hit dice `INT E6h` and `INT E5h` and the thief skills `INT E4h` and two-handed weapons `INT E3h` and Cat's
+   and the doubling of a save's d20 `INT F0h`, Cat's Grace `INT EDh`-`INT EFh` and a hidden thief's attack `INT EAh` and the class level cap `INT E7h` and a thief's hit dice `INT E6h` and `INT E5h` and the thief skills `INT E4h` and two-handed weapons `INT E3h` and the Tome of Understanding `INT B9h` and Cat's
    Grace's description and icon `INT E2h` and `INT E1h` (for
    [rule changes](README.md#rule-changes)), and
    where the game makes room for its name table and reads it in `INT ECh` and
    `INT EBh` (for [new item names](README.md#new-items)), and its item type table
-   `INT E9h` and `INT E8h` (for [the slave pens' gear](README.md#new-items)), and
+   `INT E9h` and `INT E8h` (for [the new items](README.md#new-items)), and
    the start of the routines drawing the map's floor `INT E0h` and `INT DFh`
    and of two that draw a rectangle of it again `INT DEh` and `INT DDh` (for
    [shadows](README.md#shadows)), and where the main loop asks where the pointer is
@@ -55,9 +55,11 @@ Every roll in the game goes through one function, Borland C++'s `rand()`.
    [Dinos and the Trustee](README.md#what-dinos-and-the-trustee-say-about-them)), and
    looks for its data files in the current folder rather than next to itself. The helper also hooks DOS's `INT 21h`, to
    open the launcher's copies of `SEGOBJEX.GFF`, `RESOURCE.GFF` (see
-   [Item icons](README.md#new-items)), `GPLDATA.GFF` and `RGN29.GFF` (see
-   [Kalzith](README.md#kalzith), [Semyon](README.md#semyon) and
-   [Dinos and the Trustee](README.md#what-dinos-and-the-trustee-say-about-them)), the mouse driver's `INT 33h`
+   [Item icons](README.md#new-items)), `RGN1C.GFF`, `RGN1E.GFF` (see
+   [new items](README.md#new-items)), `GPLDATA.GFF` and `RGN29.GFF` (see
+   [Kalzith](README.md#kalzith), [Semyon](README.md#semyon),
+   [Dinos and the Trustee](README.md#what-dinos-and-the-trustee-say-about-them) and
+   [no manual check](README.md#no-manual-check)), the mouse driver's `INT 33h`
    (for [scrolling the map](README.md#scrolling-the-map)) and the keyboard's `INT 16h`
    (for Tab and Enter). DOSBox runs it from the game folder, so
    it uses your saves as usual.
@@ -68,7 +70,7 @@ Every roll in the game goes through one function, Borland C++'s `rand()`.
    arguments (dice count and sides, THAC0, AC...) in a ring buffer. Others
    record the final saving throw total, the AC the game uses, and the text
    of dialogues and messages (in a second buffer); the rest draw the in-game
-   additions and make the Ledger's items and the rule changes count.
+   additions and make the new items and the rule changes count.
 3. Templar's Ledger finds the buffer in DOSBox's memory and reads it every 50 ms.
    It works out what each roll was for from the code that asked for it, and
    reads the rest (names, weapons, spells, effects) from the game's own data.
@@ -79,11 +81,12 @@ Every roll in the game goes through one function, Borland C++'s `rand()`.
 Because the replacement produces identical numbers, the game plays exactly as
 it would without it, apart from what you choose on the Options tab (the
 Ring +1, picking pockets, the [rule changes](README.md#rule-changes)), the Ledger's
-other additions (the slave pens' gear, the cooked vulture, Kalzith, Semyon,
+other additions (the new items, the cooked vulture, Kalzith, Semyon,
 what the party wears, shadows, dust, rings, Tab and Enter, scrolling) and the
 fixes always in the patched copy: no equipment penalty on thief skills (see
 [Thief skills](README.md#how-the-game-works-out-thief-skills)), the roster's DELETE and New characters counting
-as Okay (see [More characters](README.md#more-characters)).
+as Okay (see [More characters](README.md#more-characters)), and no manual check
+(see [No manual check](README.md#no-manual-check)).
 
 Limitations:
 - Only the GOG release (`DSUN.EXE` of 611,408 bytes) is supported. With
@@ -141,11 +144,11 @@ parties, plus the in-game View Character screens.
 | sheet | `+0x19` | u8 | Gender: 1 male, 2 female | |
 | sheet | `+0x1a` | u8 | Alignment: 1 LG, 2 LN, 3 LE, 4 NG, 5 TN, 6 NE, 7 CG, 8 CN, 9 CE | 1, 5, 7 confirmed in game |
 | sheet | `+0x1b` | u8 ×6 | STR DEX CON INT WIS CHA | |
+| sheet | `+0x1d` | u8 | CON (among the abilities at `+0x1b`); sets the least a level's hit point roll counts for | read by the game's level-up code |
 | sheet | `+0x21` | u8 ×3 | Class: 1–4 Cleric, 5–8 Druid, 9 Fighter, 10 Gladiator, 11 Preserver, 12 Psionicist, 13–16 Ranger, 17 Thief (0 = none); each four is air, earth, fire, water | 2, 7, 8, 9, 11, 12, 13, 14, 17 confirmed in game; the elements from the spheres in the game's class and spell tables (see Spells and effects) |
 | sheet | `+0x24` | u8 ×3 | Level in each class | |
 | sheet | `+0x27` | s8 | Base AC for the AC calculation | read by the game's AC code |
 | sheet | `+0x29` | u8 | Magic resistance (%) | read by the game's magic resistance check |
-| sheet | `+0x1d` | u8 | CON (among the abilities at `+0x1b`); sets the least a level's hit point roll counts for | read by the game's level-up code |
 | sheet | `+0x2a` | u8 | Attacks per round × 2 | read by the game's combat code |
 | sheet | `+0x37` | u8 ×5 | Saves: para/poison, rod/staff, petrify, breath, spell | match the AD&D warrior table exactly |
 
@@ -178,11 +181,26 @@ types 20-byte ones (`DS:0x1669`, 115 of them, from GPLDATA.GFF):
 
 Free item records and free objects are kept in lists (`DS:0x4D76`,
 `DS:0x4D72`), which is how the Ledger adds [the Ring +1](README.md#new-items) and
-[the slave pens' gear](README.md#new-items) as the game would.
+Kalzith's scrolls as the game would.
 
 Also seen: per-region `RGnn` chunks hold a combined creature record, sheet and
 inventory for each character. Region *nn* uses `SAVE` chunks *nn*×60+1 and up
 for its own copy of the region state.
+
+The saved characters are `CHAR` chunks of `CHARSAVE.GFF`, 314 bytes each: the
+creature record at `+0x0A` (its name at `+0x32`, its status at `+0x26`), the
+sheet at `+0x4E`, then its items. The game's own party, which START GAME uses
+when no party has been made (Cermak, Cilla, Gerakis and K'ratchek), is objects
+300, 307, 308 and 313 in `SEGOBJEX.GFF`: a creature record and a sheet each,
+already Okay, with no items. The game gives them their gear as the game
+starts (see [the game's own party](#the-games-own-party)).
+
+**Spells.** They are numbered 0 to 137: 0 to 68 wizard spells (0 is Armor, the
+first of the 1st level; its scroll is Old One-Eye's), 69 to 137 priest
+spells, a 7-byte record each from 0 (its level first, its name's DS offset at
++5). What the party knows is a table of 138 bytes for each member, 1 for a
+spell known, through the far pointer at `DS:0x132A` (in a save, `SAVE` chunk
+19).
 
 
 ## Reading the game's memory
@@ -222,6 +240,22 @@ built the same way:
 ```
 nasm -f bin -o dos/GAMEEND.COM dos/gameend.asm
 ```
+
+### From a command prompt
+
+What the `.bat` files do, from a command prompt (`dscompanion` is the
+program's internal name):
+
+```
+python -m dscompanion launch                        # start the game with the dice log, and the viewer
+python -m dscompanion view                          # the viewer only
+python -m dscompanion play                          # the game with the in-game additions, no viewer
+python -m dscompanion dicelog                       # the dice log in the command prompt
+python -m dscompanion save C:\path\to\SAVE01.SAV   # the party stored in a save
+python -m dscompanion processes                     # is DOSBox found?
+```
+
+If more than one DOSBox is running, add `--pid <number>` (from `processes`).
 
 ### Mapping memory
 
@@ -268,6 +302,14 @@ README's section.
 The game keeps the clicked reply's row at DS:1F0A while it flashes it; the log
 reads the reply's text from the game's own list.
 
+### Two weapons: AD&D's penalties
+
+([In the README](README.md#two-weapons-adds-penalties).)
+
+How: the game reads the attacker's DEX adjustment when it works out the
+two-weapon adjustment; the helper takes over from there (`INT FEh`) and gives
+AD&D's for the hand the attack's weapon is in.
+
 ### Searching junk, hay and wardrobes
 
 ([In the README](README.md#searching-junk-hay-and-wardrobes).)
@@ -306,6 +348,14 @@ behind and a backstab (`INT EAh`), makes the hidden thief's next one so, by
 the game's own conditions for a backstab (a thief, in melee, a weapon of
 weight 40 or less).
 
+### Spells saved against with the spell save
+
+([In the README](README.md#spells-saved-against-with-the-spell-save).)
+
+How: the Ledger writes the game's own table that turns a spell's kind of save
+into one of the five (a table of words at DS:1E75h, read afresh for every
+save), and puts it back when the rule is unticked.
+
 ### Fire, cold and electricity: DEX instead of a doubled d20
 
 ([In the README](README.md#fire-cold-and-electricity-dex-instead-of-a-doubled-d20).)
@@ -331,6 +381,11 @@ time it last did: older than 5 seconds, the helper shows the sheet's numbers
 instead. Before a screen is drawn, the helper asks the Ledger to update them
 and waits for its answer, half a second at most. Nothing else in the game changes.
 
+Which class levels up next, on View Character: the game looks up the XP for
+each class's next level in its tables and shows the lowest. Where it adds the
+closing bracket, the helper (`INT D2h`) finds which classes that number
+belongs to and adds their letters first.
+
 ### Each turn's rolls
 
 ([In the README](README.md#each-turns-rolls).)
@@ -352,6 +407,20 @@ How: the patched game calls the helper (`INT F5h`) where the box has drawn its
 first status rows; the helper asks the Ledger (as for each turn's rolls), and
 prints the lines with the game's text routine. `INT F6h`, at the end of the
 routine that closes the box, shows the whole description.
+
+### No manual check
+
+([In the README](README.md#no-manual-check).)
+
+How: the dragon's question is the game's script 20, which script 120 runs (a
+call into another script, command 14h) when the party leaves the warrens
+(region 28h) until bit 12 of the game's variable (135, 73) is set. The right
+answer goes on to script 86 at 1087, which sets 255 in the variable (7, 4)
+and, in region 28h, that bit. In the Ledger's copy of the scripts
+(`dscompanion/manualcheck.py`), script 20 does just that and ends: the same
+start (offset 1, its one entry in the game's table of entry points), no words
+and no question. It is replaced only if it is the dragon's (its
+`" word on page "` line).
 
 ### Weapon specialization
 
@@ -395,6 +464,14 @@ the game's own and the dice log sees both; the second time it keeps the
 better. Creation goes through the same routine, a die for each starting
 level.
 
+### Levels up to 10
+
+([In the README](README.md#levels-up-to-10).)
+
+How: the game holds a class level against 9 in two places, where a character
+goes up a level and where View Character shows the XP for the next one; the
+helper (`INT E7h`) holds it against 10 instead while the rule is on.
+
 ### Items saving against acid
 
 ([In the README](README.md#items-saving-against-acid).)
@@ -403,6 +480,14 @@ How: where the game works out the number a weapon's d20 must reach
 (`INT D6h`), where it skips the roll for armour with no magical power
 (`INT D5h`) and where it works out armour's number (`INT D4h`), the helper
 gives the easier of the two and records the check for the dice log.
+
+### Bracers of defense
+
+([In the README](README.md#bracers-of-defense).)
+
+How: where the game's AC routine asks the helper about each worn item
+(`INT F8h`) and where it starts a saving throw's modifiers (`INT F9h`), the
+helper looks at what else the character wears.
 
 ### Half-giants' two-handed weapons
 
@@ -433,25 +518,89 @@ pointer to the name, then the icon) has an empty name and no icon for 54, and
 the screen shows only effects with an icon; with the rule on, the Ledger gives
 54 Flaming Sphere's icon (21014, read as Cat's Grace's) and the spell's name.
 
+### Helms and boots
+
+([In the README](README.md#helms-and-boots).)
+
+How: the helper sets the helm types' AC as the game's AC routine reads it
+(`INT F8h`, the Ring +1's place), and adds the move where the game sets a
+round's movement, Move x 10 (`INT FBh`).
+
+### The game's own party
+
+([In the README](README.md#the-games-own-party).)
+
+How: the four are objects in `SEGOBJEX.GFF` (32000 to 32003, and 300, 307,
+308 and 313 for their figures), a creature record and a sheet each, already
+Okay and with no items; the game gives them their gear and spells as it
+starts. So the Ledger (`dscompanion/defaultparty.py`) changes them in memory
+while the game is new (its first hour, in the arena, as with Thieves' Tools),
+each change once, knowing each by name, race and classes together: their
+weapon kinds in the sheet's spare bytes, Gerakis's club item made a bone
+gythka in its place, Cilla's plain armour given back to the free item list
+(her chest armour is alone in its list, which is left empty, as a new list
+is), and her byte for spell 0 set in the known-spells table. Seen in play: Cilla's
+USE screen lists ARMOR among her 1st-level spells and her inventory has no
+chest armour (AC 5); Gerakis holds the gythka and the long sword.
+
 ### New items
 
 ([In the README](README.md#new-items).)
 
-How: the Ledger puts each item in its owner's things, a record from the game's
-free list. The short sword, the cloak whose plus counts and the bone helm are
+How: the new items (the slave pens' and the world's, the bone scale set,
+Kreenfang) are in the game's data (`dscompanion/dataitems.py`, `worldgear.py`,
+`npcitems.py`, `arms.py`): in the
+Ledger's copy of `SEGOBJEX.GFF`, each person's or chest's object (its RDFF: the
+object's record, then its items, each a child or the next of the one before,
+with its type and name as attributes) has the new items after its own, so the
+game makes them where it makes the object. Kreenfang is the arena's dead
+body's (object 1204) own gythka made +1 and renamed, its name attribute with
+it. One Castle Guard and one
+Undermountain miner have an object of their own (2560, 2561: copies of their
+kind's, their record renumbered), their entity in the Ledger's copies of
+`RGN1C.GFF` and `RGN1E.GFF` pointing to it. (People of a kind share an
+object, so every Tari, Renegade and Wild Mul carries theirs; the caravan's
+buried chest is an object the dig's script makes, and has the Boots of
+Elvenkind in it.) The Elven Leader's script (46, in
+the scripts' copy: `elvenleader.py`) gives the Cloak of Elvenkind (object 2546,
+an item object of its own) after the Gythka, as the game's scripts give items
+(command 39h, a new item of the object; 25h on the ground when it can't be
+carried); Father Garyn's (174: `garyn.py`) gives the Tome of Understanding the
+same way, the first time the pith is delivered (flag 625). The tome
+(`dscompanion/tome.py`) is a scroll of the game's kind: object 1446, among the
+game's scrolls' numbers (1400-1499: its object record the first scroll's, as
+only a scroll's kind of object has its box's icon clicked; the picture that
+number had, the icon of two objects, moved to 2552), its spell byte one past
+176. Clicked, the icon has the game's routine (DSUN.EXE 8B690h) teach a scroll
+of those numbers its spell, or a psionic power from 138 to 171; from 172 to 195
+it would show "CANNOT LEARN FROM THIS ITEM" and keep the scroll (from 196 on,
+the icon can't be clicked). There the helper (`INT B9h`) raises the reader's
+WIS, in the sheet and the creature record, writes its message in the game's
+buffer, and goes on as for a power taught: the game uses the tome up and shows
+it. The short sword, the cloak whose plus counts and the bone helm are
 item types the helper adds after the game's 115 each time the game reads its
-table in; the names (Ring of Protection, Thieves' Tools, Short Sword, the
-cloak's, Shadowseeker, Kreenfang, from 322 on) are entries it adds after the
-game's 322; and the icons are objects in the Ledger's copy of
+table in; the Ledger's item names (`dscompanion/names.py`) are entries it adds
+after the game's 322 (the game puts the item type's material before the name
+when it shows one); and the icons are objects in the Ledger's copy of
 `SEGOBJEX.GFF` (`dscompanion/icons.py`), which the helper has the game open
 instead of its own (its `INT 21h` hook). Where the game adds up AC and saving
 throws, the helper counts the rings and the cloak (`INT F8h` and the save
 probes). Shadowseeker's sight is the game's own way with a magic item's spell:
-readied, it puts Detect Invisibility on its wielder. Alagorn's new menu lines
-are in the Ledger's copy of his script (`dscompanion/alagorn.py`). In the
-original game the rings are plain rings without a name, and the sword, cloak
-and helm types it doesn't have: don't load a save that has them without the
-dice log.
+readied, it puts Detect Invisibility on its wielder. In the original game the
+rings are plain rings without a name, and the sword, cloak and helm types it
+doesn't have: don't load a save that has them without the dice log.
+
+Alagorn's new menu lines are in the Ledger's copy of his scripts
+(`dscompanion/alagorn.py`); he knows an item by its picture.
+- Script 212 with every story would overflow the script buffer, as the
+  [Trustee's](#what-dinos-and-the-trustee-say-about-them) once did, so its clothes are told by a copy of it (script 220),
+  and its rings and other items by another (221). His talk (script 211) calls
+  each part by its offset in 212, so only the called script's number changes.
+- The added "none carried" check replays the game's own tests with their own
+  jump targets: skipping one leaves the game's if/else nesting one level
+  short.
+- The two Rings of Protection have different pictures, so their one menu line
+  joins two queries with "or", as the game's own tests do.
 
 ### Kalzith
 
@@ -479,7 +628,7 @@ originals:
 His state is in the game's own flags (760 to 763: met, friendly, cold, his
 scrolls given; the game uses flags up to 755), so a save keeps it. The first
 time the party is in the pens, the Ledger puts his six scrolls among his
-things (from the game's free list, as for [the slave pens' gear](README.md#new-items)),
+things (from the game's free list, as for [the arena's ring](README.md#new-items)),
 once a game. If he is killed, the Ledger marks it (flag 772) and the others
 speak of him as dead (see
 [Dinos and the Trustee](README.md#what-dinos-and-the-trustee-say-about-them)); after

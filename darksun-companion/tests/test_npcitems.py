@@ -1,4 +1,4 @@
-"""Kurzak's, Legcrusher's and Pehtucl's things, of the companion's own."""
+"""Kurzak's, Legcrusher's and Pehtucl's things, of the companion's own (npcitems.py)."""
 
 import os
 import struct
@@ -8,7 +8,7 @@ import unittest
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from dscompanion import game, npcitems, pickpocket, ring
+from dscompanion import arms, game, npcitems, pickpocket, ring
 from test_dicelog import CREATURES, DS, HDR, ITEM_TYPES, ITEMS, NAMES, far
 from test_ring import THINGS, arena
 
@@ -23,18 +23,18 @@ def item_at(m, item):
 class NpcItemTests(unittest.TestCase):
     def setUp(self):
         """In the pens: Kurzak (creature 3) with a key, Legcrusher (4) with a club, and a
-        Templar (5) with the Bloodwrath, each one list (objects 401-403, items 80-82); items
+        Templar (5), each one list (objects 401-403, items 80-82); items
         60-69 free; DSCLOG's types in."""
         self.log = log = arena()
         self.gd = log.game
         self.m = m = log.guest.mem
-        struct.pack_into("<H", m, DS * 16 + ring.REGION, npcitems.REGION)
+        struct.pack_into("<H", m, DS * 16 + ring.REGION, 0x29)  # (the pens)
         for item in range(60, 70):
             struct.pack_into("<h", m, ITEMS + item * game.ITEM_SIZE + game.ITEM_NEXT, item + 1 if item < 69 else game.NO_ITEM)
         m[NAMES + 3 + KEY * 25:NAMES + 3 + KEY * 25 + 12] = b"Slavepen key"
         for creature, name, thing, item, item_name in ((KURZAK, b"Kurzak", 401, 80, KEY),
                                                         (LEGCRUSHER, b"Legcrusher", 402, 81, 0),
-                                                        (PEHTUCL, b"Templar", 403, 82, npcitems.BLOODWRATH)):
+                                                        (PEHTUCL, b"Templar", 403, 82, 0)):
             rec = CREATURES + creature * game.CREATURE_SIZE
             m[rec + game.CREATURE_NAME:rec + game.CREATURE_NAME + 16] = name.ljust(16, b"\0")
             struct.pack_into("<h", m, rec, 30)
@@ -63,91 +63,31 @@ class NpcItemTests(unittest.TestCase):
         self.assertFalse(npcitems.types_ready(self.gd, HDR))
         self.assertFalse(npcitems.types_ready(self.gd, None))
 
-    def test_who(self):
-        it = ring.Items(self.gd)
-        self.assertEqual([npcitems.who(self.gd, it, c) for c in (KURZAK, LEGCRUSHER, PEHTUCL, 0)],
-                         ["Kurzak", "Legcrusher", "Pehtucl", None])
-        self.m[ITEMS + 82 * game.ITEM_SIZE + game.ITEM_NAME] = 0  # a Templar without the Bloodwrath
-        self.assertIsNone(npcitems.who(self.gd, it, PEHTUCL))
+    def test_pens(self):
+        """Kurzak's sword and helm, Legcrusher's armour, Pehtucl's cloak and ring, in their
+        objects; the sword Shadowseeker with the magic weapons' switch, else plain."""
+        objects = [obj for obj, _ in npcitems.pens()]
+        self.assertEqual(objects, [29, 326, 37])
+        name = lambda rec: struct.unpack_from("<H", rec, game.ITEM_NAME)[0]
+        (_, (sword, helm)), (_, (armour,)), (_, (cloak, ring_)) = npcitems.pens()
+        self.assertEqual((sword[game.ITEM_PLUS], name(sword)), (1, arms.SWORD_NAME))
+        self.assertEqual(npcitems.pens(False)[0][1], (npcitems.SWORD, npcitems.HELM))
+        self.assertEqual((armour[game.ITEM_PLUS], cloak[game.ITEM_PLUS], ring_[game.ITEM_PLUS]), (1, 1, 1))
+        self.assertEqual((name(cloak), name(ring_)), (npcitems.CLOAK, npcitems.RING))
 
-    def test_placed_once(self):
-        given = set()
-        self.assertEqual(npcitems.place(self.gd, given), [])  # (nothing for the log)
-        head, chest, cloak = (game.EQUIP_SLOTS.index(s) for s in ("head", "chest", "cloak"))
-        sword, helm = self.carried(KURZAK)[1], self.carried(KURZAK)[0]
-        self.assertEqual(helm, (head, 6, 5, 0))
-        self.assertEqual(sword[1:], (npcitems.SHORT_SWORD, game.SHORT_SWORD_TYPE, 0))
-        self.assertGreaterEqual(sword[0], 0x0E)  # in a backpack cell
-        self.assertEqual(self.carried(LEGCRUSHER)[0], (chest, 7, 6, 1))
-        self.assertEqual(self.carried(PEHTUCL)[:2], [(game.FINGER, npcitems.RING, game.RING_TYPE, 1),
-                                                     (cloak, npcitems.CLOAK, game.CLOAK_TYPE, 1)])
-        self.assertEqual(len(given), 5)
-        self.assertEqual(npcitems.place(self.gd, given), [])  # once a game
-        self.assertEqual(len(self.carried(KURZAK)), 3)
-
-    def test_not_again_in_a_save_that_has_them(self):
-        """A game saved after the things were given, loaded where the given-once keys are missing:
-        nothing is given twice (the pens' things are found in the game), and the keys come back."""
-        npcitems.place(self.gd, set())
-        counts = [len(self.carried(c)) for c in (KURZAK, LEGCRUSHER, PEHTUCL)]
-        given = set()
-        self.assertEqual(npcitems.place(self.gd, given), [])
-        self.assertEqual([len(self.carried(c)) for c in (KURZAK, LEGCRUSHER, PEHTUCL)], counts)
-        self.assertEqual(len(given), 5)
-
-    def test_a_lifted_sword_not_given_again(self):
-        """Kurzak's sword, lifted by a thief (now in Dag's pack), isn't given to him again."""
-        npcitems.place(self.gd, set())
-        it = ring.Items(self.gd)
-        thing, = struct.unpack_from("<h", self.gd.creature(KURZAK), 8 + 4)
-        sword = next(i for i, data in it.chain(thing) if struct.unpack_from("<H", data, game.ITEM_TYPE)[0] == game.SHORT_SWORD_TYPE)
-        rec = bytearray(it.item(sword))
-        struct.pack_into("<H", rec, game.ITEM_TYPE, 5)  # (gone from him: here, made something else)
-        self.m[ITEMS + sword * game.ITEM_SIZE:ITEMS + (sword + 1) * game.ITEM_SIZE] = rec
-        struct.pack_into("<hhh", self.m, CREATURES + 8, game.NO_ITEM, game.NO_ITEM, 404)
-        struct.pack_into("<Bh", self.m, THINGS + 404 * 3, game.THING_ITEM, 83)
-        self.m[ITEMS + 83 * game.ITEM_SIZE:ITEMS + 84 * game.ITEM_SIZE] = npcitems.SWORD  # in Dag's pack
-        given = set()
-        npcitems.place(self.gd, given)
-        swords = [i for t in range(ring.THING_COUNT) for i, data in ring.Items(self.gd).chain(t)
-                  if struct.unpack_from("<H", data, game.ITEM_TYPE)[0] == game.SHORT_SWORD_TYPE]
-        self.assertEqual(swords, [83])
-
-    def test_priced_as_magic_items(self):
-        """Given at a magic item's price; ones given before (Leather Chest Armor +1 at 10) repriced."""
-        npcitems.place(self.gd, set())
-        price = lambda c, n: [struct.unpack_from("<H", data, npcitems.ITEM_VALUE)[0]
-                              for _, data in ring.Items(self.gd).chain(struct.unpack_from("<h", self.gd.creature(c), 8 + 4)[0])][n]
-        self.assertEqual(price(LEGCRUSHER, 0), npcitems.CHEST_VALUE)
-        self.assertEqual(sorted([price(PEHTUCL, 0), price(PEHTUCL, 1)]), [15000, 15000])
-        it = ring.Items(self.gd)
-        thing, = struct.unpack_from("<h", self.gd.creature(LEGCRUSHER), 8 + 4)
-        armour = next(iter(it.chain(thing)))[0]
-        struct.pack_into("<H", self.m, ITEMS + armour * game.ITEM_SIZE + npcitems.ITEM_VALUE, 10)
-        self.assertEqual(npcitems.reprice(self.gd), 1)
-        self.assertEqual(price(LEGCRUSHER, 0), npcitems.CHEST_VALUE)
-        self.assertEqual(npcitems.reprice(self.gd), 0)
-
-    def test_worn_slot_taken(self):
-        """A helm on Kurzak's head already: his goes in a backpack cell."""
-        self.m[ITEMS + 80 * game.ITEM_SIZE + game.ITEM_SLOT] = game.EQUIP_SLOTS.index("head")
-        npcitems.place(self.gd, set())
-        self.assertGreaterEqual(self.carried(KURZAK)[0][0], 0x0E)
-
-    def test_only_in_the_pens(self):
-        struct.pack_into("<H", self.m, DS * 16 + ring.REGION, 0x2A)
-        self.assertEqual(npcitems.place(self.gd, set()), [])
-
-    def test_not_the_dead(self):
-        struct.pack_into("<h", self.m, CREATURES + KURZAK * game.CREATURE_SIZE, 0)
-        given = set()
-        npcitems.place(self.gd, given)
-        self.assertFalse(any("Kurzak" in key for key in given))
+    def give(self):
+        """The three's items, as the game makes them from their objects and readies them (the
+        helm, the armour and the cloak worn)."""
+        worn = {npcitems.HELM: "head", npcitems.CHEST_ARMOR: "chest", npcitems.CLOAK_ITEM: "cloak"}
+        for creature, (_, items) in zip((KURZAK, LEGCRUSHER, PEHTUCL), npcitems.pens(False)):
+            for rec in items:
+                slot = game.EQUIP_SLOTS.index(worn[rec]) if rec in worn else None
+                self.assertTrue(npcitems.add_to(self.gd, creature, rec, slot))
 
     def test_lifted(self):
         """A thief can lift Kurzak's short sword (whatever its weight) and Pehtucl's ring, not
         the key, helm, armour or worn cloak."""
-        npcitems.place(self.gd, set())
+        self.give()
         for number, weight in ((5, 15), (6, 750), (game.RING_TYPE, 1)):
             struct.pack_into("<H", self.m, ITEM_TYPES + number * game.ITEM_TYPE_SIZE + pickpocket.TYPE_WEIGHT, weight)
         self.m[ITEM_TYPES + 5 * game.ITEM_TYPE_SIZE + pickpocket.TYPE_WORN] = 6  # the head

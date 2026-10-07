@@ -5,10 +5,10 @@ import struct
 from typing import List, NamedTuple, Optional
 
 from .game import (CATEGORY_DODGE, KIND_TO_SAVE, EFFECT_NAMES, EFFECT_RULES, PARTY_SIZE, PERMANENT, PSIONIC_COUNT, PSIONIC_FIRST, SAVE_NAMES,
-                   SPELL_COUNT, SPELL_INFO_OFF, SPELL_INFO_SIZE, SPELL_LEVEL_CAP, SPELL_SIZE, GameData, kind_to_save,
+                   SPELL_COUNT, SPELL_FIRST, SPELL_INFO_OFF, SPELL_INFO_SIZE, SPELL_LEVEL_CAP, SPELL_SIZE, GameData, kind_to_save,
                    ordinal)
 
-WIZARD_LAST = 68  # spells 1-68 are wizard spells, 69-137 priest spells
+WIZARD_LAST = 68  # spells 0-68 are wizard spells (0: Armor), 69-137 priest spells
 # a spell record's save byte (+1Fh): bit 0 a save is allowed, bits 5-7 its kind; the game's
 # table at DS:1E75h turns the kind into one of the sheet's five saves (kind 6: none;
 # game.kind_to_save, with the companion's spell save rule)
@@ -130,7 +130,7 @@ def lasts_text(gd: GameData, spell: int, rec: bytes) -> str:
 
 
 def spell_level(gd: GameData, spell: int) -> Optional[int]:
-    if not 1 <= spell <= SPELL_COUNT:
+    if not SPELL_FIRST <= spell <= SPELL_COUNT:
         return None
     return gd.guest.read(gd.load_seg * 16 + SPELL_INFO_OFF + (spell - 1) * SPELL_INFO_SIZE, 1)[0] or None
 
@@ -159,7 +159,7 @@ def all_spells(gd: GameData, party: Optional[List[int]] = None) -> List[SpellInf
     """Every wizard and priest spell (by level) and psionic power, from the running game."""
     party = list(range(PARTY_SIZE)) if party is None else party
     out = []
-    for spell in list(range(1, SPELL_COUNT + 1)) + list(range(PSIONIC_FIRST, PSIONIC_FIRST + PSIONIC_COUNT)):
+    for spell in list(range(SPELL_FIRST, SPELL_COUNT + 1)) + list(range(PSIONIC_FIRST, PSIONIC_FIRST + PSIONIC_COUNT)):
         info = spell_info(gd, spell, party)
         if info:
             out.append(info)

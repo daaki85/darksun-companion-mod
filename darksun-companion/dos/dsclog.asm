@@ -97,6 +97,7 @@ VEC_PK_FILL equ 0xBD       ; PROBE_PK_FILL
 VEC_PK_CLICK equ 0xBC      ; PROBE_PK_CLICK
 VEC_EF_ROWS equ 0xBB       ; PROBE_EF_ROWS
 VEC_HP_BEST equ 0xBA       ; PROBE_HP_BEST
+VEC_TOME equ 0xB9          ; PROBE_TOME
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 128         ; entries in the ring
@@ -254,7 +255,8 @@ xp_amount  dw 0                 ; +264
 skills_on  dw 0                 ; +266 the companion sets SKILLS_STEALTH to have an item's box name a
                                 ;      cloak's and boots' bonus to hiding and moving silently
                                 ;      (PROBE_ITEM_BOX), SKILLS_BELT for a worn belt's to picking
-                                ;      pockets and opening locks (PROBE_BELT, and its box's line)
+                                ;      pockets and opening locks (PROBE_BELT, and its box's line),
+                                ;      SKILLS_ELVEN the Cloak and Boots of Elvenkind's chances
 
 ; TEXT BUFFER: what the game sends to its dialogue window, as records of
 ;   byte 0FEh, byte kind (the dialogue window's: 0 = a reply to choose, the
@@ -2309,7 +2311,7 @@ probe_ring_ac:
         iret
 .other: pop ax
         push ax                 ; bracers of defense: their plus counts, but not over armour
-        mov ax, cx              ; on the arms, legs or chest (AD&D's; a shield, a helm, rings and
+        mov ax, cx              ; on the arms, legs, head or chest (AD&D's; a shield, rings and
         call bracers_ax         ; cloaks go with them)
         pop ax
         jne .helm
@@ -2501,10 +2503,8 @@ prot_scan:
         jne .on
 .armour: test byte [es:bx+0x0F], 0x80
         jz .on
-        cmp al, HEAD_SLOT
-        je .plus
-        or byte [cs:p_flags], P_ARMOUR  ; (a helm isn't, to bracers)
-.plus:  cmp ah, 0
+        or byte [cs:p_flags], P_ARMOUR  ; (a helm too, to bracers)
+        cmp ah, 0
         jle .metal
         or byte [cs:p_flags], P_MAGIC_ARMOUR
 .metal: mov al, [es:bx+8]               ; its material (no material: 40h with 0)
@@ -4895,7 +4895,7 @@ acid_saves db 8, 11, 5, 5, 13, 10, 12   ; wood, bone, stone, obsidian, metal, le
 P_MAGIC_ARMOUR equ 1
 P_METAL_ARMOUR equ 2
 P_SHIELD       equ 4
-P_ARMOUR       equ 8                    ; any armour on the arms, legs or chest
+P_ARMOUR       equ 8                    ; any armour on the arms, legs, head or chest
 ARM_SLOT       equ 0                    ; the item slots of armour (the game's: arm, legs,
 LEG_SLOT       equ 6                    ; head, chest)
 HEAD_SLOT      equ 7
@@ -5231,6 +5231,125 @@ probe_hp_best:
 hp_first dw 0
 hp_again db 0
 
+; PROBE_TOME: INT VEC_TOME replaces "push ds / push 3440h" (4 bytes: INT + 2 NOPs; DSUN.EXE
+; 8B80Ch) in the routine run when a scroll's icon is clicked in its box, where a scroll of the
+; game's (object 1400-1499) whose spell byte, less one ([BP-3]), is 172 to 195 has the game show
+; its message 3440h ("CANNOT LEARN FROM THIS ITEM") and keep the scroll. The Tome of Understanding (dscompanion/tome.py) is such
+; a scroll, of TOME_SPELL: the one whose scroll it is (the character on show, at 25Bh of the
+; segment the game names in its "mov ax,348h" at 8B7E3h) gains a point of WIS, in the sheet
+; (+1Fh) and the creature record (+26h), at most TOME_MOST, and the game goes on as for a psionic
+; power taught (8B7E2h): it uses the scroll up and shows the message in its buffer at [BP-54h],
+; here "<name> reads the tome: WIS <n>." At TOME_MOST already, only the message ("... can grow no
+; wiser."), shown as the game shows its own (8B810h), and the tome is kept. Any other scroll: the
+; game's message.
+TOME_SPELL   equ 0xB0             ; (172-195: the game lets the icon be clicked for below 196)
+TOME_MOST    equ 25
+TOME_WHO     equ 0x8B7E4 - 0x8B80E   ; (the segment in that "mov ax", less the INT's way back)
+TOME_USE     equ 0x8B7E2 - 0x8B80E
+TOME_SHOW    equ 0x8B810 - 0x8B80E
+probe_tome:
+        cmp byte [bp - 3], TOME_SPELL
+        je .tome
+        pop word [cs:tm_ip]
+        pop word [cs:tm_cs]
+        pop word [cs:tm_fl]
+        push ds
+        push 0x3440
+        jmp .show
+.tome:  pushad
+        push es
+        push fs
+        mov si, sp
+        mov es, [ss:si + 38]            ; (the INT's CS:IP, above FS, ES and PUSHAD's 32 bytes)
+        mov di, [ss:si + 36]
+        mov fs, [es:di + TOME_WHO]
+        mov bx, [fs:0x25B]              ; the reader
+        mov byte [cs:tm_used], 0
+        les di, [0x1661]
+        imul ax, bx, 0x47
+        add di, ax                      ; ES:DI: their sheet
+        lfs si, [0x1665]
+        imul ax, bx, 0x3A
+        add si, ax                      ; FS:SI: their creature record
+        mov al, [es:di + 0x1F]
+        cmp al, TOME_MOST
+        jae .text
+        inc al
+        mov [es:di + 0x1F], al
+        mov byte [cs:tm_used], 1
+        cmp byte [fs:si + 0x26], TOME_MOST
+        jae .text
+        inc byte [fs:si + 0x26]
+.text:  mov [cs:tm_wis], al
+        push ss
+        pop es
+        lea di, [bp - 0x54]             ; ES:DI: the game's message buffer
+        mov cx, 16
+.name:  mov al, [fs:si + 0x28]
+        or al, al
+        jz .named
+        stosb
+        inc si
+        loop .name
+.named: push ds
+        push cs
+        pop ds
+        mov si, tm_reads
+        cmp byte [cs:tm_used], 0
+        jne .copy
+        mov si, tm_wiser
+.copy:  lodsb
+        stosb
+        or al, al
+        jnz .copy
+        pop ds
+        cmp byte [cs:tm_used], 0
+        je .kept
+        dec di                          ; (the number, after "WIS ")
+        mov al, [cs:tm_wis]
+        aam                             ; AH tens, AL ones
+        or ax, 0x3030
+        cmp ah, 0x30
+        je .ones
+        mov [es:di], ah
+        inc di
+.ones:  mov [es:di], al
+        mov word [es:di + 1], '.'
+        mov si, sp
+        add word [ss:si + 36], TOME_USE ; on as for a power taught: the tome used up, the message
+        pop fs
+        pop es
+        popad
+        iret
+.kept:  pop fs
+        pop es
+        popad
+        pop word [cs:tm_ip]
+        pop word [cs:tm_cs]
+        pop word [cs:tm_fl]
+        mov [cs:tm_ax], ax
+        lea ax, [bp - 0x54]
+        push ss
+        push ax
+        mov ax, [cs:tm_ax]
+.show:  push word [cs:tm_fl]
+        push word [cs:tm_cs]
+        mov [cs:tm_ax], ax
+        mov ax, [cs:tm_ip]
+        add ax, TOME_SHOW
+        push ax
+        mov ax, [cs:tm_ax]
+        iret
+
+tm_ip    dw 0
+tm_cs    dw 0
+tm_fl    dw 0
+tm_ax    dw 0
+tm_wis   db 0
+tm_used  db 0
+tm_reads db " reads the tome: WIS ", 0
+tm_wiser db " can grow no wiser.", 0
+
 probe_mc_con:
         call con_share
         add di, ax
@@ -5472,7 +5591,9 @@ dex_table:
 
 ; PROBE_DOS_OPEN: the DOS services (INT 21h), hooked. Opening a file (AH=3Dh) whose name ends in
 ; one of COPIES' (SEGOBJEX.GFF, the game's objects and their pictures; RESOURCE.GFF, its screens'
-; pictures and texts; GPLDATA.GFF, its scripts; RGN29.GFF, the slave pens) opens the companion's
+; pictures and texts; GPLDATA.GFF, its scripts; RGN29.GFF, the slave pens; RGN1C.GFF and
+; RGN1E.GFF, the Upper Castle and the Undermountain, a person there with an object of their own
+; for a new item) opens the companion's
 ; copy instead (D:\..., which the launcher writes with
 ; the companion's icons added; the game folder is never changed), and notes that it has; with no
 ; copy there, the game's own. Everything else goes on to DOS.
@@ -5577,6 +5698,7 @@ copy_at     dw 0
 resources_on dw 0               ; 1 once the game has opened D:\RESOURCE.GFF (PROBE_CHUNK_ID)
 scripts_on dw 0                 ; 1 once the game has opened D:\GPLDATA.GFF (Kalzith's conversation)
 region_on dw 0                  ; 1 once the game has opened D:\RGN29.GFF (Kalzith in the pens)
+others_on dw 0                  ; 1 once it has opened one of the other regions' copies
 ; the files with copies: the name's length, the game's name (up to 12 letters), the copy's path,
 ; the flag set when opened
 COPY_PATH equ 16
@@ -5593,6 +5715,8 @@ copies:
         COPY 'RESOURCE.GFF', 'D:\RESOURCE.GFF', resources_on
         COPY 'GPLDATA.GFF', 'D:\GPLDATA.GFF', scripts_on
         COPY 'RGN29.GFF', 'D:\RGN29.GFF', region_on
+        COPY 'RGN1C.GFF', 'D:\RGN1C.GFF', others_on   ; (a Castle Guard of its own: worldgear.py)
+        COPY 'RGN1E.GFF', 'D:\RGN1E.GFF', others_on   ; (an Undermountain miner of its own)
         db 0
 
 ; CAT'S GRACE (RULE_CATS_GRACE): Flaming Sphere (spell 14), given Strength's record and the
@@ -5724,9 +5848,13 @@ n_fl    dw 0
 ; companion's own items that no type of the game's fits (a metal short sword, a cloak of
 ; protection). Nothing in the game limits the numbers to its own.
 TYPE_SIZE   equ 20
-TYPES_EXTRA equ 14
+TYPES_EXTRA equ 21
 TYPES_PTR   equ 0x1669          ; DS: far pointer to the item types
 BRACERS     equ 8               ; (the bracers of defense: the ninth of them)
+ELVEN_CLOAK equ 19              ; (the Cloak and Boots of Elvenkind)
+ELVEN_BOOTS equ 20
+GREYS_ARMS  equ 54              ; Grey's Scale's arm and leg armour: the game's AC 2 each, made 3
+GREYS_LEGS  equ 24              ; (PROBE_TYPES_FILL)
 
 ; PROBE_TYPES_SIZE: INT VEC_TYPES_SIZE replaces "push dword 1" (3 bytes: INT + NOP) before the
 ; game reserves memory for the IT1R chunk, its size the dword at [BP-4]: adds the room.
@@ -5744,7 +5872,8 @@ probe_types_size:
 
 ; PROBE_TYPES_FILL: INT VEC_TYPES_FILL replaces "add sp,0Ch" (3 bytes: INT + NOP) after the
 ; call that reads the chunk in (AX 0: read). Does the add, then, if it was read, copies
-; EXTRA_TYPES after the game's own (the room made, [BP-4], less theirs) and notes where.
+; EXTRA_TYPES after the game's own (the room made, [BP-4], less theirs) and notes where; and
+; raises Grey's Scale's AC (its arm and leg armour, the game's own types) to 3.
 probe_types_fill:
         pop word [cs:n_ip]
         pop word [cs:n_cs]
@@ -5765,6 +5894,8 @@ probe_types_fill:
         les di, [TYPES_PTR]
         mov [cs:types_ptr], di
         mov [cs:types_ptr+2], es
+        mov byte [es:di+GREYS_ARMS*TYPE_SIZE+0x12], 3
+        mov byte [es:di+GREYS_LEGS*TYPE_SIZE+0x12], 3
         mov ax, [bp-4]
         sub ax, TYPES_EXTRA * TYPE_SIZE
         add di, ax              ; after the game's own
@@ -5839,6 +5970,27 @@ extra_types:
         ; the Polearm's (19)
         db 0x01, 0x00, 0x30, 0x00, 0x96, 0x00, 0xFA, 0x00, 0x04, 0x05, 0x01, 0x01
         db 0x0A, 0x01, 0x00, 0x40, 0x72, 0x16, 0x00, 0x06
+        ; a circlet and a crown (dscompanion/worldgear.py): worn on the head (+9: 6), as the
+        ; Necklace's (36) of no material, not armour (+0Fh: no 80h), for every class
+        db 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0xFA, 0x00, 0x40, 0x06, 0x00, 0x00
+        db 0x00, 0x00, 0x00, 0x00, 0xFF, 0x1F, 0x00, 0x00
+        db 0x00, 0x00, 0x00, 0x00, 0x05, 0x00, 0xFA, 0x00, 0x40, 0x06, 0x00, 0x00
+        db 0x00, 0x00, 0x00, 0x00, 0xFF, 0x1F, 0x00, 0x00
+        ; plate mail (the Warden's Plate, dscompanion/worldgear.py): the Chain's chest, arm and
+        ; leg armour (57, 58, 59), heavier (+4: 250, 75, 75), AC 3, 2, 2 (+12h; chain's 2, 2, 1)
+        db 0x00, 0x00, 0x00, 0x00, 0xFA, 0x00, 0xFA, 0x00, 0x04, 0x01, 0x00, 0x00
+        db 0x00, 0x00, 0x00, 0x80, 0x6F, 0x12, 0x03, 0x01
+        db 0x00, 0x00, 0x00, 0x00, 0x4B, 0x00, 0xFA, 0x00, 0x04, 0x03, 0x00, 0x00
+        db 0x00, 0x00, 0x00, 0x80, 0x6F, 0x12, 0x02, 0x00
+        db 0x00, 0x00, 0x00, 0x00, 0x4B, 0x00, 0xFA, 0x00, 0x04, 0x0A, 0x00, 0x00
+        db 0x00, 0x00, 0x00, 0x80, 0x6F, 0x12, 0x02, 0x00
+        ; the Cloak and Boots of Elvenkind (ELVEN_CLOAK, ELVEN_BOOTS: dscompanion/worldgear.py,
+        ; their stealth stealth.py): the Cloak's (65) and the Boots' (68), for thieves and rangers
+        ; only (+10h: 600h, their class bits; a multiclass with either may wear them)
+        db 0x00, 0x00, 0x00, 0x00, 0x0A, 0x00, 0x0A, 0x00, 0x05, 0x08, 0x00, 0x00
+        db 0x00, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x01
+        db 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x0A, 0x00, 0x85, 0x04, 0x00, 0x00
+        db 0x00, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00
 ; the names, numbered from NAMES_OWN (322): the companion's items' (the same as the companion's
 ; NAMES in dscompanion/names.py), the rest blank until it writes more
 extra_names:
@@ -5858,7 +6010,37 @@ extra_names:
         times NAME_SIZE - 9 db 0
         db "Bracers/Defense"            ; (bracers of defense: BRACERS, dscompanion/worldgear.py)
         times NAME_SIZE - 15 db 0
-        times (NAMES_EXTRA - 8) * NAME_SIZE db 0
+        db "Gutterknot"                 ; (the magic weapons of dscompanion/worldgear.py: a club +1,
+        times NAME_SIZE - 10 db 0
+        db "Deepbiter"                  ; a stone pick +1,
+        times NAME_SIZE - 9 db 0
+        db "Windlash"                   ; a staff sling +1,
+        times NAME_SIZE - 8 db 0
+        db "Greenbright"                ; a metal short sword +2)
+        times NAME_SIZE - 11 db 0
+        db "Arrowbane"                  ; (the circlet and the crown of dscompanion/worldgear.py)
+        times NAME_SIZE - 9 db 0
+        db "Sunking Crown"
+        times NAME_SIZE - 13 db 0
+        db "Warden's Chest"             ; (the Warden's Plate of dscompanion/worldgear.py)
+        times NAME_SIZE - 14 db 0
+        db "Warden's Arms"
+        times NAME_SIZE - 13 db 0
+        db "Warden's Legs"
+        times NAME_SIZE - 13 db 0
+        db "Warden's Helm"
+        times NAME_SIZE - 13 db 0
+        db "Cloak/Elvenkind"            ; (the Cloak and Boots of Elvenkind)
+        times NAME_SIZE - 15 db 0
+        db "Boots/Elvenkind"
+        times NAME_SIZE - 15 db 0
+        db "Flame Blade"                ; (an obsidian long sword +1, Focus Heat on what it hits)
+        times NAME_SIZE - 11 db 0
+        db "Tome/Understand"            ; (the Tome of Understanding: dscompanion/tome.py)
+        times NAME_SIZE - 15 db 0
+        db "Inixhide"                   ; (Legcrusher's Leather Chest Armor +1: dscompanion/npcitems.py)
+        times NAME_SIZE - 8 db 0
+        times (NAMES_EXTRA - 23) * NAME_SIZE db 0
 
 ; STEALTH (RULE_STEALTH): a thief who starts a turn with no enemy next to them may hide in
 ; shadows and move silently up to someone; the companion rolls both and, when both succeed,
@@ -7816,6 +7998,7 @@ TYPES_PTR equ 0x1669            ; DS: far pointer to the item types, 20 bytes ea
 TYPE_WORN equ 9                 ; in one: where it is worn (8: as a cloak, 4: on the feet, 2: as a belt)
 SKILLS_STEALTH equ 1            ; (SKILLS_ON's bits)
 SKILLS_BELT equ 2
+SKILLS_ELVEN equ 4              ; (the Cloak and Boots of Elvenkind's: the stealth rule on)
 TYPE_ARMOUR equ 0x0F            ; ... 80h: armour (AC BONUS drawn)
 probe_item_box:
         pushad
@@ -7827,6 +8010,15 @@ probe_item_box:
         les bx, [TYPES_PTR]             ; (DS: the game's)
         imul ax, si, 20
         add bx, ax
+        mov ax, si                      ; the Cloak and Boots of Elvenkind: their own lines
+        sub ax, [cs:types_first]
+        mov cl, SKILLS_ELVEN
+        mov dx, ib_elf_hide
+        cmp ax, ELVEN_CLOAK
+        je .want
+        mov dx, ib_elf_quiet
+        cmp ax, ELVEN_BOOTS
+        je .want
         mov al, [es:bx + TYPE_WORN]
         mov cl, SKILLS_STEALTH
         mov dx, ib_hide
@@ -7879,6 +8071,8 @@ ib_draw    dd 0
 ib_hide    db 'Hide +10', 0     ; (the skills' short names, as the inventory screen's thief rows
 ib_quiet   db 'Move +10', 0     ;   have them: HIDE, MOVE, PICK, LOCK; mixed case, as item names)
 ib_belt    db 'Pick +5, Lock +5', 0
+ib_elf_hide  db 'Hide 90-95%', 0    ; (the Cloak of Elvenkind's chance: stealth.py)
+ib_elf_quiet db 'Move 95%', 0
 
 ; PROBE_BELT: INT VEC_BELT replaces "mov ax,si" (2 bytes) at the end of the game's thief skill
 ; routine (DSUN.EXE 803B2h: SI the chance, armour and effects counted; DI the thief's object; the
@@ -8238,6 +8432,9 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_HP_BEST
         mov dx, probe_hp_best
         int 21h
+        mov ax, 2500h + VEC_TOME
+        mov dx, probe_tome
+        int 21h
         mov ax, 2500h + VEC_EF_ROWS
         mov dx, probe_ef_rows
         int 21h
@@ -8282,7 +8479,7 @@ install:                        ; DS = ES = PSP, CS = the image
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
 busy    db 'DSCLOG: interrupts 60h-65h or BAh-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
-all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS, VEC_LV_PICK, VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK, VEC_EF_ROWS, VEC_HP_BEST
+all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS, VEC_LV_PICK, VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK, VEC_EF_ROWS, VEC_HP_BEST, VEC_TOME
 all_vectors_end:
 
         align 16, db 0

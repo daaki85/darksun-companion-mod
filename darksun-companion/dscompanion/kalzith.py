@@ -576,7 +576,9 @@ def with_entry(entries: bytes, script: int = SCRIPT) -> bytes:
 
 
 def script_chunks(gpldata: bytes, kalzith: bool = True, semyon: bool = True,
-                  vulture: bool = True, ring: bool = True, arms: bool = True) -> Dict[Tuple[str, int], bytes]:
+                  vulture: bool = True, ring: bool = True, arms: bool = True,
+                  magic: bool = True, cloak: bool = False, tome: bool = False,
+                  pens: bool = True) -> Dict[Tuple[str, int], bytes]:
     """For the Ledger's copy of GPLDATA: his conversation, and the master script running it (and
     Semyon's, semyon.py; Dinos's and the Trustee's questions, pensasks.py; Alagorn on Kreenfang
     and Shadowseeker, alagorn.py), each part only if switched on (the Options tab's new content)."""
@@ -609,9 +611,17 @@ def script_chunks(gpldata: bytes, kalzith: bool = True, semyon: bool = True,
     # the questions about either show only once he is in the pens (their flags)
     from . import pensasks
     out.update(pensasks.script_chunks(chunks, field_types, vulture=vulture))
-    if arms:  # Alagorn tells of Kreenfang and Shadowseeker (alagorn.py)
-        from . import alagorn
-        out.update(alagorn.script_chunks(chunks, field_types))
+    if arms or magic or pens or ring:  # Alagorn tells of the new magic items (alagorn.py; the rings
+        from . import alagorn  # and cloak of protection with the pens' people's or the arena's ring)
+        out.update(alagorn.script_chunks(chunks, field_types, arms, magic, pens or ring))
+    if cloak:  # the Elven Leader gives the Cloak of Elvenkind (elvenleader.py; its object in the
+        from . import elvenleader  # objects' copy)
+        out.update(elvenleader.script_chunks(chunks, field_types))
+    if tome:  # Father Garyn gives the Tome of Understanding (garyn.py; its object in the objects' copy)
+        from . import garyn
+        out.update(garyn.script_chunks(chunks, field_types))
+    from . import manualcheck  # no manual check (the dragon's question): always
+    out.update(manualcheck.script_chunks(chunks, field_types))
     if ring:  # the XP for finding the arena's ring (ring.py), in the same script as Semyon's exit
         from . import ring as rg
         body = ("GPL ", rg.BODY_SCRIPT)
@@ -736,36 +746,6 @@ def _held_by_party(gd, it) -> set:
     return held
 
 
-def _unlink(gd, it, item: int) -> bool:
-    """ITEM taken out of whatever list holds it (never the only one in it) and given back to the
-    game's free list of item records."""
-    from . import ring
-    for thing in range(ring.THING_COUNT):
-        kind, first = it.thing(thing)
-        if kind != game.THING_ITEM:
-            continue
-        before, index = None, first
-        for _ in range(ring.MAX_ITEMS):
-            if not 0 <= index < game.NO_ITEM:
-                break
-            rec = it.item(index)
-            after = struct.unpack_from("<h", rec, game.ITEM_NEXT)[0]
-            if index == item:
-                if before is None:
-                    if not 0 <= after < game.NO_ITEM:
-                        return False  # (the only one: left)
-                    gd.guest.write(it.things + thing * 3 + 1, struct.pack("<h", after))
-                else:
-                    gd.guest.write(it.items + before * game.ITEM_SIZE + game.ITEM_NEXT, struct.pack("<h", after))
-                gd.guest.write(it.items + item * game.ITEM_SIZE + game.ITEM_NEXT,
-                               struct.pack("<H", it.word(ring.FREE_ITEMS)))
-                gd.guest.write(gd.ds * 16 + ring.FREE_ITEMS, struct.pack("<H", item))
-                ring.took(item, "given back (Kalzith's)")
-                return True
-            before, index = index, after
-    return False
-
-
 def _after(gd, it, item: int, rec: bytes) -> bool:
     """A new item REC (from the game's free list) put next after ITEM, in its list."""
     from . import ring
@@ -801,7 +781,7 @@ def loot(gd, choose: Callable = None) -> List[str]:
     keep = (choose or random.choice)(sorted(left))
     for index in sorted(left):
         if index != keep:
-            _unlink(gd, ring.Items(gd), index)
+            ring.unlink(gd, ring.Items(gd), index, "given back (Kalzith's)")
     out = [f"Scroll of {left[keep]}"]
     if gd.flag(DRESSED):
         return out  # (he carried them: in his body already)
@@ -881,10 +861,11 @@ def _write(source: str, dest: str, added) -> None:
 
 
 def write_scripts(source: str, dest: str, kalzith: bool = True, semyon: bool = True, vulture: bool = True,
-                  ring: bool = True, arms: bool = True) -> None:
+                  ring: bool = True, arms: bool = True, magic: bool = True, cloak: bool = False,
+                  tome: bool = False, pens: bool = True) -> None:
     """The game's GPLDATA.GFF (SOURCE, only read) with Kalzith's conversation (and the rest of
     the new content switched on), to DEST."""
-    _write(source, dest, lambda data: script_chunks(data, kalzith, semyon, vulture, ring, arms))
+    _write(source, dest, lambda data: script_chunks(data, kalzith, semyon, vulture, ring, arms, magic, cloak, tome, pens))
 
 
 def write_region(source: str, dest: str) -> None:

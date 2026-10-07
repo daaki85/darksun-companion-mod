@@ -24,7 +24,7 @@ from collections import Counter, deque
 from dataclasses import dataclass
 from typing import Callable, Deque, Dict, List, NamedTuple, Optional, Tuple
 
-from . import arms, bonescale, dust, game, rings, targeting, icons, kalzith, monsters, names, npcitems, pickpocket, ring, scrolling, searches, semyon, shadows, specialize, sprites, stealth, tools, vulture, weaponchoice, worldgear
+from . import defaultparty, dust, game, rings, targeting, icons, kalzith, monsters, names, pickpocket, ring, scrolling, searches, semyon, shadows, specialize, sprites, stealth, tools, vulture, weaponchoice
 from .game import (CONVENTIONAL_AND_UPPER, CREATURE_ABILITIES, CREATURE_SIDE, CREATURE_THAC0, EFFECT_NAMES,
                    EFFECT_RULES, MATERIAL_TO_HIT, MATERIALS, SAVE_NAMES, STR_DAMAGE, GameData)
 from .guestmem import GuestMemory
@@ -54,6 +54,7 @@ TSR_MAIN_TICKS = 260  # the map's main loop run (counted)
 TSR_XP_WHO, TSR_XP_AMOUNT = 262, 264  # a party member to be given XP with the pick's text (FFFFh: none)
 TSR_SKILLS_ON = 266  # bits: item boxes name a cloak's and boots' bonus to hiding and moving silently;
 SKILLS_STEALTH, SKILLS_BELT = 1, 2  # a worn belt adds to picking pockets and opening locks (and its box says)
+SKILLS_ELVEN = 4  # the Cloak and Boots of Elvenkind's boxes name their chances (the hiding rule on)
 TSR_PICK_SEQ, TSR_PICK_REPLY, TSR_PICK_OFF, TSR_PICK_ON, PICK_SIZE = 172, 174, 176, 178, 240
 PICK_TOOLS, PICK_KEY = 1, 2  # (TSR_PICK_ON: the thieving tools on someone; P in a conversation too)
 TSR_USE_SEQ, TSR_USE_REPLY, TSR_USE_WHO, TSR_USE_TAKEN, TSR_USE_ITEM = 180, 182, 184, 186, 188
@@ -343,10 +344,6 @@ class DiceLog:
         self.show_shadows = True  # shadows under the figures on the map (shadows.py)
         self._shadows = shadows.Shadows()
         self.show_dust = True  # dust raised by walkers on sand and dirt (dust.py)
-        self.pens_gear = True  # the slave pens' gear for Kurzak, Legcrusher, Pehtucl, the bone scale set
-        self.magic_arms = True  # the arena's dead body's gythka and Kurzak's short sword +1 (arms.py)
-        self.world_gear = True  # the new plain weapons in merchants' stock and people's packs (worldgear.py)
-        self.world_magic = True  # bracers of defense and magic weapons (worldgear.py)
         self.vulture_on = True  # the cooked vulture quest (vulture.py)
         self.stealth_gear = True  # a worn cloak's and boots' bonuses to hiding (stealth.py)
         self._dust = dust.Dust()
@@ -368,14 +365,13 @@ class DiceLog:
         self._clock: Optional[int] = None
         self._mended_in: Optional[int] = None  # the area Kalzith's scrolls were last mended in
         self.tools_given: set = set()  # the thieves given thieving tools (tools.py)
+        self._party_done: set = set()  # the game's own party's changes made (defaultparty.py)
         self._tools_session: set = set()  # ... while this runs
         self._swap_seq = 0  # DSCLOG's text swaps seen (the arena ring's search, ring.py)
         self._tools_new: List[str] = []
         self.rules = 0  # RULE_HELMS | RULE_BOOTS: rule changes DSCLOG makes (set_rules)
         self.stealth_roll: Callable[[], int] = lambda: random.randint(1, 100)  # hiding, moving silently
         self._ring_check = 0.0
-        self._bone_watch = bonescale.Watch()
-        self._recent: Deque[str] = deque(maxlen=60)  # the log's last lines (for bonescale's report)
         self._main_ticks: Optional[int] = None  # DSCLOG's count of the map's main loop, last read
         self._look_seq = 0
         self._turn_seq = 0
@@ -647,10 +643,6 @@ class DiceLog:
         self.show_shadows = bool(settings.get("shadows", True))
         self.scroll_map = bool(settings.get("scroll_map", True))
         self.show_dust = bool(settings.get("dust", True))
-        self.pens_gear = bool(settings.get("pens_gear", True))
-        self.magic_arms = bool(settings.get("magic_arms", True))
-        self.world_gear = bool(settings.get("world_gear", True))
-        self.world_magic = bool(settings.get("world_magic", True))
         self.vulture_on = bool(settings.get("vulture", True))
         self.stealth_gear = bool(settings.get("stealth_gear", True))
         self.ring_mode = rings.mode(settings)
@@ -672,7 +664,8 @@ class DiceLog:
         if self.tsr_hdr is not None:
             self.guest.write(self.tsr_hdr + TSR_RULES, struct.pack("<H", rules))
             skills = (SKILLS_STEALTH if rules & game.RULE_STEALTH and self.stealth_gear else 0) \
-                | (SKILLS_BELT if self.stealth_gear else 0)  # (the hiding rule's cloak and boots; the belt's own)
+                | (SKILLS_BELT if self.stealth_gear else 0) \
+                | (SKILLS_ELVEN if rules & game.RULE_STEALTH else 0)  # (the hiding rule's cloak and boots; the belt's own)
             self.guest.write(self.tsr_hdr + TSR_SKILLS_ON, struct.pack("<H", skills))
             table = self.game.ds * 16 + game.SAVE_KINDS if self.game is not None else None
             # (only over the game's own table: kind 5 is petrification/polymorph or, so far, the spell save)
@@ -1036,7 +1029,6 @@ class DiceLog:
         if self.missed:
             out.append(f"({self.missed} rolls came too fast to record)")
             self.missed = 0
-        self._recent.extend(out)
         return out
 
     def _arena_ring(self, now: float) -> List[str]:
@@ -1053,24 +1045,8 @@ class DiceLog:
                 return out  # no names for them yet: none given
             if self.rules & game.RULE_SPECIALIZE:  # (new characters' weapon kinds and starting weapon)
                 out += weaponchoice.finish_new(self.game)
-            if self.pens_gear and npcitems.types_ready(self.game, self.tsr_hdr):  # Kurzak's, Legcrusher's, Pehtucl's
-                before = set(self.tools_given)
-                out += npcitems.place(self.game, self.tools_given)
-                out += bonescale.place(self.game, self.tools_given)  # the bone scale armour's set
-                out += self._bone_watch.check(self.game, self.tools_given, self._recent)  # (one vanished)
-                npcitems.reprice(self.game)  # (those given before they had a magic item's price)
-                self._tools_new += sorted(self.tools_given - before)
-            if self.magic_arms and npcitems.types_ready(self.game, self.tsr_hdr):
-                before = set(self.tools_given)
-                out += arms.upgrade(self.game, self.tools_given)  # the gythka and the short sword +1
-                self._tools_new += sorted(self.tools_given - before)
-            if (self.world_gear or self.world_magic) and npcitems.types_ready(self.game, self.tsr_hdr):
-                before = set(self.tools_given)
-                if self.world_gear:  # the new weapons, in shops and packs
-                    out += worldgear.place(self.game, self.tools_given)
-                if self.world_magic:  # bracers of defense and magic weapons
-                    out += worldgear.place(self.game, self.tools_given, worldgear.MAGIC)
-                self._tools_new += sorted(self.tools_given - before)
+            out += defaultparty.ready(self.game, self.rules, self._party_done)  # (the game's own party, once)
+            # (the slave pens' and the world's new items are in the game's data: worldgear.py)
             if self.stealth_gear:
                 stealth.reprice(self.game)  # (cloaks and boots: they help a thief hide and move silently)
             kalzith.stock(self.game, bool(self.rules & game.RULE_CATS_GRACE))  # (once a game, by its flag)
@@ -1860,7 +1836,7 @@ class DiceLog:
                 pending = PendingDice(f"{count}d{sides} = {faces_text} = {sum(faces)}", now,
                                       damage=e.parent_code.startswith(SPELL_DAMAGE_RETURN))
                 target, spell = e.parent_arg(6), e.parent_arg(8)
-                if count == 1 and sides == 100 and target is not None and 1 <= spell < game.PSIONIC_FIRST + game.PSIONIC_COUNT \
+                if count == 1 and sides == 100 and target is not None and game.SPELL_FIRST <= spell < game.PSIONIC_FIRST + game.PSIONIC_COUNT \
                         and self.game.combatant_creature(target) is not None:
                     pending.resistance = (target, spell, faces[0])
                 self._pending.append(pending)
@@ -1910,7 +1886,7 @@ class DiceLog:
         if not e.parent_code.startswith(OVERLAY_TRAP):
             return False
         spell, level = e.parent_arg(6), e.parent_arg(8)
-        if spell is None or level is None or not 1 <= spell < game.PSIONIC_FIRST + game.PSIONIC_COUNT or not 1 <= level <= 40:
+        if spell is None or level is None or not game.SPELL_FIRST <= spell < game.PSIONIC_FIRST + game.PSIONIC_COUNT or not 1 <= level <= 40:
             return False
         rec = self.game.spell_record(spell)
         return len(rec) > 4 and (rec[4] & 0x0F, rec[4] >> 4) == (count, sides)
@@ -1941,7 +1917,7 @@ class DiceLog:
         if not e.parent_code.startswith(OVERLAY_TRAP):
             return None
         spell = e.arg(0x0C)
-        if spell is None or spell != e.parent_arg(6) or not 1 <= spell < game.PSIONIC_FIRST + game.PSIONIC_COUNT:
+        if spell is None or spell != e.parent_arg(6) or not game.SPELL_FIRST <= spell < game.PSIONIC_FIRST + game.PSIONIC_COUNT:
             return None
         rule = self.game.spell_damage(spell)
         if rule is None or rule.sides != sides or sides < 2:

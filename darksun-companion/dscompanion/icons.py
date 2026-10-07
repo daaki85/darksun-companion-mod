@@ -3,7 +3,7 @@ items' (the Bloodwrath's is the obsidian long sword's with a few pixels in the c
 cycles: 240-248, fire): from the plain item's icon.
 
 - the Short Sword: the metal long sword's, its blade four steps shorter, centred;
-- Leather Chest Armor +1: the leather's brightest pixels in the fire colours;
+- Inixhide (Legcrusher's Leather Chest Armor +1): the leather's brightest pixels in the fire colours;
 - the Cloak of Protection +1: every other pixel of its lightest folds in the violet ones (232-239);
 - the Rings of Protection +1: the gold band violet for Pehtucl's, in the fire colours for the
   arena's (the Tied-up Prisoner's), so the two can be told apart.
@@ -106,7 +106,7 @@ def recolour(rows: Rows, colours: Dict[int, int]) -> Rows:
 
 
 GREAT_AXE_TYPE = 2
-MAGIC_KINDS = {18: "Club +1", 112: "Pick +1", 0: "Staff Sling +1"}  # (the game's types: none has a plus)
+MAGIC_KINDS = {18: "Gutterknot", 112: "Deepbiter", 0: "Windlash"}  # (the game's types: none has a plus)
 BLADE = range(0xD1, 0xDA)
 # the Axe's metal head, shade for shade (by brightness), in the bone long sword's whites
 AXE_BONE = {208: 129, 209: 132, 210: 132, 211: 200, 212: 146, 213: 146, 214: 148, 215: 152}
@@ -147,11 +147,73 @@ def bracers_icon(_rows: Rows = None) -> Rows:
     return out
 
 
+# plate (worldgear.py's Warden's Plate): the chain armour's greys polished, two steps lighter (the
+# metal long sword's), a few of its brightest pixels in the fire colours (magic). The Helm's
+# leather browns, by brightness, in the same greys
+CHAIN_TO_PLATE = {208: 210, 209: 211, 210: 213, 211: 214, 212: 215, 213: 216, 214: 217, 215: 217, 216: 217}
+LEATHER_TO_PLATE = {128: 210, 129: 211, 134: 212, 135: 213, 136: 214, 137: 215, 138: 216, 139: 217, 140: 217}
+
+
+def plate_icon(colours: Dict[int, int], bright: Tuple[int, ...]) -> Callable[[Rows], Rows]:
+    return lambda r: recolour(glow(r, lambda p, x, y: p in bright and (x + y) % 3 == 0, FIRE), colours)
+
+
+# the Cloak and Boots of Elvenkind (worldgear.py): the Cloak's leather browns, by brightness, in a
+# neutral grey cloth, a few of its lightest folds in a leaf green (no region changes 53-56); the
+# Boots' browns in soft grey leather, their orange-browns in the greens
+LEATHER_TO_GREY = {128: 208, 129: 209, 134: 210, 135: 211, 136: 212, 137: 213, 138: 214, 139: 215, 140: 216}
+BOOTS_TO_ELVEN = {128: 209, 129: 210, 134: 211, 135: 212, 179: 53, 180: 54, 181: 55, 182: 56}
+LEAF = (54, 55, 56, 55)
+
+
+def elven_cloak_icon(rows: Rows) -> Rows:
+    return recolour(glow(rows, lambda p, x, y: p in (138, 139, 140) and (x + y) % 3 == 0, LEAF), LEATHER_TO_GREY)
+
+
+SILVER = (210, 212, 213, 214, 215, 216, 217)  # dark to light (the metal long sword's greys)
+
+
+def circlet_icon(_rows: Rows = None) -> Rows:
+    """Arrowbane: a thin silver band seen from a little above, a stone at its front in the fire
+    colours."""
+    out: Rows = [[None] * 18 for _ in range(12)]
+    cx, cy, rx, ry = 8.5, 6.0, 7.5, 3.6
+    import math
+    for step in range(160):
+        a = 2 * math.pi * step / 160
+        x, y = int(round(cx + rx * math.cos(a))), int(round(cy + ry * math.sin(a)))
+        front = math.sin(a) > 0  # (the near half: lit)
+        shade = SILVER[min(len(SILVER) - 1, (4 if front else 1) + int(2 * math.cos(a - 0.8) + 0.5))]
+        if 0 <= y < 12 and 0 <= x < 18 and (out[y][x] is None or front):
+            out[y][x] = shade
+    gem = int(round(cy + ry))
+    out[gem][8], out[gem][9], out[gem - 1][8], out[gem - 1][9] = FIRE[2], FIRE[4], FIRE[6], FIRE[3]
+    return out
+
+
+def crown_icon(_rows: Rows = None) -> Rows:
+    """The Sunking Crown: a gold band with five points, a jewel in the fire colours at its front."""
+    out: Rows = [[None] * 18 for _ in range(14)]
+    band_top, band_bottom = 8, 12
+    for x in range(1, 17):
+        for y in range(band_top, band_bottom + 1):
+            out[y][x] = GOLD[0] if x in (1, 16) or y == band_bottom else GOLD[1] if y == band_top else GOLD[2]
+    for peak in (2, 5, 8, 12, 15):  # the points, the middle one the tallest
+        tall = 6 if peak == 8 else 4
+        for k in range(1, tall + 1):
+            out[band_top - k][peak] = GOLD[0] if k == tall else GOLD[2]
+            if k < tall - 1:
+                out[band_top - k][peak + 1] = GOLD[1]
+        out[band_top - tall - 1][peak] = FIRE[5]
+    out[10][8], out[10][9], out[11][8], out[11][9] = FIRE[2], FIRE[4], FIRE[6], FIRE[0]
+    return out
+
+
 # (name, the plain item's picture, the new object's number, its icon's number, the icon made from
 # the plain one's)
 ICONS: Tuple[Tuple[str, int, int, int, Callable[[Rows], Rows]], ...] = (
     ("Short Sword", 0xFC0A, 2427, 2432, shorter_blade),
-    ("Leather Chest Armor +1", 0xFC02, 2428, 2433,
+    ("Inixhide", 0xFC02, 2428, 2433,
      lambda r: glow(r, lambda p, x, y: p in (0x89, 0x8A), FIRE)),
     ("Cloak of Protection +1", 0xFBE3, 2429, 2434,
      lambda r: glow(r, lambda p, x, y: p in (0x8A, 0x8B, 0x8C) and (x + y) % 2 == 0, VIOLET)),
@@ -170,10 +232,10 @@ ICONS: Tuple[Tuple[str, int, int, int, Callable[[Rows], Rows]], ...] = (
     # the game's obsidian maces are its Blackmace alone: a plain one, the Mace's head in obsidian
     ("Obsidian Mace", 0xFB5D, 2486, 2487, lambda r: recolour(r, MACE_OBSIDIAN)),
     # magic weapons of kinds the game has none of (worldgear.py): the game's magic look, its fire
-    ("Club +1", 0xFB5F, 2494, 2495, lambda r: glow(r, lambda p, x, y: p >= 140 and p <= 143, FIRE)),
-    ("Pick +1", 0xFB46, 2496, 2497, lambda r: glow(r, lambda p, x, y: p in (209, 210) and (x + y) % 2 == 0, FIRE)),
-    ("Staff Sling +1", 0xFC08, 2498, 2499, lambda r: glow(r, lambda p, x, y: p in (59, 60, 61), FIRE)),
-    ("Short Sword +2", 0xFC0A, 2500, 2501, lambda r: glow(shorter_blade(r), lambda p, x, y: p in BLADE, FIRE)),
+    ("Gutterknot", 0xFB5F, 2494, 2495, lambda r: glow(r, lambda p, x, y: p >= 140 and p <= 143, FIRE)),
+    ("Deepbiter", 0xFB46, 2496, 2497, lambda r: glow(r, lambda p, x, y: p in (209, 210) and (x + y) % 2 == 0, FIRE)),
+    ("Windlash", 0xFC08, 2498, 2499, lambda r: glow(r, lambda p, x, y: p in (59, 60, 61), FIRE)),
+    ("Greenbright", 0xFC0A, 2500, 2501, lambda r: glow(shorter_blade(r), lambda p, x, y: p in BLADE, FIRE)),
     ("Bracers of Defense", 0xFC01, 2502, 2503, bracers_icon),  # (on the map: the leather Arm Armor)
     # metal versions of the plain weapons the game has none of in metal: their heads and blades
     # in the metal long sword's colours
@@ -182,6 +244,19 @@ ICONS: Tuple[Tuple[str, int, int, int, Callable[[Rows], Rows]], ...] = (
     ("Metal Great Axe", 0xFC06, 2508, 2509, lambda r: recolour(r, {1: 58, 2: 59, **TEAL_TO_METAL})),
     ("Metal Pick", 0xFB46, 2510, 2511, lambda r: recolour(r, STONE_TO_METAL)),
     ("Metal Polearm", 0xFB5E, 2512, 2513, lambda r: recolour(r, LIGHT_TO_METAL)),
+    # the circlet and the crown (worldgear.py), drawn; on the map, the Ring's
+    ("Arrowbane", 0xFA1C, 2514, 2515, circlet_icon),
+    ("Sunking Crown", 0xFA1C, 2516, 2517, crown_icon),
+    # the Warden's Plate (worldgear.py): the Chain armour's pieces and the Helm, in plate
+    ("Warden's Chest", 0xFBF4, 2538, 2539, plate_icon(CHAIN_TO_PLATE, (213, 214))),
+    ("Warden's Arms", 0xFBF3, 2540, 2541, plate_icon(CHAIN_TO_PLATE, (213, 214, 215))),
+    ("Warden's Legs", 0xFBF2, 2542, 2543, plate_icon(CHAIN_TO_PLATE, (213, 215, 216))),
+    ("Warden's Helm", 0xFC03, 2544, 2545, plate_icon(LEATHER_TO_PLATE, (138, 139, 140))),
+    # the Cloak and Boots of Elvenkind (worldgear.py): the Cloak's and the Boots'
+    ("Cloak of Elvenkind", 0xFBE3, 2546, 2547, elven_cloak_icon),
+    ("Boots of Elvenkind", 0xFBE5, 2548, 2549, lambda r: recolour(r, BOOTS_TO_ELVEN)),
+    # the Flame Blade (worldgear.py): the obsidian long sword's, its blade in the fire colours
+    ("Flame Blade", 0xFC0B, 2550, 2551, lambda r: glow(r, lambda p, x, y: p in BLADE or p in (208, 209, 210), FIRE)),
 )
 PICTURES: Dict[str, int] = {name: 0x10000 - number for name, _, number, _, _ in ICONS}  # an item's +0
 
@@ -355,9 +430,12 @@ def write_resources(source: str, dest: str) -> None:
     os.replace(tmp, dest)
 
 
-def write_objects(source: str, dest: str) -> bool:
-    """The game's SEGOBJEX.GFF (SOURCE, only read) with the companion's icons, to DEST. Whether
-    Kalzith's object is in it (his scripts name it: without it they mustn't be written)."""
+def write_objects(source: str, dest: str, on: Optional[Dict[str, bool]] = None) -> Tuple[bool, Tuple[int, ...]]:
+    """The game's SEGOBJEX.GFF (SOURCE, only read) with the companion's icons, and its new items
+    in their people's and chests' objects (the content switched ON: dataitems.py), to DEST.
+    Whether Kalzith's object is in it (his scripts name it: without it they mustn't be
+    written), and the objects added for items (the regions' copies and scripts naming them
+    mustn't be written without them)."""
     with open(source, "rb") as f:
         data = f.read()
     from . import sprites
@@ -376,12 +454,15 @@ def write_objects(source: str, dest: str) -> bool:
     except KeyError:  # (a number of his taken in this copy of the game: no Kalzith, the rest kept)
         his = {}
     added.update(his)
+    from . import worldgear
+    items = worldgear.data_chunks(chunks, on or {})
+    added.update(items)
     out = with_chunks(data, added, room)
     tmp = dest + ".tmp"
     with open(tmp, "wb") as f:
         f.write(out)
     os.replace(tmp, dest)
-    return ("OJFF", kalzith.OBJECT) in his
+    return ("OJFF", kalzith.OBJECT) in his, tuple(sorted(n for (k, n) in items if k == "RDFF" and ("RDFF", n) not in chunks))
 
 
 # The companion's items, and the plain pictures they keep in a game that hasn't the copy
@@ -408,9 +489,20 @@ def _metal_types() -> Dict[int, str]:
 METAL_TYPES = _metal_types()
 
 
+def _plate_types() -> Dict[int, str]:
+    from . import game
+    return {game.PLATE_CHEST_TYPE: "Warden's Chest", game.PLATE_ARMS_TYPE: "Warden's Arms",
+            game.PLATE_LEGS_TYPE: "Warden's Legs"}
+
+
+PLATE_TYPES = _plate_types()
+OBSIDIAN_LONG_SWORD, FLAME_BLADE_NAME = 45, 0x156  # (the Flame Blade: worldgear.py)
+METAL_HELM_TYPE, WARDENS_HELM = 89, 0x153  # (the game's metal helm, the Helm of Contemplation's; its name)
+
+
 def which(rec: bytes) -> Optional[str]:
     """Which of the companion's items an item record is, if one: the Short Sword (Shadowseeker once +1) and the
-    Cloak by their types, the rings by their names and plus, Leather Chest Armor +1 and Kreenfang (the Gythka
+    Cloak by their types, the rings by their names and plus, Inixhide (Leather Chest Armor +1) and Kreenfang (the Gythka
     +1) by their types and plus (the game has no gythka with a plus)."""
     from . import game, npcitems, ring
     if len(rec) < game.ITEM_SIZE:
@@ -434,9 +526,23 @@ def which(rec: bytes) -> Optional[str]:
     if kind == game.SHORT_SWORD_TYPE:
         return "Shadowseeker" if plus == 1 else "Short Sword"
     if kind == game.METAL_SHORT_SWORD_TYPE:
-        return "Short Sword +2" if plus == 2 else "Short Sword" if plus == 0 else None
+        return "Greenbright" if plus == 2 else "Short Sword" if plus == 0 else None
     if kind == game.BRACERS_TYPE:
         return "Bracers of Defense"
+    if kind == game.CIRCLET_TYPE:
+        return "Arrowbane"
+    if kind == game.CROWN_TYPE:
+        return "Sunking Crown"
+    if kind == OBSIDIAN_LONG_SWORD and struct.unpack_from("<H", rec, game.ITEM_NAME)[0] == FLAME_BLADE_NAME:
+        return "Flame Blade"
+    if kind == game.ELVEN_CLOAK_TYPE:
+        return "Cloak of Elvenkind"
+    if kind == game.ELVEN_BOOTS_TYPE:
+        return "Boots of Elvenkind"
+    if kind in PLATE_TYPES:
+        return PLATE_TYPES[kind]
+    if kind == METAL_HELM_TYPE and struct.unpack_from("<H", rec, game.ITEM_NAME)[0] == WARDENS_HELM:
+        return "Warden's Helm"
     if kind in METAL_TYPES and plus == 0:
         return METAL_TYPES[kind]
     if plus == 1 and kind in MAGIC_KINDS:
@@ -452,7 +558,7 @@ def which(rec: bytes) -> Optional[str]:
         if name == npcitems.RING:
             return "Pehtucl's Ring of Protection +1"
     if kind == LEATHER_CHEST_TYPE and plus == 1:
-        return "Leather Chest Armor +1"
+        return "Inixhide"
     return None
 
 

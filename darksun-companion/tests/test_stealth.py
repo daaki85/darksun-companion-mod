@@ -69,6 +69,46 @@ class StealthTests(unittest.TestCase):
         worn[:] = []
         self.assertIn("needs 8 or less (16, halved in daylight)", stealth.turn(self.gd, 0, rolls(99))[0][0])
 
+    def elven(self, cloak=True, boots=True):
+        worn = []
+        for on, type_, slot in ((cloak, game.ELVEN_CLOAK_TYPE, game.CLOAK_SLOT), (boots, game.ELVEN_BOOTS_TYPE, game.FOOT)):
+            if on:
+                rec = bytearray(game.ITEM_SIZE)
+                rec[game.ITEM_SLOT] = slot
+                struct.pack_into("<H", rec, game.ITEM_TYPE, type_)
+                worn.append((len(worn), bytes(rec), b""))
+        self.gd._worn = lambda member: iter(worn)
+
+    def test_elvenkind(self):
+        """The Cloak of Elvenkind: 95 to hide under the open sky (no halving), 90 under a roof; the
+        Boots of Elvenkind: 95 to move silently; the switch for plain gear makes no difference."""
+        self.elven()
+        lines, hidden = stealth.turn(self.gd, 0, rolls(95, 95), gear=False)
+        self.assertTrue(hidden)
+        self.assertEqual(lines[0], "Dag hides in shadows: d100 = 95, needs 95 or less "
+                                   "(Cloak of Elvenkind, under the open sky) -> hidden")
+        self.assertTrue(lines[1].startswith("  Dag moves silently: d100 = 95, needs 95 (Boots of Elvenkind) or less "
+                                            "-> unheard: their next attack this turn is from behind (a backstab"))
+        self.region(0x29)
+        self.assertIn("needs 90 or less (Cloak of Elvenkind, under a roof)", stealth.turn(self.gd, 0, rolls(99))[0][0])
+
+    def test_elvenkind_not_a_thief(self):
+        """No thief or ranger (who couldn't put them on in the game): nothing."""
+        self.m[game_sheet() + game.SHEET_CLASSES + 1] = 0  # (a fighter only)
+        self.elven()
+        self.assertEqual(stealth.turn(self.gd, 0, rolls()), ([], False))
+
+    def test_elvenkind_ranger(self):
+        """A ranger in the cloak indoors: 90, not their halved chance."""
+        self.m[game_sheet() + game.SHEET_CLASSES + 1] = 13
+        self.m[game_sheet() + game.SHEET_LEVELS + 1] = 10
+        self.region(0x29)
+        self.elven()
+        lines, hidden = stealth.turn(self.gd, 0, rolls(90, 95))
+        self.assertTrue(hidden)
+        self.assertIn("needs 90 or less (Cloak of Elvenkind, under a roof)", lines[0])
+        self.assertTrue(lines[1].endswith("their next attack this turn is from behind"))
+
     def test_cloak_and_boots_switched_off(self):
         """With the Options tab's switch off, a worn cloak and boots add nothing."""
         cloak, boots = bytearray(game.ITEM_SIZE), bytearray(game.ITEM_SIZE)
