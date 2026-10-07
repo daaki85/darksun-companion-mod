@@ -5908,7 +5908,9 @@ extra_names:
         times NAME_SIZE - 15 db 0
         db "Boots/Elvenkind"
         times NAME_SIZE - 15 db 0
-        times (NAMES_EXTRA - 20) * NAME_SIZE db 0
+        db "Flame Blade"                ; (an obsidian long sword +1, Focus Heat on what it hits)
+        times NAME_SIZE - 11 db 0
+        times (NAMES_EXTRA - 21) * NAME_SIZE db 0
 
 ; STEALTH (RULE_STEALTH): a thief who starts a turn with no enemy next to them may hide in
 ; shadows and move silently up to someone; the companion rolls both and, when both succeed,

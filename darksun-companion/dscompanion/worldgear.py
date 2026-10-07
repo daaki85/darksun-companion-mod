@@ -22,6 +22,11 @@
 - The Cloak and Boots of Elvenkind (DSCLOG's types, the game's Cloak's and Boots'; their stealth:
   stealth.py): the cloak comes with the Elven Leader's gift of his Gythka +1 (to whoever has it),
   the boots are in the buried chest of Kel's caravan, with the Cahulaks +1.
+- The Flame Blade, an obsidian long sword +1 (fire clerics can wield it) whose blade burns what it
+  hits, as the game's Dark Flame does with Burning Hands: Focus Heat, the fire clerics' spell, cast
+  as a weapon's spells are, at caster level 0: 2d6 of fire to the one hit, a save for half (AD&D's
+  flame blade: 1d6 of fire; the game's Produce Fire, 1d6, sets the ground alight and burns friends
+  standing there): in the pack of the Hot Springs' Templar (the one with the Drake Shield).
 - Bracers of defense (DSCLOG's BRACERS type, worn on the arms: their plus counts for AC while neither
   armour nor a helm is worn), now that a preserver can't cast in armour: on four
   of the game's wizards, better the later they're met.
@@ -144,7 +149,23 @@ NAMES.update({CLOAK_OF_ELVENKIND: b"Cloak/Elvenkind", BOOTS_OF_ELVENKIND: b"Boot
 # priced as the game's magic clothes: its Serpent Boots 20,000, Chameleon Gloves 30,000
 ELVEN_CLOAK = armour(game.ELVEN_CLOAK_TYPE, CLOAK_OF_ELVENKIND, 0x10000 - 2546, 25000, plus=0)
 ELVEN_BOOTS = armour(game.ELVEN_BOOTS_TYPE, BOOTS_OF_ELVENKIND, 0x10000 - 2548, 20000, plus=0)
-GYTHKA_1 = (game.GYTHKA_TYPE, 1)  # the Elven Leader's gift (the game's own: its own name, not Kreenfang)
+GYTHKA_1 = (game.GYTHKA_TYPE, 1)
+FLAME_BLADE_NAME, OBSIDIAN_LONG_SWORD, FOCUS_HEAT = 0x156, 45, 116
+NAMES[FLAME_BLADE_NAME] = b"Flame Blade"
+DRAKE_SHIELD = 0x4B  # (its name entry: the Hot Springs' Templar carries it)
+
+
+def magic_weapon(spec: Tuple[int, int, int, int], plus: int, spell: int) -> bytes:
+    """A magic weapon that casts SPELL (the game's number) on what it hits (a helpful one: on its
+    wielder while readied)."""
+    rec = bytearray(weapon(spec, plus))
+    struct.pack_into("<H", rec, ITEM_SPELL_SHOWN, spell + 1)
+    rec[ITEM_SPELL] = spell + 1
+    return bytes(rec)
+
+
+# priced as Shadowseeker (a plus and a spell: 22,000)
+FLAME_BLADE = magic_weapon((OBSIDIAN_LONG_SWORD, FLAME_BLADE_NAME, 0x10000 - 2550, 22000), 1, FOCUS_HEAT)  # the Elven Leader's gift (the game's own: its own name, not Kreenfang)
 
 
 NAMES_OWN = 0x142  # the game's names: those before the Ledger's (DSCLOG's NAMES_OWN)
@@ -203,6 +224,8 @@ MAGIC: Tuple[Gift, ...] = (
     # the Cloak of Elvenkind with the Elven Leader's Gythka +1, the boots in the caravan's buried chest
     Gift(0x14, "Elven Leader's gift", (ELVEN_CLOAK,), beside=GYTHKA_1),
     Gift(0x1A, "Buried chest", (ELVEN_BOOTS,), container=CARAVAN_CHEST),
+    # the Flame Blade on the Hot Springs' Templar
+    Gift(0x23, "Templar", (FLAME_BLADE,), carrying=DRAKE_SHIELD),
 )
 def _lists(gd: GameData, index: int) -> List[int]:
     return [struct.unpack_from("<h", gd.creature(index), o)[0] for o in game.CREATURE_ITEM_LISTS]

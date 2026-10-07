@@ -22,6 +22,11 @@ requests #1 to #13; its notes are in
   cloak hides in shadows on 95 or less under the open sky, 90 under a roof
   (not halved by the light), and anyone in the boots moves silently on 95 or
   less, thief or not; their item boxes say so (`Hide 90-95%`, `Move 95%`).
+- **The Flame Blade,** an obsidian long sword +1 (with the magic weapons'
+  switch) whose blade casts the fire clerics' Focus Heat on what it hits (2d6
+  fire, a save for half), as the game's Dark Flame does Burning Hands: in the pack of the Hot Springs'
+  Templar. Obsidian, so a fire cleric can wield it. Alagorn tells its story
+  among his magic swords.
 - **Alagorn tells of the Warden's Plate** (Haldren's, the last of the Wardens:
   a part of his story for each piece) among his magic armor, and of the Cloak
   and Boots of Elvenkind among his magic clothes.

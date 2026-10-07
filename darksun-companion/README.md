@@ -1849,6 +1849,7 @@ like its own. The log doesn't say: they're there to be found.
 | **Deepbiter** | carried by one of the **Undermountain folk** (the miners) | a stone pick +1 (the game has no magic pick) |
 | **Windlash** | sold by the **Bowyer** | a staff sling +1 (the game has no magic staff sling) |
 | **Greenbright** | carried by **Arant**, who holds the captured gladiators | a metal short sword +2 |
+| **Flame Blade** | in the pack of the **Templar** of the Hot Springs (the one with the Drake Shield) | an obsidian long sword +1 (1d8+1) whose blade burns what it hits: the fire clerics' Focus Heat, 2d6 fire damage to the creature hit (a save for half), as the game's Dark Flame casts Burning Hands. Obsidian, so a fire (or earth) cleric can wield it |
 | **Arrowbane** | sold by **Kel** | a silver circlet: Protection from Normal Missiles on its wearer while worn (normal arrows, sling stones and chatkchas can't hurt them); worn on the head, not armour |
 | **Sunking Crown** | worn by **Keldar**, the templar of Dagolar's tunnels | a gold crown: Protection from Evil, 10' Radius on its wearer while worn; worn on the head, not armour |
 | **Warden's Helm** | on **Dagolar**'s body (the one carrying Dag's Dagger) | the game's metal helm +1: Cloak of Bravery on its wearer while worn |
@@ -1861,8 +1862,8 @@ like its own. The log doesn't say: they're there to be found.
 
 **Prices** follow the game's own:
 - magic melee weapons 20,800 for each plus, as its Obsidian Bloodwrath +1
-  (Kreenfang 20,800, Greenbright 41,600; Shadowseeker 22,000, as it
-  also sees the invisible);
+  (Kreenfang 20,800, Greenbright 41,600; Shadowseeker and the Flame Blade
+  22,000, as each has a spell too);
 - Windlash 2,800, as its Sling +1 (it prices magic missile weapons
   low);
 - the plain metal weapons 50 to 300 (its metal long sword is 500);
@@ -1929,7 +1930,7 @@ full.
 
 **Alagorn**, the wizard of the Painted Badlands who identifies magic items,
 knows the Ledger's magic items when the party carries them, each with a story
-of its own: Shadowseeker and Greenbright among his magic swords, Kreenfang,
+of its own: Shadowseeker, Greenbright and the Flame Blade among his magic swords, Kreenfang,
 Gutterknot, Deepbiter and Windlash among his magic weapons, the Warden's Plate's
 four pieces (each a part of Haldren's story, the last of the Wardens) among his
 magic armor, and the Cloak and Boots of Elvenkind among his magic clothes,

@@ -255,6 +255,8 @@ ICONS: Tuple[Tuple[str, int, int, int, Callable[[Rows], Rows]], ...] = (
     # the Cloak and Boots of Elvenkind (worldgear.py): the Cloak's and the Boots'
     ("Cloak of Elvenkind", 0xFBE3, 2546, 2547, elven_cloak_icon),
     ("Boots of Elvenkind", 0xFBE5, 2548, 2549, lambda r: recolour(r, BOOTS_TO_ELVEN)),
+    # the Flame Blade (worldgear.py): the obsidian long sword's, its blade in the fire colours
+    ("Flame Blade", 0xFC0B, 2550, 2551, lambda r: glow(r, lambda p, x, y: p in BLADE or p in (208, 209, 210), FIRE)),
 )
 PICTURES: Dict[str, int] = {name: 0x10000 - number for name, _, number, _, _ in ICONS}  # an item's +0
 
@@ -488,6 +490,7 @@ def _plate_types() -> Dict[int, str]:
 
 
 PLATE_TYPES = _plate_types()
+OBSIDIAN_LONG_SWORD, FLAME_BLADE_NAME = 45, 0x156  # (the Flame Blade: worldgear.py)
 METAL_HELM_TYPE, WARDENS_HELM = 89, 0x153  # (the game's metal helm, the Helm of Contemplation's; its name)
 
 
@@ -524,6 +527,8 @@ def which(rec: bytes) -> Optional[str]:
         return "Arrowbane"
     if kind == game.CROWN_TYPE:
         return "Sunking Crown"
+    if kind == OBSIDIAN_LONG_SWORD and struct.unpack_from("<H", rec, game.ITEM_NAME)[0] == FLAME_BLADE_NAME:
+        return "Flame Blade"
     if kind == game.ELVEN_CLOAK_TYPE:
         return "Cloak of Elvenkind"
     if kind == game.ELVEN_BOOTS_TYPE:

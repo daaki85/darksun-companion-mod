@@ -71,7 +71,12 @@ MAGIC = {
               "smiths who knew more than how to knap stone. It was a long sword once; a thousand "
               "years of sharpening have worn it short, and the old enchantment only grew keener "
               "for it. Arant took it from a gladiator who would not kneel. He never fought fair "
-              "again, and never needed to."),),
+              "again, and never needed to."),
+             ("Flame Blade",
+              "A Flame Blade! Its blade is no common obsidian, but glass from the heart of a "
+              "fire-mountain, and the clerics of fire sang its flames into it. Whatever it cuts, "
+              "it burns. The templars of Draj have tried to keep every one of them; the one at "
+              "the Hot Springs wore his like a badge, though he never knew the prayers to wake it."),),
     WEAPONS: (("Gutterknot",
                "Gutterknot! A knot of agafari root, the hardest wood under the sun, with the stub "
                "of an iron spike driven through it. Every boss of the Draj low warrens has beaten "

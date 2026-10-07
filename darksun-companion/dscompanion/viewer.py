@@ -388,7 +388,7 @@ class Viewer:
                 ("world_gear", "Bone, obsidian and metal short swords, bone and obsidian axes and obsidian maces "
                                "sold by the Weapon Merchant and Jark, and carried by a few kinds of people"),
                 ("world_magic", "Bracers of defense on four wizards, a magic club, pick, staff sling and "
-                                "short sword, a circlet and a crown, the Warden's Plate and elven cloak and boots")):
+                                "short sword, a circlet and a crown, the Warden's Plate, elven cloak and boots and a flame blade")):
             self.content_vars[key] = tk.BooleanVar(value=settings.get(key, True) is not False)
             ttk.Checkbutton(new, text=text, variable=self.content_vars[key],
                             command=self._popups_changed).pack(anchor="w", pady=(4, 0))

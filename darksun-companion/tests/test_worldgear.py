@@ -133,6 +133,19 @@ class WorldGearTests(unittest.TestCase):
         self.assertEqual(gift("Elven Leader's gift").beside, (game.GYTHKA_TYPE, 1))
         self.assertEqual(gift("Buried chest").container, worldgear.CARAVAN_CHEST)
 
+    def test_flame_blade(self):
+        """The Flame Blade: the obsidian long sword +1 (a fire cleric's to wield), Focus Heat on
+        what it hits (one past the game's number, its icon shown too), on the Hot Springs'
+        Templar with the Drake Shield."""
+        item = worldgear.FLAME_BLADE
+        self.assertEqual(struct.unpack_from("<H", item, game.ITEM_TYPE)[0], 45)
+        self.assertEqual((item[game.ITEM_PLUS], item[worldgear.ITEM_SPELL]), (1, 117))
+        self.assertEqual(struct.unpack_from("<H", item, worldgear.ITEM_SPELL_SHOWN)[0], 117)
+        self.assertEqual(icons.which(item), "Flame Blade")
+        self.assertEqual(names.NAMES[worldgear.FLAME_BLADE_NAME], b"Flame Blade")
+        templar = next(g for g in worldgear.MAGIC if item in g.items)
+        self.assertEqual((templar.region, templar.name, templar.carrying), (0x23, "Templar", 0x4B))
+
     def test_bracers_not_armour(self):
         """The bracers' type (as DSCLOG has it) isn't armour to the class rules; arm armour is."""
         bracers = npcitems.TYPES[game.BRACERS_TYPE - game.GAME_TYPES]
