@@ -71,7 +71,7 @@ double-click, with the options as last set.)
 
 ## What's new
 
-In pull request #25 (in progress): **bone and obsidian great axes and a bone
+In pull request #25 (merged 2026-10-07): **bone and obsidian great axes and a bone
 dagger**, so water and fire clerics' warriors have more to choose from, and
 ways to replace a broken weapon or lost Thieves' Tools in the shops. Defilers
 now leave a body, a thief can lift Mindshard from Maris for 200 XP, and the
