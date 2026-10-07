@@ -8,7 +8,17 @@ requests #1 to #13; its notes are in
 
 ## Pull request #21 ([in review](https://github.com/daaki85/darksun-companion-mod/pull/21))
 
+**Added**
+- **The Warden's Plate,** plate mail +1 in four pieces (with the magic
+  weapons' switch): the **Helm** on Dagolar's body (Cloak of Bravery while
+  worn), the **Arms** in the Lower Castle's treasure chest with Dark Flame,
+  the **Legs** in the Gemfields' chest, the **Chest** on Balkazar's body
+  (Resist Fire while worn). Plate is AC 3 chest, 2 arms, 2 legs (DSCLOG's new
+  item types), each +1; the helm is the game's metal helm +1. Each piece
+  has an icon of its own and is drawn on the figures.
+
 **Changed**
+- **Grey's Scale's arm and leg armour are AC 3** (the game's are 2).
 - **A new warrior with a staff sling keeps its shield,** as with a bow: both
   go in the missile slot, and the game asks nothing of the hands for them (the
   shield went into the backpack before).

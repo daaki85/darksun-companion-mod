@@ -147,6 +147,17 @@ def bracers_icon(_rows: Rows = None) -> Rows:
     return out
 
 
+# plate (worldgear.py's Warden's Plate): the chain armour's greys polished, two steps lighter (the
+# metal long sword's), a few of its brightest pixels in the fire colours (magic). The Helm's
+# leather browns, by brightness, in the same greys
+CHAIN_TO_PLATE = {208: 210, 209: 211, 210: 213, 211: 214, 212: 215, 213: 216, 214: 217, 215: 217, 216: 217}
+LEATHER_TO_PLATE = {128: 210, 129: 211, 134: 212, 135: 213, 136: 214, 137: 215, 138: 216, 139: 217, 140: 217}
+
+
+def plate_icon(colours: Dict[int, int], bright: Tuple[int, ...]) -> Callable[[Rows], Rows]:
+    return lambda r: recolour(glow(r, lambda p, x, y: p in bright and (x + y) % 3 == 0, FIRE), colours)
+
+
 SILVER = (210, 212, 213, 214, 215, 216, 217)  # dark to light (the metal long sword's greys)
 
 
@@ -224,6 +235,11 @@ ICONS: Tuple[Tuple[str, int, int, int, Callable[[Rows], Rows]], ...] = (
     # the circlet and the crown (worldgear.py), drawn; on the map, the Ring's
     ("Arrowbane", 0xFA1C, 2514, 2515, circlet_icon),
     ("Sunking Crown", 0xFA1C, 2516, 2517, crown_icon),
+    # the Warden's Plate (worldgear.py): the Chain armour's pieces and the Helm, in plate
+    ("Warden's Chest", 0xFBF4, 2538, 2539, plate_icon(CHAIN_TO_PLATE, (213, 214))),
+    ("Warden's Arms", 0xFBF3, 2540, 2541, plate_icon(CHAIN_TO_PLATE, (213, 214, 215))),
+    ("Warden's Legs", 0xFBF2, 2542, 2543, plate_icon(CHAIN_TO_PLATE, (213, 215, 216))),
+    ("Warden's Helm", 0xFC03, 2544, 2545, plate_icon(LEATHER_TO_PLATE, (138, 139, 140))),
 )
 PICTURES: Dict[str, int] = {name: 0x10000 - number for name, _, number, _, _ in ICONS}  # an item's +0
 
@@ -450,6 +466,16 @@ def _metal_types() -> Dict[int, str]:
 METAL_TYPES = _metal_types()
 
 
+def _plate_types() -> Dict[int, str]:
+    from . import game
+    return {game.PLATE_CHEST_TYPE: "Warden's Chest", game.PLATE_ARMS_TYPE: "Warden's Arms",
+            game.PLATE_LEGS_TYPE: "Warden's Legs"}
+
+
+PLATE_TYPES = _plate_types()
+METAL_HELM_TYPE, WARDENS_HELM = 89, 0x153  # (the game's metal helm, the Helm of Contemplation's; its name)
+
+
 def which(rec: bytes) -> Optional[str]:
     """Which of the companion's items an item record is, if one: the Short Sword (Shadowseeker once +1) and the
     Cloak by their types, the rings by their names and plus, Leather Chest Armor +1 and Kreenfang (the Gythka
@@ -483,6 +509,10 @@ def which(rec: bytes) -> Optional[str]:
         return "Arrowbane"
     if kind == game.CROWN_TYPE:
         return "Sunking Crown"
+    if kind in PLATE_TYPES:
+        return PLATE_TYPES[kind]
+    if kind == METAL_HELM_TYPE and struct.unpack_from("<H", rec, game.ITEM_NAME)[0] == WARDENS_HELM:
+        return "Warden's Helm"
     if kind in METAL_TYPES and plus == 0:
         return METAL_TYPES[kind]
     if plus == 1 and kind in MAGIC_KINDS:

@@ -457,6 +457,7 @@ class BeltTests(unittest.TestCase):
     """PROBE_BELT, at the end of the game's thief skill routine (where "mov ax,si" was): a thief
     wearing a belt gets 5 more to pick pockets and open locks, with SKILLS_ON's belt bit."""
     CREATURES, ITEMS = 0x9000, 0xA000
+    DS = 0x8000  # (the game's DS: its things table, 9E4h paragraphs below, clear of DSCLOG's image)
 
     def setUp(self):
         from dscompanion.gamepatch import VEC_BELT
@@ -470,9 +471,9 @@ class BeltTests(unittest.TestCase):
         self.assertGreater(handler, 0)
         mu.mem_write(VEC_BELT * 4, struct.pack("<HH", handler, TSR))
         mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
-        mu.mem_write(GAME_DS * 16 + 0x1665, struct.pack("<HH", 0, self.CREATURES))
-        mu.mem_write(GAME_DS * 16 + 0x165D, struct.pack("<HH", 0, self.ITEMS))
-        things = (GAME_DS + 0x3972 - 0x4356) * 16 + 0xC36  # (the things table, from the game's DS)
+        mu.mem_write(self.DS * 16 + 0x1665, struct.pack("<HH", 0, self.CREATURES))
+        mu.mem_write(self.DS * 16 + 0x165D, struct.pack("<HH", 0, self.ITEMS))
+        things = (self.DS + 0x3972 - 0x4356) * 16 + 0xC36  # (the things table, from the game's DS)
         # object 3: creature 1, whose first list is object 10: item 4
         for thing, kind, index in ((3, 2, 1), (10, 1, 4)):
             mu.mem_write(things + thing * 3, struct.pack("<BH", kind, index))
@@ -490,7 +491,7 @@ class BeltTests(unittest.TestCase):
         mu.mem_write(self.hdr + 266, struct.pack("<H", on))
         mu.mem_write(SS * 16 + BP + 8, struct.pack("<I", skill))
         mu.mem_write(CALLER * 16 + 0x600, bytes((0xCD, 0xD9)))
-        for name, value in dict(cs=CALLER, ds=GAME_DS, ss=SS, esp=0x800, ebp=BP, eflags=IF | 2,
+        for name, value in dict(cs=CALLER, ds=self.DS, ss=SS, esp=0x800, ebp=BP, eflags=IF | 2,
                                 esi=si, edi=3, ebx=0x1234, ecx=0x5678, edx=0x9ABC, es=0x4444).items():
             mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
         mu.emu_start(CALLER * 16 + 0x600, CALLER * 16 + 0x602, count=10000)
@@ -1822,7 +1823,7 @@ class TypesTests(unittest.TestCase):
         self.mu = mu = Uc(UC_ARCH_X86, UC_MODE_16)
         mu.mem_map(0, 0x100000)
         mu.mem_write(TSR * 16, image)
-        size = image.find(bytes.fromhex("8146fc4001" "8356fe00"))  # 16 types of 20 bytes: 140h
+        size = image.find(bytes.fromhex("8146fc7c01" "8356fe00"))  # 19 types of 20 bytes: 17Ch
         names_fill, fill = fill_probes(image)
         self.assertGreater(min(size, fill - names_fill), 0)
         mu.mem_write(VEC_TYPES_SIZE * 4, struct.pack("<HH", size, TSR))
@@ -1840,18 +1841,20 @@ class TypesTests(unittest.TestCase):
         return mu.reg_read(r.UC_X86_REG_SP)
 
     def test_room_and_filled(self):
-        """The game's 115 types (2300 bytes): 320 bytes more reserved, and after the read
-        DSCLOG's types at 115 on, the number noted."""
+        """The game's 115 types (2300 bytes): 380 bytes more reserved, and after the read
+        DSCLOG's types at 115 on, the number noted, and Grey's Scale's arm and leg armour AC 3."""
         from dscompanion import npcitems
         self.mu.mem_write(SS * 16 + BP - 4, struct.pack("<I", 2300))
         self.assertEqual(self.interrupt(VEC_TYPES_SIZE), 0x7FC)
-        self.assertEqual(struct.unpack("<I", self.mu.mem_read(SS * 16 + BP - 4, 4))[0], 2620)
+        self.assertEqual(struct.unpack("<I", self.mu.mem_read(SS * 16 + BP - 4, 4))[0], 2680)
         self.mu.mem_write(SS * 16 + 0x7FC, bytes(4))
         self.assertEqual(self.interrupt(VEC_TYPES_FILL, eax=0), 0x80C)
         at = self.TYPES_SEG * 16 + 115 * 20
         self.assertEqual(bytes(self.mu.mem_read(at, 20 * len(npcitems.TYPES))), b"".join(npcitems.TYPES))
         first, off, seg = struct.unpack("<HHH", self.mu.mem_read(self.hdr + 212, 6))
         self.assertEqual((first, off, seg), (115, 0, self.TYPES_SEG))
+        for kind in (24, 54):  # (Grey's Scale's legs and arms)
+            self.assertEqual(self.mu.mem_read(self.TYPES_SEG * 16 + kind * 20 + 0x12, 1)[0], 3)
         self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_AX, r.UC_X86_REG_DS)], [0, GAME_DS])
 
     def test_not_read(self):

@@ -5722,9 +5722,11 @@ n_fl    dw 0
 ; companion's own items that no type of the game's fits (a metal short sword, a cloak of
 ; protection). Nothing in the game limits the numbers to its own.
 TYPE_SIZE   equ 20
-TYPES_EXTRA equ 16
+TYPES_EXTRA equ 19
 TYPES_PTR   equ 0x1669          ; DS: far pointer to the item types
 BRACERS     equ 8               ; (the bracers of defense: the ninth of them)
+GREYS_ARMS  equ 54              ; Grey's Scale's arm and leg armour: the game's AC 2 each, made 3
+GREYS_LEGS  equ 24              ; (PROBE_TYPES_FILL)
 
 ; PROBE_TYPES_SIZE: INT VEC_TYPES_SIZE replaces "push dword 1" (3 bytes: INT + NOP) before the
 ; game reserves memory for the IT1R chunk, its size the dword at [BP-4]: adds the room.
@@ -5742,7 +5744,8 @@ probe_types_size:
 
 ; PROBE_TYPES_FILL: INT VEC_TYPES_FILL replaces "add sp,0Ch" (3 bytes: INT + NOP) after the
 ; call that reads the chunk in (AX 0: read). Does the add, then, if it was read, copies
-; EXTRA_TYPES after the game's own (the room made, [BP-4], less theirs) and notes where.
+; EXTRA_TYPES after the game's own (the room made, [BP-4], less theirs) and notes where; and
+; raises Grey's Scale's AC (its arm and leg armour, the game's own types) to 3.
 probe_types_fill:
         pop word [cs:n_ip]
         pop word [cs:n_cs]
@@ -5763,6 +5766,8 @@ probe_types_fill:
         les di, [TYPES_PTR]
         mov [cs:types_ptr], di
         mov [cs:types_ptr+2], es
+        mov byte [es:di+GREYS_ARMS*TYPE_SIZE+0x12], 3
+        mov byte [es:di+GREYS_LEGS*TYPE_SIZE+0x12], 3
         mov ax, [bp-4]
         sub ax, TYPES_EXTRA * TYPE_SIZE
         add di, ax              ; after the game's own
@@ -5843,6 +5848,14 @@ extra_types:
         db 0x00, 0x00, 0x00, 0x00, 0xFF, 0x1F, 0x00, 0x00
         db 0x00, 0x00, 0x00, 0x00, 0x05, 0x00, 0xFA, 0x00, 0x40, 0x06, 0x00, 0x00
         db 0x00, 0x00, 0x00, 0x00, 0xFF, 0x1F, 0x00, 0x00
+        ; plate mail (the Warden's Plate, dscompanion/worldgear.py): the Chain's chest, arm and
+        ; leg armour (57, 58, 59), heavier (+4: 250, 75, 75), AC 3, 2, 2 (+12h; chain's 2, 2, 1)
+        db 0x00, 0x00, 0x00, 0x00, 0xFA, 0x00, 0xFA, 0x00, 0x04, 0x01, 0x00, 0x00
+        db 0x00, 0x00, 0x00, 0x80, 0x6F, 0x12, 0x03, 0x01
+        db 0x00, 0x00, 0x00, 0x00, 0x4B, 0x00, 0xFA, 0x00, 0x04, 0x03, 0x00, 0x00
+        db 0x00, 0x00, 0x00, 0x80, 0x6F, 0x12, 0x02, 0x00
+        db 0x00, 0x00, 0x00, 0x00, 0x4B, 0x00, 0xFA, 0x00, 0x04, 0x0A, 0x00, 0x00
+        db 0x00, 0x00, 0x00, 0x80, 0x6F, 0x12, 0x02, 0x00
 ; the names, numbered from NAMES_OWN (322): the companion's items' (the same as the companion's
 ; NAMES in dscompanion/names.py), the rest blank until it writes more
 extra_names:
@@ -5874,7 +5887,15 @@ extra_names:
         times NAME_SIZE - 9 db 0
         db "Sunking Crown"
         times NAME_SIZE - 13 db 0
-        times (NAMES_EXTRA - 14) * NAME_SIZE db 0
+        db "Warden's Chest"             ; (the Warden's Plate of dscompanion/worldgear.py)
+        times NAME_SIZE - 14 db 0
+        db "Warden's Arms"
+        times NAME_SIZE - 13 db 0
+        db "Warden's Legs"
+        times NAME_SIZE - 13 db 0
+        db "Warden's Helm"
+        times NAME_SIZE - 13 db 0
+        times (NAMES_EXTRA - 18) * NAME_SIZE db 0
 
 ; STEALTH (RULE_STEALTH): a thief who starts a turn with no enemy next to them may hide in
 ; shadows and move silently up to someone; the companion rolls both and, when both succeed,

@@ -4,8 +4,9 @@ import sys
 import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from dscompanion import game, icons, names, npcitems, restrict, worldgear  # noqa: E402
+from dscompanion import game, icons, names, npcitems, restrict, ring, worldgear  # noqa: E402
 
 
 def gift(name):
@@ -92,6 +93,32 @@ class WorldGearTests(unittest.TestCase):
         self.assertEqual(gift("Kel").items, (worldgear.ARROWBANE_ITEM,))
         self.assertEqual(gift("Keldar").slot, game.EQUIP_SLOTS.index("head"))
 
+    def test_wardens_plate(self):
+        """The Warden's Plate: plate +1 of AC 3, 2, 2 (metal armour to the class rules) and the
+        game's metal helm +1; the chest Resist Fire, the helm Cloak of Bravery, the arms and legs
+        none; the helm on Dagolar, the arms in the Lower Castle's chest with Dark Flame, the legs
+        in the Gemfields' chest, the chest on Balkazar."""
+        chest, arms, legs, helm = worldgear.WARDENS_PLATE
+        for item, type_, slot, ac, spell, name in (
+                (chest, game.PLATE_CHEST_TYPE, 1, 3, 87, "Warden's Chest"),
+                (arms, game.PLATE_ARMS_TYPE, 3, 2, 0, "Warden's Arms"),
+                (legs, game.PLATE_LEGS_TYPE, 0x0A, 2, 0, "Warden's Legs"),
+                (helm, 89, None, None, 109, "Warden's Helm")):
+            self.assertEqual(struct.unpack_from("<H", item, game.ITEM_TYPE)[0], type_)
+            self.assertEqual(item[game.ITEM_PLUS], 1)
+            self.assertEqual(item[worldgear.ITEM_SPELL], spell + 1 if spell else 0)
+            self.assertEqual(struct.unpack_from("<H", item, worldgear.ITEM_SPELL_SHOWN)[0], spell + 1 if spell else 0)
+            self.assertEqual(icons.which(item), name)
+            self.assertEqual(names.NAMES[struct.unpack_from("<H", item, game.ITEM_NAME)[0]], name.encode())
+            if slot is not None:
+                typ = npcitems.TYPES[type_ - game.GAME_TYPES]
+                self.assertEqual((typ[9], typ[0x12], typ[8]), (slot, ac, 4))  # (metal)
+                self.assertTrue(restrict.is_armour(typ))
+        where = {g.items[0]: (g.region, g.name, g.container, g.carrying) for g in worldgear.MAGIC
+                 if set(g.items) & set(worldgear.WARDENS_PLATE)}
+        self.assertEqual(where, {helm: (None, "Dagolar", None, 0x75), arms: (0x1D, "Treasure chest", 1360, None),
+                                 legs: (0x08, "Gemfields chest", 1065, None), chest: (0x0D, "Balkazar", None, None)})
+
     def test_bracers_not_armour(self):
         """The bracers' type (as DSCLOG has it) isn't armour to the class rules; arm armour is."""
         bracers = npcitems.TYPES[game.BRACERS_TYPE - game.GAME_TYPES]
@@ -104,3 +131,49 @@ class WorldGearTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ContainerTests(unittest.TestCase):
+    """A piece put in a chest of the region's (the Lower Castle's, with Dark Flame): first in its
+    contents, once; an emptied chest given a new list of contents."""
+
+    def setUp(self):
+        from test_dicelog import DS, ITEMS
+        from test_ring import THINGS, arena
+        self.log = log = arena()
+        self.gd, self.m, self.items, self.things = log.game, log.guest.mem, ITEMS, THINGS
+        struct.pack_into("<H", self.m, DS * 16 + ring.REGION, 0x1D)
+        for item in range(60, 70):
+            struct.pack_into("<h", self.m, ITEMS + item * game.ITEM_SIZE + game.ITEM_NEXT, item + 1 if item < 69 else game.NO_ITEM)
+        # the chest (item 90, on the map as object 300), its contents object 301: Dark Flame (item 91)
+        self.put(90, 0x10000 - worldgear.DARK_FLAME_CHEST, contents=301)
+        self.put(91, 0xFAB1)
+        struct.pack_into("<Bh", self.m, THINGS + 300 * 3, game.THING_ITEM, 90)
+        struct.pack_into("<Bh", self.m, THINGS + 301 * 3, game.THING_ITEM, 91)
+
+    def put(self, item, picture, contents=game.NO_ITEM):
+        rec = bytearray(game.ITEM_SIZE)
+        struct.pack_into("<HhH", rec, 0, picture, 0, 0)
+        struct.pack_into("<h", rec, game.ITEM_NEXT, game.NO_ITEM)
+        struct.pack_into("<H", rec, ring.ITEM_CONTENTS, contents)
+        self.m[self.items + item * game.ITEM_SIZE:self.items + (item + 1) * game.ITEM_SIZE] = rec
+
+    def inside(self):
+        it = ring.Items(self.gd)
+        thing, = struct.unpack_from("<H", it.item(90), ring.ITEM_CONTENTS)
+        return [(struct.unpack_from("<H", rec, game.ITEM_NAME)[0], rec[game.ITEM_SLOT]) for _, rec in it.chain(thing)]
+
+    def test_in_the_chest_once(self):
+        given = set()
+        worldgear.place(self.gd, given, worldgear.MAGIC)
+        self.assertEqual(self.inside(), [(worldgear.WARDENS_ARMS, 0xFF), (0, 0)])
+        worldgear.place(self.gd, given, worldgear.MAGIC)
+        worldgear.place(self.gd, set(), worldgear.MAGIC)  # (a save from after: found there)
+        self.assertEqual(len(self.inside()), 2)
+
+    def test_an_emptied_chest(self):
+        struct.pack_into("<H", self.m, self.items + 90 * game.ITEM_SIZE + ring.ITEM_CONTENTS, game.NO_ITEM)
+        struct.pack_into("<Bh", self.m, self.things + 301 * 3, 0, 0)
+        worldgear.place(self.gd, set(), worldgear.MAGIC)
+        self.assertEqual(self.inside(), [(worldgear.WARDENS_ARMS, 0xFF)])
+        self.assertEqual(struct.unpack_from("<H", self.m, self.items + 90 * game.ITEM_SIZE + ring.ITEM_CONTENTS)[0], 505)

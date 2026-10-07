@@ -1840,6 +1840,10 @@ like its own. The log doesn't say: they're there to be found.
 | **Greenbright** | carried by **Arant**, who holds the captured gladiators | a metal short sword +2 |
 | **Arrowbane** | sold by **Kel** | a silver circlet: Protection from Normal Missiles on its wearer while worn (normal arrows, sling stones and chatkchas can't hurt them); worn on the head, not armour |
 | **Sunking Crown** | worn by **Keldar**, the templar of Dagolar's tunnels | a gold crown: Protection from Evil, 10' Radius on its wearer while worn; worn on the head, not armour |
+| **Warden's Helm** | on **Dagolar**'s body (the one carrying Dag's Dagger) | the game's metal helm +1: Cloak of Bravery on its wearer while worn |
+| **Warden's Arms** | the Lower Castle's treasure chest, with Dark Flame (behind the wall the Serpent Boots show, where the vrock perch) | plate arm armour +1 (AC 2, +1) |
+| **Warden's Legs** | the Gemfields' chest | plate leg armour +1 (AC 2, +1) |
+| **Warden's Chest** | on **Balkazar**'s body | plate chest armour +1 (AC 3, +1): Resist Fire on its wearer while worn |
 | **Bracers of Defense** | **Mikquetzl** (AC 6, in his pack), **Wyrmias** (AC 5), **Balkazar** (AC 4), **Dagolar** (AC 2, the one carrying Dag's Dagger) | AC for those wearing no armour: [bracers of defense](#bracers-of-defense) |
 
 **Prices** follow the game's own:
@@ -1852,12 +1856,20 @@ like its own. The log doesn't say: they're there to be found.
 - bracers of defense 5,000 for each point of AC (20,000 to 40,000);
 - Arrowbane 30,000 and the Sunking Crown 40,000 (its Helm of Might is 30,000,
   the Helm of Contemplation 35,000);
-- the rings and cloak of protection 15,000 each, Leather Chest Armor +1 6,000.
+- the rings and cloak of protection 15,000 each, Leather Chest Armor +1 6,000;
+- the Warden's Arms and Legs 27,000 each, as a piece of its Grey's Scale (AC 3
+  too), the Warden's Chest 36,000 and Helm 30,000 (each with a spell).
+
+**The Warden's Plate** is plate mail +1 in four pieces (AC 11 as a set, 12
+with [helms giving AC 1](#helms-and-boots)): metal armour, worn by the classes
+that can wear the game's chain (no single-class thieves), and kept from more
+with [class restrictions](#class-restrictions). **Grey's Scale**'s arm and
+leg armour is AC 3 each (the game's is 2).
 
 **On the Options tab**, under New content:
 - **Bone, obsidian and metal short swords...** places the plain weapons;
 - **Bracers of defense on four wizards...** places the bracers, the
-  magic weapons, Arrowbane and the Sunking Crown;
+  magic weapons, Arrowbane, the Sunking Crown and the Warden's Plate;
 - the arena's ring (**A Ring of Protection +1 on the arena's Tied-up
   Prisoner**) and Kreenfang and Shadowseeker (**...are +1 magic weapons**:
   without it Kurzak's is a plain Short Sword, 1d6) each have their own box;
@@ -1877,6 +1889,8 @@ and neither ring nor cloak gives AC over magical armour.
 ![Backpack cells in the game: the metal Dagger, Mace, Great Axe, Pick and Polearm](docs/metal-weapons.png)
 
 ![The inventory screen in the game: Arrowbane, a silver circlet, in a backpack cell; the Sunking Crown, a gold crown, in the head's slot](docs/head-items.png)
+
+![Inventory cells in the game: the Warden's Chest, Arms, Legs and Helm](docs/wardens-plate.png)
 
 **Icons and names.** Each has an icon of its own on the inventory screen,
 made from the plain item's the way the game makes its magic items' (a few

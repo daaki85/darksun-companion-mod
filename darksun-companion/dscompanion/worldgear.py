@@ -13,6 +13,12 @@
   worn, as it does its own magic items': Arrowbane, Protection from Normal Missiles, sold by
   Kel; the Sunking Crown, Protection from Evil 10' Radius (the party round its wearer warded),
   worn by Keldar, the templar of Dagolar's tunnels.
+- The Warden's Plate, plate mail +1 (DSCLOG's plate types: AC 3 chest, 2 arms, 2 legs, as AD&D's
+  piecemeal plate; the helm the game's metal one), its four pieces scattered: the helm on
+  Dagolar's body; the arms in the Lower Castle's treasure chest with Dark Flame (behind the
+  wall the Serpent Boots show, the vrock's cliff); the legs in the Gemfields' chest; the chest
+  on Balkazar's body. The chest puts Resist Fire on its wearer while worn, the helm Cloak of
+  Bravery; the arms and legs are plain.
 - Bracers of defense (DSCLOG's BRACERS type, worn on the arms: their plus counts for AC while neither
   armour nor a helm is worn), now that a preserver can't cast in armour: on four
   of the game's wizards, better the later they're met.
@@ -101,6 +107,36 @@ ARROWBANE_ITEM = head_item(game.CIRCLET_TYPE, ARROWBANE, 0x10000 - 2514, 30000, 
 CROWN_ITEM = head_item(game.CROWN_TYPE, SUNKING_CROWN, 0x10000 - 2516, 40000, PROT_EVIL_10)
 
 
+WARDENS_CHEST, WARDENS_ARMS, WARDENS_LEGS, WARDENS_HELM = 0x150, 0x151, 0x152, 0x153
+NAMES.update({WARDENS_CHEST: b"Warden's Chest", WARDENS_ARMS: b"Warden's Arms", WARDENS_LEGS: b"Warden's Legs",
+              WARDENS_HELM: b"Warden's Helm"})
+RESIST_FIRE, CLOAK_OF_BRAVERY = 87, 109
+METAL_HELM_TYPE = 89  # (the game's metal helm: the Helm of Contemplation's)
+
+
+def armour(type_: int, name: int, picture: int, value: int, spell: Optional[int] = None, plus: int = 1) -> bytes:
+    """A piece of magic armour's item record: SPELL, if any, put on its wearer while worn."""
+    rec = bytearray(head_item(type_, name, picture, value, spell or 0))
+    if spell is None:
+        struct.pack_into("<H", rec, ITEM_SPELL_SHOWN, 0)
+        rec[ITEM_SPELL] = 0
+    rec[game.ITEM_PLUS] = plus
+    return bytes(rec)
+
+
+# priced as the game's own: the arms and legs (AC 3) as a piece of Grey's Scale (27,000, now AC 3
+# too), the chest (AC 4, a spell) 36,000, the helm as the Helm of Might (30,000)
+WARDENS_PLATE = (
+    armour(game.PLATE_CHEST_TYPE, WARDENS_CHEST, 0x10000 - 2538, 36000, RESIST_FIRE),
+    armour(game.PLATE_ARMS_TYPE, WARDENS_ARMS, 0x10000 - 2540, 27000),
+    armour(game.PLATE_LEGS_TYPE, WARDENS_LEGS, 0x10000 - 2542, 27000),
+    armour(METAL_HELM_TYPE, WARDENS_HELM, 0x10000 - 2544, 30000, CLOAK_OF_BRAVERY),
+)
+
+
+DARK_FLAME_CHEST, GEMFIELDS_CHEST = 1360, 1065  # (SEGOBJEX objects: their item records' picture, negated)
+
+
 class Gift(NamedTuple):
     region: Optional[int]  # None: wherever they are (the game's people of its RGNFF)
     name: str
@@ -108,6 +144,7 @@ class Gift(NamedTuple):
     every: bool = False  # each of that name, not only the first met
     slot: Optional[int] = None  # worn there if it's free (else in the backpack)
     carrying: Optional[int] = None  # only one carrying an item of this name entry
+    container: Optional[int] = None  # not a person's: in the container of this object (SEGOBJEX's)
 
 
 PLAIN = (BONE_SHORT_SWORD, OBSIDIAN_SHORT_SWORD, BONE_AXE, OBSIDIAN_AXE, OBSIDIAN_MACE)
@@ -140,6 +177,14 @@ MAGIC: Tuple[Gift, ...] = (
     # the circlet sold by Kel (the game's magic items' merchant), the crown worn by Keldar
     Gift(0x1A, "Kel", (ARROWBANE_ITEM,)),
     Gift(0x27, "Keldar", (CROWN_ITEM,), slot=HEAD),
+    # the Warden's Plate, scattered: the helm on Dagolar (a boss's body, early on), the arms in the
+    # Lower Castle's treasure chest (object 1360, with Dark Flame: behind the barrier the Serpent
+    # Boots show, the vrock near), the legs in the Gemfields' chest (object 1065), the chest on
+    # Balkazar (the hardest kill, after his mirror)
+    Gift(None, "Dagolar", (WARDENS_PLATE[3],), carrying=0x75),
+    Gift(0x1D, "Treasure chest", (WARDENS_PLATE[1],), container=DARK_FLAME_CHEST),
+    Gift(0x08, "Gemfields chest", (WARDENS_PLATE[2],), container=GEMFIELDS_CHEST),
+    Gift(0x0D, "Balkazar", (WARDENS_PLATE[0],)),
 )
 def _lists(gd: GameData, index: int) -> List[int]:
     return [struct.unpack_from("<h", gd.creature(index), o)[0] for o in game.CREATURE_ITEM_LISTS]
@@ -158,6 +203,50 @@ def _same(item: bytes) -> Callable[[bytes], bool]:
     return lambda rec: npcitems._same(rec, item) and rec[game.ITEM_PLUS] == item[game.ITEM_PLUS]
 
 
+def _in_region(it: ring.Items, test: Callable[[bytes], bool]) -> bool:
+    return any(test(rec) for thing in range(ring.THING_COUNT) for _, rec in it.chain(thing))
+
+
+def _container(it: ring.Items, obj: int) -> Optional[int]:
+    """The item number of the container of SEGOBJEX object OBJ in the region, if there."""
+    for thing in range(ring.THING_COUNT):
+        for item, rec in it.chain(thing, inside=False):
+            if struct.unpack_from("<H", rec, 0)[0] == 0x10000 - obj:
+                return item
+    return None
+
+
+def add_inside(gd: GameData, obj: int, rec: bytes) -> bool:
+    """An item from the game's free list, made REC, put first in the container of object OBJ (a
+    new list of its contents, from the game's free objects, if it's empty)."""
+    it = ring.Items(gd)
+    box, item = _container(it, obj), it.word(ring.FREE_ITEMS)
+    if box is None or item >= game.NO_ITEM:
+        return False
+    contents, = struct.unpack_from("<H", it.item(box), ring.ITEM_CONTENTS)
+    ds = gd.ds * 16
+    if contents >= ring.THING_COUNT:
+        contents = it.word(ring.FREE_THINGS)
+        if contents >= ring.THING_COUNT:
+            return False
+        gd.guest.write(ds + ring.FREE_THINGS, struct.pack("<H", it.thing(contents)[1] & 0xFFFF))
+        gd.guest.write(ds + ring.THINGS_USED, struct.pack("<H", it.word(ring.THINGS_USED) + 1))
+        gd.guest.write(it.things + contents * 3, struct.pack("<BH", game.THING_ITEM, game.NO_ITEM))
+        gd.guest.write(it.items + box * game.ITEM_SIZE + ring.ITEM_CONTENTS, struct.pack("<H", contents))
+        it = ring.Items(gd)
+    kind, first = it.thing(contents)
+    if kind != game.THING_ITEM:
+        return False
+    gd.guest.write(ds + ring.FREE_ITEMS, it.item(item)[game.ITEM_NEXT:game.ITEM_NEXT + 2])
+    ring.took(item, f"an item (picture {struct.unpack_from('<H', rec, 0)[0]:04X}h) for object {obj}")
+    rec = bytearray(rec)
+    struct.pack_into("<h", rec, game.ITEM_NEXT, first)
+    rec[game.ITEM_SLOT] = 0xFF
+    gd.guest.write(it.items + item * game.ITEM_SIZE, bytes(rec))
+    gd.guest.write(it.things + contents * 3, struct.pack("<Bh", game.THING_ITEM, item))
+    return True
+
+
 def place(gd: GameData, given: Set[str], gifts: Tuple[Gift, ...] = GIFTS) -> List[str]:
     """Each of GIFTS in the area gets its items not yet given this game (GIVEN: a key for each,
     updated)."""
@@ -167,6 +256,18 @@ def place(gd: GameData, given: Set[str], gifts: Tuple[Gift, ...] = GIFTS) -> Lis
         return []
     leader = gd.creature_name(0)
     it = ring.Items(gd)
+    for gift in here:
+        if gift.container is None:
+            continue
+        for item in gift.items:
+            key = f"{leader}|world:{gift.name}:{struct.unpack_from('<H', item, game.ITEM_TYPE)[0]}:{item[game.ITEM_PLUS]}"
+            if key in given:
+                continue
+            if _in_region(it, _same(item)):  # (a save from after it was put there)
+                given.add(key)
+            elif add_inside(gd, gift.container, item):
+                given.add(key)
+                it = ring.Items(gd)
     for index in sorted(set(gd.combatants().values())):
         if index < game.PARTY_SIZE:
             continue

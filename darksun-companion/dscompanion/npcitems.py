@@ -52,6 +52,10 @@ TYPES = (  # as DSCLOG's EXTRA_TYPES has them
     # a circlet and a crown (worldgear.py): the Necklace's, worn on the head, not armour
     bytes.fromhex("000000000100fa00" "4006000000000000" "ff1f0000"),
     bytes.fromhex("000000000500fa00" "4006000000000000" "ff1f0000"),
+    # plate mail's chest, arm and leg armour (worldgear.py): the Chain's, heavier, AC 3, 2, 2
+    bytes.fromhex("00000000fa00fa00040100000000008" "06f120301"),
+    bytes.fromhex("000000004b00fa00040300000000008" "06f120200"),
+    bytes.fromhex("000000004b00fa00040a00000000008" "06f120200"),
 )
 TSR_TYPES_OFF, TSR_TYPES_COUNT, TSR_TYPES_FIRST, TSR_TYPES_PTR = 208, 210, 212, 214
 BLOODWRATH = 0x9C  # the name entry of the Templar's sword: which Templar is Pehtucl
