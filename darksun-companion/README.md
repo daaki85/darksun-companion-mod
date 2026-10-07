@@ -96,20 +96,21 @@ Templar's Ledger runs beside Dark Sun: Shattered Lands, in DOSBox:
   weapon specialization, class restrictions, thief skills, saving throws and
   levels up to 10 ([Rule changes](#rule-changes), [Thieves](#thieves),
   [Saving throws](#saving-throws)).
-- **It adds to the game:** new items and two new people in the slave pens,
-  picking pockets and a use for the cooked vulture
+- **It adds to the game:** new items across Athas, two new people in the
+  slave pens, picking pockets and a use for the cooked vulture
   ([New content](#new-content)); gear, shadows and dust on the map
   ([On the screen](#on-the-screen)); choosing an enemy with Tab and scrolling
   with the mouse ([Controls](#controls)); 40 saves and 29 saved characters
   ([More saves and characters](#more-saves-and-characters)); a game speed
-  setting and crash reports.
+  setting and crash reports; and no more [manual check](#no-manual-check).
 
 Nothing in the game folder or your save files is changed, except what play
 writes there: save pages 2 to 4 as files of their own beside the game's,
 characters 20 to 29 in the game's `CHARSAVE.GFF`, and, in a game you save,
-what the Ledger has handed out (untick their boxes to go without). Some of it
-the original game doesn't know (the Short Sword, the Cloak of Protection, the
-Bone Helm, the new item names), so load such a save with the dice log. For the
+the Ledger's new items (untick their boxes to go without). Some of them the
+original game doesn't know (the item types it lacks, such as the Short Sword,
+the Cloak of Protection, the bracers, plate mail and the Cloak and Boots of
+Elvenkind, and the new item names), so load such a save with the dice log. For the
 rest, the Ledger only reads the game's memory; the patched game and its copies
 of the game's files are in its own folder (see
 [DEVELOPMENT.md](DEVELOPMENT.md#how-the-dice-log-works)). The window is dressed

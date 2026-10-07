@@ -3,9 +3,10 @@
 Leaving the sewers, the Tari's warrens (region 28h; script 120: "Do you want to leave the
 sewers?"), until it has been answered there, the game runs script 20: a dragon "creates a
 mindlink" and asks for a word from the manual ("The 3rd word on page 14, line 1, begins with
-the letter 'p'. What is that word?"), one of twenty at random; three wrong answers and the party dies. Answered, script 86
-(at 1087) sets what the right answer sets: 255 in a variable of the game's (7, 4), and, in that
-region (28h), the bit (12 of 135, 73) that script 120 tests to ask only once.
+the letter 'p'. What is that word?"), one of twenty at random; three wrong answers and the
+party dies. Answered, script 86 (at 1087) sets what the right answer sets: 255 in a variable
+of the game's (7, 4), and, in that region (28h), the bit (12 of 135, 73) that script 120
+tests to ask only once.
 
 In the Ledger's copy of the scripts, script 20 does only that: no dragon, no question. It
 starts at the same place (1, after its first command), the one entry point the game's table

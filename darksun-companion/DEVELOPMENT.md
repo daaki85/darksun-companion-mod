@@ -57,8 +57,9 @@ Every roll in the game goes through one function, Borland C++'s `rand()`.
    open the launcher's copies of `SEGOBJEX.GFF`, `RESOURCE.GFF` (see
    [Item icons](README.md#new-items)), `RGN1C.GFF`, `RGN1E.GFF` (see
    [the world's new items](README.md#the-worlds-new-items)), `GPLDATA.GFF` and `RGN29.GFF` (see
-   [Kalzith](README.md#kalzith), [Semyon](README.md#semyon) and
-   [Dinos and the Trustee](README.md#what-dinos-and-the-trustee-say-about-them)), the mouse driver's `INT 33h`
+   [Kalzith](README.md#kalzith), [Semyon](README.md#semyon),
+   [Dinos and the Trustee](README.md#what-dinos-and-the-trustee-say-about-them) and
+   [no manual check](README.md#no-manual-check)), the mouse driver's `INT 33h`
    (for [scrolling the map](README.md#scrolling-the-map)) and the keyboard's `INT 16h`
    (for Tab and Enter). DOSBox runs it from the game folder, so
    it uses your saves as usual.
@@ -80,11 +81,12 @@ Every roll in the game goes through one function, Borland C++'s `rand()`.
 Because the replacement produces identical numbers, the game plays exactly as
 it would without it, apart from what you choose on the Options tab (the
 Ring +1, picking pockets, the [rule changes](README.md#rule-changes)), the Ledger's
-other additions (the slave pens' gear, the cooked vulture, Kalzith, Semyon,
+other additions (the new items, the cooked vulture, Kalzith, Semyon,
 what the party wears, shadows, dust, rings, Tab and Enter, scrolling) and the
 fixes always in the patched copy: no equipment penalty on thief skills (see
 [Thief skills](README.md#how-the-game-works-out-thief-skills)), the roster's DELETE and New characters counting
-as Okay (see [More characters](README.md#more-characters)).
+as Okay (see [More characters](README.md#more-characters)), and no manual check
+(see [No manual check](README.md#no-manual-check)).
 
 Limitations:
 - Only the GOG release (`DSUN.EXE` of 611,408 bytes) is supported. With
@@ -354,6 +356,20 @@ first status rows; the helper asks the Ledger (as for each turn's rolls), and
 prints the lines with the game's text routine. `INT F6h`, at the end of the
 routine that closes the box, shows the whole description.
 
+### No manual check
+
+([In the README](README.md#no-manual-check).)
+
+How: the dragon's question is the game's script 20, which script 120 runs (a
+call into another script, command 14h) when the party leaves the warrens
+(region 28h) until bit 12 of the game's variable (135, 73) is set. The right
+answer goes on to script 86 at 1087, which sets 255 in the variable (7, 4)
+and, in region 28h, that bit. In the Ledger's copy of the scripts
+(`dscompanion/manualcheck.py`), script 20 does just that and ends: the same
+start (offset 1, its one entry in the game's table of entry points), no words
+and no question. It is replaced only if it is the dragon's (its
+`" word on page "` line).
+
 ### Weapon specialization
 
 ([In the README](README.md#weapon-specialization).)
@@ -433,20 +449,6 @@ The game's table of effects (6 bytes each, from the load segment + 3F8Dh: a far
 pointer to the name, then the icon) has an empty name and no icon for 54, and
 the screen shows only effects with an icon; with the rule on, the Ledger gives
 54 Flaming Sphere's icon (21014, read as Cat's Grace's) and the spell's name.
-
-### No manual check
-
-([In the README](README.md#no-manual-check).)
-
-How: the dragon's question is the game's script 20, which script 120 runs (a
-call into another script, command 14h) when the party leaves the warrens
-(region 28h) until bit 12 of the game's variable (135, 73) is set. The right
-answer goes on to script 86 at 1087, which sets 255 in the variable (7, 4)
-and, in region 28h, that bit. In the Ledger's copy of the scripts
-(`dscompanion/manualcheck.py`), script 20 does just that and ends: the same
-start (offset 1, its one entry in the game's table of entry points), no words
-and no question. It is replaced only if it is the dragon's (its
-`" word on page "` line).
 
 ### New items
 

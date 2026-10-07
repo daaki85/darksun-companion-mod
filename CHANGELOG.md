@@ -25,8 +25,8 @@ requests #1 to #13; its notes are in
   `Move 95%`).
 - **The Flame Blade,** an obsidian long sword +1 (with the magic weapons'
   switch) whose blade casts the fire clerics' Focus Heat on what it hits (2d6
-  fire, a save for half), as the game's Dark Flame does Burning Hands: in the pack of the Hot Springs'
-  Templar. Obsidian, so a fire cleric can wield it. Alagorn tells its story
+  fire, a save for half), as the game's Dark Flame does Burning Hands: in
+  the pack of the Hot Springs' Templar. Obsidian, so a fire cleric can wield it. Alagorn tells its story
   among his magic swords.
 - **Alagorn tells of the Warden's Plate** (Haldren's, the last of the Wardens:
   a part of his story for each piece) among his magic armor, and of the Cloak
@@ -44,8 +44,8 @@ requests #1 to #13; its notes are in
   play: the launcher writes them into their people's and chests' objects, so a
   new game makes them where they belong. The slave pens' items (Kurzak's
   Shadowseeker and helm, Legcrusher's armour, Pehtucl's cloak and ring) and
-  Kreenfang (the arena's dead body's gythka) are in the data too. The Boots of Elvenkind are in the
-  buried chest when it is dug up; the bone scale set's arm and leg pieces and
+  Kreenfang (the arena's dead body's gythka) are in the data too. The Boots
+  of Elvenkind are in the buried chest when it is dug up; the bone scale set's arm and leg pieces and
   helm are in the slave pens' chest with its chest piece; one Castle Guard and
   one Undermountain miner have objects of their own for their items. The
   Options tab's switches take effect from the next start, in regions not yet

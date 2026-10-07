@@ -87,10 +87,16 @@ can be switched off on its Options tab.
 
 - **New items:** a Ring of Protection +1 to find in the arena (50 XP for
   finding it); gear for Kurzak, Legcrusher and Pehtucl in the slave pens (a
-  Cloak and a Ring of Protection +1 among it); two named magic weapons,
-  **Kreenfang** and **Shadowseeker** (whose wielder sees the invisible), that
-  Alagorn tells the story of; the rest of the bone scale armour, with a Bone
-  Helm, where its chest piece lies; each with an icon of its own.
+  Cloak and a Ring of Protection +1 among it); the rest of the bone scale
+  armour, with a Bone Helm, where its chest piece lies; bone, obsidian and
+  metal weapons the game lacks, sold and carried across Athas; bracers of
+  defense on four wizards; named magic items with stories Alagorn tells
+  (**Kreenfang**, **Shadowseeker**, **Gutterknot**, **Deepbiter**,
+  **Windlash**, **Greenbright**, the **Flame Blade**, **Arrowbane**, the
+  **Sunking Crown**, the four pieces of the **Warden's Plate**, and the
+  **Cloak and Boots of Elvenkind**); each with an icon of its own. They're
+  written into the game's own data, so a new game makes them where they
+  belong.
 - **Thief play:** Thieves' Tools for every thief, picking anyone's pockets
   (200 XP for lifting Shadowseeker), and no more thief skill penalty for what
   a thief holds.
@@ -133,6 +139,8 @@ can be switched off on its Options tab.
 - **More saves:** 40 instead of the game's 10, on four pages of the save and
   load window (PAGE 1 to PAGE 4 buttons, or PgUp and PgDn).
 - **More characters:** 29 saved characters instead of the game's 19.
+- **No manual check:** the dragon who asks for a word from the manual when
+  the party first leaves the sewers (the game's copy protection) doesn't come.
 - **Two of the game's own bugs fixed:** DELETE in the roster removed the wrong
   character when the list was scrolled down, and a new character's thief skills
   showed 0 until the game started.
@@ -143,7 +151,7 @@ can be switched off on its Options tab.
 - **Crash reports:** if DOSBox crashes or the game stops with an error, the
   game's message stays on screen and what happened is saved in a file to send.
 
-(More in [More saves](darksun-companion/README.md#more-saves), [More characters](darksun-companion/README.md#more-characters), [Game speed](darksun-companion/README.md#game-speed) and [Crash reports](darksun-companion/README.md#crash-reports).)
+(More in [No manual check](darksun-companion/README.md#no-manual-check), [More saves](darksun-companion/README.md#more-saves), [More characters](darksun-companion/README.md#more-characters), [Game speed](darksun-companion/README.md#game-speed) and [Crash reports](darksun-companion/README.md#crash-reports).)
 
 The game's own files are never modified. What play writes to the game folder
 is what you'd expect: your saves, which keep the items the Ledger hands out and
@@ -177,6 +185,23 @@ addition in detail, and how it works.
 double-click, with the options as last set.)
 
 ## What's new
+
+In [pull request #21](https://github.com/daaki85/darksun-companion-mod/pull/21)
+(in review):
+- **No manual check:** the dragon's question, the game's copy protection, is
+  gone; the game goes on as if it had been answered.
+- **New magic items:** the **Warden's Plate**, plate mail +1 in four pieces
+  across the world (the helm with Cloak of Bravery, the chest with Resist
+  Fire); the **Cloak and Boots of Elvenkind** for thieves and rangers (hiding
+  in shadows on 90-95, moving silently on 95), the cloak given by the Elven
+  Leader with his Gythka +1; and the **Flame Blade**, an obsidian long sword
+  +1 that burns what it hits with Focus Heat, for fire clerics. Alagorn tells
+  the story of each.
+- **Every new item is in the game's own data,** written into the people's
+  and chests' objects, so a new game makes them where they belong.
+- **Arrowbane** (a circlet) and the **Sunking Crown,** worn on the head and
+  not armour; Grey's Scale's arm and leg armour AC 3; bracers of defense give
+  nothing with a helm on; a new warrior with a staff sling keeps its shield.
 
 In [pull request #20](https://github.com/daaki85/darksun-companion-mod/pull/20)
 (merged):
