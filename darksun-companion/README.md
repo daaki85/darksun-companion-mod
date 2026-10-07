@@ -1916,7 +1916,7 @@ new character's starting weapon with [weapon specialization](#weapon-specializat
 | ![](docs/items/glasshewer.png) | **Glasshewer** | carried by the **Templar** of the elven slavers' camp (the one with the Chain Arm Armor) | an obsidian axe +2 (1d8+2): a fire or earth cleric can wield it |
 | ![](docs/items/headsman.png) | **Headsman** | in the arena **Announcer**'s stash, with his Stoneskin scroll, rings and gems | a metal great axe +2 |
 | ![](docs/items/galefang.png) | **Galefang** | carried by the **Rogue Shaman**, with his Shaman Followers | a metal dagger +2 an **air cleric** can wield (none of the game's daggers are) |
-| ![](docs/items/mindshard.png) | **Mindshard** | carried by **Maris** | an obsidian short sword +1: a **psionicist** can wield it, alone or with a fire or earth cleric |
+| ![](docs/items/mindshard.png) | **Mindshard** | carried by **Maris**; a thief can lift it (200 XP) | an obsidian short sword +1: a **psionicist** can wield it, alone or with a fire or earth cleric |
 | ![](docs/items/stillwater.png) | **Stillwater** | in the chest **Chaya** gives as her apology | a bone short sword +1: a **psionicist** can wield it, alone or with a water cleric |
 | ![](docs/items/linebreaker.png) | **Linebreaker** | carried by the **Troop Leader** | a metal polearm +2 |
 | ![](docs/items/thornwall.png) | **Thornwall** | on the slave pens' **weapon rack**, in place of one of its two plain bone polearms | a bone polearm +1 |
@@ -1952,8 +1952,8 @@ leg armour is AC 3 each (the game's is 2).
 places them all (the arena's ring has a box of its own); a thief's tools come
 with picking pockets.
 
-A thief can lift Pehtucl's ring, Shadowseeker and Gutterknot (200 XP for each
-weapon), not what's worn on the body. With [AD&D's rules for rings and cloaks of
+A thief can lift Pehtucl's ring, Shadowseeker, Gutterknot and Mindshard (200
+XP for each weapon), not what's worn on the body. With [AD&D's rules for rings and cloaks of
 protection](#rings-and-cloaks-of-protection) on, two rings give +1 together
 and neither ring nor cloak gives AC over magical armour.
 
@@ -2356,8 +2356,8 @@ it stands now (effects and a worn belt's 5 counted, as in the thief rows):
   cell): something weighing 10 or less (a bag or arrows are 10, a helm 15, a
   long sword 30) that isn't worn on the body (armour, a belt, boots, a helm, a
   cloak). A dagger, a ring, an amulet, a gem or food can be lifted, and so can
-  Kurzak's short sword, Shadowseeker, and Churrr's club, Gutterknot, whatever
-  their weight: lifting either is worth 200 XP to the thief, given by the game's own routine for a quest's XP
+  Kurzak's short sword, Shadowseeker, Churrr's club, Gutterknot, and Maris's
+  short sword, Mindshard, whatever their weight: lifting any of them is worth 200 XP to the thief, given by the game's own routine for a quest's XP
   ("Cilla receives 200 experience points!", the quest's sound; split among a
   multi-class thief's classes, as the game's quests are) (see
   [New items](#new-items)). Keys stay,

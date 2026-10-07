@@ -9,7 +9,7 @@ unnoticed. With nothing else on them, the thief takes a few coins (party money),
 the last try on them. A thief can go on trying the same person until caught (both rolls
 failed) or until they take the coins; after that, their pockets are out of reach.
 
-Lifting Kurzak's Short Sword (npcitems.py) or Churrr's Gutterknot (worldgear.py) is worth SWORD_XP
+Lifting Kurzak's Short Sword (npcitems.py), Churrr's Gutterknot or Maris's Mindshard (worldgear.py) is worth SWORD_XP
 to the thief, given as the game gives
 a quest's XP to one person ("Cilla receives 200 experience points!", and the quest's sound): the
 Ledger has DSCLOG call the game's own routine for it, which also sees to a level gained.
@@ -28,15 +28,15 @@ BACKPACK = range(14, 26)  # the backpack's 12 cells, as the inventory screen sho
 TYPE_WEIGHT, TYPE_WORN = 0x04, 0x09  # in an item type's record: its weight; where it's worn
 LIFTABLE_TYPES = (game.SHORT_SWORD_TYPE,)  # lifted whatever their weight: Kurzak's short sword
 # ... and these by their name entry, with what the conversation says was lifted: Churrr's club
-# (worldgear.GUTTERKNOT)
-LIFTABLE_NAMES = {0x14A: "a knotted club"}
+# (worldgear.GUTTERKNOT), Maris's short sword (worldgear.MINDSHARD)
+LIFTABLE_NAMES = {0x14A: "a knotted club", 0x15D: "an obsidian short sword"}
 MAX_WEIGHT = 10  # a bag, a quiver of arrows: pocket-sized (a long sword is 30, a helm 15)
 # where on the body (TYPE_WORN) things can't be lifted from: chest, belt, arms, feet, head,
 # cloak, legs (a pair of boots weighs 1). Hands (a dagger), fingers, neck and ammunition can.
 ON_THE_BODY = (0x01, 0x02, 0x03, 0x04, 0x06, 0x08, 0x0A)
 SCENERY = 0x60  # in its +08h: doors, haystacks, walls...
 OWN_POCKETS = ("Trustee",)  # people whose script has its own pickpocket
-SWORD_XP = 200  # for lifting Kurzak's Short Sword or Churrr's club
+SWORD_XP = 200  # for lifting Kurzak's Short Sword, Churrr's club or Maris's Mindshard
 SWORD_SEEN = "a metal short sword"  # what the conversation says was lifted
 MAX_ITEMS = 200
 
@@ -198,8 +198,8 @@ def attempt(gd: GameData, tried: set, roll: Callable[[], int] = lambda: random.r
                 return Attempt(f"{thief} can't take anything now.", lines)
             text = f"{thief} lifts {name} from {npc} unnoticed."
             special = _seen(data)
-            if special is not None:  # Kurzak's sword, Churrr's club
-                # (what it is, Shadowseeker or Gutterknot, is for the inventory screen to show: the log says)
+            if special is not None:  # Kurzak's sword, Churrr's club, Maris's Mindshard
+                # (what it is, Shadowseeker, Gutterknot or Mindshard, is for the inventory screen to show: the log says)
                 seen = f"{thief} lifts {special} from {npc} unnoticed."
                 reward = f"{thief} receives {SWORD_XP} experience points!"
                 lines += ["  " + text, "  " + reward]

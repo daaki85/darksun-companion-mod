@@ -24,6 +24,9 @@ Released pull requests are summarised in a line or two each; the release notes
   a body to search when one dies (it leaves none for someone who carried
   nothing).
 
+- **Mindshard from Maris's pocket:** a thief can lift it, as Shadowseeker and
+  Gutterknot (whatever its weight), for 200 XP.
+
 **Fixed**
 - **The game's Sling +1** (in a chest) showed a blank icon: its picture was
   missing from the game's data. It has one now, the Sling's with a glow.
