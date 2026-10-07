@@ -50,9 +50,14 @@ class WorldGearTests(unittest.TestCase):
             self.assertEqual(specialize.KINDS[specialize.KIND_OF_TYPE[spec[0]]], kind)
             self.assertEqual(npcitems.TYPES[spec[0] - game.GAME_TYPES][8], 4)
 
-    def test_warren_chief(self):
-        """The Club +1 is the Warren Chief's own, as loot."""
-        self.assertEqual(icons.which(gift("Warren Chief").items[0]), "Club +1")
+    def test_churrr(self):
+        """The Club +1 is Churrr's own, as loot."""
+        self.assertEqual(icons.which(gift("Churrr").items[0]), "Club +1")
+
+    def test_priced_as_bloodwrath(self):
+        """20,800 a plus, as the game's Obsidian Bloodwrath +1."""
+        for spec, plus in (worldgear.CLUB_1, worldgear.PICK_1, worldgear.STAFF_SLING_1, worldgear.SHORT_SWORD_2):
+            self.assertEqual(spec[3], 20800 * plus)
 
     def test_bracers(self):
         """AC 6, 5, 4 and 2, as a plus of 10 - AC, worn on the arms; the Ledger's icon and name."""

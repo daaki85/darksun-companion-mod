@@ -37,12 +37,13 @@ METAL_MACE = (game.METAL_MACE_TYPE, 0x13, 0x10000 - 2506, 200)
 METAL_GREAT_AXE = weaponchoice.OTHERS[KIND("great axe")][0]  # (300; an earth cleric's starting one)
 METAL_PICK = (game.METAL_PICK_TYPE, 0xAD, 0x10000 - 2510, 150)
 METAL_POLEARM = weaponchoice.OTHERS[KIND("polearm")][0]  # (250)
-# (type, name entry, picture, price) and plus, priced as the game's magic weapons of the like: the
-# Cahulaks +1 (11,600), the Axe +1 (18,300), the Sling +1 (2,800), Dark Flame +2 (41,000)
-CLUB_1 = ((18, 0x11, 0x10000 - 2494, 11600), 1)
-PICK_1 = ((112, 0xAD, 0x10000 - 2496, 18300), 1)
-STAFF_SLING_1 = ((0, 0x01, 0x10000 - 2498, 2800), 1)
-SHORT_SWORD_2 = ((game.METAL_SHORT_SWORD_TYPE, 0x144, 0x10000 - 2500, 41000), 2)
+# (type, name entry, picture, price) and plus, priced as the game's Obsidian Bloodwrath +1 (20,800,
+# as its Hornblade +1 and Gythka +1): 20,800 a plus
+PLUS_VALUE = 20800
+CLUB_1 = ((18, 0x11, 0x10000 - 2494, PLUS_VALUE), 1)
+PICK_1 = ((112, 0xAD, 0x10000 - 2496, PLUS_VALUE), 1)
+STAFF_SLING_1 = ((0, 0x01, 0x10000 - 2498, PLUS_VALUE), 1)
+SHORT_SWORD_2 = ((game.METAL_SHORT_SWORD_TYPE, 0x144, 0x10000 - 2500, 2 * PLUS_VALUE), 2)
 
 BRACERS_NAME = 0x149  # the name entry DSCLOG adds ("Bracers/Defense")
 BRACERS_PICTURE = 0x10000 - 2502
@@ -98,7 +99,7 @@ GIFTS: Tuple[Gift, ...] = (
 MAGIC: Tuple[Gift, ...] = (
     Gift(0x0B, "Bowyer", (weapon(*STAFF_SLING_1),)),
     Gift(0x1E, "Undermt Folk", (weapon(*PICK_1),)),  # (the Undermountain's miners: the first met)
-    Gift(0x28, "Warren Chief", (weapon(*CLUB_1),)),  # (on him, with his Helm of Contemplation)
+    Gift(0x28, "Churrr", (weapon(*CLUB_1),)),  # (the warrens' fighter, with his club)
     Gift(None, "Elite Guard", (weapon(*SHORT_SWORD_2),)),
     # bracers of defense on the wizards, worn where nothing else is (Mikquetzl's arm armour stays)
     Gift(0x28, "Mikquetzl", (bracers(6),), slot=ARM),
