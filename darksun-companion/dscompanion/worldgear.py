@@ -37,12 +37,13 @@ METAL_MACE = (game.METAL_MACE_TYPE, 0x13, 0x10000 - 2506, 200)
 METAL_GREAT_AXE = weaponchoice.OTHERS[KIND("great axe")][0]  # (300; an earth cleric's starting one)
 METAL_PICK = (game.METAL_PICK_TYPE, 0xAD, 0x10000 - 2510, 150)
 METAL_POLEARM = weaponchoice.OTHERS[KIND("polearm")][0]  # (250)
-# (type, name entry, picture, price) and plus, priced as the game's Obsidian Bloodwrath +1 (20,800,
-# as its Hornblade +1 and Gythka +1): 20,800 a plus
-PLUS_VALUE = 20800
+# (type, name entry, picture, price) and plus, priced as the game prices its own: a melee weapon as
+# the Obsidian Bloodwrath +1 (20,800, as its Hornblade +1 and Gythka +1), 20,800 a plus; a missile
+# weapon far less, as its Sling +1 (2,800; the Chatkcha +1 1,800, the Sling +2 3,500)
+PLUS_VALUE, SLING_VALUE = 20800, 2800
 CLUB_1 = ((18, 0x11, 0x10000 - 2494, PLUS_VALUE), 1)
 PICK_1 = ((112, 0xAD, 0x10000 - 2496, PLUS_VALUE), 1)
-STAFF_SLING_1 = ((0, 0x01, 0x10000 - 2498, PLUS_VALUE), 1)
+STAFF_SLING_1 = ((0, 0x01, 0x10000 - 2498, SLING_VALUE), 1)
 SHORT_SWORD_2 = ((game.METAL_SHORT_SWORD_TYPE, 0x144, 0x10000 - 2500, 2 * PLUS_VALUE), 2)
 
 BRACERS_NAME = 0x149  # the name entry DSCLOG adds ("Bracers/Defense")

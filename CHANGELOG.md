@@ -21,8 +21,9 @@ requests #1 to #13; its notes are in
 - **Magic weapons of the kinds the game has none of:** a Club +1 on Churrr
   in the warrens, a stone Pick +1 on one of the Undermountain folk, a Staff
   Sling +1 sold by the Bowyer and a metal Short Sword +2 on an Elite Guard,
-  each with an icon of its own and priced as the game's Obsidian Bloodwrath
-  +1: 20,800 a plus.
+  each with an icon of its own and priced as the game prices its own: the
+  melee ones as its Obsidian Bloodwrath +1, 20,800 a plus; the staff sling as
+  its Sling +1, 2,800.
 - **Metal daggers, maces, great axes, picks and polearms** (the game has none
   plain): one each on Tobrian, a Templar of the slavers' camp, Uskuye, Kwerin
   and a Castle Guard; an earth cleric may now take the great axe and the

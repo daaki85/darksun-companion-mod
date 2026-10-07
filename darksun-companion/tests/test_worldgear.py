@@ -54,10 +54,12 @@ class WorldGearTests(unittest.TestCase):
         """The Club +1 is Churrr's own, as loot."""
         self.assertEqual(icons.which(gift("Churrr").items[0]), "Club +1")
 
-    def test_priced_as_bloodwrath(self):
-        """20,800 a plus, as the game's Obsidian Bloodwrath +1."""
-        for spec, plus in (worldgear.CLUB_1, worldgear.PICK_1, worldgear.STAFF_SLING_1, worldgear.SHORT_SWORD_2):
+    def test_priced_as_the_game(self):
+        """Melee weapons 20,800 a plus, as the game's Obsidian Bloodwrath +1; the staff sling as
+        its Sling +1."""
+        for spec, plus in (worldgear.CLUB_1, worldgear.PICK_1, worldgear.SHORT_SWORD_2):
             self.assertEqual(spec[3], 20800 * plus)
+        self.assertEqual(worldgear.STAFF_SLING_1[0][3], 2800)
 
     def test_bracers(self):
         """AC 6, 5, 4 and 2, as a plus of 10 - AC, worn on the arms; the Ledger's icon and name."""
