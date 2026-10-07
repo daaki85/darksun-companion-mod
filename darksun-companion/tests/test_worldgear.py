@@ -76,6 +76,22 @@ class WorldGearTests(unittest.TestCase):
         self.assertEqual(acs, {"Mikquetzl": 6, "Wyrmias": 5, "Balkazar": 4, "Dagolar": 2})
         self.assertEqual(names.NAMES[worldgear.BRACERS_NAME], b"Bracers/Defense")
 
+    def test_head_items(self):
+        """Arrowbane and the Sunking Crown: worn on the head, not armour, each with its spell (one
+        past the game's number, its icon shown too), Kel's and Keldar's (worn)."""
+        for item, type_, spell, name in ((worldgear.ARROWBANE_ITEM, game.CIRCLET_TYPE, 36, "Arrowbane"),
+                                         (worldgear.CROWN_ITEM, game.CROWN_TYPE, 121, "Sunking Crown")):
+            self.assertEqual(struct.unpack_from("<H", item, game.ITEM_TYPE)[0], type_)
+            self.assertEqual(item[worldgear.ITEM_SPELL], spell + 1)
+            self.assertEqual(struct.unpack_from("<H", item, worldgear.ITEM_SPELL_SHOWN)[0], spell + 1)
+            self.assertEqual(icons.which(item), name)
+            typ = npcitems.TYPES[type_ - game.GAME_TYPES]
+            self.assertEqual(typ[9], 6)  # (the head)
+            self.assertFalse(restrict.is_armour(typ))
+            self.assertEqual(names.NAMES[struct.unpack_from("<H", item, game.ITEM_NAME)[0]], name.encode())
+        self.assertEqual(gift("Kel").items, (worldgear.ARROWBANE_ITEM,))
+        self.assertEqual(gift("Keldar").slot, game.EQUIP_SLOTS.index("head"))
+
     def test_bracers_not_armour(self):
         """The bracers' type (as DSCLOG has it) isn't armour to the class rules; arm armour is."""
         bracers = npcitems.TYPES[game.BRACERS_TYPE - game.GAME_TYPES]

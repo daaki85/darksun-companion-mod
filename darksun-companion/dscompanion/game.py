@@ -92,6 +92,7 @@ BRACERS_TYPE = GAME_TYPES + 8  # bracers of defense: worn on the arms, their plu
 # metal versions of the game's plain weapons that have none (worldgear.py)
 METAL_DAGGER_TYPE, METAL_MACE_TYPE, METAL_GREAT_AXE_TYPE = GAME_TYPES + 9, GAME_TYPES + 10, GAME_TYPES + 11
 METAL_PICK_TYPE, METAL_POLEARM_TYPE = GAME_TYPES + 12, GAME_TYPES + 13
+CIRCLET_TYPE, CROWN_TYPE = GAME_TYPES + 14, GAME_TYPES + 15  # worn on the head, not armour (worldgear.py)
 GYTHKA_TYPE = 0x2C  # the game's gythka ("2 handed Bone Gythka")
 # The companion's rule changes (DSCLOG's RULES): helms count AC 1, boots add a move in a fight;
 # AD&D's two-weapon penalties; spells saved against with the spell save; no doubled d20

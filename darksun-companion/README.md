@@ -1706,8 +1706,9 @@ so the Ledger adds AD&D's bracers of defense ([where](#new-items)). They are
 worn on the arms, in the arm armour's place, and give the AC their name says:
 AC 6 is 4 better than no armour, AC 2 is 8 better. As in AD&D they give nothing
 while armour is worn: on the arms, legs or chest, or a helm (bone, leather or
-metal, magical or not). A shield and rings and cloaks of protection go with
-them, and they aren't armour to anything else (a preserver casts in them, a
+metal, magical or not). A shield, rings and cloaks of protection, and the
+Ledger's [circlet and crown](#new-items) (Arrowbane, the Sunking Crown: worn on
+the head, but not armour) go with them, and they aren't armour to anything else (a preserver casts in them, a
 thief wears them, and a ring or cloak of protection still counts). In the game
 they are **BRACERS/DEFENSE** with their plus: Bracers/Defense +4 is AC 6.
 Each is priced 5,000 for each point (AC 6: 20,000, as the game's Shimmer Armor +3
@@ -1835,6 +1836,8 @@ like its own. The log doesn't say: they're there to be found.
 | **Deepbiter** | carried by one of the **Undermountain folk** (the miners) | a stone pick +1 (the game has no magic pick) |
 | **Windlash** | sold by the **Bowyer** | a staff sling +1 (the game has no magic staff sling) |
 | **Greenbright** | carried by **Arant**, who holds the captured gladiators | a metal short sword +2 |
+| **Arrowbane** | sold by **Kel** | a silver circlet: Protection from Normal Missiles on its wearer while worn (normal arrows, sling stones and chatkchas can't hurt them); worn on the head, not armour |
+| **Sunking Crown** | worn by **Keldar**, the templar of Dagolar's tunnels | a gold crown: Protection from Evil, 10' Radius on its wearer while worn; worn on the head, not armour |
 | **Bracers of Defense** | **Mikquetzl** (AC 6, in his pack), **Wyrmias** (AC 5), **Balkazar** (AC 4), **Dagolar** (AC 2, the one carrying Dag's Dagger) | AC for those wearing no armour: [bracers of defense](#bracers-of-defense) |
 
 **Prices** follow the game's own:
@@ -1845,12 +1848,14 @@ like its own. The log doesn't say: they're there to be found.
   low);
 - the plain metal weapons 50 to 300 (its metal long sword is 500);
 - bracers of defense 5,000 for each point of AC (20,000 to 40,000);
+- Arrowbane 30,000 and the Sunking Crown 40,000 (its Helm of Might is 30,000,
+  the Helm of Contemplation 35,000);
 - the rings and cloak of protection 15,000 each, Leather Chest Armor +1 6,000.
 
 **On the Options tab**, under New content:
 - **Bone, obsidian and metal short swords...** places the plain weapons;
-- **Bracers of defense on four wizards...** places the bracers and the
-  magic weapons;
+- **Bracers of defense on four wizards...** places the bracers, the
+  magic weapons, Arrowbane and the Sunking Crown;
 - the arena's ring (**A Ring of Protection +1 on the arena's Tied-up
   Prisoner**) and Kreenfang and Shadowseeker (**...are +1 magic weapons**:
   without it Kurzak's is a plain Short Sword, 1d6) each have their own box;
@@ -1868,6 +1873,8 @@ and neither ring nor cloak gives AC over magical armour.
 ![Backpack cells in the game: Gutterknot, Deepbiter, Windlash, Greenbright, a plain metal Short Sword and Bracers of Defense](docs/magic-items.png)
 
 ![Backpack cells in the game: the metal Dagger, Mace, Great Axe, Pick and Polearm](docs/metal-weapons.png)
+
+![The inventory screen in the game: Arrowbane, a silver circlet, in a backpack cell; the Sunking Crown, a gold crown, in the head's slot](docs/head-items.png)
 
 **Icons and names.** Each has an icon of its own on the inventory screen,
 made from the plain item's the way the game makes its magic items' (a few

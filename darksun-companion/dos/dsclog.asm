@@ -5722,7 +5722,7 @@ n_fl    dw 0
 ; companion's own items that no type of the game's fits (a metal short sword, a cloak of
 ; protection). Nothing in the game limits the numbers to its own.
 TYPE_SIZE   equ 20
-TYPES_EXTRA equ 14
+TYPES_EXTRA equ 16
 TYPES_PTR   equ 0x1669          ; DS: far pointer to the item types
 BRACERS     equ 8               ; (the bracers of defense: the ninth of them)
 
@@ -5837,6 +5837,12 @@ extra_types:
         ; the Polearm's (19)
         db 0x01, 0x00, 0x30, 0x00, 0x96, 0x00, 0xFA, 0x00, 0x04, 0x05, 0x01, 0x01
         db 0x0A, 0x01, 0x00, 0x40, 0x72, 0x16, 0x00, 0x06
+        ; a circlet and a crown (dscompanion/worldgear.py): worn on the head (+9: 6), as the
+        ; Necklace's (36) of no material, not armour (+0Fh: no 80h), for every class
+        db 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0xFA, 0x00, 0x40, 0x06, 0x00, 0x00
+        db 0x00, 0x00, 0x00, 0x00, 0xFF, 0x1F, 0x00, 0x00
+        db 0x00, 0x00, 0x00, 0x00, 0x05, 0x00, 0xFA, 0x00, 0x40, 0x06, 0x00, 0x00
+        db 0x00, 0x00, 0x00, 0x00, 0xFF, 0x1F, 0x00, 0x00
 ; the names, numbered from NAMES_OWN (322): the companion's items' (the same as the companion's
 ; NAMES in dscompanion/names.py), the rest blank until it writes more
 extra_names:
@@ -5864,7 +5870,11 @@ extra_names:
         times NAME_SIZE - 8 db 0
         db "Greenbright"                ; a metal short sword +2)
         times NAME_SIZE - 11 db 0
-        times (NAMES_EXTRA - 12) * NAME_SIZE db 0
+        db "Arrowbane"                  ; (the circlet and the crown of dscompanion/worldgear.py)
+        times NAME_SIZE - 9 db 0
+        db "Sunking Crown"
+        times NAME_SIZE - 13 db 0
+        times (NAMES_EXTRA - 14) * NAME_SIZE db 0
 
 ; STEALTH (RULE_STEALTH): a thief who starts a turn with no enemy next to them may hide in
 ; shadows and move silently up to someone; the companion rolls both and, when both succeed,

@@ -8,6 +8,11 @@
   mace, a great axe, a pick, a polearm): one each, on people who fight with the like.
 - Magic weapons of the kinds the game has none of (a club, a pick, a staff sling; a short sword
   but Shadowseeker): one each, priced as the game's magic weapons of the like.
+- A circlet and a crown, worn on the head and not armour (no AC; bracers of defense and a
+  preserver's spells go with them), each with a spell the game keeps on its wearer while it's
+  worn, as it does its own magic items': Arrowbane, Protection from Normal Missiles, sold by
+  Kel; the Sunking Crown, Protection from Evil 10' Radius (the party round its wearer warded),
+  worn by Keldar, the templar of Dagolar's tunnels.
 - Bracers of defense (DSCLOG's BRACERS type, worn on the arms: their plus counts for AC while neither
   armour nor a helm is worn), now that a preserver can't cast in armour: on four
   of the game's wizards, better the later they're met.
@@ -50,6 +55,11 @@ STAFF_SLING_1 = ((0, WINDLASH, 0x10000 - 2498, SLING_VALUE), 1)  # a staff sling
 SHORT_SWORD_2 = ((game.METAL_SHORT_SWORD_TYPE, GREENBRIGHT, 0x10000 - 2500, 2 * PLUS_VALUE), 2)  # a metal short sword +2
 
 BRACERS_NAME = 0x149  # the name entry DSCLOG adds ("Bracers/Defense")
+ARROWBANE, SUNKING_CROWN = 0x14E, 0x14F  # and the circlet's and crown's
+NAMES[ARROWBANE], NAMES[SUNKING_CROWN] = b"Arrowbane", b"Sunking Crown"
+ITEM_SPELL, ITEM_SPELL_SHOWN = 0x0F, 0x02  # a magic item's spell, one past its number (as arms.py's)
+PROT_MISSILES, PROT_EVIL_10 = 36, 121  # the game's Prot'n from Normal Missiles, Prot'n from Evil 10' Rad.
+HEAD = game.EQUIP_SLOTS.index("head")
 BRACERS_PICTURE = 0x10000 - 2502
 ARM = game.EQUIP_SLOTS.index("arm")
 
@@ -72,6 +82,23 @@ def bracers(ac: int) -> bytes:
     struct.pack_into("<H", rec, game.ITEM_NAME, BRACERS_NAME)
     rec[game.ITEM_PLUS] = 10 - ac
     return bytes(rec)
+
+
+def head_item(type_: int, name: int, picture: int, value: int, spell: int) -> bytes:
+    """A circlet's or crown's item record: its spell put on its wearer while worn."""
+    rec = bytearray(TEMPLATE)
+    struct.pack_into("<H", rec, 0, picture)
+    struct.pack_into("<H", rec, ITEM_SPELL_SHOWN, spell + 1)  # (as the game keeps it)
+    struct.pack_into("<H", rec, weaponchoice.ITEM_VALUE, value)
+    struct.pack_into("<H", rec, game.ITEM_TYPE, type_)
+    struct.pack_into("<H", rec, game.ITEM_NAME, name)
+    rec[ITEM_SPELL] = spell + 1
+    return bytes(rec)
+
+
+# priced as the game's magic helms: the Helm of Might 30,000, the Helm of Contemplation 35,000
+ARROWBANE_ITEM = head_item(game.CIRCLET_TYPE, ARROWBANE, 0x10000 - 2514, 30000, PROT_MISSILES)
+CROWN_ITEM = head_item(game.CROWN_TYPE, SUNKING_CROWN, 0x10000 - 2516, 40000, PROT_EVIL_10)
 
 
 class Gift(NamedTuple):
@@ -110,6 +137,9 @@ MAGIC: Tuple[Gift, ...] = (
     Gift(0x03, "Wyrmias", (bracers(5),), slot=ARM),
     Gift(0x0D, "Balkazar", (bracers(4),), slot=ARM),
     Gift(None, "Dagolar", (bracers(2),), slot=ARM, carrying=0x75),  # (the one with Dag's Dagger)
+    # the circlet sold by Kel (the game's magic items' merchant), the crown worn by Keldar
+    Gift(0x1A, "Kel", (ARROWBANE_ITEM,)),
+    Gift(0x27, "Keldar", (CROWN_ITEM,), slot=HEAD),
 )
 def _lists(gd: GameData, index: int) -> List[int]:
     return [struct.unpack_from("<h", gd.creature(index), o)[0] for o in game.CREATURE_ITEM_LISTS]

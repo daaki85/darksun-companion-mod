@@ -376,13 +376,17 @@ def draw_back_gear(rows: Rows, body: Rows, parts: sp.Parts, pad: int, bow: bool,
 
 # Helms, worn as circlets and headdresses (the hair and face showing): a band round the head at
 # the brow, in the helm's material's faded colours, and its ornament. Item type: style.
-FEATHER, STONE, SPIKES = "feather", "stone", "spikes"
-HELMS: Dict[int, str] = {5: FEATHER, 109: FEATHER, 89: STONE, game.BONE_HELM_TYPE: SPIKES}
+FEATHER, STONE, SPIKES, CIRCLET, CROWN = "feather", "stone", "spikes", "circlet", "crown"
+HELMS: Dict[int, str] = {5: FEATHER, 109: FEATHER, 89: STONE, game.BONE_HELM_TYPE: SPIKES,
+                         game.CIRCLET_TYPE: CIRCLET, game.CROWN_TYPE: CROWN}  # (the last two worldgear.py's)
 HELM_COLOURS = {  # dark to light, close in tone (the hair's own shading showing through them)
     FEATHER: (204, 207, 205, 194),  # faded leather
     STONE: (210, 211, 212, 24),  # dull iron
     SPIKES: (207, 194, 206, 213),  # weathered bone
+    CIRCLET: (213, 214, 215, 216),  # silver (Arrowbane)
+    CROWN: (64, 65, 65, 45),  # gold (the Sunking Crown)
 }
+CIRCLET_STONE = 243  # Arrowbane's stone: the fire colours' brightest
 FEATHER_GREYS, STONE_RED = (210, 212, 211), 195
 
 _LIGHT: Dict[int, float] = {}
@@ -439,7 +443,7 @@ def draw_helm(rows: Rows, parts: sp.Parts, item_type: int, pad: int, model: int 
     xs = [x for x, _ in cells]
     first, last = min(xs), max(xs)
     centre = (first + last) // 2 if parts.facing != sp.SIDE else last - 1
-    if style == SPIKES:
+    if style in (SPIKES, CROWN):
         for x in ([first + 1, centre, last - 1] if parts.facing != sp.SIDE else [centre - 2, centre]):
             tall = 2 if x == centre else 1
             for k in range(1, tall + 1):
@@ -447,8 +451,8 @@ def draw_helm(rows: Rows, parts: sp.Parts, item_type: int, pad: int, model: int 
                     rows[y - k][x] = shades[1 if k == tall else 2]
                 else:
                     blend(x, y - k, 0.15)
-    elif style == STONE and parts.facing in (sp.FRONT, sp.SIDE):
-        rows[y][centre] = STONE_RED
+    elif style in (STONE, CIRCLET) and parts.facing in (sp.FRONT, sp.SIDE):
+        rows[y][centre] = STONE_RED if style == STONE else CIRCLET_STONE
     elif style == FEATHER:
         x = centre - (2 if parts.facing == sp.SIDE else 0)
         for k, yy in enumerate(range(y - 1, y - 4, -1)):

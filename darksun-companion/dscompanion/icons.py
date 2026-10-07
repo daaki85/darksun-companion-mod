@@ -147,6 +147,45 @@ def bracers_icon(_rows: Rows = None) -> Rows:
     return out
 
 
+SILVER = (210, 212, 213, 214, 215, 216, 217)  # dark to light (the metal long sword's greys)
+
+
+def circlet_icon(_rows: Rows = None) -> Rows:
+    """Arrowbane: a thin silver band seen from a little above, a stone at its front in the fire
+    colours."""
+    out: Rows = [[None] * 18 for _ in range(12)]
+    cx, cy, rx, ry = 8.5, 6.0, 7.5, 3.6
+    import math
+    for step in range(160):
+        a = 2 * math.pi * step / 160
+        x, y = int(round(cx + rx * math.cos(a))), int(round(cy + ry * math.sin(a)))
+        front = math.sin(a) > 0  # (the near half: lit)
+        shade = SILVER[min(len(SILVER) - 1, (4 if front else 1) + int(2 * math.cos(a - 0.8) + 0.5))]
+        if 0 <= y < 12 and 0 <= x < 18 and (out[y][x] is None or front):
+            out[y][x] = shade
+    gem = int(round(cy + ry))
+    out[gem][8], out[gem][9], out[gem - 1][8], out[gem - 1][9] = FIRE[2], FIRE[4], FIRE[6], FIRE[3]
+    return out
+
+
+def crown_icon(_rows: Rows = None) -> Rows:
+    """The Sunking Crown: a gold band with five points, a jewel in the fire colours at its front."""
+    out: Rows = [[None] * 18 for _ in range(14)]
+    band_top, band_bottom = 8, 12
+    for x in range(1, 17):
+        for y in range(band_top, band_bottom + 1):
+            out[y][x] = GOLD[0] if x in (1, 16) or y == band_bottom else GOLD[1] if y == band_top else GOLD[2]
+    for peak in (2, 5, 8, 12, 15):  # the points, the middle one the tallest
+        tall = 6 if peak == 8 else 4
+        for k in range(1, tall + 1):
+            out[band_top - k][peak] = GOLD[0] if k == tall else GOLD[2]
+            if k < tall - 1:
+                out[band_top - k][peak + 1] = GOLD[1]
+        out[band_top - tall - 1][peak] = FIRE[5]
+    out[10][8], out[10][9], out[11][8], out[11][9] = FIRE[2], FIRE[4], FIRE[6], FIRE[0]
+    return out
+
+
 # (name, the plain item's picture, the new object's number, its icon's number, the icon made from
 # the plain one's)
 ICONS: Tuple[Tuple[str, int, int, int, Callable[[Rows], Rows]], ...] = (
@@ -182,6 +221,9 @@ ICONS: Tuple[Tuple[str, int, int, int, Callable[[Rows], Rows]], ...] = (
     ("Metal Great Axe", 0xFC06, 2508, 2509, lambda r: recolour(r, {1: 58, 2: 59, **TEAL_TO_METAL})),
     ("Metal Pick", 0xFB46, 2510, 2511, lambda r: recolour(r, STONE_TO_METAL)),
     ("Metal Polearm", 0xFB5E, 2512, 2513, lambda r: recolour(r, LIGHT_TO_METAL)),
+    # the circlet and the crown (worldgear.py), drawn; on the map, the Ring's
+    ("Arrowbane", 0xFA1C, 2514, 2515, circlet_icon),
+    ("Sunking Crown", 0xFA1C, 2516, 2517, crown_icon),
 )
 PICTURES: Dict[str, int] = {name: 0x10000 - number for name, _, number, _, _ in ICONS}  # an item's +0
 
@@ -437,6 +479,10 @@ def which(rec: bytes) -> Optional[str]:
         return "Greenbright" if plus == 2 else "Short Sword" if plus == 0 else None
     if kind == game.BRACERS_TYPE:
         return "Bracers of Defense"
+    if kind == game.CIRCLET_TYPE:
+        return "Arrowbane"
+    if kind == game.CROWN_TYPE:
+        return "Sunking Crown"
     if kind in METAL_TYPES and plus == 0:
         return METAL_TYPES[kind]
     if plus == 1 and kind in MAGIC_KINDS:

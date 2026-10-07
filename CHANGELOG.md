@@ -17,6 +17,12 @@ requests #1 to #13; its notes are in
   gladiators (the Elite Guards are only in the final fight). A thief can
   lift Gutterknot from Churrr's pocket, for 200 XP, as Shadowseeker from
   Kurzak's.
+- **A circlet and a crown, worn on the head and not armour** (with the magic
+  weapons' switch): **Arrowbane**, a silver circlet sold by Kel, keeps
+  Protection from Normal Missiles on its wearer; the **Sunking Crown**, worn
+  by Keldar, Protection from Evil, 10' Radius. Neither gives AC, stops bracers
+  of defense or a preserver's spells. Each has an icon of its own and is
+  drawn on the figures (a silver band with a stone; a gold band with points).
 - **Bracers of defense give nothing with a helm on**, as with any armour; a
   shield and rings and cloaks of protection still go with them.
 - **The README's new items** are one item to a row, with the prices and the
