@@ -1451,7 +1451,7 @@ bonuses to hit and damage count for missiles too.
 **Attacks a round,** by skill and level (a warrior's level: the highest of its
 fighter, gladiator and ranger levels; characters stop at 10):
 
-| Skill with the weapon | Who | Melee, levels 1–6 | 7–10 | Bow, 1–6 | 7–10 | Sling, staff sling or chatkcha, 1–6 | 7–10 |
+| Skill with the weapon | Who | Melee, levels 1–6 | Melee, levels 7–10 | Bow, levels 1–6 | Bow, levels 7–10 | Sling, staff sling or chatkcha, levels 1–6 | Sling, staff sling or chatkcha, levels 7–10 |
 |---|---|---|---|---|---|---|---|
 | none | non-warriors: clerics, druids, preservers, psionicists, thieves | 1 | 1 | 2 | 2 | 1 | 1 |
 | a kind not chosen | any warrior | 1 | 3/2 | 2 | 2 | 1 | 1 |
