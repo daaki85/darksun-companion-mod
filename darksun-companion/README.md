@@ -1431,14 +1431,43 @@ and on the last **VIEW PSIONICS** back to the panel. It works as the game's
 disciplines do: the long sword is marked to start with (a gladiator's two:
 the long sword and the club), the others greyed; click a marked kind to take
 it back, then another. A multiclass warrior can choose only the kinds its other
-class lets it use (a fighter/psionicist the psionicist's seven, a
-fighter/cleric its sphere's): the rest stay greyed.
+class lets it use: those of which the game (or the Ledger) has a weapon the
+character may use, in any material. The rest stay greyed:
+
+| A fighter or ranger… | Kinds it can choose | Starts with |
+|---|---|---|
+| …of one class (a gladiator too), or with thief, preserver or druid | all sixteen | the game's bone long sword |
+| …with psionicist (small weapons) | club, dagger, short sword, mace, chatkcha, bow, sling | a wooden club |
+| …with air cleric (missile weapons, and the dagger that can be thrown) | dagger, chatkcha, bow, sling, staff sling | an obsidian dagger |
+| …with earth cleric (stone, obsidian, metal, wood) | long sword, club, dagger, short sword, mace, axe, pick, quarterstaff, chatkcha, bow | an obsidian long sword |
+| …with fire cleric (obsidian) | long sword, dagger, short sword, mace, axe, chatkcha | an obsidian long sword |
+| …with water cleric (bone, wood) | long sword, club, short sword, mace, axe, quarterstaff, polearm, gythka, cahulaks, bow | the game's bone long sword |
+
+(The starting weapon is for the kind marked first; the next table has the
+rest.)
 
 ![The creation screen: a gladiator's WEAPON SPEC page, the long sword and the club marked, the others greyed](docs/creation-weapons.png)
 
-A new character starts the game with a plain weapon of its (first) kind in
-place of the bone long sword the game gives warriors: bone or obsidian where
-the game has one (the axe is metal), a bow with 20 arrows; the log says so.
+A new character starts the game with a plain weapon of its first kind in
+place of the bone long sword the game gives warriors, in a material it may
+use, and the log says so (`Grog starts with a plain obsidian long sword for the
+weapon specialization chosen, in place of the bone long sword`):
+
+| Kind | Starting weapon | For a cleric's sphere that can't use it |
+|---|---|---|
+| long sword | the game's bone long sword | obsidian (fire, earth) |
+| club, quarterstaff, bow | wooden (a bow with 20 arrows) | |
+| dagger, chatkcha | obsidian | |
+| short sword | bone, the Ledger's (the game's only short sword is Kurzak's) | obsidian (fire, earth) |
+| mace, polearm, gythka, cahulaks | bone | a mace: an obsidian long sword (the game's obsidian mace is Blackmace alone) |
+| axe | bone, the Ledger's (the game's only axe is metal) | obsidian (fire, earth) |
+| great axe | the game's, with a picture of the Ledger's (the game's only one is +3: its green gem) | |
+| pick | stone | |
+| sling, staff sling | leather | |
+
+A two-handed weapon puts the game's starting shield in the backpack (not a
+half-giant's, with [its rule](#half-giants-two-handed-weapons)). The weapon is
+made once: a long sword handed to the character later stays one.
 
 **At a level gained.** A warrior with fewer kinds than it is due (a gladiator
 reaching 6th or 9th, or any warrior from a game begun before the rule) picks
@@ -1782,6 +1811,7 @@ like its own. The log doesn't say: they're there to be found.
 | **Bone Scale Arm Armor**, **Leg Armor** and **Bone Helm** | put with the Bone Scale Chest Armor the first time it's in a region with the party (the game has the set but places only the chest piece) | the set; the helm AC 1 with [Helms give AC 1](#helms-and-boots), worn by those who can wear the armour (not thieves) |
 | **Thieves' Tools** | every thief's backpack | [picking pockets](#picking-pockets) |
 | **Six scrolls** | [Kalzith's](#kalzith) shop | spells the game has no scroll of |
+| **Bone and obsidian Short Swords and Axes** | a new warrior's starting weapon, with [weapon specialization](#weapon-specialization) (the obsidian ones a fire or earth cleric's): the game has no short sword but Kurzak's, and only a metal axe | a short sword 1d6, an axe 1d8, of their material |
 
 Prices, as magic items: the armour 3,000, the cloak and Pehtucl's ring 5,000
 each, Kreenfang 18,000, Shadowseeker 22,000. A thief can lift Pehtucl's ring and
@@ -1799,8 +1829,11 @@ and neither ring nor cloak gives AC over magical armour.
 made from the plain item's the way the game makes its magic items' (a few
 pixels in the colours it cycles like fire: Kreenfang's blades, the arena's
 ring, the armour's leather; violet for Pehtucl's ring and the cloak, night
-steel for Shadowseeker's blade, bone shades for the helm); dropped on the map
-they look like the plain item. The game's names are at most 15 letters (it
+steel for Shadowseeker's blade, bone shades for the helm; the short swords the
+bone and obsidian long swords' with the shorter blade, the axes the Axe's head
+in bone or obsidian shades, and a plain great axe the game's without its green
+gem, as the game's only one is its Great Axe +3); dropped on the map they look
+like the plain item. The game's names are at most 15 letters (it
 shortens its own "Helm/Contempltn"), so the rings are **RING/PROTECTION** and
 the cloak **Cloak/Protectn**; the Ledger's screens and the log give them in
 full.

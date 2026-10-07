@@ -15,8 +15,13 @@ requests #1 to #13; its notes are in
   die a size larger and an attack more), rangers take expertise; a warrior
   with a weapon of another kind attacks at AD&D's plain rate. Sixteen kinds,
   chosen on the creation screen's new **WEAPON SPEC** pages (greyed as the
-  game's disciplines are, a multiclass warrior's limited to what its other
-  class allows), a new warrior starting with a plain weapon of its kind; a
+  game's disciplines are, a multiclass warrior's limited to the kinds it may
+  use some weapon of, in any material: a fire cleric's obsidian long sword),
+  a new warrior starting with a plain weapon of its kind in a material it may
+  use (new bone short swords and axes, obsidian ones for fire and earth
+  clerics, as the game has only Kurzak's short sword and a metal axe; a plain
+  great axe pictured without the Great Axe +3's gem; a two-handed weapon puts
+  the starting shield in the backpack); a
   gladiator's 3rd and 4th (and any warrior's from before the rule) picked at
   a level gained, in the game's own pop-up for a psionicist's new power; the
   kinds listed on the **Effects** screen and counted on the DAM lines and in
