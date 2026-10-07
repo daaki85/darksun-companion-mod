@@ -1484,7 +1484,7 @@ and [Saving throws](#saving-throws).
 
 | Rule (its box on the Options tab) | What it changes |
 |---|---|
-| [Weapon specialization](#weapon-specialization) | fighters and gladiators specialize in kinds of weapon, fighters on to mastery and grand mastery, rangers take expertise (and every ranger the bow); specialists and rangers shoot missiles faster; other weapons at AD&D's plain attack rate |
+| [Weapon specialization](#weapon-specialization) | fighters and gladiators specialize in kinds of weapon, fighters on to mastery and grand mastery, rangers take expertise (and every ranger the bow); specialists and rangers shoot missiles faster; other weapons at a warrior's plain rate (missiles faster from 7th level) |
 | [Class restrictions](#class-restrictions) | each class's limits on armour, shields and weapons hold, the strictest winning; a multiclass preserver casts no spells in armour |
 | [Multiclass hit points](#multiclass-hit-points) | each level's die and CON's bonus shared between a character's classes |
 | [Hit dice: the better of two](#hit-dice-the-better-of-two) | each hit die rolled twice, the better kept, for every character |
@@ -1524,7 +1524,11 @@ everyone (a bow 2 a round, a sling, staff sling or chatkcha 1). A fighter or
 gladiator who has chosen the kind shoots faster, and so does a ranger with its
 chosen weapon spec and with every bow: AD&D's specialist's rate for the sling, a step
 above AD&D's for the bow, staff sling and chatkcha. Mastery's and grand
-mastery's bonuses to hit and damage count for missiles too.
+mastery's bonuses to hit and damage count for missiles too. A warrior's missile
+weapon outside its chosen weapon specs shoots faster from 7th level too, as its
+melee does (where AD&D keeps the weapon's own rate): the specialist's rate a
+band lower, so a specialist stays a step ahead at every level, in melee and
+with missiles alike.
 
 **Attacks a round,** by skill and level (a warrior's level: the highest of its
 fighter, gladiator and ranger levels; characters stop at 10):
@@ -1532,7 +1536,7 @@ fighter, gladiator and ranger levels; characters stop at 10):
 | Skill with the weapon | Who | Melee, levels 1–6 | Melee, levels 7–10 | Bow, levels 1–6 | Bow, levels 7–10 | Sling, staff sling or chatkcha, levels 1–6 | Sling, staff sling or chatkcha, levels 7–10 |
 |---|---|---|---|---|---|---|---|
 | none | non-warriors: clerics, druids, preservers, psionicists, thieves | 1 | 1 | 2 | 2 | 1 | 1 |
-| not a chosen weapon spec | any warrior | 1 | 3/2 | 2 | 2 | 1 | 1 |
+| not a chosen weapon spec | any warrior | 1 | 3/2 | 2 | 3 | 1 | 3/2 |
 | expertise | a ranger: every bow, and its chosen weapon spec | 3/2 | 2 | 3 | 4 | 3/2 | 2 |
 | specialized | a fighter's or gladiator's chosen weapon spec | 3/2 | 2 | 3 | 4 | 3/2 | 2 |
 | mastery | a fighter's chosen weapon spec, from 5th level | 3/2 | 2 | 3 | 4 | 3/2 | 2 |

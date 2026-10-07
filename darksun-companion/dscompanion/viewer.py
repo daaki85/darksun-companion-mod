@@ -333,7 +333,7 @@ class Viewer:
                 ("weapon_specialization", "Weapon specialization: fighters and gladiators specialize (+1 to hit, +2 "
                                           "damage), fighters on to mastery at 5th level and grand mastery at 9th; "
                                           "rangers have expertise, every ranger with the bow; specialists and "
-                                          "rangers shoot missiles faster; other weapons at AD&D's plain rate "
+                                          "rangers shoot missiles faster; other weapons at a warrior's plain rate "
                                           "(chosen on the creation panel's WEAPON SPEC pages)"),
                 ("class_restrictions", "Class restrictions on armour, shields and weapons, the strictest class "
                                        "winning (psionicists, multiclass thieves, preservers, druids, clerics' "

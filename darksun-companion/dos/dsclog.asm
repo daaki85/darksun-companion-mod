@@ -2598,11 +2598,13 @@ probe_attacks:
 ; ES:BX, by the warrior's level (the highest fighter, gladiator or ranger level of the classes it
 ; has now: 1-6, 7-12, 13 on): AD&D's
 ; for the sling, 3/2, 2, 5/2 a round; the bow, staff sling and chatkcha a step above AD&D's, the bow
-; 3, 4, 5, the staff sling and chatkcha 3/2, 2, 5/2; a grand master one more.
+; 3, 4, 5, the staff sling and chatkcha 3/2, 2, 5/2; a grand master one more. A warrior's weapon of
+; a kind not chosen (SPEC_PLAIN), from 7th level: the specialist's rate a band lower, as in melee
+; (a bow 3 at 7-12, a sling 3/2).
 MISSILE_KIND equ 13             ; (the chatkcha's kind + 1; then the bow, the sling, the staff sling)
 missile_halves db 3, 4, 5, 6, 8, 10, 3, 4, 5, 3, 4, 5
 missile_rate:
-        cmp dl, SPEC_EXPERT
+        cmp dl, SPEC_PLAIN
         jb .ret
         cmp si, KIND_TYPES
         jae .ret
@@ -2648,7 +2650,13 @@ missile_rate:
         cmp dl, 13
         jb .tier
         inc cx
-.tier:  mov si, cx
+.tier:  mov si, sp
+        cmp byte [ss:si + 2], SPEC_PLAIN  ; (the skill: DX, pushed before SI)
+        jne .rate
+        cmp dl, 7
+        jb .out                 ; (a kind not chosen before 7th level: the weapon's own rate)
+        dec cx                  ; (from 7th: a specialist's a band lower)
+.rate:  mov si, cx
         movzx cx, byte [cs:si + missile_halves]
         cmp cx, ax
         jbe .grand

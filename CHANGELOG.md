@@ -12,6 +12,10 @@ Released pull requests are summarised in a line or two each; the release notes
   AD&D's thief skills, hiding to backstab (and the cloak, boots and belt) and
   picking pockets (and the P key), as the guide's Thieves section has them;
   the weapon specialization box is shorter.
+- **Warriors shoot faster from 7th level** with a missile weapon they
+  haven't specialized in, as their melee goes from 1 to 3/2: a bow 3 a round
+  (was 2), a sling, staff sling or chatkcha 3/2 (was 1). Specialists keep their
+  rates, a step ahead at every level.
 - **The arena's ring is one of the new items:** New items, magical and mundane
   switches it too; its own box is gone.
 - **The red rings are under Controls,** with Tab and Enter, as the guide has
