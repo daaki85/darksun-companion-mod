@@ -5591,9 +5591,9 @@ dex_table:
 
 ; PROBE_DOS_OPEN: the DOS services (INT 21h), hooked. Opening a file (AH=3Dh) whose name ends in
 ; one of COPIES' (SEGOBJEX.GFF, the game's objects and their pictures; RESOURCE.GFF, its screens'
-; pictures and texts; GPLDATA.GFF, its scripts; RGN29.GFF, the slave pens; RGN1C.GFF and
-; RGN1E.GFF, the Upper Castle and the Undermountain, a person there with an object of their own
-; for a new item) opens the companion's
+; pictures and texts; GPLDATA.GFF, its scripts; RGN29.GFF, the slave pens; RGN1C.GFF, RGN1E.GFF
+; and RGN08.GFF, the Upper Castle, the Undermountain and the Gemfields, a person there with an
+; object of their own for a new item) opens the companion's
 ; copy instead (D:\..., which the launcher writes with
 ; the companion's icons added; the game folder is never changed), and notes that it has; with no
 ; copy there, the game's own. Everything else goes on to DOS.
@@ -5717,6 +5717,7 @@ copies:
         COPY 'RGN29.GFF', 'D:\RGN29.GFF', region_on
         COPY 'RGN1C.GFF', 'D:\RGN1C.GFF', others_on   ; (a Castle Guard of its own: worldgear.py)
         COPY 'RGN1E.GFF', 'D:\RGN1E.GFF', others_on   ; (an Undermountain miner of its own)
+        COPY 'RGN08.GFF', 'D:\RGN08.GFF', others_on   ; (a Magera of their own, Drakejaw's)
         db 0
 
 ; CAT'S GRACE (RULE_CATS_GRACE): Flaming Sphere (spell 14), given Strength's record and the

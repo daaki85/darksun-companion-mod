@@ -55,7 +55,7 @@ Every roll in the game goes through one function, Borland C++'s `rand()`.
    [Dinos and the Trustee](README.md#what-dinos-and-the-trustee-say-about-them)), and
    looks for its data files in the current folder rather than next to itself. The helper also hooks DOS's `INT 21h`, to
    open the launcher's copies of `SEGOBJEX.GFF`, `RESOURCE.GFF` (see
-   [Item icons](README.md#new-items)), `RGN1C.GFF`, `RGN1E.GFF` (see
+   [Item icons](README.md#new-items)), `RGN1C.GFF`, `RGN1E.GFF`, `RGN08.GFF` (see
    [new items](README.md#new-items)), `GPLDATA.GFF` and `RGN29.GFF` (see
    [Kalzith](README.md#kalzith), [Semyon](README.md#semyon),
    [Dinos and the Trustee](README.md#what-dinos-and-the-trustee-say-about-them) and
@@ -558,7 +558,11 @@ body's (object 1204) own gythka made +1 and renamed, its name attribute with
 it. One Castle Guard, one Undermountain miner and one Magera (Drakejaw's) have
 an object of their own (2560, 2561, 2562: copies of their kind's, their record
 renumbered), their entity in the Ledger's copies of `RGN1C.GFF`, `RGN1E.GFF`
-and `RGN08.GFF` pointing to it. The Elven Leader's Gythka +2 is his own
+and `RGN08.GFF` pointing to it. So does the slave pens' weapon rack (2563: the
+Lower Castle's rack is the same object 1647; a thing's record has its number
+first, a person's at +6), with Thornwall in place of its first bone polearm,
+in Kalzith's copy of `RGN29.GFF` (one copy of the pens: with Kalzith off, the
+rack's alone). The Elven Leader's Gythka +2 is his own
 Gythka +1 (in his pack, object 124, and the item object 2534 his script gives)
 made +2. (People of a kind share an
 object, so every Tari, Renegade and Wild Mul carries theirs; the caravan's

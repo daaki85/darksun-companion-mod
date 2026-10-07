@@ -229,8 +229,13 @@ def prepare_patched_game(game_dir: str, settings: Optional[dict] = None) -> Opti
     # the regions with a person given an object of their own for a new item (worldgear.py): only
     # with that object in the objects copy (a region naming an object that isn't there would stop
     # the game)
+    # (the slave pens' clones go into Kalzith's copy of the pens, when he's in it: one copy)
+    with_kalzith = on["kalzith"] and objects_ok
     gifts = (worldgear.GIFTS if on["world_gear"] else ()) + (worldgear.MAGIC if on["world_magic"] else ())
+    pens_clones = [g for g in gifts if g.region == kalzith.REGION and g.clone and g.clone[1] in new_objects]
     for region in worldgear.regions(worldgear.GIFTS + worldgear.MAGIC):
+        if region == kalzith.REGION and with_kalzith:
+            continue
         name, dest = worldgear.region_file(region), os.path.join(DOS_DIR, worldgear.region_file(region))
         mine = [g for g in gifts if g.region == region and g.clone and g.clone[1] in new_objects]
         try:
@@ -248,7 +253,6 @@ def prepare_patched_game(game_dir: str, settings: Optional[dict] = None) -> Opti
     # copy has him too (the pens naming an object that isn't there would stop the game)
     # (Semyon, the vulture and the pens' questions are in the scripts' copy too: with Kalzith off,
     # or no objects copy with him, it is written without him, and the pens' region is the game's)
-    with_kalzith = on["kalzith"] and objects_ok
     files = [(kalzith.SCRIPTS_FILE, lambda source, dest: kalzith.write_scripts(
         source, dest, with_kalzith, on["semyon"], on["vulture"], on["arena_ring"],
         on["magic_arms"] and objects_ok, on["world_magic"] and objects_ok,
@@ -256,14 +260,14 @@ def prepare_patched_game(game_dir: str, settings: Optional[dict] = None) -> Opti
         on["pens_gear"] and objects_ok))]  # (Alagorn knows the weapons by their own
     # pictures; the Elven Leader gives the cloak, and Father Garyn the tome, of its own object)
     if with_kalzith:
-        files.append((kalzith.REGION_FILE, kalzith.write_region))
+        files.append((kalzith.REGION_FILE, lambda source, dest: kalzith.write_region(source, dest, pens_clones)))
     try:
         for name, write in files:
             source = _find_file(game_dir, name)
             if not source:
                 raise OSError(f"no {name}")
             write(source, os.path.join(DOS_DIR, name))
-        if not with_kalzith:
+        if not with_kalzith and not pens_clones:
             try:
                 os.remove(os.path.join(DOS_DIR, kalzith.REGION_FILE))
             except FileNotFoundError:

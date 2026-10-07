@@ -15,10 +15,10 @@ The header's other word (the item's: the game's own items reuse a few hundred nu
 for the same kind of item) is copied from an item of the same type, which the game does no more
 with than carry along.
 
-People of a kind share one object (six Castle Guards, four Undermountain miners): an item for one
-of them alone needs an object of their own, a copy of the kind's under a new number (its record
-naming itself), and the region's entity for that person (its ETAB entry) pointing to it, in the
-Ledger's copy of the region's file.
+People of a kind share one object (six Castle Guards, four Undermountain miners), and so can things
+(the slave pens' weapon rack and the Lower Castle's): an item for one of them alone needs an object
+of their own, a copy of the kind's under a new number (its record naming itself), and the region's
+entity for that person (its ETAB entry) pointing to it, in the Ledger's copy of the region's file.
 """
 
 import struct
@@ -71,6 +71,15 @@ def top_items(recs: Sequence[Record]) -> List[int]:
     return out
 
 
+def placed(item: bytes) -> bytes:
+    """An item record as an object's data has it: its next item and contents 0, in no slot."""
+    data = bytearray(item)
+    for at, size in ITEM_LINKS:
+        data[at:at + size] = bytes(size)
+    data[game.ITEM_SLOT] = 0xFF
+    return bytes(data)
+
+
 def with_items(rdff: bytes, items: Sequence[bytes], numbers: Optional[Dict[int, int]] = None) -> bytes:
     """The object's record (RDFF) with ITEMS (item records) after its own items. NUMBERS: the
     header number for an item type (else the last item's)."""
@@ -79,10 +88,7 @@ def with_items(rdff: bytes, items: Sequence[bytes], numbers: Optional[Dict[int, 
     numbers = numbers or {}
     for item in items:
         mine = top_items(recs)
-        data = bytearray(item)
-        for at, size in ITEM_LINKS:
-            data[at:at + size] = bytes(size)
-        data[game.ITEM_SLOT] = 0xFF
+        data = placed(item)
         kind, = struct.unpack_from("<H", data, game.ITEM_TYPE)
         name, = struct.unpack_from("<H", data, game.ITEM_NAME)
         number = numbers.get(kind, recs[mine[-1]].number if mine else 0)
@@ -113,6 +119,24 @@ def with_item_changed(rdff: bytes, test, change) -> bytes:
     return chunk(recs, end)
 
 
+def with_item_replaced(rdff: bytes, test, item: bytes, numbers: Optional[Dict[int, int]] = None) -> bytes:
+    """The object's record with the first of its own items for which TEST(record) holds made
+    ITEM (its type and name attributes, and its header number, following it); unchanged if none."""
+    recs, end = records(rdff)
+    recs = list(recs)
+    at = next((i for i in top_items(recs) if test(recs[i].data)), None)
+    if at is None:
+        return rdff
+    data = placed(item)
+    kind, = struct.unpack_from("<H", data, game.ITEM_TYPE)
+    name, = struct.unpack_from("<H", data, game.ITEM_NAME)
+    recs[at] = recs[at]._replace(number=(numbers or {}).get(kind, recs[at].number), data=data)
+    for j, r in enumerate(recs):
+        if r.level == ATTRIBUTE and r.of == at and r.kind in (TYPE, NAME):
+            recs[j] = r._replace(number=kind if r.kind == TYPE else name)
+    return chunk(recs, end)
+
+
 def items_of(rdff: bytes) -> List[bytes]:
     """The item records of the object's own items."""
     recs, _ = records(rdff)
@@ -134,9 +158,11 @@ def item_object(item: bytes, number: int) -> bytes:
 
 
 def renumbered(rdff: bytes, obj: int) -> bytes:
-    """A copy of an object's record naming itself object OBJ."""
+    """A copy of an object's record naming itself object OBJ (a person's at SELF, an item's, a
+    chest's or a rack's, first)."""
     out = bytearray(rdff)
-    struct.pack_into("<h", out, HEADER.size + SELF, -obj)
+    kind = HEADER.unpack_from(rdff)[2]
+    struct.pack_into("<h", out, HEADER.size + (0 if kind == ITEM else SELF), -obj)
     return bytes(out)
 
 

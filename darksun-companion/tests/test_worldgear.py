@@ -160,6 +160,8 @@ class WorldGearTests(unittest.TestCase):
             self.assertEqual(names.NAMES[struct.unpack_from("<H", item, game.ITEM_NAME)[0]], name.encode())
             g = next(g for g in worldgear.MAGIC if item in g.items)
             self.assertEqual((g.name, g.objects, g.region), (holder, objects, region))
+        rack = next(g for g in worldgear.MAGIC if g.name == "Weapon Rack")
+        self.assertEqual((rack.clone, rack.instead), ((131, 2563), (19, 0)))
         self.assertEqual(gift("Magera").clone, (122, 2562))
         # (the plain axes still the plain ones)
         self.assertEqual(icons.which(worldgear.weapon(worldgear.BONE_AXE)), "Bone Axe")
@@ -168,14 +170,15 @@ class WorldGearTests(unittest.TestCase):
     def test_weapons_for_the_few(self):
         """Galefang (an air cleric's dagger +2, DSCLOG's own type), Mindshard and Stillwater (a
         psionicist's short swords +1, obsidian and bone), Linebreaker and Thornwall (polearms +2 and
-        +1): named, priced, on their holders; Galefang's type an air cleric's, the short swords'
-        a lone psionicist's."""
+        +1): named, priced, with their holders (Stillwater in Chaya's chest, Thornwall on the pens'
+        rack, its own object, in place of a plain one); Galefang's type an air cleric's, the short
+        swords' a lone psionicist's."""
         import test_restrict
         cases = ((worldgear.AIR_DAGGER_2, game.AIR_DAGGER_TYPE, 2, "Galefang", "Rogue Shaman", (77,), 0x0F),
                  (worldgear.OBSIDIAN_SHORT_SWORD_1, game.OBSIDIAN_SHORT_SWORD_TYPE, 1, "Mindshard", "Maris", (228,), 0x22),
-                 (worldgear.BONE_SHORT_SWORD_1, game.BONE_SHORT_SWORD_TYPE, 1, "Stillwater", "Chaya", (74,), 0x1F),
+                 (worldgear.BONE_SHORT_SWORD_1, game.BONE_SHORT_SWORD_TYPE, 1, "Stillwater", "Chaya's chest", (2249,), None),
                  (worldgear.POLEARM_2, game.METAL_POLEARM_TYPE, 2, "Linebreaker", "Troop Leader", (18,), 0x21),
-                 (worldgear.BONE_POLEARM_1, 19, 1, "Thornwall", "Uskuye", (75,), 0x1F))
+                 (worldgear.BONE_POLEARM_1, 19, 1, "Thornwall", "Weapon Rack", (1647,), 0x29))
         for spec, type_, plus, name, holder, objects, region in cases:
             item = worldgear.weapon(*spec)
             self.assertEqual((struct.unpack_from("<H", item, game.ITEM_TYPE)[0], item[game.ITEM_PLUS]), (type_, plus))
@@ -307,12 +310,65 @@ class DataTests(unittest.TestCase):
         self.assertEqual(icons.which(recs[0].data), "Cloak of Elvenkind")
 
     def test_every_object_named(self):
-        """Every gift names objects; the clones' new numbers are free (past the icons' 2419-2551)."""
+        """Every gift names objects; the clones' new numbers are free (past the icons' 2419-2551,
+        none of the later icons' and none twice)."""
+        pictures = {n for icon in icons.ICONS for n in icon[2:4]}
+        clones = [g.clone[1] for g in worldgear.GIFTS + worldgear.MAGIC if g.clone]
         for g in worldgear.GIFTS + worldgear.MAGIC:
             self.assertTrue(g.objects, g.name)
-            if g.clone:
-                self.assertGreater(g.clone[1], 2551)
-        self.assertEqual(worldgear.regions(worldgear.GIFTS + worldgear.MAGIC), [0x08, 0x1C, 0x1E])
+        for n in clones:
+            self.assertGreater(n, 2551)
+            self.assertNotIn(n, pictures)
+        self.assertEqual(len(set(clones)), len(clones))
+        self.assertEqual(worldgear.regions(worldgear.GIFTS + worldgear.MAGIC), [0x08, 0x1C, 0x1E, 0x29])
+
+    def test_regions_opened(self):
+        """Every region file the Ledger copies for a clone is one DSCLOG opens in the game's place
+        (its D:\ copy named in its table of copies): else the game reads its own."""
+        exe = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "dos", "DSCLOG.EXE")
+        with open(exe, "rb") as f:
+            data = f.read()
+        for region in worldgear.regions(worldgear.GIFTS + worldgear.MAGIC):
+            self.assertIn(b"D:\\" + worldgear.region_file(region).encode(), data, hex(region))
+
+    def test_in_place_of_one(self):
+        """Thornwall on the pens' weapon rack (a thing, its number first in its record): a new
+        object, in place of the first of its two plain bone polearms (its type, name and header
+        number following), the rest kept; the Lower Castle's rack, the same object, unchanged."""
+        from dscompanion import dataitems as d
+        rack_head = bytes.fromhex("91f900000000010000006c000000000005ffef0000")
+        polearm = bytes.fromhex("5efb000000000700000013000000000004ff120000")
+        staff = bytes.fromhex("05fc000000000100000003000000000004ff040000")
+        self.chunks[("RDFF", 1647)] = rdff(rack_head, [polearm, staff, polearm])
+        self.chunks[("OJFF", 1647)] = b"rack's look"
+        rack = next(g for g in worldgear.MAGIC if g.name == "Weapon Rack")
+        out = worldgear.object_chunks(self.chunks, [rack])
+        self.assertNotIn(("RDFF", 1647), out)
+        self.assertEqual(out[("OJFF", 2563)], b"rack's look")
+        recs, _ = d.records(out[("RDFF", 2563)])
+        self.assertEqual(struct.unpack_from("<h", recs[0].data)[0], -2563)
+        self.assertEqual(recs[0].data[2:], rack_head[2:])
+        self.assertEqual([icons.which(r) for r in d.items_of(out[("RDFF", 2563)])], ["Thornwall", None, None])
+        self.assertEqual(d.items_of(out[("RDFF", 2563)])[1:], [staff, polearm])
+        self.assertEqual([(r.kind, r.number) for r in recs[2:4]], [(5, 19), (3, worldgear.THORNWALL)])
+        self.assertEqual(len(recs), len(d.records(self.chunks[("RDFF", 1647)])[0]))
+        # (none to replace: unchanged)
+        self.assertEqual(d.with_item_replaced(self.chunks[("RDFF", 26)], lambda r: True, polearm), self.chunks[("RDFF", 26)])
+
+    def test_pens_rack_with_kalzith(self):
+        """The pens' copy, Kalzith's: the rack's entity pointed to its own object, and Kalzith
+        after the game's entries."""
+        from dscompanion import kalzith
+        entity = struct.Struct("<HHBBh")
+        etab = b"".join(entity.pack(i, i, 0, 13, -9) for i in range(131)) + entity.pack(779, 550, 0, 13, -1647)
+        rack = next(g for g in worldgear.MAGIC if g.name == "Weapon Rack")
+        from unittest import mock
+        with mock.patch.object(kalzith, "read_gff", lambda data: {("ETAB", kalzith.ETAB_ID): etab}):
+            new = kalzith.region_chunks(b"", [rack])[("ETAB", kalzith.ETAB_ID)]
+            plain = kalzith.region_chunks(b"")[("ETAB", kalzith.ETAB_ID)]
+        self.assertEqual(entity.unpack_from(new, 131 * 8)[4], -2563)
+        self.assertEqual(entity.unpack_from(new, 132 * 8)[4], -kalzith.OBJECT)
+        self.assertEqual(entity.unpack_from(plain, 131 * 8)[4], -1647)
 
 
 if __name__ == "__main__":
