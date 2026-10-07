@@ -1443,10 +1443,9 @@ more).
 Missile weapons have a rate of fire of their own in the game, the same for
 everyone (a bow 2 a round, a sling, staff sling or chatkcha 1). A fighter or
 gladiator who has chosen the kind shoots faster, and so does a ranger with its
-chosen kind and with every bow (a ranger's expertise with the bow comes on top
-of the kind it chooses): AD&D's specialist's rate for the sling, a step above
-AD&D's for the bow, staff sling and chatkcha. Mastery's and grand mastery's
-bonuses to hit and damage count for missiles too.
+chosen kind and with every bow: AD&D's specialist's rate for the sling, a step
+above AD&D's for the bow, staff sling and chatkcha. Mastery's and grand
+mastery's bonuses to hit and damage count for missiles too.
 
 **Attacks a round,** by skill and level (a warrior's level: the highest of its
 fighter, gladiator and ranger levels; characters stop at 10):
@@ -1457,13 +1456,10 @@ fighter, gladiator and ranger levels; characters stop at 10):
 | a kind not chosen | any warrior | 1 | 3/2 | 2 | 2 | 1 | 1 |
 | expertise | a ranger: its chosen kind, and every bow | 3/2 | 2 | 3 | 4 | 3/2 | 2 |
 | specialized | a fighter's or gladiator's chosen kind | 3/2 | 2 | 3 | 4 | 3/2 | 2 |
-| mastery | a fighter's first kind, from 5th level | 3/2 | 2 | 3 | 4 | 3/2 | 2 |
-| grand mastery | a fighter's first kind, from 9th level | | 3 | | 5 | | 3 |
+| mastery | a fighter's chosen kind, from 5th level | 3/2 | 2 | 3 | 4 | 3/2 | 2 |
+| grand mastery | a fighter's chosen kind, from 9th level | | 3 | | 5 | | 3 |
 
-The Characters tab shows each ready weapon's attacks a round.
-
-Mastery and grand mastery are for a fighter's chosen kind; a
-gladiator's kinds stay at specialized. The sixteen kinds take in the game's
+The sixteen kinds take in the game's
 weapons of every material and its named ones (Bloodwrath, Swiftbite and the
 like are long swords); spell-made weapons and gloves are none.
 
@@ -1484,9 +1480,9 @@ it back, then another. A multiclass warrior can choose only the kinds its other
 class lets it use: those of which the game (or the Ledger) has a weapon the
 character may use, in any material. The rest stay greyed:
 
-| A fighter or ranger… | Kinds it can choose | Starts with |
+| A warrior (fighter, gladiator or ranger)… | Kinds it can choose | Starts with |
 |---|---|---|
-| …of one class (a gladiator too), or with thief, preserver or druid | all sixteen | the game's bone long sword |
+| …of one class, or with thief, preserver or druid | all sixteen (a ranger all but the bow) | the game's bone long sword |
 | …with psionicist (small weapons) | club, dagger, short sword, mace, chatkcha, bow, sling | a wooden club |
 | …with air cleric (missile weapons, and the dagger that can be thrown) | dagger, chatkcha, bow, sling, staff sling | an obsidian dagger |
 | …with earth cleric (stone, obsidian, metal, wood) | long sword, club, dagger, short sword, mace, axe, great axe, pick, quarterstaff, polearm, chatkcha, bow (the polearm in the Ledger's metal) | an obsidian long sword |

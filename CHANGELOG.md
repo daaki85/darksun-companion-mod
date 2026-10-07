@@ -24,13 +24,16 @@ Released pull requests are summarised in a line or two each; the release notes
   by level: a bow 3 a round, then 4 from 7th level; a sling, staff sling or
   chatkcha 3/2, then 2 (AD&D's specialist's rate for the sling, a step above
   it for the others). A grand master shoots once more a round, as in melee.
-  Before, missiles kept the game's rate.
-- **Guide:** a table of attacks a round by skill (non-warriors, a kind not
-  chosen, expertise, specialized, mastery, grand mastery) and level, for
-  melee, bows and the other missile weapons.
+  Before, missiles kept the game's rate. The Characters tab shows each missile
+  weapon's rate.
 - **Rangers and the bow:** every ranger has expertise with the bow on top of
   the kind it chooses, and a ranger's expertise with a missile weapon now
-  gives the same rate of fire (by ranger level), with no other bonus. The Characters tab shows each missile weapon's rate.
+  gives the same rate of fire, with no other bonus.
+
+**Documentation**
+- **Attacks a round:** a table in the guide by skill (non-warriors, a kind not
+  chosen, expertise, specialized, mastery, grand mastery) and level, for
+  melee, bows and the other missile weapons.
 
 ## Pull request #25 ([merged 2026-10-07](https://github.com/daaki85/darksun-companion-mod/pull/25))
 

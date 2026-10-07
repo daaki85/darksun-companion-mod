@@ -439,6 +439,9 @@ bow 4, the rest 2), not the character's (sheet +2Ah) as in melee; `INT D1h`
 raises them to a specialist's (`MISSILE_RATE`, by the fighter, gladiator or
 ranger level; a grand master one more), and the Ledger's Characters tab does the same
 (`specialize.missile_attacks`).
+Every ranger's expertise with the bow is in `SPEC_OF_SHEET` (`specialize.skill`),
+not in its chosen kinds, so `KINDS_ALLOWED` (`restrict.allowed_kinds`) leaves
+the bow out of a ranger's choices.
 
 ### Class restrictions
 
