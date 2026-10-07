@@ -93,8 +93,7 @@ PENS = {
               "Inixhide! The monster trainers of Draj have passed it down, one to the next, since "
               "the arena was young. It was cut from the first inix ever broken to the harness, and "
               "every trainer since has paid the templars to work a little more strength into it. "
-              "Claws and teeth turn on it as on no common leather. Legcrusher was only the last to "
-              "wear it."),),
+              "Claws and teeth turn on it as on no common leather."),),
     CLOTHES: (("Cloak of Protection",
                "A Cloak of Protection! Its weave turns aside blades and spells alike: only a little, "
                "but a little is often enough. The tailors who know the craft sell to the templars by "
