@@ -1,6 +1,8 @@
 """Alagorn tells of the Ledger's magic items: Kreenfang and Shadowseeker (arms.py), Gutterknot,
-Deepbiter, Windlash and Greenbright, the Warden's Plate and the Cloak and Boots of Elvenkind
-(worldgear.py).
+Deepbiter, Windlash, Greenbright and the Flame Blade, the Warden's Plate, the Cloak and Boots of
+Elvenkind, the Bracers of Defense, Arrowbane and the Sunking Crown (worldgear.py), and the Tome of
+Understanding (tome.py): each named, or a kind of its own, as the game's are (its plain "+1" items
+he doesn't tell of).
 
 Alagorn, the wizard wandering the Painted Badlands, identifies magic items from menus by kind:
 magic swords, magic weapons, fruit and wands (script 213); rings, armour, shields, necklaces,
@@ -9,16 +11,18 @@ carries (a local for each, from a query on the item's picture: the Bloodwrath's 
 there are none, or shows a menu of those, one reply each; a reply's story clears its local, and
 when none is left (a local of the script's: DONE) the menu's loop ends.
 
-With the Ledger, Shadowseeker and Greenbright join the swords, Kreenfang, Gutterknot, Deepbiter
-and Windlash the weapons, the Warden's Plate's four pieces the armour and the Cloak and Boots of
-Elvenkind the clothes, by their pictures of their own (icons.py: without the icons' copy he
-doesn't know them), each only with its content switch on. As pensasks.py does, nothing
+With the Ledger, Shadowseeker, Greenbright and the Flame Blade join the swords, Kreenfang,
+Gutterknot, Deepbiter and Windlash the weapons, the Warden's Plate's four pieces the armour, the
+Cloak and Boots of Elvenkind, the bracers, Arrowbane and the crown the clothes (where the game
+has its Helm of Contemplation and Chameleon Gloves), and the tome the other items, by their
+pictures of their own (icons.py: without the icons' copy he doesn't know them; the tome's, its
+object's), each only with its content switch on. As pensasks.py does, nothing
 of the game's script moves: commands of it become jumps (64h) to code put after the script's end,
 which jumps back:
 
 - each kind's first test for none carried (the tests just before "none"): the new items' locals
-  set too, and none of them all carried goes on to "no magic swords" / "no magic weapons"..., any
-  to the part after it (the "has" part's first line);
+  set too, then the game's tests again, the new items counted in the last: none carried goes on
+  to "no magic swords" / "no magic weapons"..., any to where the game's test goes;
 - the kind's menu: a copy with the new items' replies after the game's last;
 - each of the kind's stories' test for none left: the new items counted too.
 
@@ -30,6 +34,7 @@ from typing import Dict, List, Optional, Tuple
 from . import gpl, icons
 from .kalzith import _Script
 from .pensasks import GOTO, LONGEST, MENU, TEST
+from .tome import TOME_OBJECT
 
 SCRIPT = 213  # Alagorn's
 LOCAL_READ, LOCAL_SET = 0x8E, 14
@@ -49,8 +54,16 @@ SWORDS, WEAPONS = ("  Darkflame", "It's too bad that you have no magic swords I 
     ("  Balkazar's Staff", "I don't see any magic weapons that I know anything about. ")
 ARMOUR, CLOTHES = ("  Tanelyv's Armor", "You have no magic armor that I know anything about. "), \
     ("  Belt of Might", "Unfortunately, you have no magic clothes that I know anything about. ")
-OTHER_SCRIPT = 212  # (armour and clothes: Alagorn's other items)
-SCRIPT_OF = {SWORDS: SCRIPT, WEAPONS: SCRIPT, ARMOUR: OTHER_SCRIPT, CLOTHES: OTHER_SCRIPT}
+OTHER = ("  Orb of Knowledge", "You have no other magic items that I know anything about. ")
+OTHER_SCRIPT = 212  # (armour, clothes and other items: Alagorn's other menus)
+SCRIPT_OF = {SWORDS: SCRIPT, WEAPONS: SCRIPT, ARMOUR: OTHER_SCRIPT, CLOTHES: OTHER_SCRIPT, OTHER: OTHER_SCRIPT}
+# Script 212 with every story would be longer than the scripts' buffer: its clothes, and its other
+# items, are told by copies of it, each with only those (the Ledger's scripts; Kalzith's 218,
+# Semyon's 219). His talk (script 211) calls each part by its place in 212 (14h): the call for
+# those parts names the copy instead, its places the same.
+TALK = 211
+COPY_OF = {CLOTHES: 220, OTHER: 221}
+CALL, START = 0x14, 0x19
 # (item, story): the slave pens' two (arms.py)
 ARMS = {
     SWORDS: (("Shadowseeker",
@@ -64,7 +77,7 @@ ARMS = {
                "gythka. A kreen does not part with such a weapon while it lives; whoever carried it "
                "into the arena died with it in hand."),),
 }
-# ... and the world's (worldgear.py)
+# ... and the world's (worldgear.py; the tome, tome.py)
 MAGIC = {
     SWORDS: (("Greenbright",
               "Greenbright! True iron, forged in the Green Age, when Athas still had forests and "
@@ -125,14 +138,34 @@ MAGIC = {
                "Boots of Elvenkind! Soft as a kank's belly and silent on any ground, dry "
                "leaves and old floors alike. An elf thief of the caravan buried them with his "
                "loot, meaning to come back; he never did. Their wearer can walk up behind anyone "
-               "unheard.")),
+               "unheard."),
+              ("Bracers of Defense",
+               "Bracers of Defense! A wizard can't wear armour and cast, so the clever ones wear "
+               "these: steel cuffs that ward the whole body as armour would. The better the pair, "
+               "the older it is; the best were made before the sorcerer-kings, and the wizards who "
+               "have them guard them jealously, as you must have found."),
+              ("Arrowbane",
+               "Arrowbane! A silver circlet made for a merchant house's caravan master, who had "
+               "grown tired of raiders' arrows. While it sits on the brow, no common arrow, sling "
+               "stone or chatkcha can harm its wearer. Kel parted with it? He must need the coin "
+               "more than he lets on."),
+              ("Sunking Crown",
+               "The Sunking Crown! It was taken from the tomb of a king who ruled before Draj was "
+               "a city, and who claimed the sun's own favour. Its gold still keeps evil from its "
+               "wearer, and from those who stand close by. Keldar wore it in the dark of Dagolar's "
+               "tunnels; much good it did him.")),
+    OTHER: (("Tome of Understanding",
+             "The Tome of Understanding! Father Garyn gave you this? Then he trusts you more than "
+             "most. The water clerics of the villages kept such books from before the sorcerer-kings, "
+             "when learning was not yet a crime. Whoever reads it sees more clearly, for good; then "
+             "its pages fall blank, and it is only a book."),),
 }
 
 
 def kinds(arms: bool = True, magic: bool = True, script: int = SCRIPT) -> Tuple[Kind, ...]:
     """Each kind of the script's with the new items of the switches on."""
     out = []
-    for kind in (SWORDS, WEAPONS, ARMOUR, CLOTHES):
+    for kind in (SWORDS, WEAPONS, ARMOUR, CLOTHES, OTHER):
         if SCRIPT_OF[kind] != script:
             continue
         items = (ARMS.get(kind, ()) if arms else ()) + (MAGIC.get(kind, ()) if magic else ())
@@ -145,7 +178,10 @@ KINDS = kinds()
 
 
 def _picture(name: str) -> int:
-    """The item's picture of its own, as an item has it (negative)."""
+    """The item's picture of its own, as an item has it (negative): icons.py's, or the tome's
+    object's."""
+    if name == "Tome of Understanding":
+        return -TOME_OBJECT
     return icons.PICTURES[name] - 0x10000
 
 
@@ -207,11 +243,12 @@ def with_items(script: bytes, field_types: bytes, kinds=KINDS) -> bytes:
                        and o.args[0]["replies"][0]["text"] == ("str", kind.first_reply)), None)
         if none is None or menu_i is None or menu_i < 2:
             return script
-        first_test, held = none, []
+        first_test, held, chain = none, [], []
         while first_test >= 2 and ops[first_test - 1].code == 0x3E and ops[first_test - 2].code == TEST \
                 and _locals(ops[first_test - 2].args[0]) is not None:
             first_test -= 2
             held = _locals(ops[first_test].args[0]) + held
+            chain.insert(0, (_locals(ops[first_test].args[0]), ops[first_test + 1].args[0]))
         done = _locals(ops[menu_i - 2].args[0]) if ops[menu_i - 2].code == TEST else None
         if not held or not done or len(done) != 1:
             return script
@@ -223,17 +260,16 @@ def with_items(script: bytes, field_types: bytes, kinds=KINDS) -> bytes:
         if len(mine) < len(kind.items):
             return script
         all_of = held + mine
-        # ... after "none carried" (a return), the part going on to the menu: its first line
-        go_on = none + 1
-        while go_on < len(ops) and ops[go_on].code != SAY:
-            go_on += 1
         entry = f"entry {k}"
         s.label(entry)
         for (item, _), n in zip(kind.items, mine):
             s.op(SET, ("op", gpl.Op(0, QUERY, [("n", PARTY), 77, 80, [(HAS_PICTURE, 4, ("n", _picture(item)))]])),
                  ("var", LOCAL_SET, n))
-        s.op(TEST, _zero(all_of))
-        s.op(0x3E, ("n", ops[go_on].at))  # (any carried: on to the menu)
+        # the game's tests again, each to its own place (the game keeps its ifs and elses
+        # nested: skipping one, an else further on goes the wrong way), the new items in the last
+        for t, (names, target) in enumerate(chain):
+            s.op(TEST, _zero(names + (mine if t == len(chain) - 1 else [])))
+            s.op(0x3E, target)
         s.op(GOTO, ("n", ops[none].at))
         jumps.append((ops[first_test].at, entry))
 
@@ -282,16 +318,53 @@ def with_items(script: bytes, field_types: bytes, kinds=KINDS) -> bytes:
     return bytes(out)
 
 
+def _entry(script: bytes, field_types: bytes, kind: Kind) -> Optional[int]:
+    """Where the kind's part of SCRIPT starts (after its 19h), as script 211 calls it."""
+    ops = gpl.decode(script, field_types)
+    none = next((i for i, o in enumerate(ops) if o.code == SAY and o.args[1] == ("str", kind.none_text)), None)
+    start = next((j for j in range(none or 0, -1, -1) if ops[j].code == START), None) if none else None
+    return ops[start + 1].at if start is not None else None
+
+
+def _called_from(talk: bytes, field_types: bytes, entry: int, number: int) -> Optional[bytes]:
+    """TALK with its call of OTHER_SCRIPT's ENTRY calling NUMBER's (None: no such call)."""
+    old = gpl.encode_op((CALL, [("n", entry), ("n", OTHER_SCRIPT)]))
+    new = gpl.encode_op((CALL, [("n", entry), ("n", number)]))
+    calls = [o.at for o in gpl.decode(talk, field_types)
+             if o.code == CALL and o.args == [("n", entry), ("n", OTHER_SCRIPT)]]
+    if len(calls) != 1 or len(new) != len(old):
+        return None
+    out = bytearray(talk)
+    out[calls[0]:calls[0] + len(new)] = new
+    return bytes(out)
+
+
 def script_chunks(chunks, field_types: bytes, arms: bool = True, magic: bool = True) -> Dict[Tuple[str, int], bytes]:
-    """For the Ledger's copy of GPLDATA: Alagorn's talks (his two scripts) with the magic items of
-    the switches on (ARMS: Kreenfang and Shadowseeker; MAGIC: the world's)."""
-    out = {}
+    """For the Ledger's copy of GPLDATA: Alagorn's talks (his two scripts, and the copies of 212:
+    COPY_OF) with the magic items of the switches on (ARMS: Kreenfang and Shadowseeker; MAGIC:
+    the world's and the tome)."""
+    out: Dict[Tuple[str, int], bytes] = {}
     for number in (SCRIPT, OTHER_SCRIPT):
         key = ("GPL ", number)
-        chosen = kinds(arms, magic, number)
-        if key not in chunks or not chosen:
+        if key not in chunks:
             continue
-        changed = with_items(chunks[key], field_types, chosen)
-        if changed != chunks[key]:
-            out[key] = changed
+        groups: Dict[int, List[Kind]] = {}
+        for kind in kinds(arms, magic, number):
+            first = (kind.first_reply, kind.none_text)
+            groups.setdefault(COPY_OF.get(first, number), []).append(kind)
+        for target, chosen in groups.items():
+            changed = with_items(chunks[key], field_types, tuple(chosen))
+            if changed == chunks[key]:
+                continue
+            if target != number:
+                if ("GPL ", target) in chunks or ("GPL ", TALK) not in chunks:
+                    continue
+                talk = out.get(("GPL ", TALK), chunks[("GPL ", TALK)])
+                for kind in chosen:
+                    entry = _entry(chunks[key], field_types, kind)
+                    talk = _called_from(talk, field_types, entry, target) if entry is not None and talk else None
+                if not talk:
+                    continue
+                out[("GPL ", TALK)] = talk
+            out[("GPL ", target)] = changed
     return out

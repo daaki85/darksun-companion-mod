@@ -41,8 +41,16 @@ Released pull requests are summarised in a line or two each; the release notes
 - **Alagorn tells of the Warden's Plate** (Haldren's, the last of the Wardens:
   a part of his story for each piece) among his magic armor, and of the Cloak
   and Boots of Elvenkind among his magic clothes.
+- **Alagorn tells of the Tome of Understanding** (among his other items) and
+  of the Bracers of Defense, Arrowbane and the Sunking Crown (among his magic
+  clothes). Plain +1 items get no story, as in the game.
+  - His clothes and other items are told by copies of his script 212 (220,
+    221), so no script overflows the game's buffer.
 
 **Fixed**
+- **Alagorn's clothes with none carried:** he said "no magic clothes", then
+  "Ah, magic clothes" and showed an empty menu. The game's two nested tests
+  for clothes are now kept.
 - **Armor, spell 0, was missing from the Ledger:** the Spells tab left it
   out and the dice log would have named it "spell 0"; the game numbers its
   spells from 0.

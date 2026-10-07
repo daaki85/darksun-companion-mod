@@ -587,7 +587,13 @@ instead of its own (its `INT 21h` hook). Where the game adds up AC and saving
 throws, the helper counts the rings and the cloak (`INT F8h` and the save
 probes). Shadowseeker's sight is the game's own way with a magic item's spell:
 readied, it puts Detect Invisibility on its wielder. Alagorn's new menu lines
-are in the Ledger's copy of his script (`dscompanion/alagorn.py`). In the
+are in the Ledger's copy of his scripts (`dscompanion/alagorn.py`). Script 212
+with every story would overflow the script buffer (the Trustee's problem), so
+its clothes and other items are told by copies of it, scripts 220 and 221. His
+talk (script 211) calls each part by its offset in 212, so only the called
+script's number changes. The added "none carried" check replays the game's
+own tests with their own jump targets; skipping one leaves the game's
+if/else nesting one level short. In the
 original game the rings are plain rings without a name, and the sword, cloak
 and helm types it doesn't have: don't load a save that has them without the
 dice log.

@@ -7,7 +7,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from dscompanion import alagorn, gpl
+from dscompanion import alagorn, gpl, icons, tome
 from dscompanion.kalzith import _Script
 
 GOTO, MENU, SET, TEST, IF_NOT, END_IF, RETURN, BACK = 0x64, 0x48, 0x16, 0x18, 0x3E, 0x67, 0x15, 0x19
@@ -26,6 +26,7 @@ def alagorns(last="Other", kinds=alagorn.KINDS, done=alagorn.DONE, split=False):
     """Two kinds, each of two items: (part, menu, stories), the game's way (SPLIT: the test for
     none carried in two, each of a local, as script 212's clothes)."""
     s = _Script()
+    s.op(BACK)  # (as script 212 starts: each part after a 19h, where his talk calls it)
     for k, kind in enumerate(kinds):
         first = kind.first_reply.strip()
         s.op(SET, query(-30000 - 2 * k), ("var", 14, 0))
@@ -151,44 +152,93 @@ class AlagornTests(unittest.TestCase):
         self.assertEqual(alagorn.kinds(arms=False, magic=False), ())
         self.assertEqual(alagorn.script_chunks({("GPL ", alagorn.SCRIPT): self.script}, FIELDS, False, False), {})
 
-    def test_armour_and_clothes(self):
-        """Script 212's armour and clothes: the Warden's Plate's four pieces and the Cloak and Boots
-        of Elvenkind, their locals past the loop's own (6 there), and its test for none carried in
-        two."""
-        kinds = alagorn.kinds(script=alagorn.OTHER_SCRIPT)
-        script = alagorns(last="Nothing", kinds=kinds, done=6, split=True)
-        self.assertTrue(alagorn._nothing({"text": ("str", "Nothing")}))  # (script 212's, unindented)
+    def new_ops(self, script, kinds):
         out = alagorn.with_items(script, FIELDS, kinds)
         r = gpl._Reader(out, FIELDS)
         r.i = len(script)
         added = []
         while r.i < len(out):
             added.append(gpl._op(r))
+        return added
+
+    def test_armour_clothes_and_other(self):
+        """Script 212's kinds: the Warden's Plate, the cloak, boots, bracers, circlet and crown, and
+        the tome; their locals past the loop's own (6 there), and its test for none carried in two."""
+        kinds = alagorn.kinds(script=alagorn.OTHER_SCRIPT)
+        script = alagorns(last="Nothing", kinds=kinds, done=6, split=True)
+        self.assertTrue(alagorn._nothing({"text": ("str", "Nothing")}))  # (script 212's, unindented)
+        added = self.new_ops(script, kinds)
         menus = [[x["text"][1] for x in op.args[0]["replies"]] for op in added if op.code == MENU]
         self.assertEqual(menus, [["  Tanelyv's Armor", "  Warden's Helm", "  Warden's Arms", "  Warden's Legs",
                                   "  Warden's Chest", "  Nothing"],
-                                 ["  Belt of Might", "  Cloak of Elvenkind", "  Boots of Elvenkind", "  Nothing"]])
+                                 ["  Belt of Might", "  Cloak of Elvenkind", "  Boots of Elvenkind",
+                                  "  Bracers of Defense", "  Arrowbane", "  Sunking Crown", "  Nothing"],
+                                 ["  Orb of Knowledge", "  Tome of Understanding", "  Nothing"]])
         sets = [alagorn._sets(op) for op in added if op.code == SET and op.args[0][0] == "op"]
-        self.assertEqual([n for n, _ in sets], [2, 3, 4, 5, 2, 3])
-        self.assertIn([0, 1, 2, 3, 4, 5], [alagorn._locals(op.args[0]) for op in added if op.code == TEST])
+        self.assertEqual([n for n, _ in sets], [2, 3, 4, 5, 2, 3, 4, 5, 7, 2])
+        self.assertIn((2, -tome.TOME_OBJECT), sets)  # (the tome by its own object's picture)
         flags = [op.args for op in added if op.code == SET and op.args[0] == ("n", 1)]
         self.assertTrue(flags and all(f == [("n", 1), ("var", 14, 6)] for f in flags))
         lines = " ".join(gpl.strings(added))
-        for name in ("The Warden's Helm!", "The Warden's Chest!", "A Cloak of Elvenkind!", "Boots of Elvenkind!"):
+        for name in ("The Warden's Chest!", "A Cloak of Elvenkind!", "Bracers of Defense!", "Arrowbane!",
+                     "The Sunking Crown!", "The Tome of Understanding!"):
             self.assertIn(name, lines)
+
+    def test_split_test_kept(self):
+        """A test for none carried in two (script 212's clothes): both tests again, each to the
+        game's own place (its ifs and elses stay nested), the new items in the second."""
+        kinds = alagorn.kinds(script=alagorn.OTHER_SCRIPT)
+        script = alagorns(last="Nothing", kinds=kinds, done=6, split=True)
+        game = gpl.decode(script, FIELDS)
+        targets = [op.args[0] for op in game if op.code == IF_NOT][:2]
+        added = self.new_ops(script, kinds)
+        tests = [(alagorn._locals(a.args[0]), b.args[0]) for a, b in zip(added, added[1:])
+                 if a.code == TEST and b.code == IF_NOT]
+        self.assertEqual(tests[:2], [([0], targets[0]), ([1, 2, 3, 4, 5], targets[1])])
 
     def test_past_the_loops_local(self):
         """The new items' locals skip the loop's own."""
         kinds = alagorn.kinds(script=alagorn.OTHER_SCRIPT)
-        script = alagorns(last="Nothing", kinds=kinds, done=4)
-        out = alagorn.with_items(script, FIELDS, kinds)
-        r = gpl._Reader(out, FIELDS)
-        r.i = len(script)
-        added = []
-        while r.i < len(out):
-            added.append(gpl._op(r))
+        kinds = tuple(k for k in kinds if k.first_reply in (alagorn.ARMOUR[0], alagorn.CLOTHES[0]))
+        added = self.new_ops(alagorns(last="Nothing", kinds=kinds, done=4), kinds)
         sets = [alagorn._sets(op)[0] for op in added if op.code == SET and op.args[0][0] == "op"]
-        self.assertEqual(sets, [2, 3, 5, 6, 2, 3])
+        self.assertEqual(sets, [2, 3, 5, 6, 2, 3, 5, 6, 7])
+
+    def test_named_items_told(self):
+        """Each named magic item the Ledger adds (or of a kind of its own) has a story; its plain
+        "+1" items, as the game's, none."""
+        told = {name for kinds in (alagorn.ARMS, alagorn.MAGIC) for items in kinds.values() for name, _ in items}
+        self.assertEqual(told, {"Shadowseeker", "Kreenfang", "Greenbright", "Flame Blade", "Gutterknot", "Deepbiter",
+                                "Windlash", "Bracers of Defense", "Arrowbane", "Sunking Crown", "Warden's Helm",
+                                "Warden's Arms", "Warden's Legs", "Warden's Chest", "Cloak of Elvenkind",
+                                "Boots of Elvenkind", "Tome of Understanding"})
+        for name in told - {"Tome of Understanding"}:
+            self.assertIn(name, icons.PICTURES)
+
+    def test_copies(self):
+        """Script 212's clothes told by a copy (220), its other items by another (221), each called
+        from his talk (211) at the same place; its armour by 212 itself."""
+        kinds = alagorn.kinds(script=alagorn.OTHER_SCRIPT)
+        script = alagorns(last="Nothing", kinds=kinds, done=6)
+        entries = [alagorn._entry(script, FIELDS, k) for k in kinds]
+        self.assertEqual(len(set(entries)), 3)
+        talk = _Script()
+        for entry in entries:
+            talk.op(alagorn.CALL, ("n", entry), ("n", alagorn.OTHER_SCRIPT))
+        talk = talk.bytes(end=False)
+        out = alagorn.script_chunks({("GPL ", 212): script, ("GPL ", 211): talk}, FIELDS)
+        self.assertEqual(sorted(out), [("GPL ", 211), ("GPL ", 212), ("GPL ", 220), ("GPL ", 221)])
+        calls = [op.args for op in gpl.decode(out[("GPL ", 211)], FIELDS)]
+        self.assertEqual(calls, [[("n", entries[0]), ("n", 212)], [("n", entries[1]), ("n", 220)],
+                                 [("n", entries[2]), ("n", 221)]])
+        reply = lambda name: gpl.encode_expr(("str", f"  {name}"))
+        for number, has, hasnt in ((212, "Warden's Helm", "Arrowbane"), (220, "Arrowbane", "Tome of Understanding"),
+                                   (221, "Tome of Understanding", "Warden's Helm")):
+            self.assertIn(reply(has), out[("GPL ", number)])
+            self.assertNotIn(reply(hasnt), out[("GPL ", number)])
+        # without his talk, no copies (nothing would call them)
+        out = alagorn.script_chunks({("GPL ", 212): script}, FIELDS)
+        self.assertEqual(sorted(out), [("GPL ", 212)])
 
     def test_other_script_unchanged(self):
         other = _Script()
