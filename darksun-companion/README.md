@@ -307,9 +307,9 @@ sections are open is remembered. The sections:
 - **Rule changes** ([Rule changes](#rule-changes)).
 - **Thieves** ([Thieves](#thieves)): AD&D's thief skills, hiding to
   backstab, and picking pockets.
-- **New content** ([New content](#new-content)). The new people, the vulture and Alagorn's
-  stories go into the game's copies the next time it is started; what a saved
-  game already has stays in it.
+- **New content** ([New content](#new-content)): the new people, the vulture
+  and the new items, from the next time the game is started; what a saved game
+  already has stays in it.
 - **On the screen** ([On the screen](#on-the-screen)), **Controls**
   ([Controls](#controls)) and **Game speed** ([Game speed](#game-speed)).
 
@@ -1516,19 +1516,17 @@ with expertise in the bow**, on top of the weapon spec it chooses.
 The game already gives every fighter, gladiator and ranger the specialist's
 attacks in melee (3/2 a round, 2 from 7th level). With the rule, a warrior
 fighting with a weapon outside its chosen weapon specs gets AD&D's plain rate, half
-an attack less; with its own kind it keeps the game's rate (a grand master one
-more).
+an attack less; with a chosen weapon spec it keeps the game's rate (a grand
+master one more).
 
 Missile weapons have a rate of fire of their own in the game, the same for
-everyone (a bow 2 a round, a sling, staff sling or chatkcha 1). A fighter or
-gladiator who has chosen the kind shoots faster, and so does a ranger with its
-chosen weapon spec and with every bow: AD&D's specialist's rate for the sling, a step
-above AD&D's for the bow, staff sling and chatkcha. Mastery's and grand
-mastery's bonuses to hit and damage count for missiles too. A warrior's missile
-weapon outside its chosen weapon specs shoots faster from 7th level too, as its
-melee does (where AD&D keeps the weapon's own rate): the specialist's rate a
-band lower, so a specialist stays a step ahead at every level, in melee and
-with missiles alike.
+everyone (a bow 2 a round, a sling, staff sling or chatkcha 1). With the rule,
+fighters and gladiators shoot faster with a chosen weapon spec, and rangers
+with theirs and every bow: AD&D's specialist's rate for the sling, a step above
+it for the bow, staff sling and chatkcha. From 7th level every warrior shoots
+its other missile weapons faster too, a step behind a specialist, as in melee
+(AD&D keeps the weapon's own rate). Mastery's and grand mastery's bonuses to
+hit and damage count for missiles too.
 
 **Attacks a round,** by skill and level (a warrior's level: the highest of its
 fighter, gladiator and ranger levels; characters stop at 10):
@@ -1542,11 +1540,11 @@ fighter, gladiator and ranger levels; characters stop at 10):
 | mastery | a fighter's chosen weapon spec, from 5th level | 3/2 | 2 | 3 | 4 | 3/2 | 2 |
 | grand mastery | a fighter's chosen weapon spec, from 9th level | | 3 | | 5 | | 3 |
 
-The sixteen kinds take in the game's
+The sixteen weapon specs take in the game's
 weapons of every material and its named ones (Bloodwrath, Swiftbite and the
 like are long swords); spell-made weapons and gloves are none.
 
-| Kinds (four to a page) |
+| Weapon specs (four to a page) |
 |---|
 | long sword, club, dagger, short sword |
 | mace, axe, great axe, pick |
@@ -1555,15 +1553,15 @@ like are long swords); spell-made weapons and gloves are none.
 
 **Choosing at creation.** On the character creation screen, the panel under
 the classes (the psionic disciplines, or a cleric's or ranger's spheres) has
-**WEAPON SPEC** for a warrior: four pages of kinds, **MORE SPECS** to the next,
+**WEAPON SPEC** for a warrior: four pages of weapon specs, **MORE SPECS** to the next,
 and on the last **VIEW PSIONICS** back to the panel. It works as the game's
 disciplines do: the long sword is marked to start with (a gladiator's two:
-the long sword and the club), the others greyed; click a marked kind to take
-it back, then another. A multiclass warrior can choose only the kinds its other
+the long sword and the club), the others greyed; click a marked one to take
+it back, then another. A multiclass warrior can choose only the weapon specs its other
 class lets it use: those of which the game (or the Ledger) has a weapon the
 character may use, in any material. The rest stay greyed:
 
-| A warrior (fighter, gladiator or ranger)… | Kinds it can choose | Starts with |
+| A warrior (fighter, gladiator or ranger)… | Weapon specs it can choose | Starts with |
 |---|---|---|
 | …of one class, or with thief, preserver or druid | all sixteen (a ranger all but the bow) | the game's bone long sword |
 | …with psionicist (small weapons) | club, dagger, short sword, mace, chatkcha, bow, sling | a wooden club |
@@ -1572,18 +1570,18 @@ character may use, in any material. The rest stay greyed:
 | …with fire cleric (obsidian) | long sword, dagger, short sword, mace, axe, great axe, chatkcha | an obsidian long sword |
 | …with water cleric (bone, wood) | long sword, club, dagger, short sword, mace, axe, great axe, quarterstaff, polearm, gythka, cahulaks, bow | the game's bone long sword |
 
-(The starting weapon is for the kind marked first; the next table has the
+(The starting weapon is for the weapon spec marked first; the next table has the
 rest. A ranger never has the bow to choose: its expertise with the bow comes
 anyway.)
 
 ![The creation screen: a gladiator's WEAPON SPEC page, the long sword and the club marked, the others greyed](docs/creation-weapons.png)
 
-A new character starts the game with a plain weapon of its first kind in
+A new character starts the game with a plain weapon of its first weapon spec in
 place of the bone long sword the game gives warriors, in a material it may
 use, and the log says so (`Grog starts with a plain obsidian long sword for the
 weapon specialization chosen, in place of the bone long sword`):
 
-| Kind | Starting weapon | For a cleric's sphere that can't use it |
+| Weapon spec | Starting weapon | For a cleric's sphere that can't use it |
 |---|---|---|
 | long sword | the game's bone long sword | obsidian (fire, earth) |
 | club, quarterstaff, bow | wooden (a bow with 20 arrows) | |
@@ -1601,19 +1599,19 @@ A bow or staff sling goes in the missile slot instead, and the shield stays, as
 the game asks nothing of the hands for it. The weapon is
 made once: a long sword handed to the character later stays one.
 
-**At a level gained.** A warrior with fewer kinds than it is due (a gladiator
+**At a level gained.** A warrior with fewer weapon specs than it is due (a gladiator
 reaching 6th or 9th, or any warrior from a game begun before the rule) picks
 the rest the way a psionicist picks a new power: in the game's own pop-up,
-the kinds its classes allow in light letters, those it can't (or has) greyed,
+the weapon specs its classes allow in light letters, those it can't (or has) greyed,
 the picks left beside **EXIT** (which asks, as for powers, whether to leave
 with picks unmade: they're offered again at the next level).
 
 ![The level-up window: PICK A WEAPON SPECIALTY, the long sword, dagger, short sword, mace, axe and chatkcha open to a fighter/fire cleric (obsidian ones)](docs/weapon-picker.png)
 
 **Where it shows.** The **Effects** screen lists the selected character's
-kinds under its effects ("SPECIALIZED IN", "MASTER OF", "GRAND MASTER OF",
+weapon specs under its effects ("SPECIALIZED IN", "MASTER OF", "GRAND MASTER OF",
 "EXPERT IN"); View Character's DAM line counts it; the Characters tab lists
-the kinds (**Weapons: long sword (grand mastery)**) and gives the attacks a
+them (**Weapons: long sword (grand mastery)**) and gives the attacks a
 round with each weapon ready, a missile weapon's its own (**Attacks: 3/2 a
 round with Long Sword, 1 with Axe, 3 with Bow**); and the dice log names it on
 each attack (`+1 specialized`, `+3 grand mastery`, `(d10 for d8: grand
@@ -2314,9 +2312,9 @@ out (a reward, a gift or a find).
 | ![](docs/items/chatkcha-plus1.png) | Obsidian | chatkcha | Chatkcha +1 | +1, Produce Fire | the Guardian |
 | ![](docs/items/arrows-plus3.png) | Wooden | arrows | Arrows +3, +2, +1 | | chests; Kel and the Elven Leader (+1) |
 
-**By kind**, for [weapon specialization](#weapon-specialization):
+**By weapon spec**, for [weapon specialization](#weapon-specialization):
 
-| Kind | Magic weapons |
+| Weapon spec | Magic weapons |
 |---|---|
 | Long sword | Dragonsbane +4, Swiftbite +2, El's Drinker +2, Dark Flame +2, Draketooth +1, Hornblade +1, Bloodwrath +1, **Flame Blade** +1 |
 | Short sword | **Greenbright** +2, **Shadowseeker** +1, **Mindshard** +1, **Stillwater** +1 |

@@ -27,7 +27,7 @@ Released pull requests are summarised in a line or two each; the release notes
   content); Suggested system requirements under Requirements, linked from Game
   speed; Picking pockets moved to Thieves; weapon specialization tidied
   (repeated notes gone, one table heading for every warrior, "weapon spec" for
-  the kinds chosen, as the creation pages call them, and every ranger's bow
+  the kinds throughout, as the creation pages call them, and every ranger's bow
   expertise said first).
 - The two Two weapons sections are one; the Effects screen's click (a spell
   left on) has a section under Controls, where its box is.

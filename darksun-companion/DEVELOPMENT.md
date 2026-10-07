@@ -79,9 +79,9 @@ Every roll in the game goes through one function, Borland C++'s `rand()`.
    unless **Show unlabelled rolls** is ticked.
 
 Because the replacement produces identical numbers, the game plays exactly as
-it would without it, apart from what you choose on the Options tab (the
-Ring +1, picking pockets, the [rule changes](README.md#rule-changes)), the Ledger's
-other additions (the new items, the cooked vulture, Kalzith, Semyon,
+it would without it, apart from what you choose on the Options tab (picking
+pockets, the [rule changes](README.md#rule-changes)), the Ledger's other
+additions (the new items and the Ring +1, the cooked vulture, Kalzith, Semyon,
 what the party wears, shadows, dust, rings, Tab and Enter, scrolling) and the
 fixes always in the patched copy: no equipment penalty on thief skills (see
 [Thief skills](README.md#how-the-game-works-out-thief-skills)), the roster's DELETE and New characters counting
