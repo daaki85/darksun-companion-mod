@@ -1826,23 +1826,38 @@ like its own. The log doesn't say: they're there to be found.
 | **Bone Scale Arm Armor**, **Leg Armor** and **Bone Helm** | put with the Bone Scale Chest Armor the first time it's in a region with the party (the game has the set but places only the chest piece) | the set; the helm AC 1 with [Helms give AC 1](#helms-and-boots), worn by those who can wear the armour (not thieves) |
 | **Thieves' Tools** | every thief's backpack | [picking pockets](#picking-pockets) |
 | **Six scrolls** | [Kalzith's](#kalzith) shop | spells the game has no scroll of |
-| **Bone and obsidian Short Swords and Axes** | a new warrior's starting weapon, with [weapon specialization](#weapon-specialization) (the obsidian ones a fire or earth cleric's): the game has no short sword but Kurzak's, and only a metal axe | a short sword 1d6, an axe 1d8, of their material |
-| **Obsidian Mace** | a fire or earth cleric's starting mace; also with the short swords and axes below | 1d6+1, the game's Mace (Blackmace without the +1), with an icon without Blackmace's glow |
-| **Bone and obsidian Short Swords and Axes, Obsidian Maces, a metal Short Sword** (box: **Bone, obsidian and metal short swords, bone and obsidian axes and obsidian maces sold by the Weapon Merchant and Jark, and carried by a few kinds of people**) | sold by the **Weapon Merchant** (with the Armor Merchant and the Bowyer: all six, the metal short sword 300) and **Jark** (with Kel: the short swords and axe of bone, the obsidian short sword and mace); in the packs of **Merzol** in the slave pens (an obsidian axe), **Krikor** (a bone axe) and **Chaero** (an obsidian short sword), and as loot on every **Tari** in the warrens (an obsidian mace), every **Renegade** (a bone short sword) and every **Wild Mul** (a bone axe) | the same as a new warrior's; the metal short sword 1d6, Kurzak's (Shadowseeker's) without the plus |
-| **Metal Dagger, Mace, Great Axe, Pick and Polearm** (with the box above) | the kinds the game has in no plain metal: in the packs of **Tobrian** (the dagger), the **Templar** of the slavers' camp (the mace), **Uskuye** (the great axe), **Kwerin** (the pick) and the first **Castle Guard** met (the polearm); a new earth cleric's great axe and polearm | the game's own weapons of the kind, of metal (unbreakable; an earth cleric's, not a fire or water cleric's); priced 50, 200, 300, 150 and 250 (the metal long sword is 500, the Axe 100) |
-| **Club +1, Pick +1, Staff Sling +1, Short Sword +2** (box: **Bracers of defense on four wizards, and a magic club, pick, staff sling and short sword**) | the club on **Churrr** in the warrens (with his own club); the stone pick in the pack of the first of the **Undermountain folk** met (the miners); the staff sling sold by the **Bowyer**; the metal short sword on the first **Elite Guard** met | the kinds the game has no magic weapon of (its only magic short sword is the Ledger's Shadowseeker); priced as the game prices its own: the melee ones as its Obsidian Bloodwrath +1 (20,800, as its Hornblade +1 and Gythka +1), 20,800 a plus, the short sword 41,600; the staff sling as its Sling +1, 2,800 (the game's magic missile weapons are cheap: the Chatkcha +1 1,800, the Sling +2 3,500) |
-| **Bracers of Defense** | worn by **Mikquetzl** (AC 6: in his pack, as he wears ring armour), **Wyrmias** (AC 5), **Balkazar** (AC 4) and **Dagolar**, the one carrying Dag's Dagger (AC 2) | [bracers of defense](#bracers-of-defense) |
+| **Bone and obsidian Short Swords and Axes** | a new warrior's starting weapon with [weapon specialization](#weapon-specialization) (obsidian for a fire or earth cleric); sold by the **Weapon Merchant** and **Jark**; carried by **Merzol** in the slave pens, **Krikor**, **Chaero**, and every **Renegade** and **Wild Mul** | a short sword 1d6, an axe 1d8 (the game has no short sword but Kurzak's, and only a metal axe) |
+| **Obsidian Mace** | a fire or earth cleric's starting mace; sold by the Weapon Merchant and Jark; carried by every **Tari** in the warrens | the game's Mace (1d6+1), in obsidian (the game's only obsidian mace is Blackmace) |
 | **Great Axe** | a warrior's starting great axe | the game's plain Great Axe, with an icon without the +3's green gem |
+| **Metal Short Sword** | sold by the Weapon Merchant | 1d6: Kurzak's, without the plus |
+| **Metal Dagger, Mace, Great Axe, Pick and Polearm** | carried by **Tobrian**, the **Templar** of the slavers' camp, **Uskuye**, **Kwerin** and a **Castle Guard**; an earth cleric's starting great axe or polearm | the game's own weapons, in metal (the game has none plain) |
+| **Club +1** | carried by **Churrr** in the warrens | a magic club (the game has none) |
+| **Pick +1** | carried by one of the **Undermountain folk** (the miners) | a magic stone pick (the game has none) |
+| **Staff Sling +1** | sold by the **Bowyer** | a magic staff sling (the game has none) |
+| **Short Sword +2** | carried by an **Elite Guard** | a magic metal short sword |
+| **Bracers of Defense** | **Mikquetzl** (AC 6, in his pack), **Wyrmias** (AC 5), **Balkazar** (AC 4), **Dagolar** (AC 2, the one carrying Dag's Dagger) | AC for those wearing no armour: [bracers of defense](#bracers-of-defense) |
 
-Prices, as the game's magic items: the armour 6,000 (its Drake Armor +1 is 8,000),
-the cloak and both rings 15,000 each (its Living Cloak is 20,000, its magic rings
-30,000-50,000), Kreenfang 20,800 (as the game's Gythka +1 and
-Bloodwrath +1), Shadowseeker 22,000 (a +1 that also sees the invisible). A thief can lift Pehtucl's ring and
-Shadowseeker (200 XP for the sword), not what's worn on the body. The
-arena's ring has its own box on the Options tab (**A Ring of Protection +1 on
-the arena's Tied-up Prisoner**), and so do the two weapons (**...are +1 magic
-weapons**: without it Kurzak's is a plain Short Sword, 1d6); every thief's
-tools come with picking pockets. With [AD&D's rules for rings and cloaks of
+**Prices** follow the game's own:
+- magic melee weapons 20,800 for each plus, as its Obsidian Bloodwrath +1
+  (Kreenfang 20,800, the Short Sword +2 41,600; Shadowseeker 22,000, as it
+  also sees the invisible);
+- the Staff Sling +1 2,800, as its Sling +1 (it prices magic missile weapons
+  low);
+- the plain metal weapons 50 to 300 (its metal long sword is 500);
+- bracers of defense 5,000 for each point of AC (20,000 to 40,000);
+- the rings and cloak of protection 15,000 each, Leather Chest Armor +1 6,000.
+
+**On the Options tab**, under New content:
+- **Bone, obsidian and metal short swords...** places the plain weapons;
+- **Bracers of defense on four wizards...** places the bracers and the
+  magic weapons;
+- the arena's ring (**A Ring of Protection +1 on the arena's Tied-up
+  Prisoner**) and Kreenfang and Shadowseeker (**...are +1 magic weapons**:
+  without it Kurzak's is a plain Short Sword, 1d6) each have their own box;
+- every thief's tools come with picking pockets.
+
+A thief can lift Pehtucl's ring and Shadowseeker (200 XP for the sword), not
+what's worn on the body. With [AD&D's rules for rings and cloaks of
 protection](#rings-and-cloaks-of-protection) on, two rings give +1 together
 and neither ring nor cloak gives AC over magical armour.
 
