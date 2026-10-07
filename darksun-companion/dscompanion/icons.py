@@ -430,9 +430,12 @@ def write_resources(source: str, dest: str) -> None:
     os.replace(tmp, dest)
 
 
-def write_objects(source: str, dest: str) -> bool:
-    """The game's SEGOBJEX.GFF (SOURCE, only read) with the companion's icons, to DEST. Whether
-    Kalzith's object is in it (his scripts name it: without it they mustn't be written)."""
+def write_objects(source: str, dest: str, on: Optional[Dict[str, bool]] = None) -> Tuple[bool, Tuple[int, ...]]:
+    """The game's SEGOBJEX.GFF (SOURCE, only read) with the companion's icons, and its new items
+    in their people's and chests' objects (the content switched ON: dataitems.py), to DEST.
+    Whether Kalzith's object is in it (his scripts name it: without it they mustn't be
+    written), and the objects added for items (the regions' copies and scripts naming them
+    mustn't be written without them)."""
     with open(source, "rb") as f:
         data = f.read()
     from . import sprites
@@ -451,12 +454,15 @@ def write_objects(source: str, dest: str) -> bool:
     except KeyError:  # (a number of his taken in this copy of the game: no Kalzith, the rest kept)
         his = {}
     added.update(his)
+    from . import worldgear
+    items = worldgear.data_chunks(chunks, on or {})
+    added.update(items)
     out = with_chunks(data, added, room)
     tmp = dest + ".tmp"
     with open(tmp, "wb") as f:
         f.write(out)
     os.replace(tmp, dest)
-    return ("OJFF", kalzith.OBJECT) in his
+    return ("OJFF", kalzith.OBJECT) in his, tuple(sorted(n for (k, n) in items if k == "RDFF" and ("RDFF", n) not in chunks))
 
 
 # The companion's items, and the plain pictures they keep in a game that hasn't the copy

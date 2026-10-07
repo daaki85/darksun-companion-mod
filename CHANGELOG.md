@@ -17,7 +17,7 @@ requests #1 to #13; its notes are in
   item types), each +1; the helm is the game's metal helm +1. Each piece
   has an icon of its own and is drawn on the figures.
 - **The Cloak and Boots of Elvenkind** (with the magic weapons' switch): the
-  cloak comes with the Elven Leader's gift of his Gythka +1, the boots are in
+  cloak is the Elven Leader's gift with his Gythka +1, the boots are in
   the buried chest of Kel's caravan. Thieves and rangers only (multiclasses
   too). With the hiding rule, the cloak's wearer hides in shadows on 95 or
   less under the open sky, 90 under a roof (not halved by the light), and the
@@ -32,7 +32,22 @@ requests #1 to #13; its notes are in
   a part of his story for each piece) among his magic armor, and of the Cloak
   and Boots of Elvenkind among his magic clothes.
 
+**Fixed**
+- **The Ledger's window started with an error** (an indentation slip in its
+  Options code since pull request #20); a test now compiles every module.
+
 **Changed**
+- **The world's new items are in the game's own data,** not added while you
+  play: the launcher writes them into their people's and chests' objects, so a
+  new game makes them where they belong. The Boots of Elvenkind are in the
+  buried chest when it is dug up; the bone scale set's arm and leg pieces and
+  helm are in the slave pens' chest with its chest piece; one Castle Guard and
+  one Undermountain miner have objects of their own for their items. The
+  Options tab's switches take effect from the next start, in regions not yet
+  visited.
+- **The Elven Leader gives the Cloak of Elvenkind himself,** after his
+  Gythka +1, with a line of his own; when it can't be carried he leaves it on
+  the ground beside him, as the Gythka.
 - **Grey's Scale's arm and leg armour are AC 3** (the game's are 2).
 - **A new warrior with a staff sling keeps its shield,** as with a bow: both
   go in the missile slot, and the game asks nothing of the hands for them (the

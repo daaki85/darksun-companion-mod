@@ -5471,7 +5471,9 @@ dex_table:
 
 ; PROBE_DOS_OPEN: the DOS services (INT 21h), hooked. Opening a file (AH=3Dh) whose name ends in
 ; one of COPIES' (SEGOBJEX.GFF, the game's objects and their pictures; RESOURCE.GFF, its screens'
-; pictures and texts; GPLDATA.GFF, its scripts; RGN29.GFF, the slave pens) opens the companion's
+; pictures and texts; GPLDATA.GFF, its scripts; RGN29.GFF, the slave pens; RGN1C.GFF and
+; RGN1E.GFF, the Upper Castle and the Undermountain, a person there with an object of their own
+; for a new item) opens the companion's
 ; copy instead (D:\..., which the launcher writes with
 ; the companion's icons added; the game folder is never changed), and notes that it has; with no
 ; copy there, the game's own. Everything else goes on to DOS.
@@ -5576,6 +5578,7 @@ copy_at     dw 0
 resources_on dw 0               ; 1 once the game has opened D:\RESOURCE.GFF (PROBE_CHUNK_ID)
 scripts_on dw 0                 ; 1 once the game has opened D:\GPLDATA.GFF (Kalzith's conversation)
 region_on dw 0                  ; 1 once the game has opened D:\RGN29.GFF (Kalzith in the pens)
+others_on dw 0                  ; 1 once it has opened one of the other regions' copies
 ; the files with copies: the name's length, the game's name (up to 12 letters), the copy's path,
 ; the flag set when opened
 COPY_PATH equ 16
@@ -5592,6 +5595,8 @@ copies:
         COPY 'RESOURCE.GFF', 'D:\RESOURCE.GFF', resources_on
         COPY 'GPLDATA.GFF', 'D:\GPLDATA.GFF', scripts_on
         COPY 'RGN29.GFF', 'D:\RGN29.GFF', region_on
+        COPY 'RGN1C.GFF', 'D:\RGN1C.GFF', others_on   ; (a Castle Guard of its own: worldgear.py)
+        COPY 'RGN1E.GFF', 'D:\RGN1E.GFF', others_on   ; (an Undermountain miner of its own)
         db 0
 
 ; CAT'S GRACE (RULE_CATS_GRACE): Flaming Sphere (spell 14), given Strength's record and the

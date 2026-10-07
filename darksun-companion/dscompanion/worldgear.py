@@ -19,9 +19,10 @@
   wall the Serpent Boots show, the vrock's cliff); the legs in the Gemfields' chest; the chest
   on Balkazar's body. The chest puts Resist Fire on its wearer while worn, the helm Cloak of
   Bravery; the arms and legs are plain.
-- The Cloak and Boots of Elvenkind (DSCLOG's types, the game's Cloak's and Boots'; their stealth:
-  stealth.py): the cloak comes with the Elven Leader's gift of his Gythka +1 (to whoever has it),
-  the boots are in the buried chest of Kel's caravan, with the Cahulaks +1.
+- The Cloak and Boots of Elvenkind (DSCLOG's types, the game's Cloak's and Boots', for thieves and
+  rangers; their stealth: stealth.py): the cloak the Elven Leader's gift with his Gythka +1 (his
+  script gives it: elvenleader.py), the boots in the buried chest of Kel's caravan, with the
+  Cahulaks +1.
 - The Flame Blade, an obsidian long sword +1 (fire clerics can wield it) whose blade burns what it
   hits, as the game's Dark Flame does with Burning Hands: Focus Heat, the fire clerics' spell, cast
   as a weapon's spells are, at caster level 0: 2d6 of fire to the one hit, a save for half (AD&D's
@@ -31,16 +32,18 @@
   armour nor a helm is worn), now that a preserver can't cast in armour: on four
   of the game's wizards, better the later they're met.
 
-Each once a game (the key in the tools_given set, kept in settings), where its owner is, and never
-where the owner has one like it already (a save made after it was given). Merchants and named
-people get theirs once; people of a kind (EVERY), each of them.
+All of them are in the game's data (dataitems.py): the launcher writes them into their people's
+and chests' objects in its copy of SEGOBJEX.GFF, by the Options tab's switches, so a new game
+has them where the game makes those people and chests. People of a kind who share an object
+(the Tari, Renegades, Wild Muls) each carry the item; one Castle Guard and one Undermountain miner
+have an object of their own for theirs (a copy of their kind's, and their region's entity
+pointing to it, in the Ledger's copy of that region's file).
 """
 
 import struct
-from typing import Callable, List, NamedTuple, Optional, Set, Tuple
+from typing import Dict, List, NamedTuple, Optional, Sequence, Tuple
 
-from . import game, npcitems, ring, specialize, weaponchoice
-from .game import GameData
+from . import dataitems, game, npcitems, specialize, weaponchoice
 
 # the bone long sword the game's merchants sell (SEGOBJEX's), which the weapons are made from
 TEMPLATE = npcitems._item("0cfc000000002d000000510000000000" "04ff1c0000")
@@ -149,10 +152,8 @@ NAMES.update({CLOAK_OF_ELVENKIND: b"Cloak/Elvenkind", BOOTS_OF_ELVENKIND: b"Boot
 # priced as the game's magic clothes: its Serpent Boots 20,000, Chameleon Gloves 30,000
 ELVEN_CLOAK = armour(game.ELVEN_CLOAK_TYPE, CLOAK_OF_ELVENKIND, 0x10000 - 2546, 25000, plus=0)
 ELVEN_BOOTS = armour(game.ELVEN_BOOTS_TYPE, BOOTS_OF_ELVENKIND, 0x10000 - 2548, 20000, plus=0)
-GYTHKA_1 = (game.GYTHKA_TYPE, 1)
 FLAME_BLADE_NAME, OBSIDIAN_LONG_SWORD, FOCUS_HEAT = 0x156, 45, 116
 NAMES[FLAME_BLADE_NAME] = b"Flame Blade"
-DRAKE_SHIELD = 0x4B  # (its name entry: the Hot Springs' Templar carries it)
 
 
 def magic_weapon(spec: Tuple[int, int, int, int], plus: int, spell: int) -> bytes:
@@ -168,183 +169,161 @@ def magic_weapon(spec: Tuple[int, int, int, int], plus: int, spell: int) -> byte
 FLAME_BLADE = magic_weapon((OBSIDIAN_LONG_SWORD, FLAME_BLADE_NAME, 0x10000 - 2550, 22000), 1, FOCUS_HEAT)  # the Elven Leader's gift (the game's own: its own name, not Kreenfang)
 
 
-NAMES_OWN = 0x142  # the game's names: those before the Ledger's (DSCLOG's NAMES_OWN)
-
-
 class Gift(NamedTuple):
-    region: Optional[int]  # None: wherever they are (the game's people of its RGNFF)
+    """Items for the people or chests of OBJECTS (SEGOBJEX's), written into their data. CLONE: the
+    objects' people share theirs with others of their kind (one object each kind), and the items
+    are for one of them: the person of entity ENTITY of the region's table (ETAB), who gets an
+    object of their own, NEW, a copy of their kind's."""
     name: str
     items: Tuple[bytes, ...]
-    every: bool = False  # each of that name, not only the first met
-    slot: Optional[int] = None  # worn there if it's free (else in the backpack)
-    carrying: Optional[int] = None  # only one carrying an item of this name entry
-    container: Optional[int] = None  # not a person's: in the container of this object (SEGOBJEX's)
-    beside: Optional[Tuple[int, int]] = None  # not a person's: to the party member with an item of
-    #   this (type, plus) of a name of the game's own (a gift given by the game's script)
+    objects: Tuple[int, ...]
+    region: Optional[int] = None  # (where: the region's file, for a clone; None, RGNFF's people)
+    clone: Optional[Tuple[int, int]] = None  # (entity, new object)
 
 
 PLAIN = (BONE_SHORT_SWORD, OBSIDIAN_SHORT_SWORD, BONE_AXE, OBSIDIAN_AXE, OBSIDIAN_MACE)
+# (the objects: the people of each name in the region, as SEGOBJEX and the region's ETAB have them)
 GIFTS: Tuple[Gift, ...] = (
-    Gift(0x0B, "Weapon Merchant", tuple(weapon(w) for w in PLAIN + (METAL_SHORT_SWORD,))),
-    Gift(0x1A, "Jark", tuple(weapon(w) for w in (BONE_SHORT_SWORD, OBSIDIAN_SHORT_SWORD, BONE_AXE, OBSIDIAN_MACE))),
-    Gift(0x29, "Merzol", (weapon(OBSIDIAN_AXE),)),  # the slave pens' gladiator
-    Gift(0x1F, "Krikor", (weapon(BONE_AXE),)),
-    Gift(0x1D, "Chaero", (weapon(OBSIDIAN_SHORT_SWORD),)),
-    Gift(0x28, "Tari", (weapon(OBSIDIAN_MACE),), every=True),  # the warrens' Tari
-    Gift(None, "Renegade", (weapon(BONE_SHORT_SWORD),), every=True),
-    Gift(None, "Wild Mul", (weapon(BONE_AXE),), every=True),
+    Gift("Weapon Merchant", tuple(weapon(w) for w in PLAIN + (METAL_SHORT_SWORD,)), (285,), 0x0B),
+    Gift("Jark", tuple(weapon(w) for w in (BONE_SHORT_SWORD, OBSIDIAN_SHORT_SWORD, BONE_AXE, OBSIDIAN_MACE)), (106,), 0x1A),
+    Gift("Merzol", (weapon(OBSIDIAN_AXE),), (180,), 0x29),  # the slave pens' gladiator
+    Gift("Krikor", (weapon(BONE_AXE),), (16,), 0x1F),
+    Gift("Chaero", (weapon(OBSIDIAN_SHORT_SWORD),), (41,), 0x1D),
+    Gift("Tari", (weapon(OBSIDIAN_MACE),), (60, 243), 0x28),  # the warrens' Tari, every one
+    Gift("Renegade", (weapon(BONE_SHORT_SWORD),), (289,)),  # (every one)
+    Gift("Wild Mul", (weapon(BONE_AXE),), (290,)),
     # the metal ones, on people who fight with the like
-    Gift(0x1A, "Tobrian", (weapon(METAL_DAGGER),)),  # (a stone dagger)
-    Gift(0x14, "Templar", (weapon(METAL_MACE),)),  # the slavers' camp's (a bone mace)
-    Gift(0x1F, "Uskuye", (weapon(METAL_GREAT_AXE),)),  # (a metal long sword)
-    Gift(0x0B, "Kwerin", (weapon(METAL_PICK),)),
-    Gift(0x1C, "Castle Guard", (weapon(METAL_POLEARM),)),
+    Gift("Tobrian", (weapon(METAL_DAGGER),), (104,), 0x1A),  # (a stone dagger)
+    Gift("Templar", (weapon(METAL_MACE),), (131,), 0x14),  # the slavers' camp's (a bone mace)
+    Gift("Uskuye", (weapon(METAL_GREAT_AXE),), (75,), 0x1F),  # (a metal long sword)
+    Gift("Kwerin", (weapon(METAL_PICK),), (113,), 0x0B),
+    Gift("Castle Guard", (weapon(METAL_POLEARM),), (55,), 0x1C, clone=(121, 2560)),  # (one of six)
 )
+DAGOLAR, BALKAZAR = 26, 14  # (Dagolar: the one with Dag's Dagger, object 26; his double is 27)
 MAGIC: Tuple[Gift, ...] = (
-    Gift(0x0B, "Bowyer", (weapon(*STAFF_SLING_1),)),
-    Gift(0x1E, "Undermt Folk", (weapon(*PICK_1),)),  # (the Undermountain's miners: the first met)
-    Gift(0x28, "Churrr", (weapon(*CLUB_1),)),  # (the warrens' fighter, with his club)
-    Gift(0x04, "Arant", (weapon(*SHORT_SWORD_2),)),  # (the gladiators' captor, Silt Sea Summoning)
-    # bracers of defense on the wizards, worn where nothing else is (Mikquetzl's arm armour stays)
-    Gift(0x28, "Mikquetzl", (bracers(6),), slot=ARM),
-    Gift(0x03, "Wyrmias", (bracers(5),), slot=ARM),
-    Gift(0x0D, "Balkazar", (bracers(4),), slot=ARM),
-    Gift(None, "Dagolar", (bracers(2),), slot=ARM, carrying=0x75),  # (the one with Dag's Dagger)
+    Gift("Bowyer", (weapon(*STAFF_SLING_1),), (283,), 0x0B),
+    Gift("Undermt Folk", (weapon(*PICK_1),), (51,), 0x1E, clone=(169, 2561)),  # (one of the four miners)
+    Gift("Churrr", (weapon(*CLUB_1),), (9,), 0x28),  # (the warrens' fighter, with his club)
+    Gift("Arant", (weapon(*SHORT_SWORD_2),), (22,), 0x04),  # (the gladiators' captor, Silt Sea Summoning)
+    # bracers of defense on the wizards
+    Gift("Mikquetzl", (bracers(6),), (10,), 0x28),
+    Gift("Wyrmias", (bracers(5),), (32,), 0x03),
+    Gift("Balkazar", (bracers(4),), (BALKAZAR,), 0x0D),
+    Gift("Dagolar", (bracers(2),), (DAGOLAR,)),
     # the circlet sold by Kel (the game's magic items' merchant), the crown worn by Keldar
-    Gift(0x1A, "Kel", (ARROWBANE_ITEM,)),
-    Gift(0x27, "Keldar", (CROWN_ITEM,), slot=HEAD),
+    Gift("Kel", (ARROWBANE_ITEM,), (107,), 0x1A),
+    Gift("Keldar", (CROWN_ITEM,), (28,), 0x27),
     # the Warden's Plate, scattered: the helm on Dagolar (a boss's body, early on), the arms in the
     # Lower Castle's treasure chest (object 1360, with Dark Flame: behind the barrier the Serpent
     # Boots show, the vrock near), the legs in the Gemfields' chest (object 1065), the chest on
     # Balkazar (the hardest kill, after his mirror)
-    Gift(None, "Dagolar", (WARDENS_PLATE[3],), carrying=0x75),
-    Gift(0x1D, "Treasure chest", (WARDENS_PLATE[1],), container=DARK_FLAME_CHEST),
-    Gift(0x08, "Gemfields chest", (WARDENS_PLATE[2],), container=GEMFIELDS_CHEST),
-    Gift(0x0D, "Balkazar", (WARDENS_PLATE[0],)),
-    # the Cloak of Elvenkind with the Elven Leader's Gythka +1, the boots in the caravan's buried chest
-    Gift(0x14, "Elven Leader's gift", (ELVEN_CLOAK,), beside=GYTHKA_1),
-    Gift(0x1A, "Buried chest", (ELVEN_BOOTS,), container=CARAVAN_CHEST),
+    Gift("Dagolar", (WARDENS_PLATE[3],), (DAGOLAR,)),
+    Gift("Treasure chest", (WARDENS_PLATE[1],), (DARK_FLAME_CHEST,), 0x1D),
+    Gift("Gemfields chest", (WARDENS_PLATE[2],), (GEMFIELDS_CHEST,), 0x08),
+    Gift("Balkazar", (WARDENS_PLATE[0],), (BALKAZAR,), 0x0D),
+    # the Boots of Elvenkind in the caravan's buried chest (made by the dig's script); the cloak
+    # is the Elven Leader's gift (his script: elvenleader.py)
+    Gift("Buried chest", (ELVEN_BOOTS,), (CARAVAN_CHEST,), 0x1A),
     # the Flame Blade on the Hot Springs' Templar
-    Gift(0x23, "Templar", (FLAME_BLADE,), carrying=DRAKE_SHIELD),
+    Gift("Templar", (FLAME_BLADE,), (34,), 0x23),
 )
-def _lists(gd: GameData, index: int) -> List[int]:
-    return [struct.unpack_from("<h", gd.creature(index), o)[0] for o in game.CREATURE_ITEM_LISTS]
+ELVEN_CLOAK_OBJECT = 2546  # (its picture's object: the item the Elven Leader's script makes)
+# the header numbers of the Ledger's own item types: the game's item they're made from
+BASE_TYPES = {game.SHORT_SWORD_TYPE: 63, game.CLOAK_TYPE: 65, game.BONE_HELM_TYPE: 5, game.BONE_SHORT_SWORD_TYPE: 81,
+              game.BONE_AXE_TYPE: 22, game.OBSIDIAN_SHORT_SWORD_TYPE: 45, game.OBSIDIAN_AXE_TYPE: 22,
+              game.METAL_SHORT_SWORD_TYPE: 63, game.BRACERS_TYPE: 7, game.METAL_DAGGER_TYPE: 33,
+              game.METAL_MACE_TYPE: 20, game.METAL_GREAT_AXE_TYPE: 2, game.METAL_PICK_TYPE: 112,
+              game.METAL_POLEARM_TYPE: 19, game.CIRCLET_TYPE: 36, game.CROWN_TYPE: 36, game.PLATE_CHEST_TYPE: 57,
+              game.PLATE_ARMS_TYPE: 58, game.PLATE_LEGS_TYPE: 59, game.ELVEN_CLOAK_TYPE: 65, game.ELVEN_BOOTS_TYPE: 68}
 
 
-def _carries(gd: GameData, it: ring.Items, index: int, test: Callable[[bytes], bool]) -> bool:
-    return any(test(data) for t in _lists(gd, index) for _, data in it.chain(t))
+def header_numbers(chunks) -> Dict[int, int]:
+    out = dataitems.numbers(chunks)
+    for kind, base in BASE_TYPES.items():
+        if base in out:
+            out.setdefault(kind, out[base])
+    return out
 
 
-def _named(entry: int) -> Callable[[bytes], bool]:
-    return lambda rec: len(rec) >= game.ITEM_SIZE and struct.unpack_from("<H", rec, game.ITEM_NAME)[0] == entry
-
-
-def _same(item: bytes) -> Callable[[bytes], bool]:
-    """Like ITEM: the same type, name and plus."""
-    return lambda rec: npcitems._same(rec, item) and rec[game.ITEM_PLUS] == item[game.ITEM_PLUS]
-
-
-def _in_region(it: ring.Items, test: Callable[[bytes], bool]) -> bool:
-    return any(test(rec) for thing in range(ring.THING_COUNT) for _, rec in it.chain(thing))
-
-
-def _container(it: ring.Items, obj: int) -> Optional[int]:
-    """The item number of the container of SEGOBJEX object OBJ in the region, if there."""
-    for thing in range(ring.THING_COUNT):
-        for item, rec in it.chain(thing, inside=False):
-            if struct.unpack_from("<H", rec, 0)[0] == 0x10000 - obj:
-                return item
-    return None
-
-
-def _with_item(gd: GameData, it: ring.Items, kind: Tuple[int, int]) -> Optional[int]:
-    """The party member carrying an item of KIND (type, plus) named by the game (not the Ledger)."""
-    def test(rec: bytes) -> bool:
-        return len(rec) >= game.ITEM_SIZE and struct.unpack_from("<H", rec, game.ITEM_TYPE)[0] == kind[0] \
-            and rec[game.ITEM_PLUS] == kind[1] and struct.unpack_from("<H", rec, game.ITEM_NAME)[0] < NAMES_OWN
-    return next((m for m in range(game.PARTY_SIZE) if _carries(gd, it, m, test)), None)
-
-
-def add_inside(gd: GameData, obj: int, rec: bytes) -> bool:
-    """An item from the game's free list, made REC, put first in the container of object OBJ (a
-    new list of its contents, from the game's free objects, if it's empty)."""
-    it = ring.Items(gd)
-    box, item = _container(it, obj), it.word(ring.FREE_ITEMS)
-    if box is None or item >= game.NO_ITEM:
-        return False
-    contents, = struct.unpack_from("<H", it.item(box), ring.ITEM_CONTENTS)
-    ds = gd.ds * 16
-    if contents >= ring.THING_COUNT:
-        contents = it.word(ring.FREE_THINGS)
-        if contents >= ring.THING_COUNT:
-            return False
-        gd.guest.write(ds + ring.FREE_THINGS, struct.pack("<H", it.thing(contents)[1] & 0xFFFF))
-        gd.guest.write(ds + ring.THINGS_USED, struct.pack("<H", it.word(ring.THINGS_USED) + 1))
-        gd.guest.write(it.things + contents * 3, struct.pack("<BH", game.THING_ITEM, game.NO_ITEM))
-        gd.guest.write(it.items + box * game.ITEM_SIZE + ring.ITEM_CONTENTS, struct.pack("<H", contents))
-        it = ring.Items(gd)
-    kind, first = it.thing(contents)
-    if kind != game.THING_ITEM:
-        return False
-    gd.guest.write(ds + ring.FREE_ITEMS, it.item(item)[game.ITEM_NEXT:game.ITEM_NEXT + 2])
-    ring.took(item, f"an item (picture {struct.unpack_from('<H', rec, 0)[0]:04X}h) for object {obj}")
-    rec = bytearray(rec)
-    struct.pack_into("<h", rec, game.ITEM_NEXT, first)
-    rec[game.ITEM_SLOT] = 0xFF
-    gd.guest.write(it.items + item * game.ITEM_SIZE, bytes(rec))
-    gd.guest.write(it.things + contents * 3, struct.pack("<Bh", game.THING_ITEM, item))
-    return True
-
-
-def place(gd: GameData, given: Set[str], gifts: Tuple[Gift, ...] = GIFTS) -> List[str]:
-    """Each of GIFTS in the area gets its items not yet given this game (GIVEN: a key for each,
-    updated)."""
-    region = gd.region()
-    here = [g for g in gifts if g.region in (None, region)]
-    if not here:
-        return []
-    leader = gd.creature_name(0)
-    it = ring.Items(gd)
-    for gift in here:
-        if gift.container is None and gift.beside is None:
-            continue
-        for item in gift.items:
-            key = f"{leader}|world:{gift.name}:{struct.unpack_from('<H', item, game.ITEM_TYPE)[0]}:{item[game.ITEM_PLUS]}"
-            if key in given:
-                continue
-            if _in_region(it, _same(item)):  # (a save from after it was put there)
-                given.add(key)
-            elif gift.container is not None:
-                if add_inside(gd, gift.container, item):
-                    given.add(key)
-                    it = ring.Items(gd)
+def object_chunks(chunks, gifts: Sequence[Gift], extra: Sequence[Tuple[int, Sequence[bytes]]] = ()) -> Dict[Tuple[str, int], bytes]:
+    """For the Ledger's copy of SEGOBJEX: the objects of GIFTS (and EXTRA: (object, items)) with
+    their items, each clone a new object (its OJFF and its RDFF, renumbered), with them."""
+    numbers = header_numbers(chunks)
+    wanted: Dict[int, List[bytes]] = {}
+    out: Dict[Tuple[str, int], bytes] = {}
+    for gift in gifts:
+        for obj in gift.objects:
+            if gift.clone:
+                new = gift.clone[1]
+                if ("OJFF", obj) not in chunks or ("RDFF", obj) not in chunks:
+                    continue
+                out[("OJFF", new)] = chunks[("OJFF", obj)]
+                base = out.get(("RDFF", new), dataitems.renumbered(chunks[("RDFF", obj)], new))
+                out[("RDFF", new)] = dataitems.with_items(base, gift.items, numbers)
             else:
-                member = _with_item(gd, it, gift.beside)
-                if member is not None and npcitems.add_to(gd, member, item):
-                    given.add(key)
-                    it = ring.Items(gd)
-    for index in sorted(set(gd.combatants().values())):
-        if index < game.PARTY_SIZE:
-            continue
-        name = gd.creature_name(index)
-        rec = gd.creature(index)
-        if len(rec) < game.CREATURE_SIZE or struct.unpack_from("<h", rec, 0)[0] <= 0:
-            continue
-        for gift in here:
-            if gift.name != name:
-                continue
-            if gift.carrying is not None and not _carries(gd, it, index, _named(gift.carrying)):
-                continue
-            who = f"{name}#{region:02X}:{index}" if gift.every else name
-            for item in gift.items:
-                key = f"{leader}|world:{who}:{struct.unpack_from('<H', item, game.ITEM_TYPE)[0]}:{item[game.ITEM_PLUS]}"
-                if key in given:
-                    continue
-                if _carries(gd, it, index, _same(item)):  # (a save from after it was given)
-                    given.add(key)
-                    continue
-                if npcitems.add_to(gd, index, item, gift.slot):
-                    given.add(key)
-                    it = ring.Items(gd)
-    return []  # (nothing in the log: they're there to be found)
+                wanted.setdefault(obj, []).extend(gift.items)
+    for obj, items in extra:
+        wanted.setdefault(obj, []).extend(items)
+    for obj, items in wanted.items():
+        if ("RDFF", obj) in chunks:
+            out[("RDFF", obj)] = dataitems.with_items(chunks[("RDFF", obj)], items, numbers)
+    return out
 
+
+def data_chunks(chunks, on: Dict[str, bool]) -> Dict[Tuple[str, int], bytes]:
+    """The objects with the new items of the content switched ON (on unless False): the plain
+    weapons (world_gear), the magic ones and the rest (world_magic: with the cloak's own object,
+    for the Elven Leader's script), the bone scale set (pens_gear: with the chest piece in the
+    slave pens' chest)."""
+    from . import bonescale
+    gifts: List[Gift] = []
+    extra: List[Tuple[int, Sequence[bytes]]] = []
+    if on.get("world_gear", True) is not False:
+        gifts += GIFTS
+    if on.get("world_magic", True) is not False:
+        gifts += MAGIC
+    if on.get("pens_gear", True) is not False:
+        extra.append((bonescale.CHEST_OBJECT, bonescale.PIECES))
+    try:
+        out = object_chunks(chunks, gifts, extra)
+    except (ValueError, struct.error):
+        return {}
+    if on.get("world_magic", True) is not False:
+        out[("RDFF", ELVEN_CLOAK_OBJECT)] = dataitems.item_object(ELVEN_CLOAK, header_numbers(chunks).get(65, 0))
+    return out
+
+
+def region_chunks(region: int, rgn: Dict[Tuple[str, int], bytes], gifts: Sequence[Gift]) -> Dict[Tuple[str, int], bytes]:
+    """For the Ledger's copy of a region's file (RGNxx.GFF, its chunks RGN): its entity table
+    with each of GIFTS' clones there pointed to its new object."""
+    key = ("ETAB", region)
+    if key not in rgn:
+        return {}
+    etab = rgn[key]
+    for gift in gifts:
+        if gift.clone and gift.region == region:
+            etab = dataitems.with_entity_object(etab, gift.clone[0], gift.clone[1], gift.objects[0])
+    return {key: etab} if etab != rgn[key] else {}
+
+
+def region_file(region: int) -> str:
+    return f"RGN{region:02X}.GFF"
+
+
+def write_region(source: str, dest: str, region: int, gifts: Sequence[Gift]) -> None:
+    """The game's region file (SOURCE, only read) with GIFTS' clones in it, to DEST."""
+    import os
+    from .gff import read_gff
+    from .icons import with_chunks
+    with open(source, "rb") as f:
+        data = f.read()
+    out = with_chunks(data, region_chunks(region, read_gff(data), gifts))
+    tmp = dest + ".tmp"
+    with open(tmp, "wb") as f:
+        f.write(out)
+    os.replace(tmp, dest)
+
+
+def regions(gifts: Sequence[Gift]) -> List[int]:
+    """The regions whose files the Ledger copies (for a clone)."""
+    return sorted({g.region for g in gifts if g.clone and g.region is not None})

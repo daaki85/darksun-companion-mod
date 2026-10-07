@@ -1823,10 +1823,14 @@ Alagorn's stories from the next time the game is started.
 
 ### New items
 
-Items the game never had, or never placed. Each is given once a game, where it
-belongs (never where it is already, as in a game saved after it was given,
-and not to anyone already dead), and from then on the game keeps and saves it
-like its own. The log doesn't say: they're there to be found.
+Items the game never had, or never placed. The slave pens' (the rings, the
+cloak and armour, Shadowseeker, Kreenfang) are given once a game, where they
+belong (never where they are already, as in a game saved after they were given,
+and not to anyone already dead). The rest are in the game's own data: the
+launcher writes them into their people's and chests' objects in its copy of the
+game's objects (see [the world's new items](#the-worlds-new-items)), so the game
+makes them with those people and chests. From then on the game keeps and saves
+them like its own. The log doesn't say: they're there to be found.
 
 | Item | Where | What it does |
 |---|---|---|
@@ -1836,7 +1840,7 @@ like its own. The log doesn't say: they're there to be found.
 | **Leather Chest Armor +1** | worn by **Legcrusher**, the pens' half-giant | the leather's AC, +1 |
 | **Shadowseeker** | in the pack of **Kurzak**, the pens' guard leader | a short sword +1 (1d6+1): whoever wields it, in either hand, sees the invisible |
 | **Kreenfang** | the 2 handed Bone Gythka on the dead body by the arena's stone arch | a gythka +1 (2d4+1) |
-| **Bone Scale Arm Armor**, **Leg Armor** and **Bone Helm** | put with the Bone Scale Chest Armor the first time it's in a region with the party (the game has the set but places only the chest piece) | the set; the helm AC 1 with [Helms give AC 1](#helms-and-boots), worn by those who can wear the armour (not thieves) |
+| **Bone Scale Arm Armor**, **Leg Armor** and **Bone Helm** | in the slave pens' chest with the Bone Scale Chest Armor and Arrows +3 (the game has the set but places only the chest piece) | the set; the helm AC 1 with [Helms give AC 1](#helms-and-boots), worn by those who can wear the armour (not thieves) |
 | **Thieves' Tools** | every thief's backpack | [picking pockets](#picking-pockets) |
 | **Six scrolls** | [Kalzith's](#kalzith) shop | spells the game has no scroll of |
 | **Bone and obsidian Short Swords and Axes** | a new warrior's starting weapon with [weapon specialization](#weapon-specialization) (obsidian for a fire or earth cleric); sold by the **Weapon Merchant** and **Jark**; carried by **Merzol** in the slave pens, **Krikor**, **Chaero**, and every **Renegade** and **Wild Mul** | a short sword 1d6, an axe 1d8 (the game has no short sword but Kurzak's, and only a metal axe) |
@@ -1855,7 +1859,7 @@ like its own. The log doesn't say: they're there to be found.
 | **Warden's Arms** | the Lower Castle's treasure chest, with Dark Flame (behind the wall the Serpent Boots show, where the vrock perch) | plate arm armour +1 (AC 2, +1) |
 | **Warden's Legs** | the Gemfields' chest | plate leg armour +1 (AC 2, +1) |
 | **Warden's Chest** | on **Balkazar**'s body | plate chest armour +1 (AC 3, +1): Resist Fire on its wearer while worn |
-| **Cloak of Elvenkind** | with the **Elven Leader**'s gift of his Gythka +1 (to whoever is given it) | a grey cloak: [all but invisible](#hiding-in-shadows-to-backstab) in a fight, with the hiding rule; thieves and rangers only |
+| **Cloak of Elvenkind** | the **Elven Leader**'s gift with his Gythka +1, after the fight with his men: "And take this cloak, woven by my own tribe for our best runners..." (left on the ground by him when it can't be carried, as the Gythka is) | a grey cloak: [all but invisible](#hiding-in-shadows-to-backstab) in a fight, with the hiding rule; thieves and rangers only |
 | **Boots of Elvenkind** | the buried chest of Kel's caravan, with the Cahulaks +1 | soft boots: [silent](#hiding-in-shadows-to-backstab), with the hiding rule; thieves and rangers only |
 | **Bracers of Defense** | **Mikquetzl** (AC 6, in his pack), **Wyrmias** (AC 5), **Balkazar** (AC 4), **Dagolar** (AC 2, the one carrying Dag's Dagger) | AC for those wearing no armour: [bracers of defense](#bracers-of-defense) |
 
@@ -1890,6 +1894,24 @@ leg armour is AC 3 each (the game's is 2).
   Prisoner**) and Kreenfang and Shadowseeker (**...are +1 magic weapons**:
   without it Kurzak's is a plain Short Sword, 1d6) each have their own box;
 - every thief's tools come with picking pockets.
+
+#### The world's new items
+
+All but the slave pens' are in the game's data, written by the launcher each
+time it starts the game, by these switches: a switch changed takes effect from
+the next start, in the regions the party hasn't yet been to (a save keeps the
+regions visited as they were). Start a new game for them all.
+
+- People's items are in their objects (the game makes them carrying them); the
+  chests' in the chests' objects (the caravan's buried chest is one the dig's
+  script makes, with the Boots of Elvenkind in it).
+- People of a kind share an object: every Tari, Renegade and Wild Mul carries
+  theirs. One Castle Guard of six and one Undermountain miner of four have an
+  object of their own for their metal polearm and Deepbiter (a copy of their
+  kind's: the same look, name and fighting), their region's entity pointing to
+  it in the Ledger's copies of `RGN1C.GFF` and `RGN1E.GFF`.
+- The Elven Leader's script gives the Cloak of Elvenkind of its own object,
+  after the Gythka +1, in the Ledger's copy of the scripts.
 
 A thief can lift Pehtucl's ring, Shadowseeker and Gutterknot (200 XP for each
 weapon), not what's worn on the body. With [AD&D's rules for rings and cloaks of
@@ -1935,13 +1957,6 @@ four pieces (each a part of Haldren's story, the last of the Wardens) among his
 magic armor, and the Cloak and Boots of Elvenkind among his magic clothes,
 before his menus' "Nothing". (Checked in his scripts, not yet in a game that
 has reached him.)
-
-**A piece of the bone scale set that vanishes.** One was seen to vanish from a
-pack with no trace, so the Ledger keeps an eye on the set's three pieces: one
-gone from where it was two looks in a row (not dropped elsewhere, not a save
-loaded) is written up in the `crash-logs` folder (`vanished-` and the time),
-with what its item record holds now, and the log says so. When the game took
-it back (sold, say), the line says that nothing is wrong if you sold it.
 
 ![Dream's pack with the bone scale set: the chest, arm and leg pieces, and the Bone Helm under the pointer with its name](docs/bonescale.png)
 

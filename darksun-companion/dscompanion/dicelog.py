@@ -24,7 +24,7 @@ from collections import Counter, deque
 from dataclasses import dataclass
 from typing import Callable, Deque, Dict, List, NamedTuple, Optional, Tuple
 
-from . import arms, bonescale, dust, game, rings, targeting, icons, kalzith, monsters, names, npcitems, pickpocket, ring, scrolling, searches, semyon, shadows, specialize, sprites, stealth, tools, vulture, weaponchoice, worldgear
+from . import arms, dust, game, rings, targeting, icons, kalzith, monsters, names, npcitems, pickpocket, ring, scrolling, searches, semyon, shadows, specialize, sprites, stealth, tools, vulture, weaponchoice
 from .game import (CONVENTIONAL_AND_UPPER, CREATURE_ABILITIES, CREATURE_SIDE, CREATURE_THAC0, EFFECT_NAMES,
                    EFFECT_RULES, MATERIAL_TO_HIT, MATERIALS, SAVE_NAMES, STR_DAMAGE, GameData)
 from .guestmem import GuestMemory
@@ -346,8 +346,6 @@ class DiceLog:
         self.show_dust = True  # dust raised by walkers on sand and dirt (dust.py)
         self.pens_gear = True  # the slave pens' gear for Kurzak, Legcrusher, Pehtucl, the bone scale set
         self.magic_arms = True  # the arena's dead body's gythka and Kurzak's short sword +1 (arms.py)
-        self.world_gear = True  # the new plain weapons in merchants' stock and people's packs (worldgear.py)
-        self.world_magic = True  # bracers of defense and magic weapons (worldgear.py)
         self.vulture_on = True  # the cooked vulture quest (vulture.py)
         self.stealth_gear = True  # a worn cloak's and boots' bonuses to hiding (stealth.py)
         self._dust = dust.Dust()
@@ -375,8 +373,6 @@ class DiceLog:
         self.rules = 0  # RULE_HELMS | RULE_BOOTS: rule changes DSCLOG makes (set_rules)
         self.stealth_roll: Callable[[], int] = lambda: random.randint(1, 100)  # hiding, moving silently
         self._ring_check = 0.0
-        self._bone_watch = bonescale.Watch()
-        self._recent: Deque[str] = deque(maxlen=60)  # the log's last lines (for bonescale's report)
         self._main_ticks: Optional[int] = None  # DSCLOG's count of the map's main loop, last read
         self._look_seq = 0
         self._turn_seq = 0
@@ -650,8 +646,6 @@ class DiceLog:
         self.show_dust = bool(settings.get("dust", True))
         self.pens_gear = bool(settings.get("pens_gear", True))
         self.magic_arms = bool(settings.get("magic_arms", True))
-        self.world_gear = bool(settings.get("world_gear", True))
-        self.world_magic = bool(settings.get("world_magic", True))
         self.vulture_on = bool(settings.get("vulture", True))
         self.stealth_gear = bool(settings.get("stealth_gear", True))
         self.ring_mode = rings.mode(settings)
@@ -1038,7 +1032,6 @@ class DiceLog:
         if self.missed:
             out.append(f"({self.missed} rolls came too fast to record)")
             self.missed = 0
-        self._recent.extend(out)
         return out
 
     def _arena_ring(self, now: float) -> List[str]:
@@ -1058,21 +1051,13 @@ class DiceLog:
             if self.pens_gear and npcitems.types_ready(self.game, self.tsr_hdr):  # Kurzak's, Legcrusher's, Pehtucl's
                 before = set(self.tools_given)
                 out += npcitems.place(self.game, self.tools_given)
-                out += bonescale.place(self.game, self.tools_given)  # the bone scale armour's set
-                out += self._bone_watch.check(self.game, self.tools_given, self._recent)  # (one vanished)
                 npcitems.reprice(self.game)  # (those given before they had a magic item's price)
                 self._tools_new += sorted(self.tools_given - before)
             if self.magic_arms and npcitems.types_ready(self.game, self.tsr_hdr):
                 before = set(self.tools_given)
                 out += arms.upgrade(self.game, self.tools_given)  # the gythka and the short sword +1
                 self._tools_new += sorted(self.tools_given - before)
-            if (self.world_gear or self.world_magic) and npcitems.types_ready(self.game, self.tsr_hdr):
-                before = set(self.tools_given)
-                if self.world_gear:  # the new weapons, in shops and packs
-                    out += worldgear.place(self.game, self.tools_given)
-                if self.world_magic:  # bracers of defense and magic weapons
-                    out += worldgear.place(self.game, self.tools_given, worldgear.MAGIC)
-                self._tools_new += sorted(self.tools_given - before)
+            # (the world's new items, and the bone scale set, are in the game's data: worldgear.py)
             if self.stealth_gear:
                 stealth.reprice(self.game)  # (cloaks and boots: they help a thief hide and move silently)
             kalzith.stock(self.game, bool(self.rules & game.RULE_CATS_GRACE))  # (once a game, by its flag)

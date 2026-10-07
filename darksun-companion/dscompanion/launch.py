@@ -17,7 +17,7 @@ import subprocess
 import time
 from typing import Dict, List, Optional, Tuple
 
-from . import gamepatch, gff, gpl, icons, kalzith
+from . import gamepatch, gff, gpl, icons, kalzith, worldgear
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOS_DIR = os.path.join(HERE, "dos")
@@ -219,13 +219,31 @@ def prepare_patched_game(game_dir: str, settings: Optional[dict] = None) -> Opti
         gamepatch.write_patched(_find_file(game_dir, "DSUN.EXE"), os.path.join(DOS_DIR, PATCHED_EXE), skip)
     except (gamepatch.PatchError, OSError) as e:
         return str(e)
-    objects_ok = False
+    objects_ok, new_objects = False, ()
     try:
         objects = _find_file(game_dir, icons.OBJECTS_FILE)
         if objects:
-            objects_ok = icons.write_objects(objects, os.path.join(DOS_DIR, icons.OBJECTS_FILE))
+            objects_ok, new_objects = icons.write_objects(objects, os.path.join(DOS_DIR, icons.OBJECTS_FILE), on)
     except (gff.GffError, OSError, KeyError, struct.error, ValueError):
         pass  # no icons of our own: the game's plain ones
+    # the regions with a person given an object of their own for a new item (worldgear.py): only
+    # with that object in the objects copy (a region naming an object that isn't there would stop
+    # the game)
+    gifts = (worldgear.GIFTS if on["world_gear"] else ()) + (worldgear.MAGIC if on["world_magic"] else ())
+    for region in worldgear.regions(worldgear.GIFTS + worldgear.MAGIC):
+        name, dest = worldgear.region_file(region), os.path.join(DOS_DIR, worldgear.region_file(region))
+        mine = [g for g in gifts if g.region == region and g.clone and g.clone[1] in new_objects]
+        try:
+            source = _find_file(game_dir, name)
+            if mine and source:
+                worldgear.write_region(source, dest, region, mine)
+            elif os.path.exists(dest):
+                os.remove(dest)
+        except (gff.GffError, OSError, KeyError, struct.error, ValueError):
+            try:
+                os.remove(dest)
+            except OSError:
+                pass
     # Kalzith, the slave pens' defiler: in his pen and with his conversation only if the objects
     # copy has him too (the pens naming an object that isn't there would stop the game)
     # (Semyon, the vulture and the pens' questions are in the scripts' copy too: with Kalzith off,
@@ -233,8 +251,9 @@ def prepare_patched_game(game_dir: str, settings: Optional[dict] = None) -> Opti
     with_kalzith = on["kalzith"] and objects_ok
     files = [(kalzith.SCRIPTS_FILE, lambda source, dest: kalzith.write_scripts(
         source, dest, with_kalzith, on["semyon"], on["vulture"], on["arena_ring"],
-        on["magic_arms"] and objects_ok, on["world_magic"] and objects_ok))]  # (Alagorn knows the
-    # weapons by their own pictures)
+        on["magic_arms"] and objects_ok, on["world_magic"] and objects_ok,
+        worldgear.ELVEN_CLOAK_OBJECT in new_objects))]  # (Alagorn knows the weapons by their own
+    # pictures; the Elven Leader gives the cloak of its own object)
     if with_kalzith:
         files.append((kalzith.REGION_FILE, kalzith.write_region))
     try:

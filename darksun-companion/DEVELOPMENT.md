@@ -55,7 +55,8 @@ Every roll in the game goes through one function, Borland C++'s `rand()`.
    [Dinos and the Trustee](README.md#what-dinos-and-the-trustee-say-about-them)), and
    looks for its data files in the current folder rather than next to itself. The helper also hooks DOS's `INT 21h`, to
    open the launcher's copies of `SEGOBJEX.GFF`, `RESOURCE.GFF` (see
-   [Item icons](README.md#new-items)), `GPLDATA.GFF` and `RGN29.GFF` (see
+   [Item icons](README.md#new-items)), `RGN1C.GFF`, `RGN1E.GFF` (see
+   [the world's new items](README.md#the-worlds-new-items)), `GPLDATA.GFF` and `RGN29.GFF` (see
    [Kalzith](README.md#kalzith), [Semyon](README.md#semyon) and
    [Dinos and the Trustee](README.md#what-dinos-and-the-trustee-say-about-them)), the mouse driver's `INT 33h`
    (for [scrolling the map](README.md#scrolling-the-map)) and the keyboard's `INT 16h`
@@ -437,8 +438,20 @@ the screen shows only effects with an icon; with the rule on, the Ledger gives
 
 ([In the README](README.md#new-items).)
 
-How: the Ledger puts each item in its owner's things, a record from the game's
-free list. The short sword, the cloak whose plus counts and the bone helm are
+How: the slave pens' items, the Ledger puts in their owners' things, a record
+from the game's free list. The world's (and the bone scale set) are in the
+game's data instead (`dscompanion/dataitems.py`, `worldgear.py`): in the
+Ledger's copy of `SEGOBJEX.GFF`, each person's or chest's object (its RDFF: the
+object's record, then its items, each a child or the next of the one before,
+with its type and name as attributes) has the new items after its own, so the
+game makes them where it makes the object. One Castle Guard and one
+Undermountain miner have an object of their own (2560, 2561: copies of their
+kind's, their record renumbered), their entity in the Ledger's copies of
+`RGN1C.GFF` and `RGN1E.GFF` pointing to it. The Elven Leader's script (46, in
+the scripts' copy: `elvenleader.py`) gives the Cloak of Elvenkind (object 2546,
+an item object of its own) after the Gythka, as the game's scripts give items
+(command 39h, a new item of the object; 25h on the ground when it can't be
+carried). The short sword, the cloak whose plus counts and the bone helm are
 item types the helper adds after the game's 115 each time the game reads its
 table in; the names (Ring of Protection, Thieves' Tools, Short Sword, the
 cloak's, Shadowseeker, Kreenfang, from 322 on) are entries it adds after the
