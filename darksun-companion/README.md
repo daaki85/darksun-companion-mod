@@ -1870,8 +1870,9 @@ start a new game to have them all. The log doesn't say where they are: they're
 there to be found. [Every magic item](#every-magic-item) lists the magic ones
 with the game's own.
 
-**Mundane items.** The game has no plain short sword (only Kurzak's), only a
-metal axe, and no plain metal weapons at all; the Ledger adds them:
+**Mundane items.** The game has no plain short sword (only Kurzak's), no bone
+or obsidian axe or great axe, no bone dagger and few plain metal weapons; the
+Ledger adds them:
 
 | Icon | Item | Where | What it is |
 |---|---|---|---|
@@ -1893,9 +1894,9 @@ metal axe, and no plain metal weapons at all; the Ledger adds them:
 | ![](docs/items/leather-helm.png) | **Helm** | in **Kurzak**'s pack, in the slave pens | the game's leather helm |
 | ![](docs/items/thieves-tools.png) | **Thieves' Tools** | every thief's backpack; sold by **Kel** in his caravan (two sets, 30 each) | [picking pockets](#picking-pockets) |
 
-The bone and obsidian short swords and axes, and the obsidian mace, are also a
-new character's starting weapon with [weapon specialization](#weapon-specialization)
-(obsidian for a fire or earth cleric).
+The bone and obsidian weapons are also new characters' starting weapons with
+[weapon specialization](#weapon-specialization), each in a material the
+character can use.
 
 **Magic items:**
 
@@ -1952,26 +1953,18 @@ leg armour is AC 3 each (the game's is 2).
 places them all (the arena's ring has a box of its own); a thief's tools come
 with picking pockets.
 
-A thief can lift Pehtucl's ring, Shadowseeker, Gutterknot and Mindshard (200
-XP for each weapon), not what's worn on the body. With [AD&D's rules for rings and cloaks of
+A thief can [lift](#picking-pockets) Pehtucl's ring, Shadowseeker, Gutterknot
+and Mindshard (200 XP for each weapon), but nothing worn on the body.
+
+With [AD&D's rules for rings and cloaks of
 protection](#rings-and-cloaks-of-protection) on, two rings give +1 together
 and neither ring nor cloak gives AC over magical armour.
 
-![Backpack cells in the game: Kreenfang and Shadowseeker; Inixhide (Leather Chest Armor +1) and the Cloak of Protection +1; Pehtucl's and the arena's Rings of Protection +1; the Bone Helm](docs/icons.png)
-
-![Backpack cells in the game: the bone and obsidian Short Swords, the bone and obsidian Axes, the obsidian Mace and a plain Great Axe](docs/new-weapons.png)
-
-![Backpack cells in the game: Gutterknot, Deepbiter, Windlash, Greenbright, a plain metal Short Sword and Bracers of Defense](docs/magic-items.png)
-
-![Backpack cells in the game: the metal Dagger, Mace, Great Axe, Pick and Polearm](docs/metal-weapons.png)
-
 ![The inventory screen in the game: Arrowbane, a silver circlet, in a backpack cell; the Sunking Crown, a gold crown, in the head's slot](docs/head-items.png)
-
-![Inventory cells in the game: the Warden's Chest, Arms, Legs and Helm](docs/wardens-plate.png)
 
 ![Dream's pack with the bone scale set: the chest, arm and leg pieces, and the Bone Helm under the pointer with its name](docs/bonescale.png)
 
-**Icons and names.** Each has an icon of its own, made from the plain item's
+**Icons and names.** Each has an icon of its own (in the tables above), made from the plain item's
 the way the game makes its magic items' (a few pixels in the colours it cycles
 like fire); dropped on the map they look like the plain item. The game's names
 are at most 15 letters, so the rings are **RING/PROTECTION** and the cloak
@@ -2152,11 +2145,10 @@ Tanelyv's Armor also has a chest piece, with no plus.
 
 Every plain weapon in a game with the new items, the game's and the Ledger's,
 by kind and material: who sells it and who carries it (by the names the game
-gives them; many are of a kind, every Renegade or Tari). The **Weapon
-Merchant** is in Teaquetzl, **Jark** and **Kel** in Kel's caravan, the
-**Bowyer** in Teaquetzl. A starting weapon (see
-[weapon specialization](#weapon-specialization)) is one of these too; the
-game's stone pick is only a starting weapon (Deepbiter is its magic one).
+gives them; many are of a kind, such as every Renegade or Tari). The **Weapon
+Merchant** and the **Bowyer** are in Teaquetzl, **Jark** and **Kel** in Kel's
+caravan. The game's plain stone pick is only ever a
+[starting weapon](#weapon-specialization); Deepbiter is its magic one.
 
 | Icon | Kind | Material | Sold by | Carried by, or found in |
 |---|---|---|---|---|
@@ -2333,20 +2325,14 @@ try anyone's with Thieves' Tools; with its **... or the leader, a thief, presses
 P in a conversation** ticked too (it is off by default), also with P, the
 thief as the party's leader (keys 1-4):
 
-- **Thieving tools.** Every thief starts a new game with a set in their
-  backpack, in its first free cell (the log says so); a thief who joins later, or one in a game
-  started before this version, gets a set once too. A thief who loses or sells
-  theirs can buy another from Kel, who sells two sets. Moving the tools about the inventory
-  screen doesn't count as being without: no second set for that. They are called **Thieves'
-  Tools**, a name the helper adds to the game's (see
-  [New item names](#new-items)). Tools an earlier version gave, called
-  "pick" or named over the game's "Rest icon", are renamed. They look like a satchel (the game's own
-  picture), and earlier sets that looked like a key change to it too. On the
-  inventory screen, pick the tools up, go back to the
+- **Thieves' Tools.** Every thief starts a new game with a set (a satchel) in
+  the first free backpack cell, and a thief who joins later gets one too (the
+  log says so). A thief who loses or sells theirs can buy another from Kel, who
+  sells two sets. On the inventory screen, pick the tools up, go back to the
   game with them on the pointer, and click someone in sight: the result comes
   up in the game's message window, and the tools stay on the pointer for the
-  next one. (Clicking open ground drops them, as with anything carried.) Not in
-  a fight: there's no time for it then, and the tools stay on the pointer.
+  next try. (Clicking open ground drops them, as with anything carried.) Not in
+  a fight: there's no time for it then.
 - **P in a conversation** (if ticked). In a conversation, press **P**.
 
 Either way, the Ledger rolls the leader's pick pockets chance as
@@ -2356,12 +2342,11 @@ it stands now (effects and a worn belt's 5 counted, as in the thief rows):
   cell): something weighing 10 or less (a bag or arrows are 10, a helm 15, a
   long sword 30) that isn't worn on the body (armour, a belt, boots, a helm, a
   cloak). A dagger, a ring, an amulet, a gem or food can be lifted, and so can
-  Kurzak's short sword, Shadowseeker, Churrr's club, Gutterknot, and Maris's
-  short sword, Mindshard, whatever their weight: lifting any of them is worth 200 XP to the thief, given by the game's own routine for a quest's XP
-  ("Cilla receives 200 experience points!", the quest's sound; split among a
-  multi-class thief's classes, as the game's quests are) (see
-  [New items](#new-items)). Keys stay,
-  as scripts may look for them. People outside the party keep all they own in
+  three weapons whatever their weight: Kurzak's Shadowseeker, Churrr's
+  Gutterknot and Maris's Mindshard (see [New items](#new-items)). Lifting one is
+  worth 200 XP to the thief, given as the game gives a quest's ("Cilla
+  receives 200 experience points!", with the quest's sound; split among a
+  multi-class thief's classes). Keys stay, as scripts may look for them. People outside the party keep all they own in
   their pack, so this goes by what each thing is.
 - **Failure:** a move silently roll. Made, the thief slips away unnoticed;
   missed, they're caught.
