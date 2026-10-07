@@ -1916,10 +1916,12 @@ that can wear the game's chain (no single-class thieves), and kept from more
 with [class restrictions](#class-restrictions). **Grey's Scale**'s arm and
 leg armour is AC 3 each (the game's is 2).
 
-**On the Options tab**, under New content: **Bone, obsidian and metal short
-swords...** places the plain weapons; **Bracers of defense on four wizards...**
-the bracers and the named magic items; the arena's ring and Kreenfang and
-Shadowseeker have a box each (without the last, Kurzak's is a plain Short
+**On the Options tab**, under New content: **Plain weapons the game
+lacks...** places the plain weapons; **Magic items in the world...** the
+named magic items, the bracers and the tome, with Alagorn's stories;
+**The slave pens' people's gear...** Kurzak's, Legcrusher's and Pehtucl's
+items and the bone scale set; the arena's ring and **Kreenfang and
+Shadowseeker** have a box each (without the last, Kurzak's is a plain Short
 Sword); a thief's tools come with picking pockets.
 
 A thief can lift Pehtucl's ring, Shadowseeker and Gutterknot (200 XP for each

@@ -7,6 +7,12 @@ Released pull requests are summarised in a line or two each; the release notes
 
 ## Pull request #25 (in progress)
 
+**Changed**
+- **The Options tab's New content boxes** say what each one adds now: the
+  magic items box names the new weapons, the Gythka +2 and the tome, and the
+  others name their items (Kreenfang and Shadowseeker, the pens' gear, the
+  plain weapons).
+
 **Documentation**
 - **[Every magic item](darksun-companion/README.md#every-magic-item):** the
   guide lists all the magic items in a game with the new content, the game's

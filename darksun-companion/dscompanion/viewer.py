@@ -382,14 +382,17 @@ class Viewer:
                 ("kalzith", "Kalzith, a defiler slave in the slave pens who sells arcane scrolls (new games)"),
                 ("semyon", "Semyon in the slave pens after he leaves the arena, and breaking out with Scar"),
                 ("vulture", "The cooked vulture: Dinos cooks it for the party (XP and a full rest)"),
-                ("pens_gear", "Gear for Kurzak, Legcrusher and Pehtucl, and the rest of the bone scale "
-                              "armour with a Bone Helm"),
-                ("magic_arms", "The 2 handed Bone Gythka on the arena's dead body and Kurzak's Short Sword are +1 magic "
-                               "weapons"),
-                ("world_gear", "Bone, obsidian and metal short swords, bone and obsidian axes and obsidian maces "
-                               "sold by the Weapon Merchant and Jark, and carried by a few kinds of people"),
-                ("world_magic", "Bracers of defense on four wizards, a magic club, pick, staff sling and "
-                                "short sword, a circlet and a crown, the Warden's Plate, elven cloak and boots and a flame blade")):
+                ("pens_gear", "The slave pens' people's gear: a Bone Helm and short sword for Kurzak, Inixhide for "
+                              "Legcrusher, a Ring and Cloak of Protection +1 for Pehtucl, and the rest of the bone "
+                              "scale armour"),
+                ("magic_arms", "Kreenfang and Shadowseeker: the Bone Gythka on the arena's dead body and Kurzak's "
+                               "short sword made +1 magic weapons"),
+                ("world_gear", "Plain weapons the game lacks (bone, obsidian and metal short swords, axes, maces and "
+                               "more), sold by the Weapon Merchant and Jark and carried by people who fight with them"),
+                ("world_magic", "Magic items in the world: 13 named weapons (among them three axes, two polearms, an "
+                                "air cleric's dagger and two psionicists' short swords), the Elven Leader's Gythka +2, "
+                                "bracers of defense on four wizards, a circlet and a crown, the Warden's Plate, elven "
+                                "cloak and boots and the Tome of Understanding")):
             self.content_vars[key] = tk.BooleanVar(value=settings.get(key, True) is not False)
             ttk.Checkbutton(new, text=text, variable=self.content_vars[key],
                             command=self._popups_changed).pack(anchor="w", pady=(4, 0))
