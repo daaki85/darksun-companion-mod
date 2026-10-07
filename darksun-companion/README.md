@@ -1453,8 +1453,7 @@ fighter, gladiator and ranger levels; characters stop at 10):
 
 | Skill with the weapon | Who | Melee, levels 1–6 | 7–10 | Bow, 1–6 | 7–10 | Sling, staff sling or chatkcha, 1–6 | 7–10 |
 |---|---|---|---|---|---|---|---|
-| none (not a warrior) | clerics, druids, preservers, psionicists, thieves | 1 | 1 | 2 | 2 | 1 | 1 |
-| the game's (no kinds chosen, or the rule off) | any warrior | 3/2 | 2 | 2 | 2 | 1 | 1 |
+| none | non-warriors: clerics, druids, preservers, psionicists, thieves | 1 | 1 | 2 | 2 | 1 | 1 |
 | a kind not chosen | any warrior | 1 | 3/2 | 2 | 2 | 1 | 1 |
 | expertise | a ranger: its chosen kind, and every bow | 3/2 | 2 | 3 | 4 | 3/2 | 2 |
 | specialized | a fighter's or gladiator's chosen kind | 3/2 | 2 | 3 | 4 | 3/2 | 2 |
