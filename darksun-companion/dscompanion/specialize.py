@@ -60,7 +60,7 @@ def page_of(kind: int) -> int:
 # A character's skill with a weapon, as DSCLOG's SPEC_OF works it out (game.SPEC_SLOTS holds the
 # chosen kinds, kind + 1 each): NONE when it has chosen none (monsters too: the game's numbers),
 # PLAIN with a weapon of another kind (or as a dual-classed warrior whose warrior class isn't
-# back yet), EXPERT a ranger's (no fighter or gladiator class: the
+# back yet), EXPERT a ranger's (the
 # attacks only), SPECIAL, MASTER (a fighter's own kind, its first, from 5th level), GRAND (9th)
 NONE, PLAIN, EXPERT, SPECIAL, MASTER, GRAND = range(6)
 SKILL_NAMES = {SPECIAL: "specialized", MASTER: "mastery", GRAND: "grand mastery"}

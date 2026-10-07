@@ -1406,7 +1406,7 @@ in chosen kinds of weapon, as in AD&D:
 |---|---|---|
 | **Fighter** (one class or more) | 1 kind | specialized: +1 to hit, +2 damage; **mastery** from 5th fighter level (+3 to hit, +3 damage); **grand mastery** from 9th (the same, the damage die a size larger, d8 to d10, and one more attack a round) |
 | **Gladiator** | 2 kinds at creation, a 3rd at 6th level and a 4th at 9th | specialized in each: +1 to hit, +2 damage |
-| **Ranger** (one class or more) | 1 kind | expertise: the game's attacks a round, no other bonus (a fighter/ranger takes the fighter's row instead) |
+| **Ranger** (one class or more) | 1 kind | expertise: the game's attacks a round, no other bonus |
 
 The game already gives every fighter, gladiator and ranger the specialist's
 attacks in melee (3/2 a round, 2 from 7th level, 5/2 from 13th). With the
