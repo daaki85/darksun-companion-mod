@@ -71,12 +71,11 @@ double-click, with the options as last set.)
 
 ## What's new
 
-In pull request #24 (merged 2026-10-07): **magic weapons for the classes that had
-too few.** **Galefang**, a dagger +2 an air cleric can wield; **Mindshard** and
-**Stillwater**, short swords +1 a psionicist can wield (alone or with a
-cleric); and two polearms, **Linebreaker** +2 and **Thornwall** +1 (on the
-slave pens' weapon rack). Alagorn tells the story of each. And **Drakejaw**,
-from #23, is now really on its Magera.
+In pull request #25 (merged 2026-10-07): **bone and obsidian great axes and a bone
+dagger**, so water and fire clerics' warriors have more to choose from, and
+ways to replace a broken weapon or lost Thieves' Tools in the shops. Defilers
+now leave a body, a thief can lift Mindshard from Maris for 200 XP, and the
+guide's item tables show each item's icon.
 
 Earlier changes, pull request by pull request, are in
 [`CHANGELOG.md`](CHANGELOG.md). Releases have notes of their own:

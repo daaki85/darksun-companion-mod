@@ -98,7 +98,7 @@ class PickTests(unittest.TestCase):
     def test_churrrs_club(self):
         """Churrr's Gutterknot lifted (whatever its weight), by its name: SWORD_XP to the thief."""
         from dscompanion import worldgear
-        self.assertEqual(set(pickpocket.LIFTABLE_NAMES), {worldgear.GUTTERKNOT})
+        self.assertEqual(set(pickpocket.LIFTABLE_NAMES), {worldgear.GUTTERKNOT, worldgear.MINDSHARD})
         m = self.m
         struct.pack_into("<H", m, ITEMS + CLUB * game.ITEM_SIZE + game.ITEM_TYPE, 45)  # (too heavy now)
         struct.pack_into("<H", m, ITEMS + SWORD * game.ITEM_SIZE + game.ITEM_NAME, worldgear.GUTTERKNOT)
@@ -107,6 +107,17 @@ class PickTests(unittest.TestCase):
                                       f"Dag receives {pickpocket.SWORD_XP} experience points!")
         self.assertEqual((result.xp_to, result.xp), (0, pickpocket.SWORD_XP))
         self.assertEqual(self.guard_items(), [CLUB, KEY, BOOTS])
+
+    def test_maris_mindshard(self):
+        """Maris's Mindshard (an obsidian short sword, weight 30) lifted by its name: SWORD_XP too."""
+        from dscompanion import worldgear
+        m = self.m
+        struct.pack_into("<H", m, ITEMS + CLUB * game.ITEM_SIZE + game.ITEM_TYPE, 45)  # (too heavy now)
+        struct.pack_into("<H", m, ITEMS + SWORD * game.ITEM_SIZE + game.ITEM_NAME, worldgear.MINDSHARD)
+        result = self.attempt(11)
+        self.assertEqual(result.text, "Dag lifts an obsidian short sword from Guard unnoticed. "
+                                      f"Dag receives {pickpocket.SWORD_XP} experience points!")
+        self.assertEqual((result.xp_to, result.xp), (0, pickpocket.SWORD_XP))
 
     def test_caught(self):
         result = self.attempt(12, 17)  # pick pockets 11, move silently 16

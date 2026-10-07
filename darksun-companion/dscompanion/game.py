@@ -98,6 +98,8 @@ PLATE_CHEST_TYPE, PLATE_ARMS_TYPE, PLATE_LEGS_TYPE = GAME_TYPES + 16, GAME_TYPES
 # the Cloak and Boots of Elvenkind (worldgear.py; their stealth: stealth.py)
 ELVEN_CLOAK_TYPE, ELVEN_BOOTS_TYPE = GAME_TYPES + 19, GAME_TYPES + 20
 AIR_DAGGER_TYPE = GAME_TYPES + 21  # a metal dagger air clerics may use (worldgear.py's Galefang)
+BONE_GREAT_AXE_TYPE, OBSIDIAN_GREAT_AXE_TYPE = GAME_TYPES + 22, GAME_TYPES + 23  # (a new warrior's, weaponchoice.py)
+BONE_DAGGER_TYPE = GAME_TYPES + 24  # (a water cleric's dagger: weaponchoice.py)
 GYTHKA_TYPE = 0x2C  # the game's gythka ("2 handed Bone Gythka")
 # The companion's rule changes (DSCLOG's RULES): helms count AC 1, boots add a move in a fight;
 # AD&D's two-weapon penalties; spells saved against with the spell save; no doubled d20

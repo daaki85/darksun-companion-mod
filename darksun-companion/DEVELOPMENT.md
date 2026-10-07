@@ -584,8 +584,10 @@ the icon can't be clicked). There the helper (`INT B9h`) raises the reader's
 WIS, in the sheet and the creature record, writes its message in the game's
 buffer, and goes on as for a power taught: the game uses the tome up and shows
 it. The short sword, the cloak whose plus counts, the bone helm and the rest
-(22, the last Galefang's: a metal dagger whose class list has the air cleric's
-bit, which none of the game's daggers have) are item types the helper adds
+(25: Galefang's, a metal dagger whose class list has the air cleric's
+bit, which none of the game's daggers have; then the bone and obsidian great
+axes, the metal one's of those materials, and a bone dagger, the only dagger a
+water cleric may use) are item types the helper adds
 after the game's 115 each time the game reads its table in (`TYPES_EXTRA`; its
 weapon kinds by type, `kind_of_type`, cover them too); the Ledger's item names (`dscompanion/names.py`) are entries it adds
 after the game's 322 (the game puts the item type's material before the name
@@ -616,6 +618,13 @@ Alagorn's new menu lines are in the Ledger's copy of his scripts
   are one too many, so items past the locals use the Ledger's flags from 784
   on (set afresh as the part starts, as the locals are). The new stories'
   "none left" test is one subroutine they all call.
+
+The icons in the guide's item tables (`docs/items/*.png`) are drawn from the
+game's data by `python -m dscompanion.docicons GAME_FOLDER`, from the Ledger's
+copy of `SEGOBJEX.GFF` in `dos/` (start the game from the Ledger once first)
+and the game's palette: each picture twice its size, the rest transparent.
+`docicons.ICONS` names each image's object; a new item needs its line there,
+and `tests/test_docicons.py` checks that every icon the guide shows is there.
 
 ### Kalzith
 

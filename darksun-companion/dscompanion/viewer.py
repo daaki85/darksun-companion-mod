@@ -382,14 +382,9 @@ class Viewer:
                 ("kalzith", "Kalzith, a defiler slave in the slave pens who sells arcane scrolls (new games)"),
                 ("semyon", "Semyon in the slave pens after he leaves the arena, and breaking out with Scar"),
                 ("vulture", "The cooked vulture: Dinos cooks it for the party (XP and a full rest)"),
-                ("pens_gear", "Gear for Kurzak, Legcrusher and Pehtucl, and the rest of the bone scale "
-                              "armour with a Bone Helm"),
-                ("magic_arms", "The 2 handed Bone Gythka on the arena's dead body and Kurzak's Short Sword are +1 magic "
-                               "weapons"),
-                ("world_gear", "Bone, obsidian and metal short swords, bone and obsidian axes and obsidian maces "
-                               "sold by the Weapon Merchant and Jark, and carried by a few kinds of people"),
-                ("world_magic", "Bracers of defense on four wizards, a magic club, pick, staff sling and "
-                                "short sword, a circlet and a crown, the Warden's Plate, elven cloak and boots and a flame blade")):
+                (launch.NEW_ITEMS, "New items, magical and mundane: weapons, armour and other gear the game "
+                                   "lacks or never placed, on its people, in its shops and chests (the guide's "
+                                   "New items lists them)")):
             self.content_vars[key] = tk.BooleanVar(value=settings.get(key, True) is not False)
             ttk.Checkbutton(new, text=text, variable=self.content_vars[key],
                             command=self._popups_changed).pack(anchor="w", pady=(4, 0))
@@ -404,7 +399,6 @@ class Viewer:
         self.pick_key = tk.BooleanVar(value=bool(settings.get("pick_key", False)))
         ttk.Checkbutton(new, text="... or the leader, a thief, presses P in a conversation",
                         variable=self.pick_key, command=self._popups_changed).pack(anchor="w", padx=(20, 0))
-        ttk.Button(new, text="Give thieving tools now", command=self.give_tools).pack(anchor="w", pady=(8, 0))
 
         # how the game looks
         looks = section("on_screen", "On the screen (in the game)")
@@ -463,16 +457,6 @@ class Viewer:
         settings = launch.load_settings()
         settings["options_open"] = [key for key, part in self.sections.items() if part.is_open]
         launch.save_settings(settings)
-
-    def give_tools(self) -> None:
-        """A set of thieving tools for each thief in the party without one, right away (they
-        also get one at the start of a new game, or when the Ledger first sees them)."""
-        if self.dice is None or not self.dice.attached:
-            self.status.set("Thieving tools: the game isn't running with the dice log yet.")
-            return
-        lines = self.dice.give_tools_now()
-        self._append_dice(lines)
-        self.status.set(lines[-1] if lines else "")
 
     def _slot_box(self, parent) -> ttk.Combobox:
         box = ttk.Combobox(parent, width=3, state="readonly")

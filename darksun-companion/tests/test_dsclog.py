@@ -759,7 +759,7 @@ class KindTableTests(unittest.TestCase):
         """DSCLOG's weapon kinds by item type are specialize.py's."""
         from dscompanion import specialize
         image = load_image()
-        want = bytearray(137)
+        want = bytearray(140)
         for t, k in specialize.KIND_OF_TYPE.items():
             want[t] = k + 1
         self.assertGreater(image.find(bytes(want)), 0)
@@ -1150,7 +1150,8 @@ class KindsAllowedTests(unittest.TestCase):
                game.METAL_SHORT_SWORD_TYPE: (1, 4, 0x1672), game.METAL_DAGGER_TYPE: (1, 4, 0x1FF2),
                game.METAL_MACE_TYPE: (1, 4, 0x1672), game.METAL_GREAT_AXE_TYPE: (1, 4, 0x1662),
                game.METAL_PICK_TYPE: (1, 4, 0x1772), game.METAL_POLEARM_TYPE: (1, 4, 0x1672),
-               game.AIR_DAGGER_TYPE: (1, 4, 0x1FF3)}
+               game.AIR_DAGGER_TYPE: (1, 4, 0x1FF3), game.BONE_GREAT_AXE_TYPE: (1, 1, 0x1668),
+               game.OBSIDIAN_GREAT_AXE_TYPE: (1, 3, 0x166E), game.BONE_DAGGER_TYPE: (1, 1, 0x1FFA)}
     TYPES = 0x8000  # (segment)
 
     def record(self, t):
@@ -1170,7 +1171,7 @@ class KindsAllowedTests(unittest.TestCase):
         mu.mem_write(TSR * 16, image)
         mu.mem_write(TSR * 16 + 0xFFF0, bytes((0xF4,)))  # (hlt: where KINDS_ALLOWED returns)
         mu.mem_write(GAME_DS * 16 + 0x1669, struct.pack("<HH", 0, self.TYPES))
-        mu.mem_write(self.TYPES * 16, b"".join(self.record(t) for t in range(137)))
+        mu.mem_write(self.TYPES * 16, b"".join(self.record(t) for t in range(140)))
         sheet = test_restrict.sheet
         combos = [(9,), (13,), (10,), (11,), (12,), (17,), (9, 12), (9, 17), (9, 11), (13, 5), (13, 12)]
         for c in range(1, 5):
@@ -1188,7 +1189,7 @@ class KindsAllowedTests(unittest.TestCase):
                 self.assertEqual([k for k in range(16) if got >> k & 1], want)
         fire = restrict.allowed_kinds(sheet(9, 3), self.record)
         self.assertEqual([specialize.KINDS[k] for k in fire],
-                         ["long sword", "dagger", "short sword", "mace", "axe", "chatkcha"])
+                         ["long sword", "dagger", "short sword", "mace", "axe", "great axe", "chatkcha"])
 
 
 @unittest.skipIf(Uc is None, "unicorn is not installed")
@@ -1824,7 +1825,7 @@ class TypesTests(unittest.TestCase):
         self.mu = mu = Uc(UC_ARCH_X86, UC_MODE_16)
         mu.mem_map(0, 0x100000)
         mu.mem_write(TSR * 16, image)
-        size = image.find(bytes.fromhex("8146fcb801" "8356fe00"))  # 22 types of 20 bytes: 1B8h
+        size = image.find(bytes.fromhex("8146fcf401" "8356fe00"))  # 25 types of 20 bytes: 1F4h
         names_fill, fill = fill_probes(image)
         self.assertGreater(min(size, fill - names_fill), 0)
         mu.mem_write(VEC_TYPES_SIZE * 4, struct.pack("<HH", size, TSR))
@@ -1842,12 +1843,12 @@ class TypesTests(unittest.TestCase):
         return mu.reg_read(r.UC_X86_REG_SP)
 
     def test_room_and_filled(self):
-        """The game's 115 types (2300 bytes): 440 bytes more reserved, and after the read
+        """The game's 115 types (2300 bytes): 500 bytes more reserved, and after the read
         DSCLOG's types at 115 on, the number noted, and Grey's Scale's arm and leg armour AC 3."""
         from dscompanion import npcitems
         self.mu.mem_write(SS * 16 + BP - 4, struct.pack("<I", 2300))
         self.assertEqual(self.interrupt(VEC_TYPES_SIZE), 0x7FC)
-        self.assertEqual(struct.unpack("<I", self.mu.mem_read(SS * 16 + BP - 4, 4))[0], 2740)
+        self.assertEqual(struct.unpack("<I", self.mu.mem_read(SS * 16 + BP - 4, 4))[0], 2800)
         self.mu.mem_write(SS * 16 + 0x7FC, bytes(4))
         self.assertEqual(self.interrupt(VEC_TYPES_FILL, eax=0), 0x80C)
         at = self.TYPES_SEG * 16 + 115 * 20

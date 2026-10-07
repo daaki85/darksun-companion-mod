@@ -11,8 +11,7 @@
 - A circlet and a crown, worn on the head and not armour (no AC; bracers of defense and a
   preserver's spells go with them), each with a spell the game keeps on its wearer while it's
   worn, as it does its own magic items': Arrowbane, Protection from Normal Missiles, sold by
-  Kel; the Sunking Crown, Protection from Evil 10' Radius (the party round its wearer warded),
-  worn by Keldar, the templar of Dagolar's tunnels.
+  Kel; the Sunking Crown, Protection from Evil, worn by Keldar, the templar of Dagolar's tunnels.
 - The Warden's Plate, plate mail +1 (DSCLOG's plate types: AC 3 chest, 2 arms, 2 legs, as AD&D's
   piecemeal plate; the helm the game's metal one), its four pieces scattered: the helm on
   Dagolar's body; the arms in the Lower Castle's treasure chest with Dark Flame (behind the
@@ -51,7 +50,7 @@ pointing to it, in the Ledger's copy of that region's file).
 import struct
 from typing import Dict, List, NamedTuple, Optional, Sequence, Tuple
 
-from . import dataitems, game, npcitems, specialize, weaponchoice
+from . import dataitems, game, npcitems, specialize, tools, weaponchoice
 
 # the bone long sword the game's merchants sell (SEGOBJEX's), which the weapons are made from
 TEMPLATE = npcitems._item("0cfc000000002d000000510000000000" "04ff1c0000")
@@ -64,7 +63,10 @@ OBSIDIAN_MACE = weaponchoice.OTHERS[KIND("mace")][0]
 METAL_SHORT_SWORD = (game.METAL_SHORT_SWORD_TYPE, 0x144, 0x10000 - 2427, 300)  # (the metal long sword: 500)
 METAL_DAGGER = (game.METAL_DAGGER_TYPE, 0x10, 0x10000 - 2504, 50)
 METAL_MACE = (game.METAL_MACE_TYPE, 0x13, 0x10000 - 2506, 200)
-METAL_GREAT_AXE = weaponchoice.OTHERS[KIND("great axe")][0]  # (300; an earth cleric's starting one)
+BONE_DAGGER = weaponchoice.OTHERS[KIND("dagger")][1]
+BONE_GREAT_AXE = weaponchoice.PLAIN[KIND("great axe")]
+OBSIDIAN_GREAT_AXE = weaponchoice.OTHERS[KIND("great axe")][0]
+METAL_GREAT_AXE = weaponchoice.OTHERS[KIND("great axe")][1]  # (300)
 METAL_PICK = (game.METAL_PICK_TYPE, 0xAD, 0x10000 - 2510, 150)
 METAL_POLEARM = weaponchoice.OTHERS[KIND("polearm")][0]  # (250)
 # (type, name entry, picture, price) and plus, priced as the game prices its own: a melee weapon as
@@ -106,7 +108,7 @@ BRACERS_NAME = 0x149  # the name entry DSCLOG adds ("Bracers/Defense")
 ARROWBANE, SUNKING_CROWN = 0x14E, 0x14F  # and the circlet's and crown's
 NAMES[ARROWBANE], NAMES[SUNKING_CROWN] = b"Arrowbane", b"Sunking Crown"
 ITEM_SPELL, ITEM_SPELL_SHOWN = 0x0F, 0x02  # a magic item's spell, one past its number (as arms.py's)
-PROT_MISSILES, PROT_EVIL_10 = 36, 121  # the game's Prot'n from Normal Missiles, Prot'n from Evil 10' Rad.
+PROT_MISSILES, PROT_EVIL = 36, 76  # the game's Prot'n from Normal Missiles, Protection from Evil
 HEAD = game.EQUIP_SLOTS.index("head")
 BRACERS_PICTURE = 0x10000 - 2502
 ARM = game.EQUIP_SLOTS.index("arm")
@@ -146,7 +148,7 @@ def head_item(type_: int, name: int, picture: int, value: int, spell: int) -> by
 
 # priced as the game's magic helms: the Helm of Might 30,000, the Helm of Contemplation 35,000
 ARROWBANE_ITEM = head_item(game.CIRCLET_TYPE, ARROWBANE, 0x10000 - 2514, 30000, PROT_MISSILES)
-CROWN_ITEM = head_item(game.CROWN_TYPE, SUNKING_CROWN, 0x10000 - 2516, 40000, PROT_EVIL_10)
+CROWN_ITEM = head_item(game.CROWN_TYPE, SUNKING_CROWN, 0x10000 - 2516, 40000, PROT_EVIL)
 
 
 WARDENS_CHEST, WARDENS_ARMS, WARDENS_LEGS, WARDENS_HELM = 0x150, 0x151, 0x152, 0x153
@@ -214,22 +216,32 @@ class Gift(NamedTuple):
     instead: Optional[Tuple[int, int]] = None  # (item type, plus)
 
 
+TOOLS = tools.ITEM[:weaponchoice.ITEM_VALUE] + struct.pack("<H", 30) + tools.ITEM[weaponchoice.ITEM_VALUE + 2:]  # (AD&D's 30)
 PLAIN = (BONE_SHORT_SWORD, OBSIDIAN_SHORT_SWORD, BONE_AXE, OBSIDIAN_AXE, OBSIDIAN_MACE)
 # (the objects: the people of each name in the region, as SEGOBJEX and the region's ETAB have them)
 GIFTS: Tuple[Gift, ...] = (
-    Gift("Weapon Merchant", tuple(weapon(w) for w in PLAIN + (METAL_SHORT_SWORD,)), (285,), 0x0B),
-    Gift("Jark", tuple(weapon(w) for w in (BONE_SHORT_SWORD, OBSIDIAN_SHORT_SWORD, BONE_AXE, OBSIDIAN_MACE)), (106,), 0x1A),
+    # (the great axes in every material, a warrior's starting one being bone, and bone breaks:
+    # bone ones on every Wild Mul too. The game's shop shows a seller's first 34 items: Kalzith,
+    # given 42, showed 34 and none of the 8 oldest; these sellers have 29, 31 and 20)
+    Gift("Weapon Merchant", tuple(weapon(w) for w in PLAIN + (METAL_SHORT_SWORD, BONE_GREAT_AXE, OBSIDIAN_GREAT_AXE,
+                                                              METAL_GREAT_AXE, METAL_PICK, BONE_DAGGER)), (285,), 0x0B),
+    Gift("Jark", tuple(weapon(w) for w in (BONE_SHORT_SWORD, OBSIDIAN_SHORT_SWORD, BONE_AXE, OBSIDIAN_MACE,
+                                           BONE_GREAT_AXE, OBSIDIAN_GREAT_AXE, BONE_DAGGER)), (106,), 0x1A),
+    # Thieves' Tools, a pair, from Kel (the caravan's merchant of everything else), for a thief who
+    # has lost theirs
+    Gift("Kel", 2 * (TOOLS,), (107,), 0x1A),
     Gift("Merzol", (weapon(OBSIDIAN_AXE),), (180,), 0x29),  # the slave pens' gladiator
-    Gift("Krikor", (weapon(BONE_AXE),), (16,), 0x1F),
     Gift("Chaero", (weapon(OBSIDIAN_SHORT_SWORD),), (41,), 0x1D),
     Gift("Tari", (weapon(OBSIDIAN_MACE),), (60, 243), 0x28),  # the warrens' Tari, every one
     Gift("Renegade", (weapon(BONE_SHORT_SWORD),), (289,)),  # (every one)
-    Gift("Wild Mul", (weapon(BONE_AXE),), (290,)),
+    Gift("Wild Mul", (weapon(BONE_AXE), weapon(BONE_GREAT_AXE)), (290,)),
+    # the defilers (both kinds, made by scripts) carried nothing, so left no body: a dagger each,
+    # one kind obsidian (the game's plain one), the other bone
+    Gift("Defiler", (weapon(weaponchoice.PLAIN[KIND("dagger")]),), (258,)),
+    Gift("Defiler", (weapon(BONE_DAGGER),), (296,)),
     # the metal ones, on people who fight with the like
     Gift("Tobrian", (weapon(METAL_DAGGER),), (104,), 0x1A),  # (a stone dagger)
     Gift("Templar", (weapon(METAL_MACE),), (131,), 0x14),  # the slavers' camp's (a bone mace)
-    Gift("Uskuye", (weapon(METAL_GREAT_AXE),), (75,), 0x1F),  # (a metal long sword)
-    Gift("Kwerin", (weapon(METAL_PICK),), (113,), 0x0B),
     Gift("Castle Guard", (weapon(METAL_POLEARM),), (55,), 0x1C, clone=(121, 2560)),  # (one of six)
 )
 CHAYAS_CHEST = 2249  # (her script's)
@@ -315,7 +327,8 @@ BASE_TYPES = {game.SHORT_SWORD_TYPE: 63, game.CLOAK_TYPE: 65, game.BONE_HELM_TYP
               game.METAL_MACE_TYPE: 20, game.METAL_GREAT_AXE_TYPE: 2, game.METAL_PICK_TYPE: 112,
               game.METAL_POLEARM_TYPE: 19, game.CIRCLET_TYPE: 36, game.CROWN_TYPE: 36, game.PLATE_CHEST_TYPE: 57,
               game.PLATE_ARMS_TYPE: 58, game.PLATE_LEGS_TYPE: 59, game.ELVEN_CLOAK_TYPE: 65, game.ELVEN_BOOTS_TYPE: 68,
-              game.AIR_DAGGER_TYPE: 33}
+              game.AIR_DAGGER_TYPE: 33, game.BONE_GREAT_AXE_TYPE: 2, game.OBSIDIAN_GREAT_AXE_TYPE: 2,
+              game.BONE_DAGGER_TYPE: 17}
 
 
 def header_numbers(chunks) -> Dict[int, int]:

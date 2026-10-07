@@ -530,20 +530,6 @@ class DiceLog:
         self._picked_changed = self._picked_changed or bool(undone)
         self._clock = now
 
-    def give_tools_now(self) -> List[str]:
-        """Thieving tools for each thief in the party not carrying a set (the Ledger's button)."""
-        if self.game is None:
-            return []
-        before = set(self.tools_given)
-        try:
-            if not names.update(self.game, self.tsr_hdr):
-                return ["The game's name table has no room for the tools' name yet: load a game, then try again."]
-            out = tools.give_tools(self.game, self.tools_given, now=True, session=self._tools_session)
-        except (struct.error, IndexError, ValueError):
-            return []
-        self._tools_new += sorted(self.tools_given - before)
-        return out or ["Every thief in the party has thieving tools already."]
-
     def take_tools_given(self) -> List[str]:
         """The thieves given tools since the last call, for the caller to remember."""
         new, self._tools_new = self._tools_new, []

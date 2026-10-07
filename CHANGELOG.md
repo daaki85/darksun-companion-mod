@@ -5,6 +5,46 @@ Released pull requests are summarised in a line or two each; the release notes
 ([1.1.0](release-notes/v1.1.0.md): #14 to #18; [1.0.0](release-notes/v1.0.0.md):
 #1 to #13) and the pull requests themselves have the detail.
 
+## Pull request #25 ([merged 2026-10-07](https://github.com/daaki85/darksun-companion-mod/pull/25))
+
+**Added**
+- **Bone and obsidian great axes and a bone dagger,** each with an icon of its
+  own. A warrior's starting great axe is now bone (obsidian for a fire or earth
+  cleric), and a water cleric's starting dagger bone. Water and fire clerics'
+  warriors can now choose the great axe, and water clerics' (a water
+  cleric/psionicist among them) the dagger.
+- **Replacements for what breaks:** the Weapon Merchant sells great axes in
+  all three materials, the metal pick and the bone dagger; Jark sells bone and
+  obsidian great axes and the bone dagger; every Wild Mul carries a bone great
+  axe. Kel sells two sets of Thieves' Tools.
+- **Defilers leave a body:** each of the game's two kinds of defiler carries a
+  dagger, one obsidian and one bone. The game leaves no body for someone who
+  carried nothing.
+- **Mindshard from Maris's pocket:** a thief can lift it, as Shadowseeker and
+  Gutterknot, for 200 XP.
+
+**Changed**
+- **One box for the new items:** the Options tab's four item boxes are one,
+  **New items, magical and mundane**. The arena's ring keeps its own box, and
+  the "Give thieving tools now" button is gone (Kel sells them).
+- **Weapons off the allies:** Krikor's bone axe, Uskuye's metal great axe and
+  Lt. Kwerin's metal pick are gone; the Weapon Merchant sells the metal ones.
+- **The Sunking Crown** gives Protection from Evil, not the 10' Radius one.
+
+**Fixed**
+- **The game's Sling +1** (in a chest) showed a blank icon: its picture was
+  missing from the game's data. It now has one, the Sling's with a glow.
+
+**Documentation**
+- **Item icons** in every item table of the guide.
+- **[Every magic item](darksun-companion/README.md#every-magic-item)** and
+  **[Every mundane weapon](darksun-companion/README.md#every-mundane-weapon):**
+  each item, the game's and the Ledger's, with its bonus or power and who
+  sells or carries it; the magic weapons of each kind for weapon
+  specialization.
+- **Mundane items** in a table of their own in New items, and the Ledger's
+  weapons in the acid saving throw table.
+
 ## Pull request #24 ([merged 2026-10-07](https://github.com/daaki85/darksun-companion-mod/pull/24))
 
 **Added**
