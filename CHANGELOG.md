@@ -36,21 +36,17 @@ Released pull requests are summarised in a line or two each; the release notes
 - **The Flame Blade,** an obsidian long sword +1 (with the magic weapons'
   switch) whose blade casts the fire clerics' Focus Heat on what it hits (2d6
   fire, a save for half), as the game's Dark Flame does Burning Hands: in
-  the pack of the Hot Springs' Templar. Obsidian, so a fire cleric can wield it. Alagorn tells its story
-  among his magic swords.
-- **Alagorn tells of the Warden's Plate** (Haldren's, the last of the Wardens:
-  a part of his story for each piece) among his magic armor, and of the Cloak
-  and Boots of Elvenkind among his magic clothes.
-- **Alagorn tells of the Tome of Understanding** (among his other items), of
-  the Bracers of Defense, Arrowbane, the Sunking Crown and the Cloak of
-  Protection (among his magic clothes), and of the Rings of Protection (among
-  his magic rings).
+  the pack of the Hot Springs' Templar. Obsidian, so a fire cleric can wield
+  it.
+- **Alagorn knows every new magic item,** each in the menu the game would put
+  it in: the Flame Blade, the Warden's Plate (a part of Haldren's story for
+  each piece), the Cloak and Boots of Elvenkind, the Bracers of Defense,
+  Arrowbane, the Sunking Crown, Inixhide, the Rings and Cloak of Protection
+  and the Tome of Understanding.
   - One story for each kind, as with the game's own items: the four pairs of
     bracers share one, and so do both rings.
-- **Legcrusher's Leather Chest Armor +1 is named Inixhide** ("Leather Inixhide"
-  in the game), and Alagorn tells its story among his magic armor.
   - His clothes, rings and other items are told by copies of his script 212
-    (220, 221), so no script overflows the game's buffer.
+    (220 and 221), so no script overflows the game's script buffer.
 
 **Fixed**
 - **Alagorn's clothes with none carried:** he said "no magic clothes", then
@@ -71,11 +67,11 @@ Released pull requests are summarised in a line or two each; the release notes
   new game makes them where they belong. The slave pens' items (Kurzak's
   Shadowseeker and helm, Legcrusher's armour, Pehtucl's cloak and ring) and
   Kreenfang (the arena's dead body's gythka) are in the data too. The Boots
-  of Elvenkind are in the buried chest when it is dug up; the bone scale set's arm and leg pieces and
-  helm are in the slave pens' chest with its chest piece; one Castle Guard and
-  one Undermountain miner have objects of their own for their items. The
-  Options tab's switches take effect from the next start, in regions not yet
-  visited.
+  of Elvenkind are in the buried chest when it is dug up; the bone scale
+  set's arm and leg pieces and helm are in the slave pens' chest with its
+  chest piece; one Castle Guard and one Undermountain miner have objects of
+  their own for their items. The Options tab's switches take effect from the
+  next start, in regions not yet visited.
 - **The Elven Leader gives the Cloak of Elvenkind himself,** after his
   Gythka +1, with a line of his own; when it can't be carried he leaves it on
   the ground beside him, as the Gythka.
@@ -83,11 +79,10 @@ Released pull requests are summarised in a line or two each; the release notes
 - **A new warrior with a staff sling keeps its shield,** as with a bow: both
   go in the missile slot, and the game asks nothing of the hands for them (the
   shield went into the backpack before).
-- **The magic weapons have names and stories:** the Club +1 is **Gutterknot**,
-  the Pick +1 **Deepbiter**, the Staff Sling +1 **Windlash** and the Short
-  Sword +2 **Greenbright**, each with a story Alagorn tells, among his magic
-  weapons and swords with Kreenfang and Shadowseeker (before his menus'
-  "Nothing"). Greenbright is now on **Arant**, who holds the captured
+- **The magic weapons and Legcrusher's leather have names:** the Club +1 is
+  **Gutterknot**, the Pick +1 **Deepbiter**, the Staff Sling +1 **Windlash**,
+  the Short Sword +2 **Greenbright** and the Leather Chest Armor +1
+  **Inixhide**, each with a story from Alagorn. Greenbright is now on **Arant**, who holds the captured
   gladiators (the Elite Guards are only in the final fight). A thief can
   lift Gutterknot from Churrr's pocket, for 200 XP, as Shadowseeker from
   Kurzak's.

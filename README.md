@@ -78,10 +78,11 @@ In [pull request #21](https://github.com/daaki85/darksun-companion-mod/pull/21)
 - **New magic items:** the **Warden's Plate**, plate mail +1 in four pieces
   across the world; the **Cloak and Boots of Elvenkind** for thieves and
   rangers, the cloak given by the Elven Leader with his Gythka +1; and the
-  **Flame Blade**, an obsidian long sword +1 for fire clerics. Alagorn tells
-  the story of each.
+  **Flame Blade**, an obsidian long sword +1 for fire clerics.
 - **The Tome of Understanding:** Father Garyn's gift for the ranike pith; read
   like a scroll, it gives a point of Wisdom for good.
+- **Alagorn knows every new magic item,** with a story for each kind, the tome
+  among them; Legcrusher's leather is now **Inixhide**.
 - **Every new item is in the game's own data,** so a new game makes them where
   they belong.
 - **The game's own party is ready for the rule changes** when you press START

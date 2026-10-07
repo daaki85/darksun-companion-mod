@@ -1863,7 +1863,7 @@ there to be found.
 | **Ring of Protection +1** | the arena's Tied-up Prisoner: free him, then look at his body (the game's script says there's nothing; the Ledger finds a ring sewn into his loincloth, 50 XP to whoever searched) | +1 AC and +1 on every saving throw |
 | **Ring of Protection +1** | worn by **Pehtucl**, the slave pens' head templar (in the south-west corner, with the Obsidian Bloodwrath) | the same |
 | **Cloak of Protection +1** | worn by Pehtucl | the same, from the cloak slot |
-| **Inixhide** | worn by **Legcrusher**, the pens' half-giant | Leather Chest Armor +1: the leather's AC, +1 (in the game, "Leather Inixhide") |
+| **Inixhide** | worn by **Legcrusher**, the pens' half-giant | Leather Chest Armor +1: the leather's AC, +1 |
 | **Shadowseeker** | in the pack of **Kurzak**, the pens' guard leader | a short sword +1 (1d6+1): whoever wields it, in either hand, sees the invisible |
 | **Kreenfang** | the 2 handed Bone Gythka on the dead body by the arena's stone arch | a gythka +1 (2d4+1) |
 | **Bone Scale Arm Armor**, **Leg Armor** and **Bone Helm** | in the slave pens' chest with the Bone Scale Chest Armor and Arrows +3 (the game has the set but places only the chest piece) | the set; the helm AC 1 with [Helms give AC 1](#helms-and-boots), worn by those who can wear the armour (not thieves) |
@@ -1928,27 +1928,25 @@ and neither ring nor cloak gives AC over magical armour.
 
 ![Inventory cells in the game: the Warden's Chest, Arms, Legs and Helm](docs/wardens-plate.png)
 
+![Dream's pack with the bone scale set: the chest, arm and leg pieces, and the Bone Helm under the pointer with its name](docs/bonescale.png)
+
 **Icons and names.** Each has an icon of its own, made from the plain item's
 the way the game makes its magic items' (a few pixels in the colours it cycles
 like fire); dropped on the map they look like the plain item. The game's names
 are at most 15 letters, so the rings are **RING/PROTECTION** and the cloak
-**Cloak/Protectn**; the Ledger's screens and the log give them in full.
+**Cloak/Protectn**; the Ledger's screens and the log give them in full. As with
+its own items, the game puts the material first: **Leather Inixhide**,
+**Metal +1 Shadowseeker** in the item box.
 
 ![Shadowseeker's item box in the game: 22000, Detect Invisibility's icon, "Metal +1 Shadowseeker", 1D6+1](docs/shadowseeker-box.png)
 
 **Alagorn**, the wizard of the Painted Badlands who identifies magic items,
-knows the new magic items when the party carries them, each with a story
-of its own: Shadowseeker, Greenbright and the Flame Blade among his magic swords, Kreenfang,
-Gutterknot, Deepbiter and Windlash among his magic weapons, Legcrusher's
-Inixhide and the Warden's Plate's four pieces (each a part of Haldren's story, the last of the Wardens) among his
-magic armor, the Cloak and Boots of Elvenkind, the Bracers of Defense,
-Arrowbane, the Sunking Crown and the Cloak of Protection among his magic
-clothes, the Rings of Protection among his magic rings, and the Tome of
-Understanding among his other items, before his menus' "Nothing". As with the
-game's own, he has one story for each kind: all four pairs of bracers, and
-both rings of protection, share one line and one story.
-
-![Dream's pack with the bone scale set: the chest, arm and leg pieces, and the Bone Helm under the pointer with its name](docs/bonescale.png)
+tells the story of every magic item in the table when the party carries it,
+in the menu the game would put it in (swords, weapons, rings, armor, clothes
+or other items), before "Nothing". As with the game's own, one story for each
+kind: the four pairs of bracers share one, and so do both rings of
+protection. The Warden's Plate's pieces each tell a part of Haldren's, the last
+of the Wardens.
 
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#new-items).
 

@@ -579,27 +579,28 @@ WIS, in the sheet and the creature record, writes its message in the game's
 buffer, and goes on as for a power taught: the game uses the tome up and shows
 it. The short sword, the cloak whose plus counts and the bone helm are
 item types the helper adds after the game's 115 each time the game reads its
-table in; the names (Ring of Protection, Thieves' Tools, Short Sword, the
-cloak's, Shadowseeker, Kreenfang, from 322 on) are entries it adds after the
-game's 322; and the icons are objects in the Ledger's copy of
+table in; the Ledger's item names (`dscompanion/names.py`) are entries it adds
+after the game's 322 (the game puts the item type's material before the name
+when it shows one); and the icons are objects in the Ledger's copy of
 `SEGOBJEX.GFF` (`dscompanion/icons.py`), which the helper has the game open
 instead of its own (its `INT 21h` hook). Where the game adds up AC and saving
 throws, the helper counts the rings and the cloak (`INT F8h` and the save
 probes). Shadowseeker's sight is the game's own way with a magic item's spell:
-readied, it puts Detect Invisibility on its wielder. Alagorn's new menu lines
-are in the Ledger's copy of his scripts (`dscompanion/alagorn.py`). Script 212
-with every story would overflow the script buffer (the Trustee's problem), so
-its clothes, and its rings and other items, are told by copies of it,
-scripts 220 and 221. His
-talk (script 211) calls each part by its offset in 212, so only the called
-script's number changes. The added "none carried" check replays the game's
-own tests with their own jump targets; skipping one leaves the game's
-if/else nesting one level short. The two Rings of Protection have different
-pictures, so their one menu line joins two queries with "or", as the game's own
-tests do. In the
-original game the rings are plain rings without a name, and the sword, cloak
-and helm types it doesn't have: don't load a save that has them without the
-dice log.
+readied, it puts Detect Invisibility on its wielder. In the original game the
+rings are plain rings without a name, and the sword, cloak and helm types it
+doesn't have: don't load a save that has them without the dice log.
+
+Alagorn's new menu lines are in the Ledger's copy of his scripts
+(`dscompanion/alagorn.py`); he knows an item by its picture.
+- Script 212 with every story would overflow the script buffer, as the
+  [Trustee's](#what-dinos-and-the-trustee-say-about-them) once did, so its clothes are told by a copy of it (script 220),
+  and its rings and other items by another (221). His talk (script 211) calls
+  each part by its offset in 212, so only the called script's number changes.
+- The added "none carried" check replays the game's own tests with their own
+  jump targets: skipping one leaves the game's if/else nesting one level
+  short.
+- The two Rings of Protection have different pictures, so their one menu line
+  joins two queries with "or", as the game's own tests do.
 
 ### Kalzith
 
