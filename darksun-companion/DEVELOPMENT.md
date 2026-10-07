@@ -304,7 +304,7 @@ reads the reply's text from the game's own list.
 
 ### Two weapons: AD&D's penalties
 
-([In the README](README.md#two-weapons-adds-penalties).)
+([In the README](README.md#two-weapons).)
 
 How: the game reads the attacker's DEX adjustment when it works out the
 two-weapon adjustment; the helper takes over from there (`INT FEh`) and gives

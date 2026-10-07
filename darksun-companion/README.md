@@ -21,7 +21,6 @@ records; this ledger keeps the ones the game doesn't show you.
 - [The dice log](#the-dice-log)
   - [Initiative](#initiative)
   - [Two weapons](#two-weapons)
-  - [Two weapons: AD&D's penalties](#two-weapons-adds-penalties)
   - [Spells and effects](#spells-and-effects)
   - [Psionics](#psionics)
   - [Character creation](#character-creation)
@@ -72,6 +71,7 @@ records; this ledger keeps the ones the game doesn't show you.
 - [Controls](#controls)
   - [Choosing an enemy: Tab, Enter and the rings](#choosing-an-enemy-tab-enter-and-the-rings)
   - [Scrolling the map](#scrolling-the-map)
+  - [Spells on the Effects screen](#spells-on-the-effects-screen)
 - [More saves and characters](#more-saves-and-characters)
   - [More saves](#more-saves)
   - [More characters](#more-characters)
@@ -187,8 +187,8 @@ no packaged program to trust.
 
 1. Double-click **`Start Templar's Ledger.bat`** in that
    folder. The Ledger opens on its own.
-2. On its **Options** tab, pick what you want: the rule changes, the Ring +1,
-   picking pockets, each turn's rolls in the game and so on (see
+2. On its **Options** tab, pick what you want: the rule changes, the new
+   content, picking pockets, each turn's rolls in the game and so on (see
    [The Ledger's window](#the-ledgers-window) and [Rule changes](#rule-changes)).
    They're remembered for next time.
 3. Pick the **Game window** size at the top if you like, then press **Start
@@ -228,8 +228,8 @@ the dice log will say the game was started without it.
 **Just the game, with the in-game additions, no Ledger window:** double-click
 **`Play Dark Sun (in-game rolls).bat`**. The dice log runs unseen and stops
 when you close DOSBox. It uses the switches on the Ledger's Options tab as you
-last set them (each turn's rolls, monster descriptions, the Ring +1, picking
-pockets, the rule changes); the new items, the new people and the cooked
+last set them (each turn's rolls, monster descriptions, picking pockets, the
+rule changes); the new items, the new people and the cooked
 vulture are there too. If anything goes wrong it says so in a message box and
 writes the details to `play.log`.
 
@@ -534,12 +534,9 @@ became 5 and 6), and nothing at DEX 15 or 25; a character with one weapon
 logged hit and none for the misses (46 attacks), including a d20 of 4 that
 only hit because of the +6. It looks like a sign slip in the game: AD&D uses
 the same DEX adjustment to make two-weapon fighting *harder* at low DEX.
-The [rule changes](#rule-changes) can put AD&D's rule in instead: -2 and -4,
-with the DEX adjustment.
 
-### Two weapons: AD&D's penalties
-
-With two melee weapons ready, a character who isn't a ranger attacks at -2
+**AD&D's penalties** (a [rule change](#rule-changes), its box **Two weapons**):
+with two melee weapons ready, a character who isn't a ranger attacks at -2
 with the main (right) hand and -4 with the off (left) hand, and the DEX
 reaction adjustment is added: -6 at DEX 1, -4 at 2, -3 at 3, -2 at 4, -1 at 5,
 none for 6-15, +1 at 16, +2 at 17-18, +3 at 19-20, +4 at 21-23 and +5 at
@@ -1493,7 +1490,7 @@ and [Saving throws](#saving-throws).
 | [Hit dice: the better of two](#hit-dice-the-better-of-two) | each hit die rolled twice, the better kept, for every character |
 | [Spells saved against with the spell save](#spells-saved-against-with-the-spell-save) | the spell save rather than petrification/polymorph |
 | [Fire, cold and electricity: DEX instead of a doubled d20](#fire-cold-and-electricity-dex-instead-of-a-doubled-d20) | DEX's defensive adjustment on those saves rather than a doubled d20 |
-| [Two weapons: AD&D's penalties](#two-weapons-adds-penalties) | -2 main hand, -4 off hand, DEX's reaction adjustment added; rangers none |
+| [Two weapons](#two-weapons) | -2 main hand, -4 off hand, DEX's reaction adjustment added; rangers none |
 | [Thief skills from AD&D's table](#thief-skills-from-adds-table) | AD&D's table by level, with Dark Sun's race and DEX adjustments |
 | [Hiding in shadows to backstab](#hiding-in-shadows-to-backstab) | thieves hide and move silently to backstab, rangers to attack from behind; a worn cloak, boots and belt help |
 | [Levels up to 10](#levels-up-to-10) | every class goes to 10th level (the game stops at 9) |
@@ -1967,7 +1964,8 @@ Alagorn's stories from the next time the game is started.
 
 ### New items
 
-Items the game never had, or never placed. All but the arena's ring are written
+Items the game never had, or never placed. All but the arena's ring (which the
+Ledger hands over itself, while it runs) are written
 into the game's own data each time the Ledger starts the game, so the game
 makes them with their people and chests and then keeps and saves them like its
 own. A changed switch takes effect in regions the party hasn't visited yet;
@@ -2055,8 +2053,8 @@ with [class restrictions](#class-restrictions). **Grey's Scale**'s arm and
 leg armour is AC 3 each (the game's is 2).
 
 **On the Options tab**, under New content, **New items, magical and mundane**
-places them all (the arena's ring has a box of its own); a thief's tools come
-with picking pockets.
+places them all, the arena's ring too; a thief's tools come with picking
+pockets.
 
 A thief can [lift](#picking-pockets) Pehtucl's ring, Shadowseeker, Gutterknot
 and Mindshard (200 XP for each weapon), but nothing worn on the body.
@@ -2545,6 +2543,14 @@ The view can't be zoomed: the game draws a 320 by 200 screen at one scale,
 with the view's size built into its drawing code and its video memory pages.
 
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#scrolling-the-map).
+
+### Spells on the Effects screen
+
+On the Effects screen (a character's spells and powers in effect), a click on
+an effect's icon ends it in the game, so a stray click loses a spell. With the
+Ledger a click leaves a spell on; a psionic power's effect still ends, as that
+is how a power is stopped. It is a change to the game itself, from the next
+time it is started.
 
 ## More saves and characters
 

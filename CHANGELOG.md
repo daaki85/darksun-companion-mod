@@ -12,6 +12,10 @@ Released pull requests are summarised in a line or two each; the release notes
   AD&D's thief skills, hiding to backstab (and the cloak, boots and belt) and
   picking pockets (and the P key), as the guide's Thieves section has them;
   the weapon specialization box is shorter.
+- **The arena's ring is one of the new items:** New items, magical and mundane
+  switches it too; its own box is gone.
+- **The red rings are under Controls,** with Tab and Enter, as the guide has
+  them; scrolling with the right button is a line under the mouse wheel's.
 
 **Documentation**
 - **Guide reorganised:** Every magic item and Every mundane weapon in a section
@@ -21,6 +25,8 @@ Released pull requests are summarised in a line or two each; the release notes
   (repeated notes gone, one table heading for every warrior, "weapon spec" for
   the kinds chosen, as the creation pages call them, and every ranger's bow
   expertise said first).
+- The two Two weapons sections are one; the Effects screen's click (a spell
+  left on) has a section under Controls, where its box is.
 
 ## Pull request #27 ([merged 2026-10-07](https://github.com/daaki85/darksun-companion-mod/pull/27))
 

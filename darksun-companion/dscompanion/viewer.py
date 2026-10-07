@@ -375,9 +375,8 @@ class Viewer:
         # the companion's own content: people, a quest and items in the game. Some
         # are written into the game's files when it is started; what a save already has stays
         new = section("new_content", "New content")
-        ttk.Label(new, text="Kalzith, Semyon, the vulture and the new items: from the next time "
-                  "you start the game, in places not yet visited. What a saved game already has "
-                  "(people met, items given) stays in it.",
+        ttk.Label(new, text="From the next time you start the game, in places not yet visited. What a "
+                  "saved game already has (people met, items given) stays in it.",
                   wraplength=460).pack(anchor="w")
         options.bind("<Configure>", lambda e, label=new.winfo_children()[-1]: label.configure(
             wraplength=max(200, e.width - 60)), add="+")
@@ -392,10 +391,6 @@ class Viewer:
             self.content_vars[key] = tk.BooleanVar(value=settings.get(key, True) is not False)
             ttk.Checkbutton(new, text=text, variable=self.content_vars[key],
                             command=self._popups_changed).pack(anchor="w", pady=(4, 0))
-        # a Ring +1 on the Tied-up Prisoner in the arena (ring.py)
-        self.arena_ring = tk.BooleanVar(value=bool(settings.get("arena_ring", True)))
-        ttk.Checkbutton(new, text="A Ring of Protection +1 on the arena's Tied-up Prisoner (search his body)",
-                        variable=self.arena_ring, command=self._popups_changed).pack(anchor="w", pady=(4, 0))
         self.pickpockets = tk.BooleanVar(value=bool(settings.get("pickpockets", True)))
         ttk.Checkbutton(thieves, text="Picking pockets: a thief uses Thieves' Tools on someone in sight (each "
                         "thief gets a set), until caught", variable=self.pickpockets,
@@ -416,13 +411,6 @@ class Viewer:
         self.show_dust = tk.BooleanVar(value=bool(settings.get("dust", True)))
         ttk.Checkbutton(looks, text="Dust raised behind the feet of anyone walking on sand or dirt",
                         variable=self.show_dust, command=self._popups_changed).pack(anchor="w", pady=(4, 0))
-        self.ring_mode = tk.StringVar(value=rings.mode(settings))
-        ttk.Label(looks, text="Red rings on the ground in a fight:").pack(anchor="w", pady=(4, 0))
-        for value, text in ((rings.OFF, "... none"),
-                            (rings.ONLY_CHOSEN, "... under the enemy chosen with Tab"),
-                            (rings.ALL, "... under all the enemies (the chosen one's redder)")):
-            ttk.Radiobutton(looks, text=text, value=value, variable=self.ring_mode,
-                            command=self._popups_changed).pack(anchor="w", padx=(20, 0))
 
         # the mouse and keys in the game
         controls = section("controls", "Controls (in the game)")
@@ -430,14 +418,21 @@ class Viewer:
         ttk.Checkbutton(controls, text="In a fight, Tab (Shift+Tab back) chooses an enemy, its ring brighter, and "
                         "Enter attacks it, even behind someone", variable=self.use_targeting,
                         command=self._popups_changed).pack(anchor="w")
+        self.ring_mode = tk.StringVar(value=rings.mode(settings))
+        ttk.Label(controls, text="Red rings on the ground in a fight:").pack(anchor="w", pady=(4, 0))
+        for value, text in ((rings.OFF, "... none"),
+                            (rings.ONLY_CHOSEN, "... under the enemy chosen with Tab"),
+                            (rings.ALL, "... under all the enemies (the chosen one's redder)")):
+            ttk.Radiobutton(controls, text=text, value=value, variable=self.ring_mode,
+                            command=self._popups_changed).pack(anchor="w", padx=(20, 0))
         self.scroll_map = tk.BooleanVar(value=bool(settings.get("scroll_map", True)))
         ttk.Checkbutton(controls, text="Scroll the map with the mouse wheel: press it and move, or turn it "
                         "(Shift: sideways)", variable=self.scroll_map,
                         command=self._popups_changed).pack(anchor="w", pady=(4, 0))
         self.scroll_right = tk.BooleanVar(value=bool(settings.get("scroll_right", False)))
-        ttk.Checkbutton(controls, text="Scroll it by holding the right mouse button and moving too (a right "
+        ttk.Checkbutton(controls, text="... or by holding the right mouse button and moving (a right "
                         "click still changes the pointer)", variable=self.scroll_right,
-                        command=self._popups_changed).pack(anchor="w", pady=(4, 0))
+                        command=self._popups_changed).pack(anchor="w", padx=(20, 0))
         self.effects_kept = tk.BooleanVar(value=settings.get("effects_kept", True) is not False)
         ttk.Checkbutton(controls, text="A click on a spell's icon on the Effects screen leaves it on (the game "
                         "ends it; psionic powers can still be stopped); from the next time you start the game",
@@ -769,7 +764,7 @@ class Viewer:
                 self.dice.popups = self.popups.get()
                 self.dice.popup_level = self.popup_level.get()
                 self.dice.monster_info = self.monster_info.get()
-                self.dice.arena_ring = self.arena_ring.get()
+                self.dice.arena_ring = self.content_vars[launch.NEW_ITEMS].get()
                 self.dice.pickpockets = self.pickpockets.get()
                 self.dice.pick_key = self.pick_key.get()
                 self.dice.show_gear = self.show_gear.get()
@@ -868,7 +863,6 @@ class Viewer:
         settings["turn_popups"] = on
         settings["turn_popups_level"] = self.popup_level.get()
         settings["monster_info"] = self.monster_info.get()
-        settings["arena_ring"] = self.arena_ring.get()
         settings["pickpockets"] = self.pickpockets.get()
         settings["pick_key"] = self.pick_key.get()
         settings["show_gear"] = self.show_gear.get()
@@ -889,7 +883,7 @@ class Viewer:
             self.dice.set_popups(on)
             self.dice.popup_level = self.popup_level.get()
             self.dice.set_monster_info(self.monster_info.get())
-            self.dice.arena_ring = self.arena_ring.get()
+            self.dice.arena_ring = self.content_vars[launch.NEW_ITEMS].get()
             self.dice.set_pickpockets(self.pickpockets.get(), self.pick_key.get())
             self.dice.show_gear = self.show_gear.get()
             self.dice.show_shadows = self.show_shadows.get()

@@ -622,7 +622,7 @@ class DiceLog:
         self.popups = bool(settings.get("turn_popups", False))
         self.popup_level = popup_level(settings)
         self.monster_info = bool(settings.get("monster_info", True))
-        self.arena_ring = bool(settings.get("arena_ring", True))
+        self.arena_ring = settings.get("new_items", True) is not False  # (with the new items)
         self.pickpockets = bool(settings.get("pickpockets", True))
         self.pick_key = bool(settings.get("pick_key", False))
         self.show_gear = bool(settings.get("show_gear", True))
