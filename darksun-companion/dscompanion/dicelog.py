@@ -24,7 +24,7 @@ from collections import Counter, deque
 from dataclasses import dataclass
 from typing import Callable, Deque, Dict, List, NamedTuple, Optional, Tuple
 
-from . import arms, bonescale, dust, game, rings, targeting, icons, kalzith, monsters, names, npcitems, pickpocket, ring, scrolling, searches, semyon, shadows, specialize, sprites, stealth, tools, vulture, weaponchoice
+from . import arms, bonescale, dust, game, rings, targeting, icons, kalzith, monsters, names, npcitems, pickpocket, ring, scrolling, searches, semyon, shadows, specialize, sprites, stealth, tools, vulture, weaponchoice, worldgear
 from .game import (CONVENTIONAL_AND_UPPER, CREATURE_ABILITIES, CREATURE_SIDE, CREATURE_THAC0, EFFECT_NAMES,
                    EFFECT_RULES, MATERIAL_TO_HIT, MATERIALS, SAVE_NAMES, STR_DAMAGE, GameData)
 from .guestmem import GuestMemory
@@ -345,6 +345,7 @@ class DiceLog:
         self.show_dust = True  # dust raised by walkers on sand and dirt (dust.py)
         self.pens_gear = True  # the slave pens' gear for Kurzak, Legcrusher, Pehtucl, the bone scale set
         self.magic_arms = True  # the arena's dead body's gythka and Kurzak's short sword +1 (arms.py)
+        self.world_gear = True  # the new plain weapons in merchants' stock and people's packs (worldgear.py)
         self.vulture_on = True  # the cooked vulture quest (vulture.py)
         self.stealth_gear = True  # a worn cloak's and boots' bonuses to hiding (stealth.py)
         self._dust = dust.Dust()
@@ -647,6 +648,7 @@ class DiceLog:
         self.show_dust = bool(settings.get("dust", True))
         self.pens_gear = bool(settings.get("pens_gear", True))
         self.magic_arms = bool(settings.get("magic_arms", True))
+        self.world_gear = bool(settings.get("world_gear", True))
         self.vulture_on = bool(settings.get("vulture", True))
         self.stealth_gear = bool(settings.get("stealth_gear", True))
         self.ring_mode = rings.mode(settings)
@@ -1059,6 +1061,10 @@ class DiceLog:
             if self.magic_arms and npcitems.types_ready(self.game, self.tsr_hdr):
                 before = set(self.tools_given)
                 out += arms.upgrade(self.game, self.tools_given)  # the gythka and the short sword +1
+                self._tools_new += sorted(self.tools_given - before)
+            if self.world_gear and npcitems.types_ready(self.game, self.tsr_hdr):
+                before = set(self.tools_given)
+                out += worldgear.place(self.game, self.tools_given)  # the new weapons, in shops and packs
                 self._tools_new += sorted(self.tools_given - before)
             if self.stealth_gear:
                 stealth.reprice(self.game)  # (cloaks and boots: they help a thief hide and move silently)

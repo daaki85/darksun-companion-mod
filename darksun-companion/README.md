@@ -1812,7 +1812,8 @@ like its own. The log doesn't say: they're there to be found.
 | **Thieves' Tools** | every thief's backpack | [picking pockets](#picking-pockets) |
 | **Six scrolls** | [Kalzith's](#kalzith) shop | spells the game has no scroll of |
 | **Bone and obsidian Short Swords and Axes** | a new warrior's starting weapon, with [weapon specialization](#weapon-specialization) (the obsidian ones a fire or earth cleric's): the game has no short sword but Kurzak's, and only a metal axe | a short sword 1d6, an axe 1d8, of their material |
-| **Obsidian Mace** | a fire or earth cleric's starting mace | 1d6+1, the game's Mace (Blackmace without the +1), with an icon without Blackmace's glow |
+| **Obsidian Mace** | a fire or earth cleric's starting mace; also with the short swords and axes below | 1d6+1, the game's Mace (Blackmace without the +1), with an icon without Blackmace's glow |
+| **Bone and obsidian Short Swords and Axes, Obsidian Maces** (box: **Bone and obsidian short swords and axes and obsidian maces sold by the Weapon Merchant and Jark, and carried by a few people**) | sold by the **Weapon Merchant** (with the Armor Merchant and the Bowyer: all five) and **Jark** (with Kel: all but the obsidian axe); in the packs of **Merzol** in the slave pens (an obsidian axe), **Krikor** (a bone axe), **Chaero** (an obsidian short sword), a **Tari** in the warrens (an obsidian mace), and the first **Renegade** (a bone short sword) and **Wild Mul** (a bone axe) met | the same as a new warrior's |
 | **Great Axe** | a warrior's starting great axe | the game's plain Great Axe, with an icon without the +3's green gem |
 
 Prices, as magic items: the armour 3,000, the cloak and Pehtucl's ring 5,000

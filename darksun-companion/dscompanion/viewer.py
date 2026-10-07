@@ -384,7 +384,9 @@ class Viewer:
                 ("pens_gear", "Gear for Kurzak, Legcrusher and Pehtucl, and the rest of the bone scale "
                               "armour with a Bone Helm"),
                 ("magic_arms", "The 2 handed Bone Gythka on the arena's dead body and Kurzak's Short Sword are +1 magic "
-                               "weapons")):
+                               "weapons"),
+                ("world_gear", "Bone and obsidian short swords and axes and obsidian maces sold by the Weapon "
+                               "Merchant and Jark, and carried by a few people")):
             self.content_vars[key] = tk.BooleanVar(value=settings.get(key, True) is not False)
             ttk.Checkbutton(new, text=text, variable=self.content_vars[key],
                             command=self._popups_changed).pack(anchor="w", pady=(4, 0))
@@ -788,6 +790,8 @@ class Viewer:
                 self.dice.scroll_right = self.scroll_right.get()
                 self.dice.pens_gear = self.content_vars["pens_gear"].get()
                 self.dice.magic_arms = self.content_vars["magic_arms"].get()
+            self.dice.world_gear = self.content_vars["world_gear"].get()
+                self.dice.world_gear = self.content_vars["world_gear"].get()
                 self.dice.vulture_on = self.content_vars["vulture"].get()
                 self.dice.stealth_gear = self.stealth_gear.get()
                 self.dice.load_picked(launch.pickpocketed())
@@ -909,6 +913,7 @@ class Viewer:
             self.dice.scroll_right = self.scroll_right.get()
             self.dice.pens_gear = self.content_vars["pens_gear"].get()
             self.dice.magic_arms = self.content_vars["magic_arms"].get()
+            self.dice.world_gear = self.content_vars["world_gear"].get()
             self.dice.vulture_on = self.content_vars["vulture"].get()
             self.dice.stealth_gear = self.stealth_gear.get()
             self.dice.set_rules(self._rules())
