@@ -1837,6 +1837,10 @@ says so in the dice log:
 | **Cermak**, human preserver, once a gladiator | specializes in the long sword and the club, his once his gladiator levels count again | |
 | **Cilla**, elf preserver, druid and thief | | no leather armour (a druid wears none), and she knows **Armor**, the spell Old One-Eye's scroll teaches |
 
+![The USE screen in the game: Cilla's 1st-level mage spells, the first named ARMOR in the bar below, WIZ 2/2](docs/default-party-armor.png)
+
+![Gerakis's inventory in the game: a Gythka in his left hand and a Long Sword in his right, each 1.5 attacks a round](docs/default-party-gerakis.png)
+
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#the-games-own-party).
 
 ## New content

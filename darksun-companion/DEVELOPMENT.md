@@ -539,7 +539,9 @@ each change once, knowing each by name, race and classes together: their
 weapon kinds in the sheet's spare bytes, Gerakis's club item made a bone
 gythka in its place, Cilla's plain armour given back to the free item list
 (her chest armour is alone in its list, which is left empty, as a new list
-is), and her byte for spell 0 set in the known-spells table.
+is), and her byte for spell 0 set in the known-spells table. Seen in play: Cilla's
+USE screen lists ARMOR among her 1st-level spells and her inventory has no
+chest armour (AC 5); Gerakis holds the gythka and the long sword.
 
 ### New items
 
