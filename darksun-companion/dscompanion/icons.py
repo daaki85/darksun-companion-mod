@@ -105,7 +105,12 @@ def recolour(rows: Rows, colours: Dict[int, int]) -> Rows:
     return [[colours.get(p, p) if p is not None else None for p in r] for r in rows]
 
 
-BLADE = range(0xD1, 0xDA)  # a blade's greys, in the bone gythka's and the metal sword's icons
+GREAT_AXE_TYPE = 2
+BLADE = range(0xD1, 0xDA)
+# the Axe's metal head, shade for shade (by brightness), in the bone long sword's whites
+AXE_BONE = {208: 129, 209: 132, 210: 132, 211: 200, 212: 146, 213: 146, 214: 148, 215: 152}
+# ... and in the obsidian long sword's darker greys (it has 208-213, mostly 208-211)
+AXE_OBSIDIAN = {210: 208, 211: 209, 212: 210, 213: 210, 214: 211, 215: 212}  # a blade's greys, in the bone gythka's and the metal sword's icons
 
 # (name, the plain item's picture, the new object's number, its icon's number, the icon made from
 # the plain one's)
@@ -120,6 +125,13 @@ ICONS: Tuple[Tuple[str, int, int, int, Callable[[Rows], Rows]], ...] = (
     ("Bone Helm", 0xFC03, 2437, 2438, lambda r: recolour(r, BONE)),
     ("Kreenfang", 0xFC0D, 2446, 2447, lambda r: glow(r, lambda p, x, y: p in BLADE, FIRE)),
     ("Shadowseeker", 0xFC0A, 2448, 2449, lambda r: glow(shorter_blade(r), lambda p, x, y: p in BLADE, NIGHT_STEEL)),
+    ("Bone Short Sword", 0xFC0C, 2419, 2420, shorter_blade),
+    ("Bone Axe", 0xFB61, 2421, 2422, lambda r: recolour(r, AXE_BONE)),
+    ("Obsidian Short Sword", 0xFC0B, 2480, 2481, shorter_blade),
+    ("Obsidian Axe", 0xFB61, 2482, 2483, lambda r: recolour(r, AXE_OBSIDIAN)),
+    # the game's only great axe is its Great Axe +3, its green gem (1, 2) the magic: a plain one's
+    # has the handle's mauves there
+    ("Great Axe", 0xFC06, 2484, 2485, lambda r: recolour(r, {1: 58, 2: 59})),
 )
 PICTURES: Dict[str, int] = {name: 0x10000 - number for name, _, number, _, _ in ICONS}  # an item's +0
 
@@ -346,7 +358,17 @@ def which(rec: bytes) -> Optional[str]:
     kind, = struct.unpack_from("<H", rec, game.ITEM_TYPE)
     if kind == game.BONE_HELM_TYPE:
         return "Bone Helm"
+    if kind == game.BONE_SHORT_SWORD_TYPE:
+        return "Bone Short Sword"
+    if kind == game.BONE_AXE_TYPE:
+        return "Bone Axe"
+    if kind == game.OBSIDIAN_SHORT_SWORD_TYPE:
+        return "Obsidian Short Sword"
+    if kind == game.OBSIDIAN_AXE_TYPE:
+        return "Obsidian Axe"
     plus = struct.unpack("b", rec[game.ITEM_PLUS:game.ITEM_PLUS + 1])[0]
+    if kind == GREAT_AXE_TYPE and plus == 0:
+        return "Great Axe"
     if kind == game.SHORT_SWORD_TYPE:
         return "Shadowseeker" if plus == 1 else "Short Sword"
     if kind == game.GYTHKA_TYPE and plus == 1:

@@ -32,6 +32,12 @@ TYPES = (  # as DSCLOG's EXTRA_TYPES has them
     # the Helm's (5), of bone, worn by those who can wear the bone scale armour (+10h, the classes:
     # 126Fh, no thieves, where the Helm has 166Fh) (bonescale.py)
     bytes.fromhex("000000000f00fa0001060000000000806f120000"),
+    # a bone short sword and a bone axe, a new warrior's (weaponchoice.py)
+    bytes.fromhex("010030000f00fa0001050101060100007817" "0001"),
+    bytes.fromhex("010010002300fa0001050101080100007817" "0001"),
+    # an obsidian short sword and an obsidian axe
+    bytes.fromhex("010030001e00fa0003050101060100007e17" "0001"),
+    bytes.fromhex("010010004600fa0003050101080100007e17" "0001"),
 )
 TSR_TYPES_OFF, TSR_TYPES_COUNT, TSR_TYPES_FIRST, TSR_TYPES_PTR = 208, 210, 212, 214
 BLOODWRATH = 0x9C  # the name entry of the Templar's sword: which Templar is Pehtucl

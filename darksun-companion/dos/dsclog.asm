@@ -4527,7 +4527,7 @@ KIND_TYPES equ 128
 kind_of_type  db 16, 14, 7, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 2, 10, 5, 12, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0
               db 0, 3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 11, 1, 5, 1, 13, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1
               db 15, 0, 0, 0, 0, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 1, 0, 0, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0
-              db 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 8, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+              db 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 8, 0, 0, 4, 0, 0, 4, 6, 4, 6, 0, 0, 0, 0, 0, 0
 
 ; PROBE_XP_NEXT: INT VEC_XP_NEXT replaces "push 10F4h" (3 bytes: INT + NOP; DSUN.EXE 67DBEh) in
 ; View Character's line "EXP:10301 (16000)", where the game adds ")" (DS:10F4h) after the XP the
@@ -5753,7 +5753,22 @@ extra_types:
         ; it for the classes that can wear it (+10h: no thieves, where the Helm allows them)
         db 0x00, 0x00, 0x00, 0x00, 0x0F, 0x00, 0xFA, 0x00, 0x01, 0x06, 0x00, 0x00
         db 0x00, 0x00, 0x00, 0x80, 0x6F, 0x12, 0x00, 0x00
-        times (TYPES_EXTRA - 3) * TYPE_SIZE db 0
+        ; a bone short sword (a new warrior's, weaponchoice.py): the short sword's, of bone (+8),
+        ; half its weight (+4), for the classes of the bone long sword and psionicists (+10h)
+        db 0x01, 0x00, 0x30, 0x00, 0x0F, 0x00, 0xFA, 0x00, 0x01, 0x05, 0x01, 0x01
+        db 0x06, 0x01, 0x00, 0x00, 0x78, 0x17, 0x00, 0x01
+        ; a bone axe: the Axe's (22), of bone, half its weight, for the bone weapons' classes (a
+        ; water cleric's, not an earth cleric's)
+        db 0x01, 0x00, 0x10, 0x00, 0x23, 0x00, 0xFA, 0x00, 0x01, 0x05, 0x01, 0x01
+        db 0x08, 0x01, 0x00, 0x00, 0x78, 0x17, 0x00, 0x01
+        ; an obsidian short sword: the short sword's, of obsidian, for the obsidian long sword's
+        ; classes and psionicists
+        db 0x01, 0x00, 0x30, 0x00, 0x1E, 0x00, 0xFA, 0x00, 0x03, 0x05, 0x01, 0x01
+        db 0x06, 0x01, 0x00, 0x00, 0x7E, 0x17, 0x00, 0x01
+        ; an obsidian axe: the Axe's, of obsidian, for the obsidian weapons' classes
+        db 0x01, 0x00, 0x10, 0x00, 0x46, 0x00, 0xFA, 0x00, 0x03, 0x05, 0x01, 0x01
+        db 0x08, 0x01, 0x00, 0x00, 0x7E, 0x17, 0x00, 0x01
+        times (TYPES_EXTRA - 7) * TYPE_SIZE db 0
 ; the names, numbered from NAMES_OWN (322): the companion's items' (the same as the companion's
 ; NAMES in dscompanion/names.py), the rest blank until it writes more
 extra_names:

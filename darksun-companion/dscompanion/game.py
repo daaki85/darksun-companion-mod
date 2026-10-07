@@ -85,6 +85,8 @@ RING_TYPE = 102
 # on saves as a ring's does
 GAME_TYPES = 115
 SHORT_SWORD_TYPE, CLOAK_TYPE, BONE_HELM_TYPE = GAME_TYPES, GAME_TYPES + 1, GAME_TYPES + 2
+BONE_SHORT_SWORD_TYPE, BONE_AXE_TYPE = GAME_TYPES + 3, GAME_TYPES + 4  # (a new warrior's, weaponchoice.py)
+OBSIDIAN_SHORT_SWORD_TYPE, OBSIDIAN_AXE_TYPE = GAME_TYPES + 5, GAME_TYPES + 6
 GYTHKA_TYPE = 0x2C  # the game's gythka ("2 handed Bone Gythka")
 # The companion's rule changes (DSCLOG's RULES): helms count AC 1, boots add a move in a fight;
 # AD&D's two-weapon penalties; spells saved against with the spell save; no doubled d20

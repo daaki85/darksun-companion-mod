@@ -7,9 +7,11 @@ played (its status New) the Ledger makes them whole:
   long sword and the club if none were; any other class none (marked as a warrior, then made
   something else);
 - the game's starting weapon, the bone long sword in the right hand, becomes a plain weapon of
-  the first kind, of bone or obsidian where the game has one (the axe is metal, the great axe
-  and the pick its only ones), with its picture and name; a bow, sling or staff sling goes to the
-  missile slot, and a bow comes with arrows.
+  the first kind, of bone or obsidian where the game has one, in a material the character can use
+  (a fire cleric's long sword obsidian), with its picture and name; the short sword and the axe
+  are the Ledger's own, of bone (the game has no short sword but Kurzak's, Shadowseeker, and only
+  a metal axe). A bow, sling or staff sling goes to the missile slot, and a bow comes with
+  arrows; a weapon in both hands sends the starting shield to the backpack.
 """
 
 import struct
@@ -34,10 +36,10 @@ PLAIN: Tuple[Tuple[int, int, int, int], ...] = (
     (81, 0x1C, 0xFC0C, 45),    # long sword (bone)
     (18, 0x11, 0xFB5F, 1),     # club
     (17, 0x10, 0xFB60, 2),     # dagger (obsidian)
-    (game.SHORT_SWORD_TYPE, 0x144, 0xF685, 10),  # short sword (the Ledger's)
+    (game.BONE_SHORT_SWORD_TYPE, 0x144, 0x10000 - 2419, 10),  # short sword (the Ledger's, of bone)
     (20, 0x13, 0xFB5D, 8),     # mace (bone)
-    (22, 0x1A, 0xFB61, 100),   # axe (metal: the game's only axe)
-    (2, 0x03, 0xFC06, 12),     # great axe
+    (game.BONE_AXE_TYPE, 0x1A, 0x10000 - 2421, 8),  # axe (the Ledger's, of bone: the game's is metal)
+    (2, 0x03, 0x10000 - 2484, 12),  # great axe (the Ledger's picture: the game's only one is +3)
     (112, 0xAD, 0xFB46, 8),    # pick (stone)
     (3, 0x04, 0xFC05, 1),      # quarterstaff
     (19, 0x12, 0xFB5E, 7),     # polearm (bone)
@@ -53,6 +55,9 @@ PLAIN: Tuple[Tuple[int, int, int, int], ...] = (
 OTHERS = {
     specialize.KINDS.index("long sword"): ((45, 0x1C, 0xFC0B, 75), (63, 0x1C, 0xFC0A, 500)),  # obsidian, metal
     specialize.KINDS.index("dagger"): ((33, 0x10, 0xFB5A, 1),),  # stone
+    specialize.KINDS.index("short sword"): ((game.OBSIDIAN_SHORT_SWORD_TYPE, 0x144, 0x10000 - 2480, 20),),
+    specialize.KINDS.index("axe"): ((game.OBSIDIAN_AXE_TYPE, 0x1A, 0x10000 - 2482, 15),
+                                    (22, 0x1A, 0xFB61, 100)),  # obsidian (a fire cleric's), metal
 }
 MISSILE_KINDS = frozenset(specialize.KINDS.index(k) for k in ("bow", "sling", "staff sling"))
 BOW = specialize.KINDS.index("bow")

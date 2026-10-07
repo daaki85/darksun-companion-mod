@@ -1101,7 +1101,9 @@ class KindsAllowedTests(unittest.TestCase):
                22: (1, 4, 0x177A), 2: (1, 0x40, 0x166C), 112: (1, 2, 0x177A), 3: (1, 0, 0x1EFA),
                80: (1, 0, 0x1EFA), 19: (1, 1, 0x167A), 111: (1, 1, 0x167A), 44: (1, 1, 0x177B),
                21: (1, 1, 0x167B), 48: (0x12, 3, 0x1F77), 1: (0x0A, 0, 0x177B), 69: (0x0A, 0, 0x177B),
-               64: (2, 5, 0x1EF9), 0: (2, 5, 0x1EF1), game.SHORT_SWORD_TYPE: (1, 4, 0x1672)}
+               64: (2, 5, 0x1EF9), 0: (2, 5, 0x1EF1), game.SHORT_SWORD_TYPE: (1, 4, 0x1672),
+               game.BONE_SHORT_SWORD_TYPE: (1, 1, 0x1778), game.BONE_AXE_TYPE: (1, 1, 0x1778),
+               game.OBSIDIAN_SHORT_SWORD_TYPE: (1, 3, 0x177E), game.OBSIDIAN_AXE_TYPE: (1, 3, 0x177E)}
     TYPES = 0x8000  # (segment)
 
     def record(self, t):
@@ -1138,7 +1140,8 @@ class KindsAllowedTests(unittest.TestCase):
                 want = restrict.allowed_kinds(s, self.record)
                 self.assertEqual([k for k in range(16) if got >> k & 1], want)
         fire = restrict.allowed_kinds(sheet(9, 3), self.record)
-        self.assertEqual([specialize.KINDS[k] for k in fire], ["long sword", "dagger", "mace", "chatkcha"])
+        self.assertEqual([specialize.KINDS[k] for k in fire],
+                         ["long sword", "dagger", "short sword", "mace", "axe", "chatkcha"])
 
 
 @unittest.skipIf(Uc is None, "unicorn is not installed")
