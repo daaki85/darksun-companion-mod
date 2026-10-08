@@ -1,8 +1,7 @@
 # Templar's Ledger
 
-A companion for **Dark Sun: Shattered Lands** (the GOG release) running in
-DOSBox, in the spirit of the Gold Box Companion. In Draj the templars keep the
-records; this ledger keeps the ones the game doesn't show you.
+Templar's Ledger is a companion and mod for **Dark Sun: Shattered Lands** (the
+GOG release) in DOSBox.
 
 ## Contents
 
@@ -83,31 +82,26 @@ records; this ledger keeps the ones the game doesn't show you.
 
 Templar's Ledger runs beside Dark Sun: Shattered Lands, in DOSBox:
 
-- **It shows what the game hides.** A window with every character's numbers as
-  they stand now: THAC0 with each weapon, saves, the AC the game uses in a fight
-  and what it's made of, spell slots, thief skills
-  ([the Ledger's window](#the-ledgers-window)); a [dice log](#the-dice-log) of
-  every roll the game makes, what it needed and where each bonus comes from; and
-  tabs keeping [what's said](#the-dialogue-tab) and
-  [what every spell really does](#the-spells-tab).
-- **It shows it in the game too**, in the game's own lettering: THAC0, saves and
-  thief skills on the inventory and View Character screens, spell slots on the
-  USE screen, each turn's rolls, and what hurts a monster in the Look box
-  ([In the game](#in-the-game)).
-- **It changes rules, each one switchable:** sixteen, most of them AD&D's,
-  among them weapon specialization, class restrictions, thief skills, saving
-  throws and levels up to 10 ([Rule changes](#rule-changes)); and thieves can
-  pick pockets ([Thieves](#thieves)).
-- **It adds to the game:** new items across Athas, two new people in the
-  slave pens and a use for the cooked vulture
-  ([New content](#new-content)); gear, shadows and dust on the map
-  ([On the screen](#on-the-screen)); choosing an enemy with Tab and scrolling
-  with the mouse ([Controls](#controls)); 40 saves and 29 saved characters
-  ([More saves and characters](#more-saves-and-characters)); a game speed
-  setting and crash reports; and no more [manual check](#no-manual-check).
+- **It shows what the game hides.** A window wIt shows what the game keeps hidden. Every roll is logged as it happens:
+attacks, damage, saving throws, thief skills, initiative, even the dice at
+character creation. Each comes with what it needed and where every bonus came
+from ([the dice log](#the-dice-log)). The game's own screens gain THAC0, saves,
+thief skills and spell slots, and the Look box tells you what can hurt a
+monster ([In the game](#in-the-game)).
 
-Nothing in the game folder or your save files is changed, except what play
-writes there: save pages 2 to 4 as files of their own beside the game's,
+It brings the rules closer to AD&D: weapon specialization and mastery, class
+restrictions, thief skills from the Player's Handbook, saving throws as the
+books have them, and levels up to 10 ([Rule changes](#rule-changes)). Thieves
+can pick pockets, and hide in shadows to backstab ([Thieves](#thieves)).
+
+It adds to Athas: new weapons in every material, magic items with stories of
+their own, Kalzith (a defiler who sells scrolls), more of Semyon's story, and a
+use for the cooked vulture ([New content](#new-content)). Graphical additions
+show the weapons and armour the party wears, have characters cast shadows, and
+kick up dirt as they walk ([On the screen](#on-the-screen)). There's more:
+choosing an enemy with Tab, 40 saves, a game speed setting and no manual check.
+
+s of their own beside the game's,
 characters 20 to 29 in the game's `CHARSAVE.GFF`, and, in a game you save,
 the new items (untick **New items** to go without). Some of them the
 original game doesn't know (the item types it lacks, such as the Short Sword,
