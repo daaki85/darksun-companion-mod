@@ -16,25 +16,33 @@ GOG release) in DOSBox.
 It shows what the game keeps hidden. Every roll is logged as it happens:
 attacks, damage, saving throws, thief skills, initiative, even the dice at
 character creation. Each comes with what it needed and where every bonus came
-from ([the dice log](darksun-companion/README.md#the-dice-log)). The game's own screens gain THAC0, saves,
-thief skills and spell slots, and the Look box tells you what can hurt a
-monster ([In the game](darksun-companion/README.md#in-the-game)).
+from ([the dice log](darksun-companion/README.md#the-dice-log)). The game's own
+screens gain THAC0, saves, thief skills and spell slots, and the Look box tells
+you what can hurt a monster ([In the
+game](darksun-companion/README.md#in-the-game)).
 
 It brings the rules closer to AD&D: weapon specialization and mastery, class
 restrictions, thief skills from the Player's Handbook, saving throws as the
-books have them, and levels up to 10 ([Rule changes](darksun-companion/README.md#rule-changes)). Thieves
-can pick pockets, and hide in shadows to backstab ([Thieves](darksun-companion/README.md#thieves)).
+books have them, and levels up to 10 ([Rule
+changes](darksun-companion/README.md#rule-changes)). Thieves can pick pockets,
+and hide in shadows to backstab
+([Thieves](darksun-companion/README.md#thieves)).
 
 It adds to Athas: new weapons in every material, magic items with stories of
 their own, Kalzith (a defiler who sells scrolls), more of Semyon's story, and a
-use for the cooked vulture ([New content](darksun-companion/README.md#new-content)). Graphical additions
-show the weapons and armour the party wears, have characters cast shadows, and
-kick up dirt as they walk ([On the screen](darksun-companion/README.md#on-the-screen)).
+use for the cooked vulture ([New
+content](darksun-companion/README.md#new-content)). Graphical additions show the
+weapons and armour the party wears, have characters cast shadows, and kick up
+dirt as they walk ([On the screen](darksun-companion/README.md#on-the-screen)).
 
 Quality of life changes: choosing an enemy with Tab and attacking it with Enter,
-scrolling the map with the mouse wheel ([Controls](darksun-companion/README.md#controls)), 40 saves and 29 saved
-characters ([More saves and characters](darksun-companion/README.md#more-saves-and-characters)), a game
-speed setting ([Game speed](darksun-companion/README.md#game-speed)), crash reports, and no dragon asking for a word from the manual, the game's copy protection ([No manual check](darksun-companion/README.md#no-manual-check)).
+scrolling the map with the mouse wheel
+([Controls](darksun-companion/README.md#controls)), 40 saves and 29 saved
+characters ([More saves and
+characters](darksun-companion/README.md#more-saves-and-characters)), a game
+speed setting ([Game speed](darksun-companion/README.md#game-speed)), crash
+reports, and no dragon asking for a word from the manual, the game's copy
+protection ([No manual check](darksun-companion/README.md#no-manual-check)).
 
 The game's own files are never modified: the Ledger runs a patched copy of the
 game, and copies of its data files, from its own folder. Play writes to the game
@@ -65,11 +73,12 @@ double-click, with the options as last set.)
 
 ## What's new
 
-In pull request #29 (merged 2026-10-08): a ranger's bow is its own with class
-restrictions, so a fire ranger/cleric can use bows and a ranger who dual-classes
-gets the bow back; and a new description of what the Ledger does.
+**Templar's Ledger 1.2.0** is out ([release notes](release-notes/v1.2.0.md)):
+weapon specialization and class restrictions, new weapons and magic items
+across Athas, and more, from pull requests #19 to #29.
 
 Earlier changes, pull request by pull request, are in
 [`CHANGELOG.md`](CHANGELOG.md). Releases have notes of their own:
-[1.1.0](release-notes/v1.1.0.md) (pull requests #14 to #18) and
+[1.2.0](release-notes/v1.2.0.md) (pull requests #19 to #29),
+[1.1.0](release-notes/v1.1.0.md) (#14 to #18) and
 [1.0.0](release-notes/v1.0.0.md) (#1 to #13).
