@@ -99,6 +99,7 @@ VEC_EF_ROWS equ 0xBB       ; PROBE_EF_ROWS
 VEC_HP_BEST equ 0xBA       ; PROBE_HP_BEST
 VEC_TOME equ 0xB9          ; PROBE_TOME
 VEC_INIT equ 0xB8          ; PROBE_INIT
+VEC_THAC0 equ 0xB7         ; PROBE_THAC0
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 96          ; entries in the ring (96: the helper and it fit in upper memory)
@@ -4535,6 +4536,50 @@ probe_init:
         jne .out
         add dx, 2
 .out:   pop ax
+        iret
+
+; PROBE_THAC0: INT VEC_THAC0 replaces "mov ax,14h / sub ax,si" (5 bytes: INT + 3 NOPs; DSUN.EXE
+; 876BBh) at the end of the game's THAC0 routine (SI the most any of the character's classes
+; takes off 20, [BP+6] its sheet's number), which every write of a creature's THAC0 (+1Fh) uses:
+; AX 20 less SI, and the kit's (kits.thac0): a Swashbuckler's, Crusader's, Battle Mage's or Mind
+; Warrior's a warrior's (21 less its level) where that is better, a Scholar's 1 worse.
+probe_thac0:
+        push bx
+        push cx
+        push es
+        mov cx, 20
+        sub cx, si
+        les bx, [0x1661]
+        imul ax, [bp + 6], 0x47
+        add bx, ax
+        call kit_id
+        jz .out
+        cmp al, KIT_SCHOLAR
+        jne .warrior
+        inc cx
+        jmp .out
+.warrior:
+        cmp al, KIT_SWASHBUCKLER
+        je .level
+        cmp al, KIT_CRUSADER
+        je .level
+        cmp al, KIT_BATTLE_MAGE
+        je .level
+        cmp al, KIT_MIND_WARRIOR
+        jne .out
+.level: movzx ax, byte [es:bx + 0x24]
+        neg ax
+        add ax, 21
+        cmp ax, 1
+        jge .best
+        mov ax, 1
+.best:  cmp ax, cx
+        jge .out
+        mov cx, ax
+.out:   mov ax, cx
+        pop es
+        pop cx
+        pop bx
         iret
 
 ; KIT_SAVE: SI (a saving throw's modifiers) with the kit's of the one saving (thing DI) against
@@ -9117,8 +9162,8 @@ ib_elf_quiet db 'Move 95%', 0
 ; PROBE_BELT: INT VEC_BELT replaces "mov ax,si" (2 bytes) at the end of the game's thief skill
 ; routine (DSUN.EXE 803B2h: SI the chance, armour and effects counted; DI the thief's object; the
 ; game's [BP+8] the skill, a dword). With SKILLS_BELT, a thief wearing a belt (the waist slot)
-; gets BELT_BONUS more to pick pockets (0) and open locks (1), and an Assassin (kits.py) 15 less,
-; no less than 0, as the Ledger counts them (game.py's thief_skills_now); then AX = the chance, as
+; gets BELT_BONUS more to pick pockets (0) and open locks (1); an Assassin (kits.py) 15 less to
+; those, a Swashbuckler 10 less to every skill, no less than 0, as the Ledger counts them (game.py's thief_skills_now); then AX = the chance, as
 ; the code would have.
 WAIST      equ 5                ; the item's slot byte while worn as a belt
 BELT_BONUS equ 5
@@ -9128,8 +9173,6 @@ probe_belt:
         mov ax, si
         cmp word [bp + 0x0A], 0
         jne .out
-        cmp word [bp + 8], 1
-        ja .out
         push bx
         push cx
         push dx
@@ -9142,6 +9185,8 @@ probe_belt:
         imul bx, di, 3
         mov ax, [es:bx + COMBATANT_CREATURE]
         mov cx, ax
+        cmp word [bp + 8], 1
+        ja .kit                 ; (the belt: pick pockets and open locks only)
         test byte [cs:skills_on], SKILLS_BELT
         jz .kit
         mov word [cs:ws_slot], WAIST
@@ -9152,11 +9197,19 @@ probe_belt:
         cmp word [cs:ws_count], 0
         je .kit
         add dx, BELT_BONUS
-.kit:   mov ax, cx              ; an Assassin's 15 less (kits.thief_skill), no less than 0
+.kit:   mov ax, cx              ; the kit's (kits.thief_skill), no less than 0
         call kit_of_creature
+        cmp al, KIT_SWASHBUCKLER
+        jne .assassin
+        sub dx, 10
+        jmp .least
+.assassin:
         cmp al, KIT_ASSASSIN
         jne .done
+        cmp word [bp + 8], 1
+        ja .done
         sub dx, 15
+.least: or dx, dx
         jns .done
         xor dx, dx
 .done:  mov ax, dx
@@ -9506,6 +9559,9 @@ install:                        ; DS = ES = PSP, CS = the image
         int 21h
         mov ax, 2500h + VEC_INIT
         mov dx, probe_init
+        int 21h
+        mov ax, 2500h + VEC_THAC0
+        mov dx, probe_thac0
         int 21h
         mov ax, 3516h           ; the keyboard's (TARGETING)
         int 21h

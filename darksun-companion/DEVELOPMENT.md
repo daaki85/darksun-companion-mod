@@ -1073,9 +1073,10 @@ emulated tests hold the helper to it:
 | to hit | Ravager, Brute, Arena Champion | `PROBE_ATTACKS` (`KIT_TO_HIT`: `KIT_CHAMPION`, and `KIT_MELEE` in melee) |
 | AC | Ravager (`RAVAGER_AC` by level against the sheet's base AC, `+27h`), Wanderer, Sentinel and Arena Champion (a shield in a hand: `PROT_SCAN`), Grove Warden | `PROBE_AC` (`INT 62h`, the end of the AC routine: `KIT_AC`) |
 | movement | Stalker | `PROBE_MOVE` (`KIT_MOVE`) |
+| THAC0 | Swashbuckler, Crusader, Battle Mage, Mind Warrior (a warrior's: 21 less the level, where better), Scholar (1 worse) | `PROBE_THAC0` (`INT B7h`, new: the end of the game's THAC0 routine, `mov ax,14h / sub ax,si` at DSUN.EXE 876BBh, which every write of a creature's THAC0, `+1Fh`, uses: on making a character, 66CE0h, and at a level up, 86D7Eh and 87A91h) |
 | initiative | Sentinel | `PROBE_INIT` (`INT B8h`, new: the round's 20 added at DSUN.EXE 5750Eh) |
 | saves | Myrmidon (charms), Sentinel (spells, 0-137), Wanderer (fire and cold: the spell record's `+1Ah`, 2 or 4, as the game's Resist Fire and Resist Cold read it) | `PROBE_RING_SAVE` (the modifier routine's start: `KIT_SAVE`) |
-| pick pockets, open locks | Assassin | `PROBE_BELT` (the thief skill routine's end) |
+| thief skills | Assassin (pick pockets, open locks), Swashbuckler (all) | `PROBE_BELT` (the thief skill routine's end) |
 | hiding, moving silently | Stalker, Assassin | the stealth rule's rolls (`stealth.py`, `GameData.ranger_skill_parts`) |
 | the two-weapon penalty | Twin-blade | `PROBE_TWO` |
 | gear allowed | Ravager, Twin-blade, Brute, Stalker, Grove Warden, Lifebinder, Shinobi | `PROBE_CAN_USE` and `KINDS_ALLOWED` (`KIT_FORBIDS`: `restrict.kit_forbids`), whatever the class restrictions |
@@ -1086,7 +1087,6 @@ Still to build, a new hook at a place already found:
 
 | Effect | Kits | Where |
 |---|---|---|
-| THAC0 | Swashbuckler, Crusader, Battle Mage, Mind Warrior | the game writes a creature's THAC0 (`mov es:[bx+1Fh],al`) after one routine, at DSUN.EXE 66CE0h, 86D7Eh and 87A91h |
 | spell slots | Elementalist, Crusader, Battle Mage, Arcanist, Seeker, Justifier | the slots given on resting (5E0ACh) and the classes' rule words, which `GameData.max_spell_slots` reads |
 | max PSP | Mind Warrior | the level-up's sum at 873B2h |
 | spells learnt at a level up | Scholar, Shinobi (one, from its list) | the CHOOSE A SPELL screen (see levels up to 10) |
@@ -1114,8 +1114,10 @@ helper's code (emulated) to the Python.
    initiative hook), Myrmidon, Arena Champion, Twin-blade, Brute, Stalker,
    Assassin, Grove Warden, Wanderer, Arcanist's CON, Lifebinder's weapons; and
    the ring at 96 entries, for room in upper memory.
-3. THAC0 and spell slot hooks: Swashbuckler, Crusader, Battle Mage, Mind
-   Warrior, Arcanist, Elementalist, Justifier, Seeker, Scholar.
+3. THAC0 and spell slot hooks. Done: the THAC0 (Swashbuckler, Crusader,
+   Battle Mage, Mind Warrior, Scholar) and the Swashbuckler's thief skills.
+   Next: the spell slots (Crusader, Battle Mage, Arcanist, Elementalist,
+   Justifier, Seeker) and the Scholar's spell learnt.
 4. After finding them: PSP costs (Mind Bender, Kineticist), spell dice
    (Healer, Lifebinder), casting level (Seeker, Justifier), a hit spoiling a
    spell (Battle Mage, if the game has it).

@@ -1262,7 +1262,7 @@ class GameData:
             chance = sum(n for _, n in parts) - (table[skill] if penalty and len(table) == 8 else 0)
             if belt and skill in BELT_SKILLS:
                 chance += BELT_BONUS
-            if kits.thief_skill(kid, skill):  # (an Assassin's: no less than 0, as DSCLOG's PROBE_BELT)
+            if kits.thief_skill(kid, skill):  # (an Assassin's, a Swashbuckler's: no less than 0, as DSCLOG's PROBE_BELT)
                 chance = max(0, chance + kits.thief_skill(kid, skill))
             if any(skill in THIEF_CERTAIN.get(e, ()) for e in ids):
                 chance = 100

@@ -30,6 +30,11 @@ Released pull requests are summarised in a line or two each; the release notes
   the Lifebinder's weapons, and the Shinobi's weapons and armour. The guide's
   Kits has what each does. The dice log and the Ledger show each kit's part; a
   new probe in the game (INT B8h) makes the Sentinel's initiative.
+- **Kits' THAC0:** the Swashbuckler, Crusader, Battle Mage and Mind Warrior
+  get a warrior's THAC0, the Scholar's is 1 worse, through a new probe at the
+  end of the game's THAC0 routine (INT B7h); the Swashbuckler's −10 to every
+  thief skill, named in the dice log's thief skill lines as the Assassin's
+  now is.
 
 **Changed** (for the kits)
 - **The dice log's ring holds 96 entries** (was 128), making room in upper

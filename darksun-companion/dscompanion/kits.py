@@ -10,7 +10,11 @@ from .kitpages import KIT_IDS, KITS
 
 RAVAGER, SENTINEL, STALKER = KIT_IDS["Ravager"], KIT_IDS["Sentinel"], KIT_IDS["Stalker"]
 MYRMIDON, CHAMPION = KIT_IDS["Myrmidon"], KIT_IDS["Arena Champion"]
-ASSASSIN = KIT_IDS["Assassin"]
+ASSASSIN, SWASHBUCKLER = KIT_IDS["Assassin"], KIT_IDS["Swashbuckler"]
+CRUSADER, SCHOLAR, BATTLE_MAGE, MIND_WARRIOR = (KIT_IDS["Crusader"], KIT_IDS["Scholar"], KIT_IDS["Battle Mage"],
+                                                KIT_IDS["Mind Warrior"])
+# the kits with a warrior's THAC0 (PROBE_THAC0)
+WARRIOR_THAC0 = frozenset((SWASHBUCKLER, CRUSADER, BATTLE_MAGE, MIND_WARRIOR))
 TWIN_BLADE, BRUTE = KIT_IDS["Twin-blade"], KIT_IDS["Brute"]
 GROVE_WARDEN, LIFEBINDER = KIT_IDS["Grove Warden"], KIT_IDS["Lifebinder"]
 WANDERER, ARCANIST = KIT_IDS["Wanderer"], KIT_IDS["Arcanist"]
@@ -68,6 +72,17 @@ def ac(kid: int, shield: bool, level: int = 0, base: int = 10) -> int:
     return 0
 
 
+def thac0(kid: int, level: int, game_thac0: int) -> int:
+    """The THAC0 the game gives a character of kit KID (PROBE_THAC0), its own GAME_THAC0 at class
+    level LEVEL: a Swashbuckler's, Crusader's, Battle Mage's or Mind Warrior's a warrior's (21 less
+    the level, 1 at best) where better; a Scholar's 1 worse."""
+    if kid == SCHOLAR:
+        return game_thac0 + 1
+    if kid in WARRIOR_THAC0:
+        return min(game_thac0, max(1, 21 - level))
+    return game_thac0
+
+
 def move(kid: int) -> int:
     """Added to Move in a fight (KIT_MOVE): a Stalker's 2."""
     return 2 if kid == STALKER else 0
@@ -101,7 +116,9 @@ def champion(kid: int, shield: bool, melee: bool) -> Tuple[int, int]:
 
 def thief_skill(kid: int, skill: int) -> int:
     """Added to a thief skill (game.THIEF_SKILLS' numbers; the helper's PROBE_BELT): an Assassin's
-    -15 to pick pockets (0) and open locks (1)."""
+    -15 to pick pockets (0) and open locks (1), a Swashbuckler's -10 to every one."""
+    if kid == SWASHBUCKLER:
+        return -10
     return -15 if kid == ASSASSIN and skill in (0, 1) else 0
 
 

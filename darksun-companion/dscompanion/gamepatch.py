@@ -64,6 +64,7 @@ VEC_EF_ROWS = 0xBB
 VEC_HP_BEST = 0xBA
 VEC_TOME = 0xB9
 VEC_INIT = 0xB8
+VEC_THAC0 = 0xB7
 
 
 SCRIPT_BUFFER = 0x2E00  # the scripts' buffer, made bigger (the game's: 10000 bytes)
@@ -335,6 +336,8 @@ PATCHES = (
     Patch("tome", 0x8B80C, bytes.fromhex("1e684034"), _interrupt(VEC_TOME, 4)),
     # a combatant's initiative for the round: its 20 added, and a Sentinel's 2 more (kits.py)
     Patch("init", 0x5750E, bytes.fromhex("83c214"), _interrupt(VEC_INIT, 3)),
+    # the end of the THAC0 routine: a kit's THAC0 (kits.thac0)
+    Patch("thac0", 0x876BB, bytes.fromhex("b814002bc6"), _interrupt(VEC_THAC0, 5)),
     # A bug of the game's own: the roster's DELETE (DSUN.EXE 54AC1h) picked the character by the
     # row clicked alone, where ADD takes the row plus how far the list is scrolled; with the list
     # scrolled, another character was deleted (the row's from the top). The same code, the scroll

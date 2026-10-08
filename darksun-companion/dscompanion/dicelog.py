@@ -1645,8 +1645,14 @@ class DiceLog:
         parts = self.game.thief_skill_parts(creature, skill) if creature is not None else None
         if parts is None:
             return [head]
-        rest = chance - bonus - sum(n for _, n in parts)
+        kid = self.game.kit_id(creature)
+        kit = kits.thief_skill(kid, skill)
+        if kit and chance == 0:  # (no less than 0: what the kit took off can't be told apart)
+            kit = 0
+        rest = chance - bonus - kit - sum(n for _, n in parts)
         steps = [f"{n}" if what == "base" else f"{signed(n)} {what}" for what, n in parts]
+        if kit:
+            steps.append(f"{signed(kit)} {kits.name(kid)}")
         if bonus:
             steps.append(f"{signed(bonus)} this attempt")
         if rest:  # the only other part of the chance: the equipment penalty

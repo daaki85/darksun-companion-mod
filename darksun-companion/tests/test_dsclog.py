@@ -529,6 +529,23 @@ class BeltTests(unittest.TestCase):
         self.assertEqual(self.chance(0, on=0), 25)
         self.assertEqual([kits.thief_skill(kits.ASSASSIN, k) for k in range(4)], [-15, -15, 0, 0])
 
+    def test_swashbuckler(self):
+        """A Swashbuckler (kits on): 10 less to every skill (kits.thief_skill), the belt's 5 still
+        added to pick pockets and open locks, never below 0; kits off, none."""
+        from dscompanion import kits
+        sheets = 0xB000
+        self.mu.mem_write(self.DS * 16 + 0x1661, struct.pack("<HH", 0, sheets))
+        self.mu.mem_write(self.CREATURES * 16 + 0x3A + 4, struct.pack("<H", 2))
+        sheet = bytearray(game.SHEET_SIZE)
+        sheet[0x21], sheet[0x43] = 17, 1
+        self.mu.mem_write(sheets * 16 + 2 * 0x47, bytes(sheet))
+        self.mu.mem_write(self.hdr + 270, struct.pack("<H", 1))
+        self.assertEqual([self.chance(skill) for skill in range(8)], [35, 35, 30, 30, 30, 30, 30, 30])
+        self.assertEqual(self.chance(4, si=5), 0)
+        self.mu.mem_write(self.hdr + 270, struct.pack("<H", 0))
+        self.assertEqual([self.chance(skill) for skill in range(5)], [45, 45, 40, 40, 40])
+        self.assertEqual({kits.thief_skill(kits.SWASHBUCKLER, k) for k in range(8)}, {-10})
+
 
 @unittest.skipIf(Uc is None, "unicorn is not installed")
 class RingTests(unittest.TestCase):
@@ -2649,6 +2666,39 @@ class KitTests(unittest.TestCase):
                 self.mu.emu_start(CALLER * 16 + 0x600, CALLER * 16 + 0x603)
                 self.assertEqual(self.mu.reg_read(r.UC_X86_REG_DX), 25 + kits.initiative(kitpages.kit_id(bytes(sheet))))
                 self.assertEqual((self.mu.reg_read(r.UC_X86_REG_AX), self.mu.reg_read(r.UC_X86_REG_SP)), (0x1111, 0x7FC))
+
+    def test_thac0(self):
+        """PROBE_THAC0: 20 less SI, and kits.thac0 (a warrior's for the Swashbuckler, Crusader,
+        Battle Mage and Mind Warrior where better; the Scholar's 1 worse); kits off, the game's."""
+        from dscompanion import kits, kitpages
+        from dscompanion.gamepatch import VEC_THAC0, PATCHES
+        self.assertIn(("thac0", 0x876BB), [(p.name, p.offset) for p in PATCHES])
+        at = self.image.find(bytes.fromhex("535106b9140029f1"))
+        self.assertGreater(at, 0)
+        self.mu.mem_write(VEC_THAC0 * 4, struct.pack("<HH", at, TSR))
+        self.mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
+        self.mu.mem_write(CALLER * 16 + 0x600, bytes((0xCD, VEC_THAC0, 0x90, 0x90, 0x90)))
+        cases = [(17, 1, 1), (17, 1, 9), (17, 2, 5), (17, 3, 5), (1, 3, 4), (1, 1, 4), (11, 2, 6), (11, 1, 6),
+                 (11, 3, 6), (12, 2, 7), (12, 1, 7), (9, 1, 5), (17, 0, 5), (2, 3, 20)]
+        for rules in (game.RULE_KITS, 0):
+            self.rules(rules)
+            for cls, kit, level in cases:
+                with self.subTest(rules=rules, cls=cls, kit=kit, level=level):
+                    self.creature(cls, kit, level=level)
+                    sheet = bytearray(game.SHEET_SIZE)
+                    sheet[0x21], sheet[0x24], sheet[kitpages.KIT_BYTE] = cls, level, kit
+                    kid = kitpages.kit_id(bytes(sheet)) if rules else 0
+                    own = 20 - level // 2  # (as a thief's: SI the most taken off 20)
+                    self.mu.mem_write(SS * 16 + BP + 6, struct.pack("<H", 5))
+                    for name, value in dict(cs=CALLER, ds=self.DS, ss=SS, esp=0x7FC, ebp=BP, eflags=IF | 2,
+                                            esi=20 - own, ebx=0x2222, ecx=0x3333, es=0x6666).items():
+                        self.mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+                    self.mu.emu_start(CALLER * 16 + 0x600, CALLER * 16 + 0x605)
+                    self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), kits.thac0(kid, level, own))
+                    self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_BX, r.UC_X86_REG_CX, r.UC_X86_REG_ES,
+                                                                    r.UC_X86_REG_SP)], [0x2222, 0x3333, 0x6666, 0x7FC])
+        self.assertEqual([kits.thac0(kits.SWASHBUCKLER, 9, 16), kits.thac0(kits.SCHOLAR, 9, 18),
+                          kits.thac0(kits.CRUSADER, 25, 4), kits.thac0(0, 9, 16)], [12, 19, 1, 16])
 
     def test_kit_id(self):
         from dscompanion import kitpages
