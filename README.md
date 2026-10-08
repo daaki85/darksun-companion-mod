@@ -73,9 +73,9 @@ double-click, with the options as last set.)
 
 ## What's new
 
-In pull request #29 (merged 2026-10-08): a ranger's bow is its own with class
-restrictions, so a fire ranger/cleric can use bows and a ranger who dual-classes
-gets the bow back; and a new description of what the Ledger does.
+**Templar's Ledger 1.2.0** is out ([release notes](release-notes/v1.2.0.md)):
+weapon specialization and class restrictions, new weapons and magic items
+across Athas, and more, from pull requests #19 to #29.
 
 Earlier changes, pull request by pull request, are in
 [`CHANGELOG.md`](CHANGELOG.md). Releases have notes of their own:
