@@ -13,8 +13,7 @@ records; this ledger keeps the ones the game doesn't show you.
   - [One-time setup](#one-time-setup)
   - [Every time you play](#every-time-you-play)
   - [Other ways to start](#other-ways-to-start)
-  - [If DOSBox closes by itself](#if-dosbox-closes-by-itself)
-  - [Crash reports](#crash-reports)
+  - [If the game or DOSBox crashes](#if-the-game-or-dosbox-crashes)
 - [The Ledger's window](#the-ledgers-window)
   - [The Spells tab](#the-spells-tab)
   - [The Dialogue tab](#the-dialogue-tab)
@@ -77,7 +76,7 @@ records; this ledger keeps the ones the game doesn't show you.
   - [More characters](#more-characters)
 - [Game speed](#game-speed)
 - [Accessibility](#accessibility)
-- [Practising without the game](#practising-without-the-game)
+- [Without the game](#without-the-game)
 - [Development](DEVELOPMENT.md)
 
 ## What it does
@@ -95,12 +94,12 @@ Templar's Ledger runs beside Dark Sun: Shattered Lands, in DOSBox:
   thief skills on the inventory and View Character screens, spell slots on the
   USE screen, each turn's rolls, and what hurts a monster in the Look box
   ([In the game](#in-the-game)).
-- **It changes rules, each one switchable:** fifteen of AD&D's, among them
-  weapon specialization, class restrictions, thief skills, saving throws and
-  levels up to 10 ([Rule changes](#rule-changes), [Thieves](#thieves),
-  [Saving throws](#saving-throws)).
+- **It changes rules, each one switchable:** sixteen, most of them AD&D's,
+  among them weapon specialization, class restrictions, thief skills, saving
+  throws and levels up to 10 ([Rule changes](#rule-changes)); and thieves can
+  pick pockets ([Thieves](#thieves)).
 - **It adds to the game:** new items across Athas, two new people in the
-  slave pens, picking pockets and a use for the cooked vulture
+  slave pens and a use for the cooked vulture
   ([New content](#new-content)); gear, shadows and dust on the map
   ([On the screen](#on-the-screen)); choosing an enemy with Tab and scrolling
   with the mouse ([Controls](#controls)); 40 saves and 29 saved characters
@@ -110,7 +109,7 @@ Templar's Ledger runs beside Dark Sun: Shattered Lands, in DOSBox:
 Nothing in the game folder or your save files is changed, except what play
 writes there: save pages 2 to 4 as files of their own beside the game's,
 characters 20 to 29 in the game's `CHARSAVE.GFF`, and, in a game you save,
-the new items (untick their boxes to go without). Some of them the
+the new items (untick **New items** to go without). Some of them the
 original game doesn't know (the item types it lacks, such as the Short Sword,
 the Cloak of Protection, the bracers, plate mail and the Cloak and Boots of
 Elvenkind, and the new item names), so load such a save with the dice log. For the
@@ -196,12 +195,9 @@ no packaged program to trust.
 
 That starts Shattered Lands (through GOG's own DOSBox) with the dice log helper
 loaded and your options in force, and the Ledger picks it up once DOSBox is up.
-The game gets its in-game additions too: each turn's rolls shown in the game if
-you want them, THAC0, saves and thief skills on the inventory and View
-Character screens, and spell slots on the USE screen. Your saves are the same
-ones the game normally uses. The first time, it looks for the game in the usual
-GOG folders; if it can't find it, it asks you where the game is installed and
-remembers the answer.
+Your saves are the same ones the game normally uses. The first time, it looks
+for the game in the usual GOG folders; if it can't find it, it asks you where
+the game is installed and remembers the answer.
 
 DOSBox opens in a window three times the game's size (960x720), not full
 screen. To change that, pick **Game window** at the top of the Ledger:
@@ -233,16 +229,14 @@ rule changes); the new items, the new people and the cooked
 vulture are there too. If anything goes wrong it says so in a message box and
 writes the details to `play.log`.
 
-### If DOSBox closes by itself
+### If the game or DOSBox crashes
 
 When the game stops with an error (such as
-"Null pointer assignment"), DOSBox now waits with the game's message on screen
+"Null pointer assignment"), DOSBox waits with the game's message on screen
 ("The game stopped with an error", then press a key) rather than closing over
 it. With the game started from the Ledger (or either `.bat` file), the dice log
 also says how DOSBox closed: `DOSBox closed: it crashed (an access violation,
 code C0000005h)` means DOSBox itself failed, not the game.
-
-### Crash reports
 
 Either way, the Ledger saves a crash report in the
 `crash-logs` folder (beside `Start Templar's Ledger.bat`), named for the time,
@@ -260,9 +254,6 @@ usual way (Exit to DOS, or closing DOSBox's window) writes no report. With the
 game started from GOG's own shortcut, the Ledger can't see how it closed, so
 there is no report.
 
-**Checking a save file (no game needed):** drag a `SAVEnn.SAV` file from the
-game folder onto **`Show Save.bat`**.
-
 ## The Ledger's window
 
 The window has the party on one side and the logs and tools on the other, with
@@ -270,38 +261,39 @@ The window has the party on one side and the logs and tools on the other, with
 party pane has two tabs:
 
 - **Characters** (Alt+C): a card for each character, laid out like the game's
-  View Character screen. It shows the figure for their race and sex (the one
-  on the character creation screen, read from your install) and their name.
-  Then HP and PSP as the game shows them (PSP in blue). Then their condition
-  (the game's New, for a character not yet played, Okay, Stunned, Out Cold,
-  Dying, Dead, Animated, Petrified or Gone, followed by any spells and effects on them, with the rounds or charges
-  each has left: `Blur (22 rounds)`, `Stoneskin (5 charges)`; from the game's own
-  clock and timers). Then the character
-  sheet: scores, sex, race and alignment, classes and levels, experience,
-  AC, THAC0 with each weapon ready (`THAC0: 15 with Wooden Club, 14 with
-  Wooden Bow (base 19)`), the saves as the d20 needed now (see
-  [In the game](#thac0-saves-and-thief-skills)), movement (and a
-  fight's, with boots: `Move: 12 (13 in a fight: boots)`) and attacks. AC is
-  the one the game last used in a fight, with the base AC beside it; before the
-  first fight only the base AC is known. Then what they wear and hold, by the
-  game's own slot names ("Right hand: Bone Long Sword", "Chest: Leather Chest
-  Armor"; "Carried" for anything in the backpack), with each item's material
-  and plus. Last, for spellcasters, their spell slots (see below), for
-  thieves their skills, and for rangers, with the stealth rule on, their
-  chances to hide and move silently (`Ranger skills now`). Scroll
-  with the mouse wheel, or Tab to the cards and use the arrow and Page keys.
+  View Character screen (scroll with the mouse wheel, or Tab to the cards and
+  use the arrow and Page keys):
+  - the figure for their race and sex (as on the character creation screen,
+    read from your install), their name, and HP and PSP (PSP in blue);
+  - their condition (New, for a character not yet played, Okay, Stunned, Out
+    Cold, Dying, Dead, Animated, Petrified or Gone), then the spells and
+    effects on them with the rounds or charges left: `Blur (22 rounds)`,
+    `Stoneskin (5 charges)`;
+  - the character sheet: scores, sex, race and alignment, classes and levels,
+    experience, AC (the one the game last used in a fight, with the base AC
+    beside it), THAC0 with each weapon ready (`THAC0: 15 with Wooden Club, 14
+    with Wooden Bow (base 19)`), the saves as the d20 needed now (see
+    [In the game](#thac0-saves-and-thief-skills)), movement (`Move: 12 (13 in
+    a fight: boots)`) and attacks;
+  - what they wear and hold, by the game's own slot names ("Right hand: Bone
+    Long Sword"; "Carried" for the backpack), with each item's material and
+    plus;
+  - last, spell slots for spellcasters (see below), thief skills for thieves,
+    and for rangers, with the stealth rule on, their chances to hide and move
+    silently (`Ranger skills now`).
 - **All fields** (Alt+A): every field the layout maps, in a table, with rows
   of its own for the AC in a fight and what it's made of, THAC0 with each
   weapon and the saves now, and at the end the spell slots, thief skills and
   equipment.
 
-The other side has the **Dice log**, **Dialogue**, **Spells** and **Memory
-tools** tabs, and **Options** (Alt+O) with the Ledger's switches, in
-sections that open and close: click a section's heading (or Tab to it and
-press Space or Enter) to open it, ▸ when closed and ▾ when open. Which
-sections are open is remembered. The sections:
+The other side has the **Dice log**, **Dialogue** and **Spells** tabs (below),
+**Memory tools** (for mapping the game's memory, with **Save layout** and
+**Reload layout**: see [DEVELOPMENT.md](DEVELOPMENT.md#mapping-memory)), and
+**Options** (Alt+O) with the Ledger's switches, in sections that open and
+close: click a section's heading (or Tab to it and press Space or Enter) to
+open it, ▸ when closed and ▾ when open. Which sections are open is remembered.
+The sections:
 
-- **Dice log**: unlabelled rolls, and the details behind each roll.
 - **In the game**: each turn's rolls and how much they say, monster
   descriptions ([In the game](#in-the-game)).
 - **Rule changes** ([Rule changes](#rule-changes)).
@@ -313,8 +305,8 @@ sections are open is remembered. The sections:
 - **On the screen** ([On the screen](#on-the-screen)), **Controls**
   ([Controls](#controls)) and **Game speed** ([Game speed](#game-speed)).
 
-All are on by default except unlabelled rolls, each turn's rolls in the game,
-P in a conversation and the right button, and are remembered for next time.
+All are on by default except each turn's rolls in the game, P in a
+conversation and the right button, and are remembered for next time.
 In a window too small to show the open sections, the tab scrolls (scrollbar,
 mouse wheel, or arrow and page keys once it has the focus).
 
@@ -410,9 +402,8 @@ screenshots here are taken that way).
 starting, whose turn it is, attack rolls, saves, spells, kills. Lines indented
 two spaces are their results (damage, HP left); lines indented four spaces are
 the details: the sums behind a THAC0, a save's modifiers, the initiative
-scores. Untick **Show details** (on the Options tab, with the Ledger's other
-switches) to hide the details and keep the rest; they
-come back when it's ticked again. In the window, each kind has its colour
+scores. Untick **Show details**, above the log, to hide the details and keep
+the rest; they come back when it's ticked again. In the window, each kind has its colour
 (hits green, misses grey, damage amber, saves blue, turns sand, rounds
 underlined with a gap above), but the words say the same thing, so nothing
 depends on telling colours apart. Names stand out in bold: each party member
@@ -447,7 +438,7 @@ with the log's background (WCAG 2.0 AA, as AODA asks).
 | `    Dispel Magic on Slig's Blessed: d100 = 60, needs 85 or less (50 + 5 x 7 - 5 x 0 (its caster's level)) -> dispelled` | Dispel Magic tries each effect on its target separately: 50 + 5 for each of the dispeller's levels, less 5 for each of the level the effect was cast at. It can't touch some (Biofeedback, Diseased, Feeblemind, Poisoned, Graft Weapon, No spell use, Stuck, Mind Bar and a few more). |
 | `    Abjure on Y: d20 = 14, needs 12 or more (11 - caster level 5 + its level 6) -> sent away` | Abjure sends a summoned creature away (1000 damage) on a d20 at or over 11 - the caster's level + the creature's. |
 | `    Summoning: 1d3 = 2 picks which of its 3 creatures comes` | Which creature a summoning spell brings. |
-| `Y saves vs Fireball from X (petrification/polymorph): d20 = 6, doubled against fire = 12 +1 Blessed = 13, needs 11 (80% to save) -> saved: half damage, 19 of 38` | A saving throw: which of the target's five saves it uses, the d20, each of the game's modifiers by name (see Saving throws below; anything the log can't account for shows as `other`), and the number it had to reach. With the [rule changes](#rule-changes) off, the game uses petrification/polymorph for almost every spell and doubles the d20 against fire, cold and electricity spells, as here (see Spells and effects); with them on (the default), the line names the spell save and DEX's adjustment instead (`+5 DEX 21 dodging`). A natural 1 always fails and a natural 20 always saves. The chance of saving is worked out for you (`needs 14 (70% to save)`); with the game's doubled d20, Fireball's victims usually save. For a damaging spell the result says what the save left, from that target's damage roll just before it: `saved: half damage, 19 of 38`, `failed: full damage, 38`, or `saved: no damage` for spells such as Chill Touch. The HP line after it shows what the creature really lost, once resistances and protections have had their say. A failed save also lets the spell's effect take hold. Spells left on the ground (Grease, clouds) make creatures save again as they stay in them; those lines have no "from". |
+| `Y saves vs Fireball from X (petrification/polymorph): d20 = 6, doubled against fire = 12 +1 Blessed = 13, needs 11 (80% to save) -> saved: half damage, 19 of 38` | A saving throw: which of the target's five saves it uses, the d20, each of the game's modifiers by name (see Saving throws below; anything the log can't account for shows as `other`), and the number it had to reach. With the [rule changes](#rule-changes) off, the game uses petrification/polymorph for almost every spell and doubles the d20 against fire, cold and electricity spells, as here (see [The game's saving throws](#the-games-saving-throws)); with them on (the default), the line names the spell save and DEX's adjustment instead (`+5 DEX 21 dodging`). A natural 1 always fails and a natural 20 always saves. The chance of saving is worked out for you (`needs 14 (70% to save)`); with the game's doubled d20, Fireball's victims usually save. For a damaging spell the result says what the save left, from that target's damage roll just before it: `saved: half damage, 19 of 38`, `failed: full damage, 38`, or `saved: no damage` for spells such as Chill Touch. The HP line after it shows what the creature really lost, once resistances and protections have had their say. A failed save also lets the spell's effect take hold. Spells left on the ground (Grease, clouds) make creatures save again as they stay in them; those lines have no "from". |
 | `X gives Blessed to Y, Z: +1 to hit, +1 on saves` / `Blessed ends on Y` | A spell or psionic effect starting or ending, with what it does in the game's code where that is known: to-hit, AC and saving throws, movement and attacks, whether the creature can attack or cast, who controls it (see Spells and effects below). `Stuck on Y` (no "gives") is an effect a creature has from a spell on the ground or cast on itself. |
 
 **Checks, thief skills and searches**
@@ -496,7 +487,7 @@ The log keeps its newest line in view. Scroll up to read back and it stays
 where you are; scroll to the bottom again and it follows the new lines once
 more. The Dialogue tab does the same.
 
-**Show unlabelled rolls** also lists everything else the game randomises
+**Show unlabelled rolls**, beside it, also lists everything else the game randomises
 (creatures wandering, animations and so on), as raw numbers with where in the
 game's code they came from. It's noisy, but useful for finding more rolls worth
 labelling.
@@ -525,22 +516,17 @@ alike, is adjusted by the DEX table used for initiative with its sign flipped
 and never below 0, and rangers are left out. That comes to a **bonus** of +6 at
 DEX 1, +4 at 2, +3 at 3, +2 at 4 and +1 at 5, and nothing at DEX 6 and up, so
 in practice there is no off-hand penalty at all: both weapons hit as well as a
-single one would. The log names it, e.g. `+2 two weapons at DEX 4`.
-
-Tested in one arena fight by changing DEX in memory: a gladiator with a club
-and a bone long sword got +6 on **both** weapons at DEX 1 (THAC0 11 and 12
-became 5 and 6), and nothing at DEX 15 or 25; a character with one weapon
-(a quarterstaff) got nothing at DEX 1. The game rolled damage for every
-logged hit and none for the misses (46 attacks), including a d20 of 4 that
-only hit because of the +6. It looks like a sign slip in the game: AD&D uses
-the same DEX adjustment to make two-weapon fighting *harder* at low DEX.
+single one would. The log names it, e.g. `+2 two weapons at DEX 4`. (Tested
+in an arena fight by changing DEX in memory: +6 on both weapons at DEX 1,
+nothing at 15 or 25, nothing with one weapon.) It looks like a sign slip:
+AD&D uses the same DEX adjustment to make two-weapon fighting *harder* at low
+DEX.
 
 **AD&D's penalties** (a [rule change](#rule-changes), its box **Two weapons**):
 with two melee weapons ready, a character who isn't a ranger attacks at -2
 with the main (right) hand and -4 with the off (left) hand, and the DEX
-reaction adjustment is added: -6 at DEX 1, -4 at 2, -3 at 3, -2 at 4, -1 at 5,
-none for 6-15, +1 at 16, +2 at 17-18, +3 at 19-20, +4 at 21-23 and +5 at
-24-25. It can lessen the penalty to 0 but never make it a bonus, and low DEX
+reaction adjustment (the table under [Initiative](#initiative)) is added. It
+can lessen the penalty to 0 but never make it a bonus, and low DEX
 makes it worse: DEX 17 is 0 and -2, DEX 21 0 and 0, DEX 3 -5 and -7. Rangers
 have no penalty (in any armour). It takes a melee weapon in each hand: one
 weapon, a two-handed weapon, a weapon and a shield, or a weapon and a bow or
@@ -563,33 +549,9 @@ Lightning Bolt do at most 10d6, and Burning Hands 1d3 + 2 a level. A save halves
 the damage, or stops it all for spells such as Chill Touch. A creature that is
 Out Cold gets no save and takes the most the dice can do.
 
-**Fire, cold and electricity: the save's d20 counts double.** Each spell's
-record has a word of flags saying what kind of damage it does, and the saving
-throw code doubles the d20 whenever the kind is fire, cold or electricity
-(`test word [flags], 86h` then `shl al, 1` in DSUN.EXE). Nothing else is
-doubled: not acid (Acid Arrow), crushing (Ice Storm, Magical Stone), poison
-(Cloudkill), draining (Vampiric Touch, the Cause Wounds spells) or the
-psionic attacks. The doubled spells are:
-- fire: Burning Hands, Flaming Sphere, Fireball, Flame Arrow, Minute Meteors,
-  Fire Shield, Wall of Fire (both), Focus Heat, Produce Fire, Flame Strike;
-- cold: Chill Touch, Cone of Cold;
-- electricity: Shocking Grasp, Lightning Bolt.
-
-A natural 1 still fails and a 20 still saves, but in between the doubled roll
-makes saving far easier: needing 14, a normal d20 saves 35% of the time and a
-doubled one 70%. That's why Fireball's victims usually get away with half
-damage. It isn't AD&D, and the game never explains it, so why SSI did it is a
-guess; it may have been meant as a dodge that makes energy blasts a gamble.
-The log says it on each save: `d20 = 7, doubled against fire = 14`.
-
-Almost every spell in the game is saved against with **petrification/polymorph**
-(its code maps the spell's save kind 5 to the sheet's third save; kind 1 is
-paralysis/poison/death, used by the clouds, Poison, Slay Living and the psionic
-attacks). The spell save, the one AD&D uses for spells, is never used. That
-was checked against the AD&D tables: a 3rd-level warrior needs 13 against
-Psychic Crush (paralysis) and 14 against Fireball (petrification), where the
-spell save would be 16. The [rule changes](#rule-changes) can put the spell
-save back, and take the doubled d20 away.
+**Saves.** Almost every spell is saved against with petrification/polymorph,
+and against fire, cold and electricity the save's d20 counts double: see
+[The game's saving throws](#the-games-saving-throws).
 
 **How long.** A duration is (caster level × so much + dice) × a unit of time.
 A round is 60 game seconds. Some effects last a number of uses instead
@@ -914,8 +876,10 @@ not the situation's bonus or penalty), for the five skills the game rolls
 (pick pockets, open locks, find/remove traps, hear noise, climb walls) and
 the two the Ledger rolls: move silently (when a pocket isn't picked, see
 [Picking pockets](#picking-pockets)) and hide in shadows (for the
-[stealth rule](#rule-changes)). **All fields** has them in a row
-(`PP/OL/FT/MS/HS/HN/CW`).
+[stealth rule](#rule-changes)), with any Thieves' Tools carried. **All
+fields** has them in a row (`PP/OL/FT/MS/HS/HN/CW`).
+
+![Cilla's card on the Characters tab: Thieves' Tools carried, and her thief skills now, move silently and hide in shadows among them](docs/thief-card.png)
 
 ### Attacks from behind and backstabs
 
@@ -934,29 +898,28 @@ From the game's code:
   attack of the round the damage, STR bonus included, is multiplied: x2 at
   thief levels 1-4, x3 at 5-8, x4 at 9-12, x5 from 13.
 
-Which weapons can backstab, from the game's item tables. Weight belongs to the
-weapon's kind and material, in the game's units, which look like tenths of a
-pound (a dagger is 10, a club 30, a mace 100, as AD&D's 1, 3 and 10 lb), so
-the limit is 4 lb. Missile weapons (slings, bows, a thrown chatkcha) never
-backstab: it has to be melee.
+Which weapons can backstab, the game's and the [Ledger's](#new-items) (a magic
+one weighs as its plain kind). Weight belongs to the weapon's kind and
+material, in the game's units, which look like tenths of a pound (a dagger is
+10, a club 30, a mace 100, as AD&D's 1, 3 and 10 lb), so the limit is 4 lb.
+Missile weapons (slings, bows, a thrown chatkcha) never backstab: it has to be
+melee.
 
-| Weapon | Material | Damage | Weight | Backstab |
-|---|---|---|---|---|
-| Dagger | stone, obsidian | 1d4 | 10 | yes |
-| Long Sword | bone | 1d8 | 20 | yes |
-| Long Sword | obsidian | 1d8 | 30 | yes |
-| Long Sword | metal | 1d8 | 40 | yes (the limit) |
-| Short Sword ([Kurzak's](#new-items), the Ledger's own; Shadowseeker, +1) | metal | 1d6 | 30 | yes |
-| Club | wood | 1d6 | 30 | yes |
-| Quarterstaff | wood | 1d6 | 40 | yes |
-| Dark Flame (+2) | obsidian | 1d8 | 40 | yes |
-| Shillelagh, Flame Blade, Spiritual Hammer (spells) | | 2d4, 1d4+4, 1d4+1 | 10, 40, 40 | yes |
-| Axe (and Soulcrusher +1) | metal | 1d8 | 70 | no |
-| Mace (and the Wyvern Hook) | bone | 1d6+1 | 100 | no |
-| Blackmace (+1) | obsidian | 1d6+1 | 100 | no |
-| Cahulaks | bone | 1d6 | 120 | no |
-| Gythka | bone | 2d4 | 120 | no |
-| Polearm | bone | 1d10 | 150 | no |
+| Weapon | Material (weight) | Damage | Backstab |
+|---|---|---|---|
+| Dagger | bone, stone, obsidian, metal (10) | 1d4 | yes |
+| Short sword | bone (15); obsidian, metal (30) | 1d6 | yes |
+| Long sword | bone (20), obsidian (30), metal (40, the limit); Dark Flame (40) | 1d8 | yes |
+| Club | wood (30) | 1d6 | yes |
+| Quarterstaff | wood (40) | 1d6 | yes |
+| Axe | bone (35) | 1d8 | yes |
+| Pick | stone, metal (40) | 1d4+1 | yes |
+| Shillelagh, Flame Blade, Spiritual Hammer (spells) | (10, 40, 40) | 2d4, 1d4+4, 1d4+1 | yes |
+| Axe | obsidian, metal (70) | 1d8 | no |
+| Great axe | bone (50); obsidian, metal (70) | 1d10 | no |
+| Mace | bone, obsidian, metal (100) | 1d6+1 | no |
+| Cahulaks, gythka | bone (120) | 1d6, 2d4 | no |
+| Polearm | bone, metal (150) | 1d10 | no |
 
 About a dozen more weapon kinds are in the game's tables with no item of
 theirs in its data (monsters' own, made by scripts, or unused).
@@ -1164,11 +1127,6 @@ Daaki picks Kurzak's pocket: d100 = 71, needs 63 or less -> failed
   Daaki fumbles Kurzak's pockets, but slips away unnoticed.
 ```
 
-The thief's card on the Ledger's Characters tab shows the chances as they
-stand, move silently among them, and the tools they carry:
-
-![Cilla's card on the Characters tab: Thieves' Tools carried, and her thief skills now, move silently and hide in shadows among them](docs/thief-card.png)
-
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#picking-pockets).
 
 ## Saving throws
@@ -1179,10 +1137,35 @@ Options tab).
 ### The game's saving throws
 
 From the game's saving throw routine. The spell names which of the character
-sheet's five saves to use (almost always petrification/polymorph, see Spells
-and effects). The d20 counts double against fire, cold and electricity; a
-natural 1 always fails and a natural 20 always saves; otherwise the d20 and
-the modifiers below must reach the save's number.
+sheet's five saves to use; a natural 1 always fails and a natural 20 always
+saves; otherwise the d20 and the modifiers below must reach the save's number.
+
+**Petrification/polymorph for almost every spell.** The game's code maps the
+spell's save kind 5 to the sheet's third save; kind 1 is
+paralysis/poison/death, used by the clouds, Poison, Slay Living and the
+psionic attacks. The spell save, the one AD&D uses for spells, is never used:
+a 3rd-level warrior needs 13 against Psychic Crush (paralysis) and 14 against
+Fireball (petrification), where the spell save would be 16.
+
+**Fire, cold and electricity: the d20 counts double.** Each spell's record
+has a word of flags saying what kind of damage it does, and the saving throw
+code doubles the d20 whenever the kind is fire, cold or electricity
+(`test word [flags], 86h` then `shl al, 1` in DSUN.EXE). Nothing else is
+doubled: not acid (Acid Arrow), crushing (Ice Storm, Magical Stone), poison
+(Cloudkill), draining (Vampiric Touch, the Cause Wounds spells) or the
+psionic attacks. The doubled spells are:
+- fire: Burning Hands, Flaming Sphere, Fireball, Flame Arrow, Minute Meteors,
+  Fire Shield, Wall of Fire (both), Focus Heat, Produce Fire, Flame Strike;
+- cold: Chill Touch, Cone of Cold;
+- electricity: Shocking Grasp, Lightning Bolt.
+
+In between a 1 and a 20 the doubled roll makes saving far easier: needing 14,
+a normal d20 saves 35% of the time and a doubled one 70%, which is why
+Fireball's victims usually get away with half damage. It isn't AD&D, and the
+game never explains it; it may have been meant as a dodge. The log says it on
+each save: `d20 = 7, doubled against fire = 14`. The two
+[rule changes](#spells-saved-against-with-the-spell-save) below put the spell
+save back and take the doubled d20 away.
 
 The target's spells and effects:
 - Blessed +1, Barkskin +1, Spirit Armor +3 (but not on
@@ -1236,21 +1219,16 @@ save used.
 
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#spells-saved-against-with-the-spell-save).
 
-(More in [Spells and effects](#spells-and-effects).)
-
 ### Fire, cold and electricity: DEX instead of a doubled d20
 
-The game doubles the save's d20 against those spells (Fireball, Lightning
-Bolt, Cone of Cold, Burning Hands... and nine monsters' attacks of those
-kinds), which looks meant as a dodge. With this rule the d20 isn't doubled and
+The game doubles the save's d20 against those spells (and nine monsters'
+attacks of those kinds). With this rule the d20 isn't doubled and
 AD&D's DEX defensive adjustment is added instead, as AD&D does for attacks
 that can be dodged: -5 at DEX 1, -4 at 3, -3 at 4, ... none for 7-14, +1 at
 15, +2 at 16, +3 at 17, +4 at 18-20, +5 at 21-23 and +6 at 24-25. Fireball
 stays dangerous for slow targets (needing 14 at DEX 12: 35% to save, where the
 doubled d20 gave 70%) and much less so for quick ones (DEX 21: 60%). The log
 names it: `+5 DEX 21 dodging`.
-
-(More in [Spells and effects](#spells-and-effects).)
 
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#fire-cold-and-electricity-dex-instead-of-a-doubled-d20).
 
@@ -1279,11 +1257,8 @@ right-hand panel, drawn by the game's text routine so they look like the rest:
   `TRAP`s, `MOVE` silently, `HIDE` in shadows and `CLMB` walls. Move silently
   and hide in shadows are the ones the Ledger rolls (for
   [picking pockets](#picking-pockets) and the [stealth rule](#rule-changes)).
-  A worn belt's 5 is in `PICK` and `LOCK` (see [Rule changes](#rule-changes)).
-  Hear noise, which one script check in the game rolls, is left out for want
-  of room (the Characters tab shows it), as is read languages, which nothing
-  checks (see Where the game rolls them). Not below the weapons: three weapons fill the panel down to its
-  buttons. A ranger, with the [stealth rule](#rule-changes) on, gets their
+  A worn belt's 5 is in `PICK` and `LOCK`. Hear noise (one script check) and
+  read languages (none) are left out for want of room. A ranger, with the [stealth rule](#rule-changes) on, gets their
   `MOVE` and `HIDE` in the same places (the other four left out);
 - right of SP in the saves (where RSW and BW sit on the rows above), the DEX
   **reaction adjustment** (`REAC +4`): -6 at DEX 1 to +5 at DEX 24-25, the
@@ -1312,32 +1287,6 @@ shows at once. Spells start and end as time passes in the game, which it
 doesn't while these screens are open; open the screen again to see such a
 change.
 
-For a character of more than one class, the number in brackets on View
-Character's experience line is the XP at which the first of their classes
-goes up a level, and the Ledger adds which class that is:
-`EXP:87230 (90000 Pr)` means the preserver goes up next, at 90,000. Each
-class is a letter, except preserver and psionicist, which both start with P:
-
-| Class | Letters |
-|---|---|
-| Cleric | C |
-| Druid | D |
-| Fighter | F |
-| Gladiator | G |
-| Preserver | Pr |
-| Psionicist | Ps |
-| Ranger | R |
-| Thief | T |
-
-When two classes go up at the same XP, both are named:
-`(20000 Pr/T)`. A class already at the highest level (9, or 10 with
-[levels up to 10](#levels-up-to-10)) has no next level, so it is never named.
-A character of one class shows the line as the game always has, and so
-does a human, who can only dual-class: the game counts only one of their
-classes there.
-
-![View Character's experience line for a fighter/thief, (110000 T), and a fighter/preserver/thief, (90000 Pr)](docs/xp-next.png)
-
 - **THAC0**: the character's THAC0 less STR's to-hit adjustment (DEX's for a
   missile weapon), the weapon's plus (or, for a plain wooden, bone, stone or
   obsidian weapon, its material's penalty), Bless and Prayer (+1), Curse
@@ -1363,6 +1312,32 @@ The Characters tab shows the same THAC0 with each weapon and saves. The
 game's own numbers (the character sheet's) come back on these screens when
 the Ledger isn't running.
 
+**The next level's class.** For a character of more than one class, the number in brackets on View
+Character's experience line is the XP at which the first of their classes
+goes up a level, and the Ledger adds which class that is:
+`EXP:87230 (90000 Pr)` means the preserver goes up next, at 90,000. Each
+class is a letter, except preserver and psionicist, which both start with P:
+
+| Class | Letters |
+|---|---|
+| Cleric | C |
+| Druid | D |
+| Fighter | F |
+| Gladiator | G |
+| Preserver | Pr |
+| Psionicist | Ps |
+| Ranger | R |
+| Thief | T |
+
+When two classes go up at the same XP, both are named:
+`(20000 Pr/T)`. A class already at the highest level (9, or 10 with
+[levels up to 10](#levels-up-to-10)) has no next level, so it is never named.
+A character of one class shows the line as the game always has, and so
+does a human, who can only dual-class: the game counts only one of their
+classes there.
+
+![View Character's experience line for a fighter/thief, (110000 T), and a fighter/preserver/thief, (90000 Pr)](docs/xp-next.png)
+
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#thac0-saves-and-thief-skills).
 
 ### Spell slots on the USE screen
@@ -1383,14 +1358,9 @@ along its bottom from the left, so the slots take only the three lines above
 them: a character with both wizard and priest spells gets the two lines without
 the `SPELLS LEFT BY LEVEL` heading.
 
-The numbers are the same as on the Characters tab (see Spell slots): the
-Ledger works them out, including the WIS bonus, and keeps a copy in the
-helper's memory, which the patched game (`INT F2h`, where the USE screen
-labels its LEVEL button) prints with the game's own text routine. Picking a
-character or a spell level repaints the screen's panels after that, so the
-helper prints them again when the game has finished redrawing the USE window
-(`INT F4h`, at the end of the game's window-redraw routine). So they show,
-and stay, while Templar's Ledger (or its command-line dice log) is running.
+The numbers are the Characters tab's (see Spell slots), WIS bonus included,
+printed with the game's own text routine; they show while Templar's Ledger (or
+its command-line dice log) is running.
 
 ### Each turn's rolls
 
@@ -1427,9 +1397,7 @@ hit did.
 dice: `Mlemlem hits Mountain Stalker for 12, misses. Slig takes 9 from
 Fireball`. It leaves out who is still to act.
 
-Each turn gets its own window, monsters' included. (The game plays a
-monster's whole turn inside one call, so the helper is also called there, just
-before such a turn starts: `INT F7h`.) Only fights the party is in get them:
+Each turn gets its own window, monsters' included. Only fights the party is in get them:
 the fights the game stages without the party, such as the Defiler's show at
 the start of the arena, are run by scripts waiting on the same dialogue window,
 and a window of ours there would let the script go on before the fight ends.
@@ -1474,13 +1442,14 @@ How it works: [DEVELOPMENT.md](DEVELOPMENT.md#no-manual-check).
 
 ## Rule changes
 
-Fifteen changes to the game's rules, each with its own box on the Options tab
-(under **Rule changes**, or **Thieves** for the two thief rules) (all on by default; they take effect in games started with
-the dice log, while the Ledger runs or with **Play Dark Sun (in-game rolls)**,
-which uses the Options as last set). Untick one and the game's own rule is back
-at once. The rules for two weapons, thieves and saving throws are described with
-what the game itself does, under [Two weapons](#two-weapons), [Thieves](#thieves)
-and [Saving throws](#saving-throws).
+Sixteen changes to the game's rules, each with its own box on the Options tab,
+under **Rule changes** (the two thief rules under **Thieves**). All are on by
+default, and they take effect in games started with the dice log: with the
+Ledger running, or with **Play Dark Sun (in-game rolls)**, which uses the
+Options as last set. Untick one and the game's own rule is back at once. The
+rules for two weapons, thieves and saving throws are described with what the
+game itself does, under [Two weapons](#two-weapons), [Thieves](#thieves) and
+[Saving throws](#saving-throws).
 
 | Rule (its box on the Options tab) | What it changes |
 |---|---|
@@ -1847,15 +1816,11 @@ worn on the arms, in the arm armour's place, and give the AC their name says:
 AC 6 is 4 better than no armour, AC 2 is 8 better. As in AD&D they give nothing
 while armour is worn: on the arms, legs or chest, or a helm (bone, leather or
 metal, magical or not). A shield, rings and cloaks of protection, and the
-Ledger's [circlet and crown](#new-items) (Arrowbane, the Sunking Crown: worn on
-the head, but not armour) go with them, and they aren't armour to anything else (a preserver casts in them, a
-thief wears them, and a ring or cloak of protection still counts). In the game
-they are **BRACERS/DEFENSE** with their plus: Bracers/Defense +4 is AC 6.
-Each is priced 5,000 for each point (AC 6: 20,000, as the game's Shimmer Armor +3
-and Drake Shield +1, about 24,000; AC 2: 40,000, as its magic rings, 30,000-50,000).
-
-The dice log's saving throws name each: `+1 Ring of Protection +1 Cloak of
-Protection`, and its attack lines show the AC that results (`target AC`).
+Ledger's circlet and crown (worn on the head, but not armour) go with them.
+They aren't armour to anything else: a preserver casts in them, a thief wears
+them, and a ring or cloak of protection still counts. In the game they are
+**BRACERS/DEFENSE** with their plus (Bracers/Defense +4 is AC 6), priced 5,000
+a point of AC.
 
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#bracers-of-defense).
 
@@ -1895,20 +1860,6 @@ on it opens; untick it and Flaming Sphere is back.
 
 ![The Effects screen: Cat's Grace's paw, and its name below](docs/cats-grace-effect.png)
 
-On that screen the game ends an effect whose icon is clicked. With the Ledger's
-copy of the game, a spell's effect is left on (two jumps in the screen's click
-handler, DSUN.EXE 7F226h and 7F236h, go to its way out instead of to the
-routine ending an effect); a psionic power's can still be stopped there, since
-maintaining it costs PSP.
-The description: the game reads a spell's text from RESOURCE.GFF (chunk SPIN,
-the spell's number + 1) into a buffer for the box; after the read
-(`INT E2h`) the helper puts Cat's Grace's in, in the game's words for
-Strength's. The icon: the launcher writes `dos\RESOURCE.GFF`, the game's file
-(only read) with the icon added (number 21900), which the helper has the game
-open in place of its own (as `SEGOBJEX.GFF`, see [Item icons](#new-items));
-where the game's two routines that read a chunk begin (`INT E1h`), the helper
-has Flaming Sphere's icon (21014) read as that one.
-
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#cats-grace).
 
 ### Helms and boots
@@ -1927,15 +1878,12 @@ boots put on mid-fight count from the next round. The Characters tab shows it:
 `Move: 12 (13 in a fight: boots)`.
 
 The game has no descriptions of items, only their names, so while the helms'
-or boots' rule is on the Ledger names the items for it: **Helm (AC 1)** and
-**Boots (Speed+1)**, as the inventory screen and the Characters tab show them
-("Speed", as `Move +10` in a boots' item box is moving silently). (Dapartea's
-Helm, Helm/Contempltn, Helm of Might and Serpent Boots get the rule too, but
-keep their names: with the note they'd be too long for the game's Look box.)
-With the rule off they're the game's own names again. (Like the Ring of
-Protection's, the names are in the game's name table, which it reads afresh
-each time it starts and a game is loaded; without the Ledger they're the
-game's own.)
+or boots' rule is on the Ledger renames the plain ones: **Helm (AC 1)** and
+**Boots (Speed+1)** ("Speed", as `Move +10` in a boots' item box is moving
+silently). The named ones (Dapartea's Helm, Helm/Contempltn, Helm of Might,
+Serpent Boots) keep their names, which would be too long for the game's Look
+box with the note. With the rule off, or without the Ledger, the names are the
+game's own.
 
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#helms-and-boots).
 
@@ -1960,9 +1908,9 @@ How it works: [DEVELOPMENT.md](DEVELOPMENT.md#the-games-own-party).
 
 ## New content
 
-People, a quest and items the Ledger adds to the game. Each can be switched off on
-the Options tab's **New content** group; Kalzith, Semyon, the vulture and
-Alagorn's stories from the next time the game is started.
+People, a quest and items the Ledger adds to the game, each with a box in the
+Options tab's **New content** section, from the next time the game is
+started.
 
 ### New items
 
@@ -2054,16 +2002,10 @@ that can wear the game's chain (no single-class thieves), and kept from more
 with [class restrictions](#class-restrictions). **Grey's Scale**'s arm and
 leg armour is AC 3 each (the game's is 2).
 
-**On the Options tab**, under New content, **New items, magical and mundane**
-places them all, the arena's ring too; a thief's tools come with picking
-pockets.
-
-A thief can [lift](#picking-pockets) Pehtucl's ring, Shadowseeker, Gutterknot
-and Mindshard (200 XP for each weapon), but nothing worn on the body.
-
-With [AD&D's rules for rings and cloaks of
-protection](#rings-and-cloaks-of-protection) on, two rings give +1 together
-and neither ring nor cloak gives AC over magical armour.
+**New items, magical and mundane** on the Options tab places them all, the
+arena's ring too; a thief's tools come with picking pockets. A thief can
+[lift](#picking-pockets) Pehtucl's ring, Shadowseeker, Gutterknot and
+Mindshard (200 XP for each weapon).
 
 ![The inventory screen in the game: Arrowbane, a silver circlet, in a backpack cell; the Sunking Crown, a gold crown, in the head's slot](docs/head-items.png)
 
@@ -2123,8 +2065,7 @@ Talk button). His conversation is the game's kind, just him speaking:
 
   None of them is a spell the game has a scroll of, so they're something you
   can't find elsewhere. The prices are the game's own for the spell's level
-  (3,000 a level, as most of its scrolls are); scrolls from an earlier version
-  are made these, wherever they are.
+  (3,000 a level, as most of its scrolls are).
 
   Cat's Grace is there only with its rule on (see
   [Rule changes](#rule-changes)). A preserver learns a scroll's spell as from
@@ -2475,9 +2416,7 @@ walking and fighting:
 The colours are muted ones no region's palette changes. A thri-kreen shows
 only weapons and shields (all it can use). Two party members of the same race
 and sex each show their own equipment: the game gives them one figure, so the
-second is moved to pictures of their own. A save made before the Ledger's
-copy (whose party still names the game's own pictures) is put right as soon
-as it is loaded.
+second is moved to pictures of their own.
 
 ![The arena, three of the party as the game draws them (left) and as the Ledger shows them (right): leather armour and leggings recoloured, clubs and a sword worn at the hip, a bow on the back](docs/gear.png)
 
@@ -2601,8 +2540,7 @@ A character made with CREATE CHARACTERS is **New** until the game starts,
 when the game makes it Okay (and gives a New one the starting gear). The game's
 tests for Okay left New out, so a New thief's skills all showed 0 on the
 inventory screen, and the Ledger did the same. The patched game counts New as
-Okay wherever it tests for Okay, a jump each (`NEW_AS_OKAY` in
-`dscompanion/gamepatch.py`), and so does the Ledger. Left as they were: the
+Okay wherever it tests for Okay, and so does the Ledger. Left as they were: the
 status under the portrait still reads New, and the game still gives the
 starting gear and makes New characters Okay when the game starts.
 
@@ -2640,19 +2578,10 @@ the game's time; higher is smoother):
 So at 20,000 the Ledger's own drawing is what slows the whole party: without
 it the four walk as fast as one. Of it, the dust costs the most (each puff is
 worked out pixel by pixel, and four walkers raise four times as many), then
-the shadows. Both are drawn as cheaply as they can be without looking any
-different: a shadow is darkened a plane of the video memory at a time (the
-graphics card's registers set four times for a figure, not four times for
-each of its rows), and a puff's pixels are worked out a row at a time, only
-within its outline and the part of the view being drawn again.
-
-The pictures the Ledger draws the party's gear on are each exactly as long as
-their outfit, with only the room gear needs round the figure while walking (6
-pixels at the sides, 2 above; 10 in a fight): the game draws a walking figure's
-whole picture at every step (see [What the party wears](#what-the-party-wears)).
-
-What each setting asks of the computer: [Suggested system
+the shadows. What each setting asks of the computer: [Suggested system
 requirements](#suggested-system-requirements).
+
+How it works: [DEVELOPMENT.md](DEVELOPMENT.md#game-speed).
 
 ## Accessibility
 
@@ -2683,9 +2612,12 @@ WCAG 2.0 level AA:
   and `python -m dscompanion dicelog` prints the same log (dialogue included) in
   a command prompt, which screen readers do read.
 
-## Practising without the game
+## Without the game
 
-`tests/make_fake_party.py` writes `FAKEPTY.COM`, a tiny DOS program holding two
+**Checking a save file:** drag a `SAVEnn.SAV` file from the game folder onto
+**`Show Save.bat`**.
+
+**Practising:** `tests/make_fake_party.py` writes `FAKEPTY.COM`, a tiny DOS program holding two
 made-up characters in the same record shapes as the game. The first character
 loses 1 HP every second. Run it in DOSBox and try the viewer (search for
 `SADIRA`).

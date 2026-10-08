@@ -20,6 +20,11 @@ Released pull requests are summarised in a line or two each; the release notes
   switches it too; its own box is gone.
 - **The red rings are under Controls,** with Tab and Enter, as the guide has
   them; scrolling with the right button is a line under the mouse wheel's.
+- **The Ledger's window:** Show details and Show unlabelled rolls are on the
+  Dice log tab, above the log, rather than in an Options section of their own;
+  Save layout and Reload layout are on the Memory tools tab, leaving the top
+  row to starting the game, its window, the text size and Reconnect; a byte's
+  decoding has a line of its own.
 
 **Documentation**
 - **Guide reorganised:** Every magic item and Every mundane weapon in a section
@@ -31,6 +36,13 @@ Released pull requests are summarised in a line or two each; the release notes
   expertise said first).
 - The two Two weapons sections are one; the Effects screen's click (a spell
   left on) has a section under Controls, where its box is.
+- **Guide read through:** the game's own saving throws (petrification/
+  polymorph, the doubled d20) explained once, under Saving throws; the crash
+  sections one; Show Save with the practice program under Without the game;
+  the Characters tab's card as a list; the backstab table with the new
+  weapons (a bone axe and a pick can backstab); sixteen rule changes, not
+  fifteen; technical notes (patch addresses, drawing costs) moved to
+  DEVELOPMENT; old-save notes gone.
 
 ## Pull request #27 ([merged 2026-10-07](https://github.com/daaki85/darksun-companion-mod/pull/27))
 

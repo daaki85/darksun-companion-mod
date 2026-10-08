@@ -526,6 +526,22 @@ The game's table of effects (6 bytes each, from the load segment + 3F8Dh: a far
 pointer to the name, then the icon) has an empty name and no icon for 54, and
 the screen shows only effects with an icon; with the rule on, the Ledger gives
 54 Flaming Sphere's icon (21014, read as Cat's Grace's) and the spell's name.
+The description: the game reads a spell's text from RESOURCE.GFF (chunk SPIN,
+the spell's number + 1) into a buffer for the box; after the read
+(`INT E2h`) the helper puts Cat's Grace's in, in the game's words for
+Strength's. The icon: the launcher writes `dos\RESOURCE.GFF`, the game's file
+(only read) with the icon added (number 21900), which the helper has the game
+open in place of its own (as `SEGOBJEX.GFF`); where the game's two routines
+that read a chunk begin (`INT E1h`), the helper has Flaming Sphere's icon
+(21014) read as that one.
+
+A click on an effect's icon on the Effects screen
+([In the README](README.md#spells-on-the-effects-screen)) ends it in the game;
+with the switch on, a spell's effect is left on: two jumps in the screen's
+click handler (DSUN.EXE 7F226h and 7F236h, `effects_click_low` and
+`effects_click_high` in `dscompanion/gamepatch.py`) go to its way out instead
+of to the routine ending an effect. A psionic power's (spells 8Ah-ABh) still
+ends, as stopping it there is how a power is dropped.
 
 ### Helms and boots
 
@@ -827,6 +843,20 @@ it the game draws again. While anyone walks, the rectangle the game draws again
 round what moved is made to take the puffs in; once everyone stands, DSCLOG has
 the view drawn again a few times a second until the last puff is gone.
 
+### Game speed
+
+([In the README](README.md#game-speed).)
+
+The Ledger's drawing is as cheap as it can be without looking any different:
+a shadow is darkened a plane of the video memory at a time (the graphics
+card's registers set four times for a figure, not four times for each of its
+rows), and a dust puff's pixels are worked out a row at a time, only within
+its outline and the part of the view being drawn again. The pictures the
+Ledger draws the party's gear on are each exactly as long as their outfit,
+with only the room gear needs round the figure while walking (6 pixels at the
+sides, 2 above; 10 in a fight), since the game draws a walking figure's whole
+picture at every step.
+
 ### Choosing an enemy: Tab, Enter and the rings
 
 ([In the README](README.md#choosing-an-enemy-tab-enter-and-the-rings).)
@@ -885,3 +915,6 @@ How: the game's file routines take any number; only its loops over the
 characters stop at 20, its roster list has room for 20 and its "Maximum
 characters" check counts to 19. The patched game has 30 and 29 there
 (`dscompanion/gamepatch.py`, a byte each).
+
+A New character counts as Okay wherever the game tests for Okay: a jump each
+(`NEW_AS_OKAY` in `dscompanion/gamepatch.py`), and `game.py` does the same.

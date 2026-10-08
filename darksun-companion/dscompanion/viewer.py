@@ -86,8 +86,6 @@ class Viewer:
         self.status = tk.StringVar(value="Not connected")
         # on a line of its own, below the buttons, so it never pushes them off at larger text sizes
         ttk.Label(self.root, textvariable=self.status, style="Status.TLabel", padding=(8, 2)).pack(fill="x")
-        ttk.Button(top, text="Save layout", command=self.save_layout).pack(side="right")
-        ttk.Button(top, text="Reload layout", command=self.reload_layout).pack(side="right", padx=4)
         ttk.Button(top, text="Reconnect", command=self.reconnect).pack(side="right")
         # for when the Ledger was opened on its own: start the game (with the dice log) from here
         self.start_button = ttk.Button(top, text="Start the game", command=self.start_game)
@@ -139,9 +137,19 @@ class Viewer:
         ttk.Button(row, text="Clear", command=lambda: self.dice_text.delete("1.0", "end")).pack(side="right")
         ttk.Button(row, text="Save...", command=lambda: self.save_text(self.dice_text, "dice log")).pack(
             side="right", padx=4)
-        # (the switches are on the Options tab, leaving this one to the log)
         self.dice_status = tk.StringVar(value="Waiting for the game...")
         ttk.Label(row, textvariable=self.dice_status).pack(side="left", fill="x")
+        # what the log shows (the game's switches are on the Options tab)
+        row = ttk.Frame(dice)
+        row.pack(fill="x", pady=(4, 0))
+        # the indented lines under a roll (what a THAC0 or save was made of); hiding them leaves
+        # the rolls, results, turns and HP
+        self.show_details = tk.BooleanVar(value=True)
+        ttk.Checkbutton(row, text="Show details (the sums behind each roll)", variable=self.show_details,
+                        command=lambda: self.dice_text.tag_configure("detail", elide=not self.show_details.get())
+                        ).pack(side="left")
+        self.show_all = tk.BooleanVar(value=False)
+        ttk.Checkbutton(row, text="Show unlabelled rolls", variable=self.show_all).pack(side="left", padx=(12, 0))
         # the round's order stays here while the log scrolls on: who acts now, who is still to come
         self.round_line = tk.StringVar(value="")
         self.round_label = ttk.Label(dice, textvariable=self.round_line, style="Status.TLabel", wraplength=900,
@@ -237,6 +245,9 @@ class Viewer:
         entry.pack(side="left")
         entry.bind("<Return>", lambda _e: self.search_name())
         ttk.Button(row, text="Search", command=self.search_name).pack(side="left", padx=4)
+        # the field addresses found (layouts/), for mapping fields or other layouts
+        ttk.Button(row, text="Save layout", command=self.save_layout).pack(side="right")
+        ttk.Button(row, text="Reload layout", command=self.reload_layout).pack(side="right", padx=4)
         row = ttk.Frame(locate)
         row.pack(fill="x", pady=(6, 0))
         ttk.Label(row, text="Assign selected name hit to slot").pack(side="left", padx=(0, 2))
@@ -262,8 +273,9 @@ class Viewer:
         self.show_addresses = tk.BooleanVar(value=False)
         ttk.Checkbutton(row, text="Record addresses in the party table",
                         variable=self.show_addresses).pack(side="right")
+        # (a line of its own: the decoded values are long)
         self.inspect = tk.StringVar(value="Click a byte to decode it.")
-        ttk.Label(row, textvariable=self.inspect, font="TkFixedFont").pack(side="left", padx=8)
+        ttk.Label(hexframe, textvariable=self.inspect, font="TkFixedFont").pack(anchor="w", pady=(4, 0))
         self.hex = tk.Text(hexframe, font="TkFixedFont", height=20, wrap="none")
         theme.style_text(self.hex)
         self.hex.pack(fill="both", expand=True, pady=(6, 0))
@@ -276,7 +288,7 @@ class Viewer:
         self._apply_layout()
 
     def _build_options(self, tabs: ttk.Notebook) -> None:
-        """The Options tab: what the dice log shows, and what the Ledger adds to the game."""
+        """The Options tab: what the Ledger shows, changes and adds in the game."""
         # it scrolls, for a window too small (or text too large) to show it all
         area = theme.ScrollArea(tabs, padding=6)
         tabs.add(area, text="Options", underline=0)
@@ -294,15 +306,6 @@ class Viewer:
             self.sections[key] = part
             return part.body
 
-        log = section("dice_log", "Dice log")
-        self.show_all = tk.BooleanVar(value=False)
-        ttk.Checkbutton(log, text="Show unlabelled rolls", variable=self.show_all).pack(anchor="w")
-        # the indented lines under a roll (what a THAC0 or save was made of); hiding them leaves
-        # the rolls, results, turns and HP
-        self.show_details = tk.BooleanVar(value=True)
-        ttk.Checkbutton(log, text="Show details (the sums behind each roll)", variable=self.show_details,
-                        command=lambda: self.dice_text.tag_configure("detail", elide=not self.show_details.get())
-                        ).pack(anchor="w", pady=(4, 0))
         in_game = section("in_game", "In the game (when started with the dice log)")
         # long lines wrap to the window (as with larger text) instead of running out of it
         options.bind("<Configure>", lambda e: [ttk.Style().configure(

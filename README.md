@@ -26,9 +26,10 @@ can be switched off on its Options tab.
   thief skills on the character screens, spell slots on the USE screen, each
   turn's rolls in a fight, and what hurts a monster in the Look box.
   ([In the game](darksun-companion/README.md#in-the-game))
-- **Changes rules, each one switchable:** fifteen of AD&D's, among them weapon
-  specialization, class restrictions, thief skills from AD&D's table, saving
-  throws and levels up to 10; and picking pockets for thieves.
+- **Changes rules, each one switchable:** sixteen, most of them AD&D's,
+  among them weapon specialization, class restrictions, thief skills from
+  AD&D's table, saving throws and levels up to 10; and picking pockets for
+  thieves.
   ([Rule changes](darksun-companion/README.md#rule-changes),
   [Thieves](darksun-companion/README.md#thieves))
 - **Adds to the game:** new weapons, armour and magic items across Athas, with
@@ -56,7 +57,8 @@ folder only what you'd expect: your saves (pages 2 to 4 as files of their own,
    [Releases page](https://github.com/daaki85/darksun-companion-mod/releases)
    (`Templars-Ledger-<version>.zip`) and unzip it anywhere. (Or this repository
    as it stands: **Code → Download ZIP**.)
-2. In the `darksun-companion` folder, double-click **`Start Templar's Ledger.bat`**.
+2. In the unzipped folder (`Templars-Ledger-<version>`, or `darksun-companion`
+   in a download of the repository), double-click **`Start Templar's Ledger.bat`**.
    The first time, it offers to install 64-bit Python if you don't have it.
    If Windows shows "Open File - Security Warning" (it does for any `.bat`
    from a download), press **Run**: the Ledger then unblocks its own files, so
