@@ -74,8 +74,10 @@ double-click, with the options as last set.)
 
 ## What's new
 
-In pull request #27 (merged 2026-10-07): a ranger no longer has the bow to choose at
-creation, since every ranger has expertise with the bow already.
+In pull request #28 (merged 2026-10-08): the Options tab has a Thieves section
+of its own; warriors shoot faster from 7th level with missile weapons they
+haven't specialized in; the arena's ring comes with the new items; and the
+guide is reorganised and shorter.
 
 Earlier changes, pull request by pull request, are in
 [`CHANGELOG.md`](CHANGELOG.md). Releases have notes of their own:
