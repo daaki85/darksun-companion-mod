@@ -11,7 +11,7 @@ starts. Each is known by name, race and classes together.
   bone gythka, in the same hand: a two-handed weapon beside a one-handed one (the long sword
   weighs 20, the gythka 120: one heavy weapon, as the game allows). K'ratchek (a fighter,
   druid and psionicist) the chatkcha, the one weapon she has. Cermak (a gladiator who became a
-  preserver) the long sword and the axe, his once his gladiator levels count again.
+  preserver) the long sword and the axe, which count once his gladiator levels do again.
 - With class restrictions: Cilla (a preserver, druid and thief) can't wear armour (the druid's
   rule), so her leather armour is taken away and she knows Armor, the first wizard spell (0),
   the one Old One-Eye's scroll in the fields teaches.

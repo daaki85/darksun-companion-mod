@@ -153,6 +153,20 @@ class RestrictTests(unittest.TestCase):
         self.assertFalse(ok(bytes(s), 22))  # an axe: not its kind
         self.assertFalse(ok(bytes(s), 57))  # (armour: the psionicist's limits as before)
 
+    def test_rangers_bow(self):
+        """A ranger's bow is its own: a fire cleric/fire ranger may use it (the fire sphere alone
+        forbids it), and a human fire ranger turned fire cleric once its cleric level passes."""
+        self.assertFalse(ok(sheet(3), 1))  # a fire cleric: no bow
+        self.assertTrue(ok(sheet(3, 15), 1))  # with fire ranger: the bow
+        self.assertTrue(ok(sheet(15, 3), 1))
+        self.assertFalse(ok(sheet(3, 15), 22))  # (the axe: still the cleric's rule)
+        s = bytearray(sheet(3, 15, race=game.HUMAN))
+        s[game.SHEET_LEVELS:game.SHEET_LEVELS + 2] = bytes((4, 5))
+        self.assertFalse(ok(bytes(s), 1))  # a cleric not yet past its ranger level
+        s[game.SHEET_LEVELS] = 6
+        self.assertTrue(ok(bytes(s), 1))
+        self.assertTrue(ok(sheet(15, 3, race=game.HUMAN), 1))  # a ranger now
+
 
 if __name__ == "__main__":
     unittest.main()

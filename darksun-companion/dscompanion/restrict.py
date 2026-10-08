@@ -19,6 +19,9 @@ PROBE_CAN_USE does this in the game; this is its model, for the tests and the Le
 
 A human who was a fighter, gladiator or ranger and has changed class keeps the weapons it
 specialized in, whatever the new class allows, once its new class's level has passed the old.
+A ranger's bow is its own the same way (every ranger has expertise with it): a multiclass
+ranger may use bows whatever its other classes allow (a fire cleric's sphere), and so may a
+human once ranger, as its chosen weapons.
 
 Helms count as armour. A human who has changed class (dual-classed: the class it has now is the
 first) is held only by that class; another race's classes (multiclass) all hold it. Weapons of
@@ -91,11 +94,16 @@ WARRIORS = frozenset((9, 10)) | frozenset(RANGERS)
 def specialized_back(sheet: bytes, kind: int) -> bool:
     """A human who was a fighter, gladiator or ranger and has dual-classed keeps the weapons it
     specialized in once the new class's level has passed the old: none of the new class's
-    limits on them."""
-    if sheet[game.SHEET_RACE] != game.HUMAN or kind + 1 not in sheet[game.SPEC_SLOTS:game.SPEC_SLOTS + game.SPEC_COUNT]:
-        return False
+    limits on them. A ranger's bow is its own too: a multiclass ranger's always, a human's while
+    it is a ranger or once its new class's level has passed its ranger level."""
+    human = sheet[game.SHEET_RACE] == game.HUMAN
     classes = sheet[game.SHEET_CLASSES:game.SHEET_CLASSES + 3]
     levels = sheet[game.SHEET_LEVELS:game.SHEET_LEVELS + 3]
+    if kind == specialize.KINDS.index("bow") and any(
+            c in RANGERS and (not human or i == 0 or levels[i] < levels[0]) for i, c in enumerate(classes)):
+        return True
+    if not human or kind + 1 not in sheet[game.SPEC_SLOTS:game.SPEC_SLOTS + game.SPEC_COUNT]:
+        return False
     return any(classes[i] in WARRIORS and levels[i] < levels[0] for i in (1, 2))
 
 

@@ -1,8 +1,7 @@
 # Templar's Ledger
 
-A companion for **Dark Sun: Shattered Lands** (the GOG release) running in
-DOSBox, in the spirit of the Gold Box Companion. In Draj the templars keep the
-records; this ledger keeps the ones the game doesn't show you.
+Templar's Ledger is a companion and mod for **Dark Sun: Shattered Lands** (the
+GOG release) in DOSBox.
 
 ## Contents
 
@@ -19,13 +18,15 @@ records; this ledger keeps the ones the game doesn't show you.
   - [The Dialogue tab](#the-dialogue-tab)
 - [The dice log](#the-dice-log)
   - [Initiative](#initiative)
-  - [Two weapons](#two-weapons)
   - [Spells and effects](#spells-and-effects)
   - [Psionics](#psionics)
   - [Character creation](#character-creation)
   - [Monsters' defences](#monsters-defences)
   - [Searching junk, hay and wardrobes](#searching-junk-hay-and-wardrobes)
   - [No critical hits](#no-critical-hits)
+- [Two weapons](#two-weapons)
+  - [The game's two weapons](#the-games-two-weapons)
+  - [AD&D's penalties](#adds-penalties)
 - [Thieves](#thieves)
   - [How the game works out thief skills](#how-the-game-works-out-thief-skills)
   - [Where the game rolls them](#where-the-game-rolls-them)
@@ -81,30 +82,28 @@ records; this ledger keeps the ones the game doesn't show you.
 
 ## What it does
 
-Templar's Ledger runs beside Dark Sun: Shattered Lands, in DOSBox:
+It shows what the game keeps hidden. Every roll is logged as it happens:
+attacks, damage, saving throws, thief skills, initiative, even the dice at
+character creation. Each comes with what it needed and where every bonus came
+from ([the dice log](#the-dice-log)). The game's own screens gain THAC0, saves,
+thief skills and spell slots, and the Look box tells you what can hurt a
+monster ([In the game](#in-the-game)).
 
-- **It shows what the game hides.** A window with every character's numbers as
-  they stand now: THAC0 with each weapon, saves, the AC the game uses in a fight
-  and what it's made of, spell slots, thief skills
-  ([the Ledger's window](#the-ledgers-window)); a [dice log](#the-dice-log) of
-  every roll the game makes, what it needed and where each bonus comes from; and
-  tabs keeping [what's said](#the-dialogue-tab) and
-  [what every spell really does](#the-spells-tab).
-- **It shows it in the game too**, in the game's own lettering: THAC0, saves and
-  thief skills on the inventory and View Character screens, spell slots on the
-  USE screen, each turn's rolls, and what hurts a monster in the Look box
-  ([In the game](#in-the-game)).
-- **It changes rules, each one switchable:** sixteen, most of them AD&D's,
-  among them weapon specialization, class restrictions, thief skills, saving
-  throws and levels up to 10 ([Rule changes](#rule-changes)); and thieves can
-  pick pockets ([Thieves](#thieves)).
-- **It adds to the game:** new items across Athas, two new people in the
-  slave pens and a use for the cooked vulture
-  ([New content](#new-content)); gear, shadows and dust on the map
-  ([On the screen](#on-the-screen)); choosing an enemy with Tab and scrolling
-  with the mouse ([Controls](#controls)); 40 saves and 29 saved characters
-  ([More saves and characters](#more-saves-and-characters)); a game speed
-  setting and crash reports; and no more [manual check](#no-manual-check).
+It brings the rules closer to AD&D: weapon specialization and mastery, class
+restrictions, thief skills from the Player's Handbook, saving throws as the
+books have them, and levels up to 10 ([Rule changes](#rule-changes)). Thieves
+can pick pockets, and hide in shadows to backstab ([Thieves](#thieves)).
+
+It adds to Athas: new weapons in every material, magic items with stories of
+their own, Kalzith (a defiler who sells scrolls), more of Semyon's story, and a
+use for the cooked vulture ([New content](#new-content)). Graphical additions
+show the weapons and armour the party wears, have characters cast shadows, and
+kick up dirt as they walk ([On the screen](#on-the-screen)).
+
+Quality of life changes: choosing an enemy with Tab and attacking it with Enter,
+scrolling the map with the mouse wheel ([Controls](#controls)), 40 saves and 29 saved
+characters ([More saves and characters](#more-saves-and-characters)), a game
+speed setting ([Game speed](#game-speed)), crash reports, and no dragon asking for a word from the manual, the game's copy protection ([No manual check](#no-manual-check)).
 
 Nothing in the game folder or your save files is changed, except what play
 writes there: save pages 2 to 4 as files of their own beside the game's,
@@ -507,36 +506,6 @@ highest score acts first; a second roll, 0-199, decides between equal scores
 (the log shows it only for those). Choosing Wait lowers the character's score
 to 10 (or by one, if it's 10 or less already) so they act later in the round.
 
-### Two weapons
-
-The manual says a character with two weapons ready uses the second "at a
-disadvantage", unless a ranger or dextrous. The game's code does something
-else: with two weapons ready (in melee), every attack, first hand and second
-alike, is adjusted by the DEX table used for initiative with its sign flipped
-and never below 0, and rangers are left out. That comes to a **bonus** of +6 at
-DEX 1, +4 at 2, +3 at 3, +2 at 4 and +1 at 5, and nothing at DEX 6 and up, so
-in practice there is no off-hand penalty at all: both weapons hit as well as a
-single one would. The log names it, e.g. `+2 two weapons at DEX 4`. (Tested
-in an arena fight by changing DEX in memory: +6 on both weapons at DEX 1,
-nothing at 15 or 25, nothing with one weapon.) It looks like a sign slip:
-AD&D uses the same DEX adjustment to make two-weapon fighting *harder* at low
-DEX.
-
-**AD&D's penalties** (a [rule change](#rule-changes), its box **Two weapons**):
-with two melee weapons ready, a character who isn't a ranger attacks at -2
-with the main (right) hand and -4 with the off (left) hand, and the DEX
-reaction adjustment (the table under [Initiative](#initiative)) is added. It
-can lessen the penalty to 0 but never make it a bonus, and low DEX
-makes it worse: DEX 17 is 0 and -2, DEX 21 0 and 0, DEX 3 -5 and -7. Rangers
-have no penalty (in any armour). It takes a melee weapon in each hand: one
-weapon, a two-handed weapon, a weapon and a shield, or a weapon and a bow or
-sling (the missile slot) have no penalty. The game's own rule, a small bonus
-at DEX 5 or less, is gone. The dice log names it (`-4 two weapons, off hand at
-DEX 15`), as do the THAC0 lines on the Characters tab and the inventory
-screen.
-
-How it works: [DEVELOPMENT.md](DEVELOPMENT.md#two-weapons-adds-penalties).
-
 ### Spells and effects
 
 What the log says about spells comes from the game's own spell records and
@@ -770,6 +739,42 @@ that is all the d20 does: the game has no critical hits or fumbles. Its attack
 routine uses the d20 only for those two checks and the comparison with THAC0,
 and never passes it to the damage routine, so a hit on a 20 rolls the same
 damage as any other. A backstab is the only thing that multiplies damage.
+
+## Two weapons
+
+The game's rule for fighting with two weapons, then the rule change for it (its
+box under Rule changes on the Options tab).
+
+### The game's two weapons
+
+The manual says a character with two weapons ready uses the second "at a
+disadvantage", unless a ranger or dextrous. The game's code does something
+else: with two weapons ready (in melee), every attack, first hand and second
+alike, is adjusted by the DEX table used for initiative with its sign flipped
+and never below 0, and rangers are left out. That comes to a **bonus** of +6 at
+DEX 1, +4 at 2, +3 at 3, +2 at 4 and +1 at 5, and nothing at DEX 6 and up, so
+in practice there is no off-hand penalty at all: both weapons hit as well as a
+single one would. The log names it, e.g. `+2 two weapons at DEX 4`. (Tested
+in an arena fight by changing DEX in memory: +6 on both weapons at DEX 1,
+nothing at 15 or 25, nothing with one weapon.) It looks like a sign slip:
+AD&D uses the same DEX adjustment to make two-weapon fighting *harder* at low
+DEX.
+
+### AD&D's penalties
+
+With **Two weapons** ticked, and two melee weapons ready, a character who isn't a ranger attacks at -2
+with the main (right) hand and -4 with the off (left) hand, and the DEX
+reaction adjustment (the table under [Initiative](#initiative)) is added. It
+can lessen the penalty to 0 but never make it a bonus, and low DEX
+makes it worse: DEX 17 is 0 and -2, DEX 21 0 and 0, DEX 3 -5 and -7. Rangers
+have no penalty (in any armour). It takes a melee weapon in each hand: one
+weapon, a two-handed weapon, a weapon and a shield, or a weapon and a bow or
+sling (the missile slot) have no penalty. The game's own rule, a small bonus
+at DEX 5 or less, is gone. The dice log names it (`-4 two weapons, off hand at
+DEX 15`), as do the THAC0 lines on the Characters tab and the inventory
+screen.
+
+How it works: [DEVELOPMENT.md](DEVELOPMENT.md#two-weapons-adds-penalties).
 
 ## Thieves
 
@@ -1555,10 +1560,10 @@ weapon specialization chosen, in place of the bone long sword`):
 | long sword | the game's bone long sword | obsidian (fire, earth) |
 | club, quarterstaff, bow | wooden (a bow with 20 arrows) | |
 | dagger, chatkcha | obsidian | a dagger: bone, the Ledger's (water) |
-| short sword | bone, the Ledger's (the game's only short sword is Kurzak's) | obsidian (fire, earth) |
-| mace, polearm, gythka, cahulaks | bone | a mace: obsidian, the game's plain Mace type (its only one is Blackmace) with a picture of the Ledger's; a polearm: metal, the Ledger's (earth) |
-| axe | bone, the Ledger's (the game's only axe is metal) | obsidian (fire, earth) |
-| great axe | bone, the Ledger's (the game's only great axe is +3) | obsidian (fire, earth) |
+| short sword | bone, the Ledger's | obsidian (fire, earth) |
+| mace, polearm, gythka, cahulaks | bone | a mace: obsidian, the game's plain Mace type with a picture of the Ledger's; a polearm: metal, the Ledger's (earth) |
+| axe | bone, the Ledger's | obsidian (fire, earth) |
+| great axe | bone, the Ledger's | obsidian (fire, earth) |
 | pick | stone | |
 | sling, staff sling | leather | |
 
@@ -1620,7 +1625,9 @@ heads its spell slots **NO SPELLS IN ARMOUR**, and the Characters tab adds
 changed class is held by the class it has now; another race by all of its
 classes. A ranger turned cleric uses both spheres' weapons, and a warrior who
 dual-classed uses the weapons it specialized in once the new class's level
-passes the old.
+passes the old (a fighter's, gladiator's or ranger's chosen weapon specs, and a
+ranger's bow). A ranger's bow is always its own: a fire ranger/cleric, whose
+fire sphere allows only obsidian weapons, may still use bows.
 
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#class-restrictions).
 
@@ -1897,8 +1904,8 @@ says so in the dice log:
 |---|---|---|
 | **Gerakis**, half-giant gladiator | specializes in the long sword and the gythka; with [half-giants' two-handed weapons](#half-giants-two-handed-weapons), his club is a bone gythka, a two-handed weapon beside his long sword | |
 | **K'ratchek**, thri-kreen fighter, druid and psionicist | specializes in the chatkcha, her only weapon | |
-| **Cermak**, human preserver, once a gladiator | specializes in the long sword and the axe, his once his gladiator levels count again | |
-| **Cilla**, elf preserver, druid and thief | | no leather armour (a druid wears none), and she knows **Armor**, the spell Old One-Eye's scroll teaches |
+| **Cermak**, human preserver, once a gladiator | specializes in the long sword and the axe, which count once his gladiator levels do again (when his preserver level passes them) | |
+| **Cilla**, elf preserver, druid and thief | | no leather armour (a druid wears none), and she knows the **Armor** spell in its place |
 
 ![The USE screen in the game: Cilla's 1st-level mage spells, the first named ARMOR in the bar below, WIZ 2/2](docs/default-party-armor.png)
 
@@ -1923,8 +1930,8 @@ start a new game to have them all. The log doesn't say where they are: they're
 there to be found. [Every magic item](#every-magic-item) lists the magic ones
 with the game's own.
 
-**Mundane items.** The game has no plain short sword (only Kurzak's), no bone
-or obsidian axe or great axe, no bone dagger and few plain metal weapons; the
+**Mundane items.** The game has no short sword at all, no bone or obsidian
+axe or great axe, no bone dagger and few plain metal weapons; the
 Ledger adds them:
 
 | Icon | Item | Where | What it is |

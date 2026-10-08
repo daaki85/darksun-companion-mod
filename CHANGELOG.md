@@ -5,6 +5,23 @@ Released pull requests are summarised in a line or two each; the release notes
 ([1.1.0](release-notes/v1.1.0.md): #14 to #18; [1.0.0](release-notes/v1.0.0.md):
 #1 to #13) and the pull requests themselves have the detail.
 
+## Pull request #29 ([merged 2026-10-08](https://github.com/daaki85/darksun-companion-mod/pull/29))
+
+**Changed**
+- **A ranger's bow is its own** with class restrictions: a multiclass ranger
+  may use bows whatever its cleric sphere allows (a fire cleric/ranger, whose
+  sphere allows only obsidian), and a human ranger turned cleric gets the bow
+  back with its chosen weapon spec, once the cleric level passes the ranger's.
+  Before, its bow expertise was there but no bow could be readied.
+
+**Documentation**
+- **What it does**, on the front page and in the guide alike: what the Ledger
+  shows of the game's hidden rolls, how it brings the rules closer to AD&D,
+  what it adds to Athas and on the screen, and its quality of life changes,
+  in place of the old description and lists.
+- **Two weapons** is a section of its own, beside Thieves and Saving throws
+  (the game's rule, then AD&D's penalties), rather than under The dice log.
+
 ## Pull request #28 ([merged 2026-10-08](https://github.com/daaki85/darksun-companion-mod/pull/28))
 
 **Changed**
@@ -162,7 +179,7 @@ Released pull requests are summarised in a line or two each; the release notes
 
 **Changed**
 - **Cermak, of the game's own party, specializes in the long sword and the
-  axe** (was the club), his once his gladiator levels count again.
+  axe** (was the club), which count once his gladiator levels do again.
 
 ## Pull request #21 ([merged 2026-10-07](https://github.com/daaki85/darksun-companion-mod/pull/21))
 
