@@ -1560,10 +1560,10 @@ weapon specialization chosen, in place of the bone long sword`):
 | long sword | the game's bone long sword | obsidian (fire, earth) |
 | club, quarterstaff, bow | wooden (a bow with 20 arrows) | |
 | dagger, chatkcha | obsidian | a dagger: bone, the Ledger's (water) |
-| short sword | bone, the Ledger's (the game has no short sword) | obsidian (fire, earth) |
-| mace, polearm, gythka, cahulaks | bone | a mace: obsidian, the game's plain Mace type (its only one is Blackmace) with a picture of the Ledger's; a polearm: metal, the Ledger's (earth) |
-| axe | bone, the Ledger's (the game's only axe is metal) | obsidian (fire, earth) |
-| great axe | bone, the Ledger's (the game's only great axe is +3) | obsidian (fire, earth) |
+| short sword | bone, the Ledger's | obsidian (fire, earth) |
+| mace, polearm, gythka, cahulaks | bone | a mace: obsidian, the game's plain Mace type with a picture of the Ledger's; a polearm: metal, the Ledger's (earth) |
+| axe | bone, the Ledger's | obsidian (fire, earth) |
+| great axe | bone, the Ledger's | obsidian (fire, earth) |
 | pick | stone | |
 | sling, staff sling | leather | |
 
@@ -1928,8 +1928,8 @@ start a new game to have them all. The log doesn't say where they are: they're
 there to be found. [Every magic item](#every-magic-item) lists the magic ones
 with the game's own.
 
-**Mundane items.** The game has no short sword at all (Kurzak's Shadowseeker is
-the Ledger's too), no bone or obsidian axe or great axe, no bone dagger and few plain metal weapons; the
+**Mundane items.** The game has no short sword at all, no bone or obsidian
+axe or great axe, no bone dagger and few plain metal weapons; the
 Ledger adds them:
 
 | Icon | Item | Where | What it is |
