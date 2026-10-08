@@ -3,7 +3,7 @@
 A character of one class may take one of its class's three kits, or none (the class as it is).
 The kit is the sheet's byte KIT_BYTE: 0 none, 1 to 3 the class's kits in KITS's order. It is
 chosen on the creation panel, on a page of its own (a window for each class, its rows the
-class's kits and NO KIT, its button VIEW PSIONICS back to the disciplines), which KITS opens:
+NO KIT and the class's kits, its button VIEW PSIONICS back to the disciplines), which KITS opens:
 the button of the disciplines' window for a class with no sphere, of the spheres' for a
 cleric, druid or ranger, of the last weapon page for a warrior choosing weapons. The rows'
 pictures are carved as the weapon pages' are (weaponpages.py), names too long for the panel
@@ -114,7 +114,7 @@ def chunks(resource: gff.Chunks) -> Dict[Tuple[str, int], bytes]:
     rows_at = [(x, y) for _, x, y in sphere_items[:4]]
     toggle_at = sphere_items[4][1:]
     for cls in KITS:
-        ids = [KIT_ROW + 3 * (cls - 1) + k for k in range(3)] + [KIT_NONE]
+        ids = [KIT_NONE] + [KIT_ROW + 3 * (cls - 1) + k for k in range(3)]
         items = [(cid, x, y) for cid, (x, y) in zip(ids, rows_at)] + [(wp.BACK, *toggle_at)]
         added[("WIND", KIT_WINDOW + cls - 1)] = wp._window(spheres, KIT_WINDOW + cls - 1, items)
     added[("WIND", KIT_SPHERES)] = wp._window(

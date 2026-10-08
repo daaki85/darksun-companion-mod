@@ -938,27 +938,27 @@ header's +270) switches them all off.
 
 | Class | Kit | Benefit | Drawback |
 |---|---|---|---|
-| Fighter | Myrmidon | a second weapon spec at 1st level | −1 on saves against charm and fear |
+| Fighter | Myrmidon | a second weapon spec at 1st level, on to mastery and grand mastery as the first | −4 on saves against charm |
 | | Sentinel | +2 AC with a shield, +2 initiative | −1 on saves against spells |
-| | Raider | +2 movement in a fight, +1 damage on every attack | −1 AC |
+| | Raider | +2 movement in a fight, +1 damage on every melee attack | −1 AC |
 | Gladiator | Arena Champion | +1 to hit and damage on open ground | −1 to hit and damage underground |
 | | Twin-blade | no two-weapon penalty | no shield; no two-handed weapon, but a half-giant's held in one hand |
 | | Brute | +1 DEX, +1 CON | −1 INT, −1 WIS; two-handed melee weapons only (a half-giant may add a shield); missile weapons, but not as a weapon spec |
-| Ranger | Stalker | +2 movement in a fight, +10 hide in shadows, +10 move silently | light armour only |
+| Ranger | Stalker | +2 movement in a fight, +15 hide in shadows, +15 move silently | light armour only |
 | | Justifier | the bow's expertise and the chosen weapon spec's become specialization | priest spells on the Justifier's table: one 1st-level slot at 10th level |
 | | Seeker | priest spells on the Seeker's table: from 6th level | its sphere's weapon limits (but it keeps the bow) |
 | Thief | Swashbuckler | a warrior's THAC0 | −10 to all thief skills |
 | | Assassin | hiding in shadows isn't halved in daylight | −15 pick pockets and open locks |
-| | Shinobi | preserver spells on the Seeker's table, illusions only | the Seeker's few slots |
+| | Shinobi | preserver spells on the Seeker's table, cast in light armour too | the Seeker's few slots; its own short list of spells, one learnt at each level up from its first slots, none from scrolls |
 | Cleric | Elementalist | a second sphere: its spells and its weapons | spell slots one level slower (none at 1st level) |
 | | Healer | Cure spells heal 1 more per die | harmful spells do 1 less per die |
 | | Crusader | a fighter's THAC0 | one fewer spell slot at each spell level |
 | Druid | Grove Warden | AC 1 better for every 3 druid levels | no metal weapons |
-| | Lifebinder | regenerates as a character with CON 20 does | −2 on saves against poison and draining |
+| | Lifebinder | healing spells heal a die more | blunt weapons only |
 | | Wanderer | +1 WIS, +1 CON | −1 CHA, −1 STR |
 | Preserver | Scholar | a spell more learnt at each level up | −1 to hit |
-| | Battle Mage | a warrior's THAC0, a d6 hit die, expertise in one weapon spec | one fewer spell slot at each spell level |
-| | Arcanist | a spell slot more at each spell level | a d3 hit die |
+| | Battle Mage | a warrior's THAC0, a d6 hit die, expertise in one weapon spec (a one-handed warrior's weapon), light armour worn and spells cast in it, spells cast though hit in a fight (if the game stops them) | one fewer spell slot at each spell level; nothing in the off hand |
+| | Arcanist | a spell slot more at each spell level | −2 CON |
 | Psionicist | Mind Bender | telepathy powers cost 2 PSP less | psychokinesis powers 2 more |
 | | Mind Warrior | a warrior's THAC0, a d8 hit die | a tenth fewer PSP |
 | | Kineticist | psychokinesis powers cost 2 PSP less | telepathy powers 2 more |
@@ -972,6 +972,16 @@ level, not the ranger's:
 | Seeker: casting level | 1 | 2 | 3 | 4 | 5 |
 | Seeker: 1st, 2nd, 3rd level slots | 1 | 2 | 2, 1 | 2, 2 | 2, 2, 1 |
 | Justifier: casting level, slots | | | | | 1; one 1st-level |
+
+The Shinobi's spells, all the game's (thief level 6 on, the Seeker's slots):
+
+| Spell level | Spells |
+|---|---|
+| 1st | Gaze Reflection, Charm Person, Shield, Color Spray, Wall of Fog |
+| 2nd | Invisibility, Mirror Image, Blur, Detect Invisibility, Fog Cloud |
+| 3rd | Blink, Haste, Protection from Normal Missiles, Hold Person |
+
+No kit is the kit page's first row, and what a new character has.
 
 ### Room in the helper
 
@@ -1021,8 +1031,8 @@ chain, opened with a **KITS** button where the last page's button was:
 made, for the probes that open them (`PROBE_WP_DISC_WIN`,
 `PROBE_WP_SPHERE_WIN`, and `PROBE_WP_CLASS` when the classes change). The
 kit page itself is a window for each class (3026 to 3033, by the creation
-screen's class numbers), its rows the class's three kits and NO KIT
-(buttons `870h` + 3 × (class − 1) + kit − 1, and `888h`), its button VIEW
+screen's class numbers), its rows NO KIT and the class's three kits
+(buttons `888h`, and `870h` + 3 × (class − 1) + kit − 1), its button VIEW
 PSIONICS (the weapon pages' `851h`) back to the disciplines. Like the weapon
 pages, it is kept at `DS:EA6h` with the spheres' own routine answering its
 buttons, so `PROBE_WP_SPHERE_CLICK` gets its clicks and `PROBE_WP_SHOWN`
@@ -1055,39 +1065,40 @@ Already hooked:
 
 | Effect | Kits | Hook |
 |---|---|---|
-| to hit and damage with a weapon | Raider, Arena Champion | `INT D1h`, `INT D0h` (weapon specialization's) |
+| to hit and damage with a weapon | Raider (melee), Arena Champion | `INT D1h`, `INT D0h` (weapon specialization's) |
 | open ground or underground | Arena Champion | the regions and the map's floors, as for daylight (`stealth.py`) |
 | AC | Sentinel, Raider, Grove Warden | `INT F8h` (the ring's AC) |
 | movement | Raider, Stalker | `INT FBh` (boots) |
-| saves, by kind of spell | Myrmidon, Sentinel, Lifebinder | `INT F9h`, `INT 61h` |
+| saves, by kind of spell | Myrmidon, Sentinel | `INT F9h`, `INT 61h` |
 | thief skills | Swashbuckler, Stalker | `INT E4h`; hiding and moving silently are the Ledger's own rolls |
 | hiding in daylight | Assassin | `stealth.py` |
-| weapons and armour allowed | Twin-blade, Brute, Grove Warden, Stalker, Seeker | `CLASS_FORBIDS`, `restrict.py` |
+| weapons and armour allowed | Twin-blade, Brute, Grove Warden, Lifebinder, Stalker, Seeker, Battle Mage (and nothing in the off hand), Shinobi | `CLASS_FORBIDS`, `restrict.py` |
+| spells in armour | Battle Mage, Shinobi (light armour) | `INT CCh`, the multiclass preserver's no spells in armour (`PROBE_NO_CAST`) |
 | the two-weapon penalty | Twin-blade | `INT FEh` |
-| hit dice | Battle Mage, Arcanist, Mind Warrior | `INT E6h`, `INT CBh` |
-| weapon specs: how many, which | Myrmidon, Brute, Justifier, Battle Mage | the creation pages, `KINDS_ALLOWED`, `SPEC_OF_SHEET` |
+| hit dice | Battle Mage, Mind Warrior | `INT E6h`, `INT CBh` |
+| weapon specs: how many, which, how far | Myrmidon (the second to grand mastery), Brute, Justifier, Battle Mage (one-handed kinds) | the creation pages, `KINDS_ALLOWED`, `SPEC_OF_SHEET` |
 
 A new hook at a place already found:
 
 | Effect | Kits | Where |
 |---|---|---|
 | THAC0 | Swashbuckler, Crusader, Battle Mage, Mind Warrior | the game writes a creature's THAC0 (`mov es:[bx+1Fh],al`) after one routine, at DSUN.EXE 66CE0h, 86D7Eh and 87A91h |
-| regeneration | Lifebinder | `cmp byte es:[bx+24h],14h` at 2289Dh (CON against 20), five bytes, as `PROBE_LEVEL` replaces its compare |
 | initiative | Sentinel | the roll's code (`INITIATIVE_ROLL` in `dicelog.py`) |
 | spell slots | Elementalist, Crusader, Battle Mage, Arcanist, Seeker, Justifier | the slots given on resting (5E0ACh) and the classes' rule words, which `GameData.max_spell_slots` reads |
 | max PSP | Mind Warrior | the level-up's sum at 873B2h |
-| scores at creation | Brute, Wanderer | the creation sheet (`DS:119Ch`) |
-| spells learnt at a level up | Scholar | the CHOOSE A SPELL screen (see levels up to 10) |
+| scores at creation | Brute, Wanderer, Arcanist | the creation sheet (`DS:119Ch`) |
+| spells learnt at a level up | Scholar, Shinobi (one, from its list) | the CHOOSE A SPELL screen (see levels up to 10) |
 
 Still to find:
 
 | Effect | Kits | What |
 |---|---|---|
 | a power's PSP cost | Mind Bender, Kineticist | where the game takes the cost off: the costs are one table for everyone, so a kit's is a change there, by who uses the power |
-| a spell's dice | Healer | where the game rolls a spell's damage or healing (the dice log reads it; nothing changes it yet) |
+| a spell's dice | Healer, Lifebinder | where the game rolls a spell's damage or healing (the dice log reads it; nothing changes it yet) |
 | casting level | Seeker, Justifier, Shinobi | where the game takes it from the class level |
 | a second sphere | Elementalist | how the game gives a priest its element's spells (the USE screen) and counts caster level 0 for another's |
-| wizard spells for a thief | Shinobi | slots, spells known and learning for a class that has none, and which of the game's spells are illusions |
+| wizard spells for a thief | Shinobi | slots, spells known and learning for a class that has none; learning from a scroll refused (where the game learns one: the tome's probe is beside it, 8B80Ch) |
+| spells stopped by a hit | Battle Mage | whether the game spoils a spell when its caster is hit in a fight at all: none of the research so far has seen it do so (a spell is cast at once, on the caster's turn) |
 
 Every kit also needs its Python side: the Characters tab and the in-game
 THAC0 and saves (`game.py`), the dice log's lines, and tests that hold the
@@ -1099,10 +1110,10 @@ helper's code (emulated) to the Python.
    KIT page, the Effects screen's line, the Characters tab, the rule switch.
 2. The kits on hooks there already: Raider, Sentinel (with an initiative
    hook), Myrmidon, Arena Champion, Twin-blade, Brute, Stalker, Assassin,
-   Grove Warden, Wanderer.
-3. THAC0, regeneration and spell slot hooks: Swashbuckler, Crusader, Battle
-   Mage, Mind Warrior, Lifebinder, Arcanist, Elementalist, Justifier, Seeker,
-   Scholar.
+   Grove Warden, Wanderer, Arcanist's CON.
+3. THAC0 and spell slot hooks: Swashbuckler, Crusader, Battle Mage, Mind
+   Warrior, Arcanist, Elementalist, Justifier, Seeker, Scholar.
 4. After finding them: PSP costs (Mind Bender, Kineticist), spell dice
-   (Healer), casting level (Seeker, Justifier).
+   (Healer, Lifebinder), casting level (Seeker, Justifier), a hit spoiling a
+   spell (Battle Mage, if the game has it).
 5. The Shinobi.

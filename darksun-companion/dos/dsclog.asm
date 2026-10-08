@@ -3274,8 +3274,8 @@ WP_VIEW      equ 0x852
 WP_PAGES     equ 4
 SPHERE_TOGGLE equ 0x7FF             ; (the spheres' VIEW PSIONICS)
 ; Kits (RULE_HI_KITS; kitpages.py): one class's three, or none, chosen on a page of their own
-; (3026-3033, by class, kept at DS:EA6h as the weapon pages are), its rows the class's kits
-; (KIT_ROW + 3 * (class - 1) + kit - 1) and NO KIT, its button VIEW PSIONICS back. KITS opens it:
+; (3026-3033, by class, kept at DS:EA6h as the weapon pages are), its rows NO KIT and the
+; class's kits (KIT_ROW + 3 * (class - 1) + kit - 1), its button VIEW PSIONICS back. KITS opens it:
 ; the button of the disciplines' window (3022) for a class with no sphere, of the spheres' (3023)
 ; for a cleric's, druid's or ranger's, of the fourth weapon page (3025) for a warrior choosing
 ; weapons. The kit marked is the creation sheet's KIT_BYTE (0 none, 1-3), which goes with the
@@ -4788,7 +4788,7 @@ kit_row:
         jne .put
         xor dl, dl
 .put:   mov [es:bx + KIT_BYTE], dl
-; KIT_MARKS: the kit page's rows (the class's three kits, then NO KIT) marked as the creation
+; KIT_MARKS: the kit page's rows (NO KIT, then the class's three kits) marked as the creation
 ; sheet's kit, the rest not, as WP_MARKS marks a weapon page's
 kit_marks:
         push es
@@ -4800,14 +4800,13 @@ kit_marks:
         mov dl, [es:bx + KIT_BYTE]
         movzx bx, al
         imul bx, bx, 3
-        add bx, KIT_ROW - 3
-        mov dh, 1               ; (the row's kit)
+        add bx, KIT_ROW - 4     ; (NO KIT first, then the class's three)
+        xor dh, dh              ; (the row's kit)
         mov cx, 4
 .row:   mov ax, bx
-        cmp cx, 1
+        cmp cx, 4
         jne .kit
         mov ax, KIT_NONE
-        xor dh, dh
 .kit:   cmp dh, dl
         je .chosen
         push 3

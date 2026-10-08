@@ -19,7 +19,8 @@ Released pull requests are summarised in a line or two each; the release notes
   for its class, or none, on the creation panel's new KIT page (KITS, at the
   end of the panel's pages: the disciplines' for a class with no sphere, the
   spheres' for a cleric, druid or ranger, the last weapon page for a warrior
-  with weapon specialization). The kit is kept with the character (sheet
+  with weapon specialization), NO KIT first and what a new character has. The
+kit is kept with the character (sheet
   `+43h`), and the Effects screen (`KIT: RAIDER`) and the Ledger's
   Characters tab name it. A new switch on the Options tab, under Rule changes.
   The kits have no effects yet.
@@ -28,7 +29,9 @@ Released pull requests are summarised in a line or two each; the release notes
 - **Kits, planned:** DEVELOPMENT.md has the design for kits (three for each
   class, for characters of one class) and what research says about building
   them: room in the helper, the sheet byte for the kit, the creation page, and
-  each effect's hook, found or still to find.
+  each effect's hook, found or still to find. Revised: the Lifebinder's,
+  Battle Mage's, Arcanist's, Stalker's, Raider's, Myrmidon's and Shinobi's
+  kits (the Shinobi with a list of its own of 14 spells).
 
 ## Pull request #30 ([merged 2026-10-08](https://github.com/daaki85/darksun-companion-mod/pull/30))
 

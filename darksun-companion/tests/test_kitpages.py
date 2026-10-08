@@ -53,6 +53,30 @@ class KitPageTests(unittest.TestCase):
         self.assertEqual(kitpages.panel_windows((7, 0, 0), both), (3012, 3019))
         self.assertEqual(kitpages.panel_windows((8, 6, 0), both), (3012, 3013))
 
+    def test_no_kit_first(self):
+        """The kit page's rows: NO KIT at the top (the kit the sheet starts with), then the
+        class's three in KITS's order."""
+        ids = [c for c, _, _ in weaponpages._items(self.kit_window(3))]
+        self.assertEqual(ids, [kitpages.KIT_NONE, kitpages.KIT_ROW + 6, kitpages.KIT_ROW + 7, kitpages.KIT_ROW + 8,
+                               weaponpages.BACK])
+
+    def kit_window(self, cls):
+        """CLS's kit page, from a spheres' window of four rows and a button (pictures left out)."""
+        import struct
+        from unittest import mock
+        spheres = bytearray(weaponpages.ITEM_AT + 5 * weaponpages.ITEM_SIZE)
+        struct.pack_into("<I", spheres, 4, len(spheres))
+        struct.pack_into("<H", spheres, weaponpages.WIND_COUNT, 5)
+        for i, cid in enumerate((0x7FA, 0x7FB, 0x7FC, 0x7FD, 0x7FF)):
+            struct.pack_into("<IHH", spheres, weaponpages.ITEM_AT + i * weaponpages.ITEM_SIZE + 8, cid, 7, 15 + 8 * i)
+        resource = {("WIND", weaponpages.SPHERES): bytes(spheres), ("WIND", weaponpages.DISCIPLINES): bytes(spheres),
+                    ("ICON", weaponpages.ROW_TEMPLATE): b"", ("ICON", weaponpages.TOGGLE_TEMPLATE): b"",
+                    ("BUTN", weaponpages.ROW_TEMPLATE): b"", ("BUTN", weaponpages.TOGGLE_TEMPLATE): b""}
+        with mock.patch.object(weaponpages, "glyphs", return_value={}), \
+                mock.patch.object(weaponpages, "_colours", return_value=[1, 2, 3]), \
+                mock.patch.object(weaponpages, "picture", return_value=b"pic"):
+            return kitpages.chunks(resource)[("WIND", kitpages.KIT_WINDOW + cls - 1)]
+
 
 if __name__ == "__main__":
     unittest.main()
