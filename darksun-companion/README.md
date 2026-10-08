@@ -101,7 +101,7 @@ kick up dirt as they walk ([On the screen](#on-the-screen)).
 Quality of life changes: choosing an enemy with Tab and attacking it with Enter,
 scrolling the map with the mouse ([Controls](#controls)), 40 saves and 29 saved
 characters ([More saves and characters](#more-saves-and-characters)), a game
-speed setting ([Game speed](#game-speed)), crash reports, and no copy-protection quiz from the manual ([No manual check](#no-manual-check)).
+speed setting ([Game speed](#game-speed)), crash reports, and no dragon asking for a word from the manual, the game's copy protection ([No manual check](#no-manual-check)).
 
 Nothing in the game folder or your save files is changed, except what play
 writes there: save pages 2 to 4 as files of their own beside the game's,
