@@ -341,7 +341,7 @@ class Viewer:
                                           "(chosen on the creation panel's WEAPON SPEC pages)"),
                 ("kits", "Kits: a character of one class may take one of its class's three kits, each "
                          "giving something and costing something (chosen on the creation panel's KIT "
-                         "page; being built: chosen and shown, no effects yet)"),
+                         "page; being built: half of them work so far, the guide's Kits says which)"),
                 ("class_restrictions", "Class restrictions on armour, shields and weapons, the strictest class "
                                        "winning (psionicists, multiclass thieves, preservers, druids, clerics' "
                                        "spheres); a multiclass preserver casts no spells in armour"),

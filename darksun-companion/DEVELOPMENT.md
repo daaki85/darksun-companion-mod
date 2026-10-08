@@ -1056,39 +1056,40 @@ The Effects screen's lower panel (`PROBE_EF_ROWS`) has the kit's line first,
 `KIT: RAIDER`, before the weapon specs; the Characters tab has `Kit: Raider`
 (`GameData.kit`).
 
-Still to do: the Brute's and the Wanderer's scores are changed in the sheet
-being made (the creation sheet's pointer, `DS:119Ch`) when the kit is picked
-and back when it isn't, within the race's limits; the dice log names the
-kit where it changes a roll (`+1 Raider`).
+The kits' score changes are made when the character is first played, not on
+the creation screen (the game keeps no record of which scores the player
+rolled, so a change made there couldn't be taken back cleanly when the kit is).
 
 ### Where each effect goes
 
-Already hooked:
+Built (step 2). `KIT_ID` gives a sheet's kit as one number (the creation
+class × 4 + the kit: `kitpages.kit_id`), `KIT_OF_CREATURE` a creature's; each
+effect has its twin in `kits.py`, which the Ledger and the dice log use, and
+emulated tests hold the helper to it:
 
-| Effect | Kits | Hook |
+| Effect | Kits | Where |
 |---|---|---|
-| to hit and damage with a weapon | Raider (melee), Arena Champion | `INT D1h`, `INT D0h` (weapon specialization's) |
-| open ground or underground | Arena Champion | the regions and the map's floors, as for daylight (`stealth.py`) |
-| AC | Sentinel, Raider, Grove Warden | `INT F8h` (the ring's AC) |
-| movement | Raider, Stalker | `INT FBh` (boots) |
-| saves, by kind of spell | Myrmidon, Sentinel | `INT F9h`, `INT 61h` |
-| thief skills | Swashbuckler, Stalker | `INT E4h`; hiding and moving silently are the Ledger's own rolls |
-| hiding in daylight | Assassin | `stealth.py` |
-| weapons and armour allowed | Twin-blade, Brute, Grove Warden, Lifebinder, Stalker, Seeker, Battle Mage (and nothing in the off hand), Shinobi | `CLASS_FORBIDS`, `restrict.py` |
-| spells in armour | Battle Mage, Shinobi (light armour) | `INT CCh`, the multiclass preserver's no spells in armour (`PROBE_NO_CAST`) |
-| the two-weapon penalty | Twin-blade | `INT FEh` |
-| hit dice | Battle Mage, Mind Warrior | `INT E6h`, `INT CBh` |
-| weapon specs: how many, which, how far | Myrmidon (the second to grand mastery), Brute, Justifier, Battle Mage (one-handed kinds) | the creation pages, `KINDS_ALLOWED`, `SPEC_OF_SHEET` |
+| damage with a weapon | Raider (melee), Arena Champion | `PROBE_SPEC_DAMAGE` (`KIT_ATTACK_DAMAGE`), and the DAM lines (`PROBE_DAM_LINE`, `PROBE_VIEW_DAM`: `KIT_MELEE`) |
+| to hit | Arena Champion | `PROBE_ATTACKS` (`KIT_CHAMPION`) |
+| open ground or not | Arena Champion | the dice log's `stealth.daylight`, four times a second, in the header's `GROUND_OPEN` and `GROUND_ROOF` (+272, +274: a bit by sheet) |
+| AC | Raider, Sentinel, Grove Warden | `PROBE_AC` (`INT 62h`, the end of the AC routine: `KIT_AC`) |
+| movement | Raider, Stalker | `PROBE_MOVE` (`KIT_MOVE`) |
+| initiative | Sentinel | `PROBE_INIT` (`INT B8h`, new: the round's 20 added at DSUN.EXE 5750Eh) |
+| saves | Myrmidon (charms), Sentinel (spells, 0-137) | `PROBE_RING_SAVE` (the modifier routine's start: `KIT_SAVE`) |
+| pick pockets, open locks | Assassin | `PROBE_BELT` (the thief skill routine's end) |
+| hiding, moving silently | Stalker, Assassin | the stealth rule's rolls (`stealth.py`, `GameData.ranger_skill_parts`) |
+| the two-weapon penalty | Twin-blade | `PROBE_TWO` |
+| gear allowed | Twin-blade, Brute, Stalker, Grove Warden, Lifebinder | `PROBE_CAN_USE` and `KINDS_ALLOWED` (`KIT_FORBIDS`: `restrict.kit_forbids`), whatever the class restrictions |
+| weapon specs | Myrmidon (two, the second to grand mastery), Brute (no missile spec) | `WP_TWO`, `SPEC_OF_SHEET`, `KIT_FORBIDS` |
+| scores | Brute, Wanderer, Arcanist | `kits.finish_new`, once, before the character is first played (the sheet's `+45h` marks it) |
 
-A new hook at a place already found:
+Still to build, a new hook at a place already found:
 
 | Effect | Kits | Where |
 |---|---|---|
 | THAC0 | Swashbuckler, Crusader, Battle Mage, Mind Warrior | the game writes a creature's THAC0 (`mov es:[bx+1Fh],al`) after one routine, at DSUN.EXE 66CE0h, 86D7Eh and 87A91h |
-| initiative | Sentinel | the roll's code (`INITIATIVE_ROLL` in `dicelog.py`) |
 | spell slots | Elementalist, Crusader, Battle Mage, Arcanist, Seeker, Justifier | the slots given on resting (5E0ACh) and the classes' rule words, which `GameData.max_spell_slots` reads |
 | max PSP | Mind Warrior | the level-up's sum at 873B2h |
-| scores at creation | Brute, Wanderer, Arcanist | the creation sheet (`DS:119Ch`) |
 | spells learnt at a level up | Scholar, Shinobi (one, from its list) | the CHOOSE A SPELL screen (see levels up to 10) |
 
 Still to find:
@@ -1110,9 +1111,10 @@ helper's code (emulated) to the Python.
 
 1. Done: the ring out of the segment, the memory measured; the kit's byte, the
    KIT page, the Effects screen's line, the Characters tab, the rule switch.
-2. The kits on hooks there already: Raider, Sentinel (with an initiative
-   hook), Myrmidon, Arena Champion, Twin-blade, Brute, Stalker, Assassin,
-   Grove Warden, Wanderer, Arcanist's CON.
+2. Done: the kits on hooks there already: Raider, Sentinel (with an
+   initiative hook), Myrmidon, Arena Champion, Twin-blade, Brute, Stalker,
+   Assassin, Grove Warden, Wanderer, Arcanist's CON, Lifebinder's weapons; and
+   the ring at 96 entries, for room in upper memory.
 3. THAC0 and spell slot hooks: Swashbuckler, Crusader, Battle Mage, Mind
    Warrior, Arcanist, Elementalist, Justifier, Seeker, Scholar.
 4. After finding them: PSP costs (Mind Bender, Kineticist), spell dice

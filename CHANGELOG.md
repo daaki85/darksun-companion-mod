@@ -20,11 +20,20 @@ Released pull requests are summarised in a line or two each; the release notes
   end of the panel's pages: the disciplines' for a class with no sphere, the
   spheres' for a cleric, druid or ranger, the last weapon page for a warrior
   with weapon specialization), NO KIT first and what a new character has, the
-rows not chosen greyed as the spheres' are. The
-kit is kept with the character (sheet
-  `+43h`), and the Effects screen (`KIT: RAIDER`) and the Ledger's
-  Characters tab name it. A new switch on the Options tab, under Rule changes.
-  The kits have no effects yet.
+  rows not chosen greyed as the spheres' are. The kit is kept with the
+  character (sheet `+43h`), and the Effects screen (`KIT: RAIDER`) and the
+  Ledger's Characters tab name it. A new switch on the Options tab, under Rule
+  changes.
+- **Kits that work so far:** the Myrmidon, Sentinel and Raider (fighter); the
+  Arena Champion, Twin-blade and Brute (gladiator); the Stalker (ranger); the
+  Assassin (thief); the Grove Warden and Wanderer (druid); the Arcanist's CON
+  and the Lifebinder's weapons. The guide's Kits has what each does. The dice
+  log and the Ledger show each kit's part; a new probe in the game (INT B8h)
+  makes the Sentinel's initiative.
+
+**Changed** (for the kits)
+- **The dice log's ring holds 96 entries** (was 128), making room in upper
+  memory for the kits' code.
 
 **Documentation**
 - **Kits, planned:** DEVELOPMENT.md has the design for kits (three for each
