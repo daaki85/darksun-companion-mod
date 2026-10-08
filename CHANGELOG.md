@@ -40,6 +40,10 @@ Released pull requests are summarised in a line or two each; the release notes
   behind, the Seeker's and Justifier's priest slots their own tables, through
   two new probes in the game's slot routine (INT B6h, INT B5h); the Ledger's
   Spells tab counts them the same way.
+- **Kits' PSP:** the Mind Bender's telepathy powers (the defence modes too)
+  cost 2 PSP less and its psychokinesis 2 more, the Kineticist's the other way
+  about, through three new probes where the game prices a power (INT B4h,
+  B3h, B2h).
 
 **Changed** (for the kits)
 - **The dice log's ring holds 96 entries** (was 128), making room in upper

@@ -2781,6 +2781,63 @@ class KitTests(unittest.TestCase):
         self.mu.emu_start(CALLER * 16 + 0x600, CALLER * 16 + 0x604)
         self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), 7)
 
+    PSP_CASES = ((12, 1), (12, 3), (12, 2), (12, 0), (11, 1))
+
+    def run_int(self, vector, handler_hex, code_len, **regs):
+        """INT VECTOR (its handler found by HANDLER_HEX) and the NOPs after it, CODE_LEN in all, run
+        from a call site of its own (the emulator keeps code it has seen)."""
+        at = self.image.find(bytes.fromhex(handler_hex))
+        self.assertGreater(at, 0)
+        self.mu.mem_write(vector * 4, struct.pack("<HH", at, TSR))
+        if not getattr(self, "hooked", False):
+            self.mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
+            self.hooked = True
+        site = 0x400 + (vector & 0x1F) * 0x10
+        self.mu.mem_write(CALLER * 16 + site, bytes((0xCD, vector)) + b"\x90" * (code_len - 2))
+        for name, value in dict(cs=CALLER, ds=self.DS, ss=SS, esp=0x7FC, ebp=BP, eflags=IF | 2, **regs).items():
+            self.mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+        self.mu.emu_start(CALLER * 16 + site, CALLER * 16 + site + code_len, count=20000)
+        self.assertEqual((self.mu.reg_read(r.UC_X86_REG_IP), self.mu.reg_read(r.UC_X86_REG_SP)),
+                         (site + code_len, 0x7FC))
+
+    def test_psp(self):
+        """PROBE_PSP_USE (DI), PROBE_PSP_TABLE (AL from the table) and PROBE_PSP_DEFENCE (AX taken
+        off the record's PSP) as kits.psp_cost: a Mind Bender's telepathy 2 less and psychokinesis
+        2 more, a Kineticist's the other way, psychometabolism as it is; kits off, the game's."""
+        from dscompanion import kits
+        from dscompanion.gamepatch import VEC_PSP_USE, VEC_PSP_TABLE, VEC_PSP_DEFENCE
+        table = 0x8500
+        for rules in (game.RULE_KITS, 0):
+            self.rules(rules)
+            for cls, kit in self.PSP_CASES:
+                kid = self.kit_of(cls, kit, rules)
+                self.creature(cls, kit)  # (combatant 7, creature 5)
+                for power in (0, 5, 6, 19, 20, 33):
+                    for cost in (0, 1, 2, 9):
+                        with self.subTest(rules=rules, cls=cls, kit=kit, power=power, cost=cost):
+                            want = kits.psp_cost(kid, power, cost)
+                            self.mu.mem_write(SS * 16 + BP + 0x0A, struct.pack("<H", power))
+                            self.run_int(VEC_PSP_USE, "505389f88b5e0a", 6, esi=7, edi=cost, eax=0x1111,
+                                         ebx=0x2222)
+                            self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_DI, r.UC_X86_REG_AX,
+                                                                            r.UC_X86_REG_BX)], [want, 0x1111, 0x2222])
+                            self.mu.mem_write(table * 16 + power * 8 + 1, bytes((cost,)))
+                            self.run_int(VEC_PSP_TABLE, "535188e5260fb64701", 5, esi=7, eax=0x7700, es=table,
+                                         ebx=power * 8)
+                            self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), 0x7700 | want)
+                            self.assertEqual(self.mu.reg_read(r.UC_X86_REG_BX), power * 8)
+                            if power != 20:
+                                continue
+                            rec = self.CREATURES * 16 + 5 * 0x3A
+                            self.mu.mem_write(rec + 2, struct.pack("<h", 50))
+                            self.mu.mem_write(SS * 16 + BP - 6, struct.pack("<H", 5))
+                            self.run_int(VEC_PSP_DEFENCE, "535189c18b46fa", 4, eax=cost, es=self.CREATURES,
+                                         ebx=5 * 0x3A, ecx=0x3333)
+                            self.assertEqual(struct.unpack("<h", self.mu.mem_read(rec + 2, 2))[0], 50 - want)
+                            self.assertEqual(self.mu.reg_read(r.UC_X86_REG_CX), 0x3333)
+        self.assertEqual([kits.psp_cost(kits.MIND_BENDER, p, 9) for p in (0, 6, 20)], [11, 9, 7])
+        self.assertEqual([kits.psp_cost(kits.KINETICIST, p, 2) for p in (0, 6, 20)], [1, 2, 4])
+
     def test_kit_id(self):
         from dscompanion import kitpages
         self.rules(game.RULE_KITS)

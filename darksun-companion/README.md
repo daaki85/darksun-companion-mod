@@ -1633,9 +1633,15 @@ and costs something.
 | **Justifier** (ranger) | *to come:* the bow's and its weapon spec's expertise become specialization | one 1st-level priest spell slot from 10th level, in place of a ranger's slots |
 | **Battle Mage** (preserver) | a warrior's THAC0; *to come:* a d6 hit die, expertise in a one-handed melee weapon, spells cast in light armour | one fewer spell slot at each spell level; *to come:* nothing in the off hand |
 | **Mind Warrior** (psionicist) | a warrior's THAC0; *to come:* a d8 hit die | *to come:* a tenth fewer PSP |
+| **Mind Bender** (psionicist) | telepathy powers (the defence modes too) cost 2 PSP less to use | psychokinesis powers cost 2 PSP more |
+| **Kineticist** (psionicist) | psychokinesis powers cost 2 PSP less to use | telepathy powers (the defence modes too) cost 2 PSP more |
 
-Still to come: the Healer (cleric), the Shinobi's spells (thief), the Mind
-Bender and Kineticist (psionicist), and the parts marked *to come* above.
+Still to come: the Healer (cleric), the Shinobi's spells (thief), and the
+parts marked *to come* above.
+
+The Mind Bender's and Kineticist's PSP is the cost to use a power, never less
+than 1; keeping a power up round after round costs what it always did, and
+psychometabolism is as it was.
 
 The kits' spell slots are the game's own wherever it counts them (on resting,
 in the spell lists), and the Ledger's Spells tab shows the same. WIS's bonus

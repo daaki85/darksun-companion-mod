@@ -102,6 +102,9 @@ VEC_INIT equ 0xB8          ; PROBE_INIT
 VEC_THAC0 equ 0xB7         ; PROBE_THAC0
 VEC_SLOTS equ 0xB6         ; PROBE_SLOTS
 VEC_SLOT_LEVEL equ 0xB5    ; PROBE_SLOT_LEVEL
+VEC_PSP_USE equ 0xB4       ; PROBE_PSP_USE
+VEC_PSP_TABLE equ 0xB3     ; PROBE_PSP_TABLE
+VEC_PSP_DEFENCE equ 0xB2   ; PROBE_PSP_DEFENCE
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 96          ; entries in the ring (96: the helper and it fit in upper memory)
@@ -4702,6 +4705,107 @@ probe_slot_level:
 .out:   mov ah, ch
         pop cx
         pop bx
+        iret
+
+; KIT_PSP: AX the PSP a power (BX, 0-33: psychokinesis to 5, psychometabolism to 19, telepathy
+; from 20) costs combatant SI to use, from the game's AX (kits.psp_cost): a Mind Bender's telepathy
+; 2 less, its psychokinesis 2 more, a Kineticist's the other way about, never below 1 (a cost of
+; 0 or less as it was). KIT_PSP_OF: the same for the kit in CL. DS the game's; others kept.
+PSP_PK_LAST  equ 5
+PSP_TP_FIRST equ 20
+kit_psp:
+        push cx
+        push es
+        mov cx, ax
+        mov ax, ds
+        add ax, THINGS_SEG
+        mov es, ax
+        push bx
+        imul bx, si, 3
+        mov ax, [es:bx + COMBATANT_CREATURE]
+        pop bx
+        call kit_of_creature
+        xchg ax, cx             ; (CL the kit, AX the cost)
+        call kit_psp_of
+        pop es
+        pop cx
+        ret
+kit_psp_of:
+        or ax, ax
+        jle .ret
+        push dx
+        xor dx, dx              ; DX what the kit adds to telepathy (psychokinesis the opposite)
+        cmp cl, KIT_MIND_BENDER
+        jne .kineticist
+        mov dx, -2
+        jmp .discipline
+.kineticist:
+        cmp cl, KIT_KINETICIST
+        jne .out
+        mov dx, 2
+.discipline:
+        cmp bx, PSP_TP_FIRST
+        jae .add
+        neg dx
+        cmp bx, PSP_PK_LAST
+        jbe .add
+        xor dx, dx              ; (psychometabolism: as it was)
+.add:   add ax, dx
+        cmp ax, 1
+        jge .out
+        mov ax, 1
+.out:   pop dx
+.ret:   ret
+
+; PROBE_PSP_USE: INT VEC_PSP_USE replaces "or di,di / jge $+4 / xor di,di" (6 bytes: INT + 4
+; NOPs; DSUN.EXE 5CBE7h) where the routine using a power has its cost in DI (SI the combatant,
+; [BP+0Ah] the power: its table's, or worked out for Enhanced Strength and Domination): DI the
+; kit's (KIT_PSP), no less than 0.
+probe_psp_use:
+        push ax
+        push bx
+        mov ax, di
+        mov bx, [bp + 0x0A]
+        call kit_psp
+        or ax, ax
+        jge .set
+        xor ax, ax
+.set:   mov di, ax
+        pop bx
+        pop ax
+        iret
+
+; PROBE_PSP_TABLE: INT VEC_PSP_TABLE replaces "mov al,es:[bx+1]" (5 bytes: INT + 3 NOPs) where the
+; game reads a power's cost from its table (ES:BX the power's row, 8 bytes a power; SI the
+; combatant): in the check whether a power can be used (DSUN.EXE 5CAA3h) and where half of it is
+; taken for a power that fails (5CCA2h). AL the kit's (KIT_PSP); AH as it was.
+probe_psp_table:
+        push bx
+        push cx
+        mov ch, ah
+        movzx ax, byte [es:bx + 1]
+        shr bx, 3
+        call kit_psp
+        mov ah, ch
+        pop cx
+        pop bx
+        iret
+
+; PROBE_PSP_DEFENCE: INT VEC_PSP_DEFENCE replaces "sub es:[bx+2],ax" (4 bytes: INT + 2 NOPs;
+; DSUN.EXE 5D820h) where a creature (ES:BX its record, [BP-6] its number) pays AX for the psionic
+; defence it raises: the kit's (KIT_PSP_OF; the defences are all telepathy), then taken off.
+probe_psp_defence:
+        push bx
+        push cx
+        mov cx, ax
+        mov ax, [bp - 6]
+        call kit_of_creature
+        xchg ax, cx             ; (CL the kit, AX the cost)
+        mov bx, PSP_TP_FIRST
+        call kit_psp_of
+        pop cx
+        pop bx
+        sub [es:bx + 2], ax
         iret
 
 ; KIT_SAVE: SI (a saving throw's modifiers) with the kit's of the one saving (thing DI) against
@@ -9690,6 +9794,15 @@ install:                        ; DS = ES = PSP, CS = the image
         int 21h
         mov ax, 2500h + VEC_SLOT_LEVEL
         mov dx, probe_slot_level
+        int 21h
+        mov ax, 2500h + VEC_PSP_USE
+        mov dx, probe_psp_use
+        int 21h
+        mov ax, 2500h + VEC_PSP_TABLE
+        mov dx, probe_psp_table
+        int 21h
+        mov ax, 2500h + VEC_PSP_DEFENCE
+        mov dx, probe_psp_defence
         int 21h
         mov ax, 3516h           ; the keyboard's (TARGETING)
         int 21h

@@ -66,6 +66,7 @@ VEC_TOME = 0xB9
 VEC_INIT = 0xB8
 VEC_THAC0 = 0xB7
 VEC_SLOTS, VEC_SLOT_LEVEL = 0xB6, 0xB5
+VEC_PSP_USE, VEC_PSP_TABLE, VEC_PSP_DEFENCE = 0xB4, 0xB3, 0xB2
 
 
 SCRIPT_BUFFER = 0x2E00  # the scripts' buffer, made bigger (the game's: 10000 bytes)
@@ -342,6 +343,12 @@ PATCHES = (
     # the spell slot routine: a kit's slots (kits.slots), and the level an Elementalist's count from
     Patch("slots", 0x5E255, bytes.fromhex("8b46fe"), _interrupt(VEC_SLOTS, 3)),
     Patch("slot_level", 0x5E1F6, bytes.fromhex("268a4724"), _interrupt(VEC_SLOT_LEVEL, 4)),
+    # a psionic power's PSP: a kit's cost (kits.psp_cost) where it's used, checked, half taken for
+    # a failure, and for a defence raised
+    Patch("psp_use", 0x5CBE7, bytes.fromhex("0bff7d0233ff"), _interrupt(VEC_PSP_USE, 6)),
+    Patch("psp_can_use", 0x5CAA3, bytes.fromhex("268a870100"), _interrupt(VEC_PSP_TABLE, 5)),
+    Patch("psp_failed", 0x5CCA2, bytes.fromhex("268a870100"), _interrupt(VEC_PSP_TABLE, 5)),
+    Patch("psp_defence", 0x5D820, bytes.fromhex("26294702"), _interrupt(VEC_PSP_DEFENCE, 4)),
     # A bug of the game's own: the roster's DELETE (DSUN.EXE 54AC1h) picked the character by the
     # row clicked alone, where ADD takes the row plus how far the list is scrolled; with the list
     # scrolled, another character was deleted (the row's from the top). The same code, the scroll

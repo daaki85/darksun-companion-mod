@@ -19,6 +19,10 @@ WIZARD, PRIEST = 1, 2  # (the kinds of magic, as game.MAGIC_KINDS has their bits
 # SEEKER_SLOTS); a Justifier's one 1st-level slot from 10th level
 SEEKER_SLOTS = ((1, 0, 0), (2, 0, 0), (2, 1, 0), (2, 2, 0), (2, 2, 1))
 SEEKER_FIRST, JUSTIFIER_FIRST = 6, 10
+MIND_BENDER, KINETICIST = KIT_IDS["Mind Bender"], KIT_IDS["Kineticist"]
+# the psionic powers' disciplines, by power (0-33: spells 138-171): psychokinesis to PK_LAST,
+# psychometabolism, telepathy from TP_FIRST (the defences among them)
+PK_LAST, TP_FIRST = 5, 20
 # the kits with a warrior's THAC0 (PROBE_THAC0)
 WARRIOR_THAC0 = frozenset((SWASHBUCKLER, CRUSADER, BATTLE_MAGE, MIND_WARRIOR))
 TWIN_BLADE, BRUTE = KIT_IDS["Twin-blade"], KIT_IDS["Brute"]
@@ -113,6 +117,20 @@ def slots(kid: int, magic: int, level: int, spell_level: int, game_slots: int) -
             return 0
         return SEEKER_SLOTS[min(level, SEEKER_FIRST + len(SEEKER_SLOTS) - 1) - SEEKER_FIRST][spell_level - 1]
     return game_slots
+
+
+def psp_cost(kid: int, power: int, cost: int) -> int:
+    """The PSP power POWER (0-33) costs a character of kit KID to use, the game asking COST
+    (KIT_PSP): a Mind Bender's telepathy 2 less and its psychokinesis 2 more, a Kineticist's the
+    other way about, never below 1; psychometabolism, and a cost of 0, as they are."""
+    if cost <= 0 or kid not in (MIND_BENDER, KINETICIST):
+        return cost
+    change = -2 if kid == MIND_BENDER else 2
+    if power <= PK_LAST:
+        change = -change
+    elif power < TP_FIRST:
+        change = 0
+    return max(1, cost + change)
 
 
 def move(kid: int) -> int:
