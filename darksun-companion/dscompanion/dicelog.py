@@ -24,7 +24,7 @@ from collections import Counter, deque
 from dataclasses import dataclass
 from typing import Callable, Deque, Dict, List, NamedTuple, Optional, Tuple
 
-from . import defaultparty, dust, game, rings, targeting, icons, kalzith, monsters, names, pickpocket, ring, scrolling, searches, semyon, shadows, specialize, sprites, stealth, tools, vulture, weaponchoice
+from . import defaultparty, dust, game, kits, rings, targeting, icons, kalzith, monsters, names, pickpocket, ring, scrolling, searches, semyon, shadows, specialize, sprites, stealth, tools, vulture, weaponchoice
 from .game import (CONVENTIONAL_AND_UPPER, CREATURE_ABILITIES, CREATURE_SIDE, CREATURE_THAC0, EFFECT_NAMES,
                    EFFECT_RULES, MATERIAL_TO_HIT, MATERIALS, SAVE_NAMES, STR_DAMAGE, GameData)
 from .guestmem import GuestMemory
@@ -1558,6 +1558,9 @@ class DiceLog:
                 parts.append((dex, "DEX"))
             ids = {x.id for x in effects if x.owner == combatant and x.id in game.INITIATIVE_EFFECTS}
             parts += [(game.INITIATIVE_EFFECTS[eid], EFFECT_NAMES[eid]) for eid in sorted(ids)]
+            kid = g.kit_id(index)
+            if kits.initiative(kid):
+                parts.append((kits.initiative(kid), kits.name(kid)))
             score = INITIATIVE_BASE + roll + sum(v for v, _ in parts)
             stored = table[index][0]
             if stored >= 0 and stored != score:  # not acted yet, and something else counted
@@ -1836,8 +1839,11 @@ class DiceLog:
         total = max(sum(faces) + bonus, 1)
         skill = self.weapon_skill(attacker, e.parent_arg(0x14))
         extra = specialize.damage(skill)
-        steps = f"{count}d{sides} = {faces_text}" + (f" {signed(bonus - extra)} weapon" if bonus - extra else "") \
-            + (f" {signed(extra)} {specialize.SKILL_NAMES[skill]}" if extra else "")
+        kid = g.kit_id(attacker) if attacker is not None else 0
+        kit = kits.melee_damage(kid) if mode is not None and mode <= 1 and not g.missile_type(e.parent_arg(0x14)) else 0
+        steps = f"{count}d{sides} = {faces_text}" + (f" {signed(bonus - extra - kit)} weapon" if bonus - extra - kit else "") \
+            + (f" {signed(extra)} {specialize.SKILL_NAMES[skill]}" if extra else "") \
+            + (f" {signed(kit)} {kits.name(kid)}" if kit else "")
         if skill == specialize.GRAND:
             steps += f" (d{sides} for d{sides - 2}: grand mastery)"
         if sum(faces) + bonus < 1:

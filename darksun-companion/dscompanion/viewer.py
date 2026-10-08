@@ -17,7 +17,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from typing import Callable, Dict, List, Optional, Set, Tuple
 
-from . import __version__, art, dicelog, game, launch, partyview, rings, spellbook, theme, values
+from . import __version__, art, dicelog, game, kits, launch, partyview, rings, spellbook, theme, values
 from .dicelog import DiceLog, DiceLogError
 from .guestmem import GuestMemory
 from .layout import Layout
@@ -1211,10 +1211,11 @@ class Viewer:
                 weapons = gd.specializations(index) if known and index < game.PARTY_SIZE else []
                 no_spells = bool(known and index < game.PARTY_SIZE and gd.no_spells(index))
                 kit = gd.kit(index) if known and index < game.PARTY_SIZE else None
+                kit_move = kits.move(gd.kit_id(index)) if kit else 0
             except (struct.error, IndexError, ValueError):
-                weapons, no_spells, kit = [], False, None
+                weapons, no_spells, kit, kit_move = [], False, None, 0
             card.show(name, dict(fields), status, ac, self.art, member_slots, thief, equipment, hits, saves, boots,
-                      skills_label=label, weapons=weapons, no_spells=no_spells, kit=kit)
+                      skills_label=label, weapons=weapons, no_spells=no_spells, kit=kit, kit_move=kit_move)
 
     def _hex_base(self) -> Optional[int]:
         record = self.layout.records.get(self.hex_record.get())

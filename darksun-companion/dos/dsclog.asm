@@ -98,6 +98,7 @@ VEC_PK_CLICK equ 0xBC      ; PROBE_PK_CLICK
 VEC_EF_ROWS equ 0xBB       ; PROBE_EF_ROWS
 VEC_HP_BEST equ 0xBA       ; PROBE_HP_BEST
 VEC_TOME equ 0xB9          ; PROBE_TOME
+VEC_INIT equ 0xB8          ; PROBE_INIT
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 96          ; entries in the ring (96: the helper and it fit in upper memory)
@@ -506,6 +507,7 @@ probe_ac:
         push si                 ; the game's SI is part of the AC
         mov ax, [bp-6]
         add ax, si
+        call kit_ac
         mov si, sp
         sub si, 4
         mov word [cs:kind], 2
@@ -2355,6 +2357,9 @@ probe_ring_save:
         les bx, [bp+2]
         mov ax, [es:bx+6]       ; the things table's segment: the code after the patch is
         call ring_plus          ; "mov bx,di / imul bx,bx,3 / mov ax,<segment>"
+        mov bx, [bp]            ; (the routine's frame: [BP+14h] the spell)
+        mov ax, [ss:bx + 0x14]
+        call kit_save
         pop es
         pop dx
         pop cx
@@ -2677,6 +2682,7 @@ missile_rate:
 
 probe_spec_damage:
         add [bp - 0x12], ax
+        call kit_attack_damage
         test word [cs:rules], RULE_SPECIALIZE
         jz .done
         push dx
@@ -2699,11 +2705,18 @@ probe_spec_damage:
 ; and their count pushed (under the INT's return, in that order up). With RULE_SPECIALIZE, the
 ; attacks as PROBE_ATTACKS gives them, and the bonus and sides as PROBE_SPEC_DAMAGE does.
 probe_dam_line:
+        push bp
+        mov bp, sp              ; BP+8 the count, +0Ah the sides, +0Ch the bonus
+        push ax
+        call kit_melee          ; (a Raider's +1)
+        add [bp + 0x0C], ax
+        pop ax
+        pop bp
         mov al, [es:bx + 0x2a]
         test word [cs:rules], RULE_SPECIALIZE
         jz .done
         push bp
-        mov bp, sp              ; BP+8 the count, +0Ah the sides, +0Ch the bonus
+        mov bp, sp
         push dx
         call spec_of_sheet
         cmp al, 2
@@ -2737,7 +2750,7 @@ probe_dam_line:
 VIEW_DAM_WHO equ 0x84           ; that operand, back from the INT's return
 probe_view_dam:
         mov [bp - 0x0E], dx
-        test word [cs:rules], RULE_SPECIALIZE
+        call wp_rules
         jz .done
         push ax
         push bx
@@ -2758,6 +2771,13 @@ probe_view_dam:
         imul ax, ax, 0x47
         les bx, [0x1661]
         add bx, ax
+        push ax
+        call kit_melee          ; (a Raider's +1, the rule for kits being on)
+        add [bp - 0x0E], ax
+        pop ax
+        mov dl, SPEC_NONE
+        test word [cs:rules], RULE_SPECIALIZE
+        jz .bonus
         call spec_of_sheet
         mov ax, si              ; a missile weapon (the type's +0, 2) keeps its rate
         imul ax, ax, 0x14
@@ -4142,6 +4162,166 @@ kit_of_creature:
         pop bx
         ret
 
+; KIT_AC: AX (the AC the game's AC routine has for its creature, whose thing is its [BP+6]) with
+; the creature's kit's: a Raider's 1 worse, a Sentinel's 2 better with a shield in a hand. DS the
+; game's; others kept.
+kit_ac:
+        test word [cs:rules_hi], RULE_HI_KITS
+        jz .ret
+        push bx
+        push cx
+        push es
+        mov cx, ax
+        mov ax, ds
+        add ax, THINGS_SEG
+        mov es, ax
+        mov bx, [bp + 6]
+        imul bx, bx, 3
+        cmp byte [es:bx + THINGS], 2
+        jne .out                ; (not a creature)
+        mov ax, [es:bx + THINGS + 1]
+        call kit_of_creature
+        cmp al, KIT_RAIDER
+        jne .sentinel
+        inc cx
+        jmp .out
+.sentinel:
+        cmp al, KIT_SENTINEL
+        jne .out
+        push di
+        mov di, [bp + 6]
+        mov [cs:r_things], es
+        call prot_scan
+        pop di
+        jc .out
+        test byte [cs:p_flags], P_SHIELD
+        jz .out
+        sub cx, 2
+.out:   mov ax, cx
+        pop es
+        pop cx
+        pop bx
+.ret:   ret
+
+; KIT_MELEE: AX the damage the kit of sheet ES:BX adds with item type SI unless it is a missile
+; weapon's (its type's +0, bit 2): a Raider's 1; else 0. DS the game's; others kept.
+kit_melee:
+        call kit_id
+        cmp al, KIT_RAIDER
+        jne .none
+        push bx
+        push es
+        les bx, [ITEM_TYPES]
+        imul ax, si, 0x14
+        add bx, ax
+        test byte [es:bx], 2
+        pop es
+        pop bx
+        jnz .none
+        mov ax, 1
+        ret
+.none:  xor ax, ax
+        ret
+
+; KIT_ATTACK_DAMAGE: the weapon attack's damage bonus ([BP-12h]) with the attacker's kit's
+; (KIT_MELEE, for a melee attack: [BP+16h] 1 or less; the sheet [BP+10h], the item type
+; [BP+14h]). All registers kept.
+kit_attack_damage:
+        cmp word [bp + 0x16], 1
+        jg .ret
+        push ax
+        push bx
+        push si
+        push es
+        les bx, [0x1661]
+        imul ax, [bp + 0x10], 0x47
+        add bx, ax
+        mov si, [bp + 0x14]
+        call kit_melee
+        add [bp - 0x12], ax
+        pop es
+        pop si
+        pop bx
+        pop ax
+.ret:   ret
+
+; PROBE_INIT: INT VEC_INIT replaces "add dx,14h" (3 bytes: INT + NOP; DSUN.EXE 5750Eh) where a
+; combatant's initiative for the round is made (DX the 0-9 roll and its adjustments, SI the
+; creature): the game's 20 added, and a Sentinel's 2 more (kits.initiative).
+probe_init:
+        add dx, 20
+        push ax
+        mov ax, si
+        call kit_of_creature
+        cmp al, KIT_SENTINEL
+        jne .out
+        add dx, 2
+.out:   pop ax
+        iret
+
+; KIT_SAVE: SI (a saving throw's modifiers) with the kit's of the one saving (thing DI) against
+; spell AX: a Sentinel's -1 against a wizard's or priest's spell (0-137, not a psionic power or a
+; monster's), a Myrmidon's -4 against a charm (KIT_CHARMS). DS the game's; others kept.
+KIT_SPELL_LAST equ 137
+kit_save:
+        push ax
+        push bx
+        push cx
+        push es
+        mov cx, ax
+        mov ax, ds
+        add ax, THINGS_SEG
+        mov es, ax
+        mov bx, di
+        imul bx, bx, 3
+        cmp byte [es:bx + THINGS], 2
+        jne .out                ; (not a creature)
+        mov ax, [es:bx + THINGS + 1]
+        call kit_of_creature
+        cmp al, KIT_SENTINEL
+        jne .myrmidon
+        cmp cx, KIT_SPELL_LAST
+        ja .out
+        dec si
+        jmp .out
+.myrmidon:
+        cmp al, KIT_MYRMIDON
+        jne .out
+        mov bx, kit_charms
+.charm: cmp [cs:bx], cx
+        je .charmed
+        add bx, 2
+        cmp bx, kit_charms_end
+        jb .charm
+        jmp .out
+.charmed:
+        sub si, 4
+.out:   pop es
+        pop cx
+        pop bx
+        pop ax
+        ret
+; the charms (kits.CHARMS): Charm Person, Charm Monster, Domination, Charm Person or Mammal, and
+; the psionic Domination and Mass Domination
+kit_charms dw 2, 40, 61, 82, 158, 159
+kit_charms_end:
+
+; KIT_MOVE: AX (a creature's movement for its turn in a fight, its Move x 10; SI the creature)
+; with its kit's: a Raider's and a Stalker's 2 more. Others kept.
+kit_move:
+        push ax
+        mov ax, si
+        call kit_of_creature
+        cmp al, KIT_RAIDER
+        je .two
+        cmp al, KIT_STALKER
+        jne .none
+.two:   pop ax
+        add ax, 20
+        ret
+.none:  pop ax
+        ret
+
 ; CS:SI on the panel's next line (all registers kept: the game's text routine changes ES)
 ef_line:
         pusha
@@ -5501,6 +5681,7 @@ THINGS_SEG equ 0x3972 - 0x4356  ; the things table's segment, relative to DS
 ; creature's turn in a fight starts: AX = its movement for the turn (its Move x 10), SI the
 ; creature. Does the move, with 10 more for boots on its feet when RULE_BOOTS is on.
 probe_move:
+        call kit_move
         test byte [cs:rules], RULE_BOOTS
         jz .store
         push ax
@@ -8980,6 +9161,9 @@ install:                        ; DS = ES = PSP, CS = the image
         int 21h
         mov ax, 2500h + VEC_EF_ROWS
         mov dx, probe_ef_rows
+        int 21h
+        mov ax, 2500h + VEC_INIT
+        mov dx, probe_init
         int 21h
         mov ax, 3516h           ; the keyboard's (TARGETING)
         int 21h

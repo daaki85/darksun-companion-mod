@@ -992,6 +992,10 @@ class GameData:
         caster_sheet = self.sheet(ci) if ci is not None else b""
         out: List[Tuple[int, str]] = []
         out += self.protection(ti)
+        from . import kits
+        kid = self.kit_id(ti)
+        if kits.save(kid, spell):
+            out.append((kits.save(kid, spell), kits.name(kid)))
         if EFFECT_SAVE_PENALTY in mine:
             out.append((-1, EFFECT_NAMES[EFFECT_SAVE_PENALTY]))
         if EFFECT_SPIRIT_ARMOR in mine and save != PPD_SAVE:
@@ -1433,6 +1437,18 @@ class GameData:
         return any(item[ITEM_SLOT] == slot and len(typ) > 0x0A and typ[0x0A] == 1
                    for _, item, typ in self._worn(creature))
 
+    def missile_type(self, item_type: Optional[int]) -> bool:
+        """A missile weapon's item type (its +00h, bit 2), as DSCLOG's KIT_MELEE tells one."""
+        if item_type is None or not 0 <= item_type < 0x200:
+            return False
+        typ = self.guest.read(far_pointer(self.guest, self.ds, ITEM_TYPES_PTR) + item_type * ITEM_TYPE_SIZE, 1)
+        return bool(typ[0] & 2)
+
+    def holds_shield(self, creature: int) -> bool:
+        """A shield in a hand (as DSCLOG's PROT_SCAN finds one)."""
+        return any(len(typ) == ITEM_TYPE_SIZE and typ[0] & TYPE_SHIELD and item[ITEM_SLOT] in WEAPON_HANDS
+                   for _, item, typ in self._worn(creature))
+
     def wears_boots(self, creature: int) -> bool:
         """Something worn on the feet (with the Options' rule, a move more in a fight)."""
         return any(item[ITEM_SLOT] == FOOT for _, item, _ in self._worn(creature))
@@ -1497,6 +1513,13 @@ class GameData:
         if cloak and not blocked:
             out.append((cloak, "Cloak of Protection"))
         return out
+
+    def kit_id(self, creature: int) -> int:
+        """With kits, the creature's kit as kitpages.kit_id numbers it, else 0."""
+        if not self.rules & RULE_KITS:
+            return 0
+        from . import kitpages
+        return kitpages.kit_id(self.sheet(creature))
 
     def kit(self, creature: int) -> Optional[str]:
         """With kits, the kit the creature took when made (kitpages.KITS), or None."""
