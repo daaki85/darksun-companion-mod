@@ -2324,7 +2324,7 @@ class KitTests(unittest.TestCase):
 
     def test_effects_line(self):
         from dscompanion import kitpages
-        sheets = [(c, 0, kit) for c in range(1, 18) for kit in range(0, 5)] + [(9, 12, 1), (13, 5, 2)]
+        sheets = [(c, 0, kit) for c in range(1, 18) for kit in (0, 1, 2, 3, 4, 0xFF)] + [(9, 12, 1), (13, 5, 2)]
         for rules in (game.RULE_KITS, 0):
             self.rules(rules)
             for c1, c2, kit in sheets:

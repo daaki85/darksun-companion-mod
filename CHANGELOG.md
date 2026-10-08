@@ -19,7 +19,8 @@ Released pull requests are summarised in a line or two each; the release notes
   for its class, or none, on the creation panel's new KIT page (KITS, at the
   end of the panel's pages: the disciplines' for a class with no sphere, the
   spheres' for a cleric, druid or ranger, the last weapon page for a warrior
-  with weapon specialization), NO KIT first and what a new character has. The
+  with weapon specialization), NO KIT first and what a new character has, the
+rows not chosen greyed as the spheres' are. The
 kit is kept with the character (sheet
   `+43h`), and the Effects screen (`KIT: RAIDER`) and the Ledger's
   Characters tab name it. A new switch on the Options tab, under Rule changes.

@@ -3290,6 +3290,7 @@ KIT_ROW      equ 0x870
 KIT_NONE     equ 0x888
 KIT_VIEW     equ 0x889
 KIT_BYTE     equ 0x43
+KIT_OPEN     equ 0xFF               ; (KIT_BYTE while the player has taken the kit back: none chosen)
 WP_DISC      equ 0xEA2              ; DS: the panel's windows (far)
 WP_SPHERE    equ 0xEA6
 WP_DISC_MASK equ 0x4980             ; DS: the disciplines and spheres marked, kept while hidden
@@ -4772,21 +4773,25 @@ wp_page_button:
         call far [cs:wp_far]
 .ret:   ret
 
-; KIT_ROW: kit row AX of the kit page clicked (KIT_NONE: NO KIT): the creation sheet's kit the
-; row's, or none if it was already. DS = the game's.
+; KIT_ROW: kit row AX of the kit page clicked (KIT_NONE: NO KIT), as the game's spheres: with
+; none chosen, the row's kit chosen; the one chosen, taken back (KIT_OPEN: the rows all in use,
+; the sheet with no kit); another, nothing. DS = the game's.
 kit_row:
         les bx, [WP_CREATION]
         xor dl, dl
         cmp ax, KIT_NONE
-        je .put
+        je .row
         sub ax, KIT_ROW
         mov cl, 3
         div cl
         mov dl, ah
         inc dl
-        cmp dl, [es:bx + KIT_BYTE]
-        jne .put
-        xor dl, dl
+.row:   mov dh, [es:bx + KIT_BYTE]
+        cmp dh, KIT_OPEN        ; none chosen: this one
+        je .put
+        cmp dl, dh              ; another, while one is chosen: out of use (nothing)
+        jne kit_marks
+        mov dl, KIT_OPEN        ; the one chosen: taken back, the rest in use again
 .put:   mov [es:bx + KIT_BYTE], dl
 ; KIT_MARKS: the kit page's rows (NO KIT, then the class's three kits) marked as the creation
 ; sheet's kit, the rest not, as WP_MARKS marks a weapon page's
@@ -4809,10 +4814,14 @@ kit_marks:
         mov ax, KIT_NONE
 .kit:   cmp dh, dl
         je .chosen
-        push 3
+        push 3                  ; not chosen: greyed while another is, as the game's spheres
         call wp_button_op
-        push 0
-        call wp_button_op
+        cmp dl, KIT_OPEN
+        je .open
+        push 1
+        jmp .op
+.open:  push 0
+.op:    call wp_button_op
         push 0
         jmp .next
 .chosen:

@@ -957,7 +957,7 @@ header's +270) switches them all off.
 | | Lifebinder | healing spells heal a die more | blunt weapons only |
 | | Wanderer | +1 WIS, +1 CON | −1 CHA, −1 STR |
 | Preserver | Scholar | a spell more learnt at each level up | −1 to hit |
-| | Battle Mage | a warrior's THAC0, a d6 hit die, expertise in one weapon spec (a one-handed warrior's weapon), light armour worn and spells cast in it, spells cast though hit in a fight (if the game stops them) | one fewer spell slot at each spell level; nothing in the off hand |
+| | Battle Mage | a warrior's THAC0, a d6 hit die, expertise in one weapon spec (a one-handed melee weapon: long sword, short sword, dagger, club, mace, axe or pick; no thrown weapon), which it may use as well as a preserver's own weapons; light armour worn and spells cast in it; spells cast though hit in a fight (if the game stops them) | one fewer spell slot at each spell level; nothing in the off hand |
 | | Arcanist | a spell slot more at each spell level | −2 CON |
 | Psionicist | Mind Bender | telepathy powers cost 2 PSP less | psychokinesis powers 2 more |
 | | Mind Warrior | a warrior's THAC0, a d8 hit die | a tenth fewer PSP |
@@ -1037,8 +1037,10 @@ PSIONICS (the weapon pages' `851h`) back to the disciplines. Like the weapon
 pages, it is kept at `DS:EA6h` with the spheres' own routine answering its
 buttons, so `PROBE_WP_SPHERE_CLICK` gets its clicks and `PROBE_WP_SHOWN`
 lets the game close it when another class is clicked. `KIT_ROW` puts the
-kit in the creation sheet's `+43h` (clicked again, none), and `KIT_MARKS`
-marks the rows. The game keeps the whole sheet when DONE is pressed: `+43h`
+kit in the creation sheet's `+43h`, and `KIT_MARKS` marks the rows. As the
+game's spheres do, the rows not chosen are out of use (greyed) while one is;
+the one chosen, clicked, is taken back (`KIT_OPEN`, `FFh`: none chosen, no
+kit), and the rows are all in use again. The game keeps the whole sheet when DONE is pressed: `+43h`
 is in the roster's CHAR record (the sheet at its `+4Eh`). It also keeps the
 creation sheet from one character to the next, so the kit is put back to none
 whenever the disciplines' window is opened other than on the way back to it

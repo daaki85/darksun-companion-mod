@@ -1626,7 +1626,9 @@ the button at the end of the panel's pages: under the psionic disciplines for
 a fighter, gladiator (without weapon specialization), preserver, psionicist
 or thief; under the clerical spheres for a cleric, druid or ranger; on the
 last weapon page for a fighter, gladiator or ranger choosing weapon specs.
-NO KIT, the first row, is what a new character has; click a kit to take it. A few names are shortened to fit the panel
+NO KIT, the first row, is what a new character has. As with the clerical
+spheres, the rows not chosen are greyed: click the marked row to take it back,
+then click the kit you want. A few names are shortened to fit the panel
 (CHAMPION, SWASHBUCK, ELEMENTLST, GRV WARDEN, M-BENDER, M-WARRIOR). Choosing
 another class puts the kit back to none. The Effects screen names the kit
 (`KIT: RAIDER`), as does the Ledger's Characters tab.
