@@ -949,7 +949,7 @@ header's +270) switches them all off.
 | | Seeker | priest spells on the Seeker's table: from 6th level | its sphere's weapon limits (but it keeps the bow) |
 | Thief | Swashbuckler | a warrior's THAC0 | −10 to all thief skills |
 | | Assassin | hiding in shadows isn't halved in daylight | −15 pick pockets and open locks |
-| | Shinobi | preserver spells on the Seeker's table, cast in light armour too | the Seeker's few slots; its own short list of spells, one learnt at each level up from its first slots, none from scrolls |
+| | Shinobi | preserver spells on the Seeker's table, cast in light armour too | the Seeker's few slots; its own short list of spells, one learnt at each level up from its first slots, none from scrolls; only the dagger, short sword, quarterstaff, sling, staff sling and bow; light armour only; no shield |
 | Cleric | Elementalist | a second sphere: its spells and its weapons | spell slots one level slower (none at 1st level) |
 | | Healer | Cure spells heal 1 more per die | harmful spells do 1 less per die |
 | | Crusader | a fighter's THAC0 | one fewer spell slot at each spell level |
@@ -1079,7 +1079,7 @@ emulated tests hold the helper to it:
 | pick pockets, open locks | Assassin | `PROBE_BELT` (the thief skill routine's end) |
 | hiding, moving silently | Stalker, Assassin | the stealth rule's rolls (`stealth.py`, `GameData.ranger_skill_parts`) |
 | the two-weapon penalty | Twin-blade | `PROBE_TWO` |
-| gear allowed | Twin-blade, Brute, Stalker, Grove Warden, Lifebinder | `PROBE_CAN_USE` and `KINDS_ALLOWED` (`KIT_FORBIDS`: `restrict.kit_forbids`), whatever the class restrictions |
+| gear allowed | Twin-blade, Brute, Stalker, Grove Warden, Lifebinder, Shinobi | `PROBE_CAN_USE` and `KINDS_ALLOWED` (`KIT_FORBIDS`: `restrict.kit_forbids`), whatever the class restrictions |
 | weapon specs | Myrmidon (two, the second to grand mastery), Brute (no missile spec) | `WP_TWO`, `SPEC_OF_SHEET`, `KIT_FORBIDS` |
 | scores | Brute, Wanderer, Arcanist | `kits.finish_new`, once, before the character is first played (the sheet's `+45h` marks it) |
 

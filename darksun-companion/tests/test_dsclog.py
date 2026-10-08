@@ -1121,7 +1121,7 @@ class CanUseTests(unittest.TestCase):
                 rules = game.RULE_RESTRICT | half_rule
                 game.RULES_IN_FORCE = rules | game.RULE_KITS
                 self.mu.mem_write(hdr + 270, struct.pack("<H", 1))
-                for cls, kit in ((10, 2), (10, 3), (13, 1), (5, 1), (5, 2), (9, 3)):
+                for cls, kit in ((10, 2), (10, 3), (13, 1), (5, 1), (5, 2), (17, 3), (9, 3)):
                     for race in (2, game.RACE_HALF_GIANT):
                         s = bytearray(test_restrict.sheet(cls, race=race))
                         s[0x43] = kit
@@ -1138,6 +1138,11 @@ class CanUseTests(unittest.TestCase):
             self.assertTrue(restrict.kit_forbids(bytes(brute), 1, test_restrict.record(1), spec=True))  # (... not as a spec)
             self.assertTrue(restrict.kit_forbids(bytes(brute), 22, test_restrict.record(22)))  # (an axe: one hand)
             self.assertFalse(restrict.kit_forbids(bytes(brute), 3, test_restrict.record(3)))  # (a quarterstaff)
+            shinobi = bytearray(test_restrict.sheet(17))
+            shinobi[0x43] = 3
+            self.assertEqual([t for t in (17, 1, 3, 0, 6, 90, 22, 45, 4, 57, 48)
+                              if not restrict.kit_forbids(bytes(shinobi), t, test_restrict.record(t))],
+                             [17, 1, 3, 0, 6, 90])  # (dagger, bow, quarterstaff, staff sling, leather, silk)
         finally:
             game.RULES_IN_FORCE = old
             self.mu.mem_write(hdr + 270, struct.pack("<H", 0))
@@ -1351,7 +1356,7 @@ class KindsAllowedTests(unittest.TestCase):
         try:  # the kits that limit weapons: a Brute's two-handed melee kinds (no missile spec), a Lifebinder's blunt
             game.RULES_IN_FORCE = game.RULE_KITS
             mu.mem_write(hdr + 270, struct.pack("<H", 1))
-            for classes, kit in (((10,), 3), ((10,), 2), ((5,), 2), ((5,), 1)):
+            for classes, kit in (((10,), 3), ((10,), 2), ((5,), 2), ((17,), 3), ((5,), 1)):
                 s = bytearray(sheet(*classes))
                 s[0x43] = kit
                 with self.subTest(classes=classes, kit=kit):

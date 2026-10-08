@@ -25,6 +25,9 @@ MELEE, MISSILE, SHIELD, TWO_HANDED, ARMOUR = 0x01, 0x02, 0x04, 0x40, 0x80
 METAL, LEATHER, NO_MATERIAL = 4, 5, 0x40
 # a Lifebinder's weapon kinds (specialize.KINDS' numbers): club, mace, quarterstaff, sling, staff sling
 BLUNT = frozenset((1, 4, 8, 14, 15))
+# a Shinobi's: dagger, short sword, quarterstaff, bow, sling, staff sling
+SHINOBI_KINDS = frozenset((2, 3, 8, 13, 14, 15))
+SHINOBI = KIT_IDS["Shinobi"]
 # the charms (DSCLOG's KIT_CHARMS): Charm Person, Charm Monster, Domination, Charm Person or
 # Mammal, and the psionic Domination and Mass Domination
 CHARMS = (2, 40, 61, 82, 158, 159)
@@ -98,7 +101,7 @@ def forbids(kid: int, typ: bytes, kind: Optional[int], half_giant: bool, spec: b
     half-giant's, HALF_GIANT: with the rule for its hands); a Brute a one-handed melee weapon, a
     shield (but a half-giant's), and, choosing a weapon spec (SPEC), a missile weapon; a Stalker
     armour that isn't light; a Grove Warden a metal weapon; a Lifebinder a weapon of a kind not
-    blunt."""
+    blunt; a Shinobi a shield, armour that isn't light, a weapon not of SHINOBI_KINDS."""
     flags, kinds, mat = typ[0], typ[0x0F], typ[8] & 0x4F
     weapon = bool(flags & (MELEE | MISSILE))
     if kid == TWIN_BLADE:
@@ -115,6 +118,12 @@ def forbids(kid: int, typ: bytes, kind: Optional[int], half_giant: bool, spec: b
         return weapon and mat == METAL
     if kid == LIFEBINDER:
         return kind is not None and kind not in BLUNT
+    if kid == SHINOBI:
+        if flags & SHIELD:
+            return True
+        if kinds & ARMOUR:
+            return mat not in (LEATHER, NO_MATERIAL)
+        return kind is not None and kind not in SHINOBI_KINDS
     return False
 
 

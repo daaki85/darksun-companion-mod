@@ -2846,7 +2846,8 @@ probe_can_use:
 ; with RULE_HALF_GIANT); a Brute a one-handed melee weapon, and a shield (but a half-giant's,
 ; with the rule), and with KF_SPEC set (a weapon spec chosen) a missile weapon; a Stalker armour
 ; that isn't light (leather, or of no material); a Grove Warden a metal weapon; a Lifebinder a
-; weapon of a kind not blunt (KIT_BLUNT). DS the game's; all registers kept.
+; weapon of a kind not blunt (KIT_BLUNT); a Shinobi a shield, armour that isn't light, and a
+; weapon not of its kinds (KIT_SHINOBI). DS the game's; all registers kept.
 KT_MELEE   equ 0x01             ; (the item type's +0 flags, +0Fh kind flags)
 KT_MISSILE equ 0x02
 KT_SHIELD  equ 0x04
@@ -2858,6 +2859,7 @@ kit_forbids:
         push ax
         push bx
         push cx
+        push si
         push es
         call kit_id
         jz .ok
@@ -2927,31 +2929,50 @@ kit_forbids:
         je .no
         jmp .ok
 .lifebinder:
+        mov si, kit_blunt
         cmp cl, KIT_LIFEBINDER
+        je .kind
+        cmp cl, KIT_SHINOBI
         jne .ok
-        cmp dx, KIND_TYPES
+        test al, KT_SHIELD      ; a Shinobi: no shield, light armour, its own weapons
+        jnz .no
+        test ah, KT_ARMOUR
+        jz .weapon
+        mov al, [es:bx + 8]
+        and al, 0x4F
+        cmp al, LEATHER
+        je .ok
+        cmp al, 0x40
+        je .ok
+        jmp .no
+.weapon:
+        mov si, kit_shinobi
+.kind:  cmp dx, KIND_TYPES      ; a weapon's kind in the mask at CS:SI (no kind: as the game has it)
         jae .ok
         push si
         mov si, dx
         movzx ax, byte [cs:si + kind_of_type]
         pop si
         dec ax
-        js .ok                  ; (no kind: as the game has it)
-        bt word [cs:kit_blunt], ax
+        js .ok
+        bt word [cs:si], ax
         jc .ok
 .no:    pop es
+        pop si
         pop cx
         pop bx
         pop ax
         stc
         ret
 .ok:    pop es
+        pop si
         pop cx
         pop bx
         pop ax
         clc
         ret
 kit_blunt  dw KIT_BLUNT
+kit_shinobi dw 0xE10C           ; bits by kind: dagger, short sword, quarterstaff, bow, sling, staff sling
 kf_spec    db 0
 
 ; CLASS_FORBIDS: carry set if the classes of the character whose sheet is at ES:BX keep it from

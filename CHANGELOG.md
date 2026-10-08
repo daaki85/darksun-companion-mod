@@ -26,10 +26,10 @@ Released pull requests are summarised in a line or two each; the release notes
   changes.
 - **Kits that work so far:** the Myrmidon, Sentinel and Raider (fighter); the
   Arena Champion, Twin-blade and Brute (gladiator); the Stalker (ranger); the
-  Assassin (thief); the Grove Warden and Wanderer (druid); the Arcanist's CON
-  and the Lifebinder's weapons. The guide's Kits has what each does. The dice
-  log and the Ledger show each kit's part; a new probe in the game (INT B8h)
-  makes the Sentinel's initiative.
+  Assassin (thief); the Grove Warden and Wanderer (druid); the Arcanist's CON,
+  the Lifebinder's weapons, and the Shinobi's weapons and armour. The guide's
+  Kits has what each does. The dice log and the Ledger show each kit's part; a
+  new probe in the game (INT B8h) makes the Sentinel's initiative.
 
 **Changed** (for the kits)
 - **The dice log's ring holds 96 entries** (was 128), making room in upper
