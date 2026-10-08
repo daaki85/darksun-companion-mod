@@ -454,6 +454,11 @@ def write_resources(source: str, dest: str) -> None:
         added.update(weaponpages.chunks(chunks))
     except (KeyError, ValueError, IndexError, StopIteration, struct.error):
         pass  # (no weapon pages: the panel as the game has it, the choice through the Ledger)
+    from . import kitpages
+    try:
+        added.update(kitpages.chunks(chunks))
+    except (KeyError, ValueError, IndexError, StopIteration, struct.error):
+        pass  # (no kit pages: no kits to choose)
     out = with_chunks(data, added)
     tmp = dest + ".tmp"
     with open(tmp, "wb") as f:

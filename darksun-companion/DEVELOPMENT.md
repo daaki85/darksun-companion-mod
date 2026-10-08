@@ -926,11 +926,13 @@ A New character counts as Okay wherever the game tests for Okay: a jump each
 
 ## Planned: kits
 
-Not built yet: the design, and what the research so far says about building
-it. A kit is a choice a single-class character makes at creation: three for
+Being built: the choice is made (the KIT page, the kit's byte, the Effects
+screen's line, the Characters tab, the Options switch); the kits' effects are
+not. A kit is a choice a single-class character makes at creation: three for
 each class, or none (the class as it is). Each gives something and costs
-something, as AD&D's kits do. A rule change on the Options tab would switch
-them all off.
+something, as AD&D's kits do. The **Kits** rule change on the Options tab
+(`game.RULE_KITS`, bit 0 of the helper's second rules word, `RULES_HI` at the
+header's +270) switches them all off.
 
 ### The kits
 
@@ -987,10 +989,11 @@ Measured with `mem` in DOSBox (GOG's settings: one upper memory block of
 didn't fit in upper memory, so `LH` loaded it low, and the game had 570 KB of
 conventional memory free rather than 632 KB. Now it asks for the resident part
 and the ring (`LOAD_EXTRA`), 63 KB in all with its PSP, and loads high: 632 KB
-free, and 1 KB of upper memory left. More code for the kits than that goes
-low again (the game losing 62 KB, as before) unless room is made in upper
-memory too: the ring at 96 entries would give 6 KB, the text buffer
-(`TSIZE`, 8 KB) a little more.
+free, and 1 KB of upper memory left. The KIT page took 736 bytes of that
+(the image 40,752 bytes), and the helper still loads high. More code for the
+kits than the 300 bytes or so left goes low again (the game losing 62 KB, as
+before) unless room is made in upper memory too: the ring at 96 entries would
+give 6 KB, the text buffer (`TSIZE`, 8 KB) a little more.
 
 ### The kit's byte
 
@@ -1002,15 +1005,49 @@ the class's kits.
 
 ### Choosing one
 
-A **KIT** page on the creation panel, as the WEAPON SPEC pages are made
-(`INT C8h` to `INT C3h`, a window of its own in the Ledger's copy of
-`RESOURCE.GFF`), offered to a character of one class, of any class. To find
-out: what the panel shows for a preserver or a thief, and whether a button
-fits there. The Brute's and the Wanderer's scores are changed in the sheet
+Built. The creation panel's lower window shows the psionic disciplines or the
+clerical spheres, each with a button that swaps them (VIEW SPHERES is there,
+out of use, for a class with no sphere), and for a warrior with weapon
+specialization the WEAPON SPEC pages. The **KIT** page is at the end of that
+chain, opened with a **KITS** button where the last page's button was:
+
+| The class (one only) | Where KITS is |
+|---|---|
+| preserver, psionicist, thief; a fighter or gladiator without weapon specialization | the disciplines' window (3022, a copy of 3012) |
+| cleric, druid; a ranger without weapon specialization | the spheres' window (3023, a copy of 3013) |
+| fighter, gladiator, ranger with weapon specialization | the fourth weapon page (3025, a copy of 3017) |
+
+`WP_IDS` (`kitpages.panel_windows`) picks the windows for the classes being
+made, for the probes that open them (`PROBE_WP_DISC_WIN`,
+`PROBE_WP_SPHERE_WIN`, and `PROBE_WP_CLASS` when the classes change). The
+kit page itself is a window for each class (3026 to 3033, by the creation
+screen's class numbers), its rows the class's three kits and NO KIT
+(buttons `870h` + 3 × (class − 1) + kit − 1, and `888h`), its button VIEW
+PSIONICS (the weapon pages' `851h`) back to the disciplines. Like the weapon
+pages, it is kept at `DS:EA6h` with the spheres' own routine answering its
+buttons, so `PROBE_WP_SPHERE_CLICK` gets its clicks and `PROBE_WP_SHOWN`
+lets the game close it when another class is clicked. `KIT_ROW` puts the
+kit in the creation sheet's `+43h` (clicked again, none), and `KIT_MARKS`
+marks the rows. The game keeps the whole sheet when DONE is pressed: `+43h`
+is in the roster's CHAR record (the sheet at its `+4Eh`). It also keeps the
+creation sheet from one character to the next, so the kit is put back to none
+whenever the disciplines' window is opened other than on the way back to it
+(`KIT_KEEP`, set by VIEW PSIONICS): for a new character, or another class.
+
+The rows' letters are carved from the game's own labels, as the weapon
+pages' (`kitpages.py`, with a J and a hyphen drawn), and the panel takes
+about 96 pixels: ARENA CHAMPION, SWASHBUCKLER, ELEMENTALIST, GROVE WARDEN,
+MIND BENDER and MIND WARRIOR are shortened, the last two as the game's
+P-KINESIS.
+
+The Effects screen's lower panel (`PROBE_EF_ROWS`) has the kit's line first,
+`KIT: RAIDER`, before the weapon specs; the Characters tab has `Kit: Raider`
+(`GameData.kit`).
+
+Still to do: the Brute's and the Wanderer's scores are changed in the sheet
 being made (the creation sheet's pointer, `DS:119Ch`) when the kit is picked
-and back when it isn't, within the race's limits. The Effects screen lists the
-kit (`INT BBh`, as the weapon specs), the Characters tab and the dice log name
-it (`+1 Raider`).
+and back when it isn't, within the race's limits; the dice log names the
+kit where it changes a roll (`+1 Raider`).
 
 ### Where each effect goes
 
@@ -1058,8 +1095,8 @@ helper's code (emulated) to the Python.
 
 ### Order
 
-1. The ring out of the segment, the memory measured; the kit's byte, the KIT
-   page, the Effects screen's line, the Characters tab, the rule switch.
+1. Done: the ring out of the segment, the memory measured; the kit's byte, the
+   KIT page, the Effects screen's line, the Characters tab, the rule switch.
 2. The kits on hooks there already: Raider, Sentinel (with an initiative
    hook), Myrmidon, Arena Champion, Twin-blade, Brute, Stalker, Assassin,
    Grove Warden, Wanderer.

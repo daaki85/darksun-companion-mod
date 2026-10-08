@@ -46,6 +46,7 @@ GOG release) in DOSBox.
   - [No manual check](#no-manual-check)
 - [Rule changes](#rule-changes)
   - [Weapon specialization](#weapon-specialization)
+  - [Kits](#kits)
   - [Class restrictions](#class-restrictions)
   - [Multiclass hit points](#multiclass-hit-points)
   - [Hit dice: the better of two](#hit-dice-the-better-of-two)
@@ -1447,7 +1448,7 @@ How it works: [DEVELOPMENT.md](DEVELOPMENT.md#no-manual-check).
 
 ## Rule changes
 
-Sixteen changes to the game's rules, each with its own box on the Options tab,
+Seventeen changes to the game's rules, each with its own box on the Options tab,
 under **Rule changes** (the two thief rules under **Thieves**). All are on by
 default, and they take effect in games started with the dice log: with the
 Ledger running, or with **Play Dark Sun (in-game rolls)**, which uses the
@@ -1459,6 +1460,7 @@ game itself does, under [Two weapons](#two-weapons), [Thieves](#thieves) and
 | Rule (its box on the Options tab) | What it changes |
 |---|---|
 | [Weapon specialization](#weapon-specialization) | fighters and gladiators specialize in kinds of weapon, fighters on to mastery and grand mastery, rangers take expertise (and every ranger the bow); specialists and rangers shoot missiles faster; other weapons at a warrior's plain rate (missiles faster from 7th level) |
+| [Kits](#kits) | a character of one class takes one of three kits for its class, or none (being built: chosen and shown, no effects yet) |
 | [Class restrictions](#class-restrictions) | each class's limits on armour, shields and weapons hold, the strictest winning; a multiclass preserver casts no spells in armour |
 | [Multiclass hit points](#multiclass-hit-points) | each level's die and CON's bonus shared between a character's classes |
 | [Hit dice: the better of two](#hit-dice-the-better-of-two) | each hit die rolled twice, the better kept, for every character |
@@ -1600,6 +1602,34 @@ ranger: it counts again (and so do those weapons, whatever the new class
 allows) once the new class's level passes the old.
 
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#weapon-specialization).
+
+### Kits
+
+Being built: the kits can be chosen and are shown, but have **no effects
+yet**. With **Kits** ticked, a character of one class may take one of three
+kits for its class when it is made, or none (the class as it is). Each will
+give something and cost something.
+
+| Class | Kits |
+|---|---|
+| Cleric | Elementalist, Healer, Crusader |
+| Druid | Grove Warden, Lifebinder, Wanderer |
+| Fighter | Myrmidon, Sentinel, Raider |
+| Gladiator | Arena Champion, Twin-blade, Brute |
+| Preserver | Scholar, Battle Mage, Arcanist |
+| Psionicist | Mind Bender, Mind Warrior, Kineticist |
+| Ranger | Stalker, Justifier, Seeker |
+| Thief | Swashbuckler, Assassin, Shinobi |
+
+The kit is chosen on the creation panel's **KIT** page, opened with **KITS**,
+the button at the end of the panel's pages: under the psionic disciplines for
+a fighter, gladiator (without weapon specialization), preserver, psionicist
+or thief; under the clerical spheres for a cleric, druid or ranger; on the
+last weapon page for a fighter, gladiator or ranger choosing weapon specs.
+Click a kit to take it, or NO KIT. A few names are shortened to fit the panel
+(CHAMPION, SWASHBUCK, ELEMENTLST, GRV WARDEN, M-BENDER, M-WARRIOR). Choosing
+another class puts the kit back to none. The Effects screen names the kit
+(`KIT: RAIDER`), as does the Ledger's Characters tab.
 
 ### Class restrictions
 

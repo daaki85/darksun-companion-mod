@@ -56,6 +56,7 @@ TSR_SKILLS_ON = 266  # bits: item boxes name a cloak's and boots' bonus to hidin
 SKILLS_STEALTH, SKILLS_BELT = 1, 2  # a worn belt adds to picking pockets and opening locks (and its box says)
 SKILLS_ELVEN = 4  # the Cloak and Boots of Elvenkind's boxes name their chances (the hiding rule on)
 TSR_RING_SEG = 268  # the ring's segment (past the image, so it takes none of DSCLOG's 64 KB)
+TSR_RULES_HI = 270  # the rules' bits past 16 (game.RULE_KITS), shifted down
 TSR_PICK_SEQ, TSR_PICK_REPLY, TSR_PICK_OFF, TSR_PICK_ON, PICK_SIZE = 172, 174, 176, 178, 240
 PICK_TOOLS, PICK_KEY = 1, 2  # (TSR_PICK_ON: the thieving tools on someone; P in a conversation too)
 TSR_USE_SEQ, TSR_USE_REPLY, TSR_USE_WHO, TSR_USE_TAKEN, TSR_USE_ITEM = 180, 182, 184, 186, 188
@@ -649,7 +650,8 @@ class DiceLog:
             self.game.rules = rules
             self.game.belt = self.stealth_gear
         if self.tsr_hdr is not None:
-            self.guest.write(self.tsr_hdr + TSR_RULES, struct.pack("<H", rules))
+            self.guest.write(self.tsr_hdr + TSR_RULES, struct.pack("<H", rules & 0xFFFF))
+            self.guest.write(self.tsr_hdr + TSR_RULES_HI, struct.pack("<H", rules >> 16 & 0xFFFF))
             skills = (SKILLS_STEALTH if rules & game.RULE_STEALTH and self.stealth_gear else 0) \
                 | (SKILLS_BELT if self.stealth_gear else 0) \
                 | (SKILLS_ELVEN if rules & game.RULE_STEALTH else 0)  # (the hiding rule's cloak and boots; the belt's own)

@@ -339,6 +339,9 @@ class Viewer:
                                           "rangers have expertise, every ranger with the bow; specialists and "
                                           "rangers shoot missiles faster; other weapons at a warrior's plain rate "
                                           "(chosen on the creation panel's WEAPON SPEC pages)"),
+                ("kits", "Kits: a character of one class may take one of its class's three kits, each "
+                         "giving something and costing something (chosen on the creation panel's KIT "
+                         "page; being built: chosen and shown, no effects yet)"),
                 ("class_restrictions", "Class restrictions on armour, shields and weapons, the strictest class "
                                        "winning (psionicists, multiclass thieves, preservers, druids, clerics' "
                                        "spheres); a multiclass preserver casts no spells in armour"),
@@ -1207,10 +1210,11 @@ class Viewer:
             try:
                 weapons = gd.specializations(index) if known and index < game.PARTY_SIZE else []
                 no_spells = bool(known and index < game.PARTY_SIZE and gd.no_spells(index))
+                kit = gd.kit(index) if known and index < game.PARTY_SIZE else None
             except (struct.error, IndexError, ValueError):
-                weapons, no_spells = [], False
+                weapons, no_spells, kit = [], False, None
             card.show(name, dict(fields), status, ac, self.art, member_slots, thief, equipment, hits, saves, boots,
-                      skills_label=label, weapons=weapons, no_spells=no_spells)
+                      skills_label=label, weapons=weapons, no_spells=no_spells, kit=kit)
 
     def _hex_base(self) -> Optional[int]:
         record = self.layout.records.get(self.hex_record.get())

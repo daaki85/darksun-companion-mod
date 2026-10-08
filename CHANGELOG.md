@@ -14,6 +14,16 @@ Released pull requests are summarised in a line or two each; the release notes
   (was 63) and what it asks for fits DOSBox's upper memory. It also leaves
   room in its segment for the kits' code.
 
+**Added**
+- **Kits, being built:** a character of one class may take one of three kits
+  for its class, or none, on the creation panel's new KIT page (KITS, at the
+  end of the panel's pages: the disciplines' for a class with no sphere, the
+  spheres' for a cleric, druid or ranger, the last weapon page for a warrior
+  with weapon specialization). The kit is kept with the character (sheet
+  `+43h`), and the Effects screen (`KIT: RAIDER`) and the Ledger's
+  Characters tab name it. A new switch on the Options tab, under Rule changes.
+  The kits have no effects yet.
+
 **Documentation**
 - **Kits, planned:** DEVELOPMENT.md has the design for kits (three for each
   class, for characters of one class) and what research says about building

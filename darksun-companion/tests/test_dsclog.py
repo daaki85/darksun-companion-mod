@@ -2206,7 +2206,7 @@ class LevelPickTests(unittest.TestCase):
                 mu.mem_write(TSR * 16 + self.image.find(HDR_SIG) + self.RULES, struct.pack("<H", rules))
                 mu.mem_write(SS * 16 + BP - 4, struct.pack("<H", cells))
                 mu.mem_write(SS * 16 + 0x7F8, struct.pack("<HH", 0x1111, 0x2222))  # (DI's, then SI's)
-                self.run_probe(rb"\xfb\x66\x60\x06\x2e\xf7\x06..\x00\x10", VEC_EF_ROWS,
+                self.run_probe(rb"\xfb\x66\x60\x06\xe8..\x74.\x83\x7e\xfc\x15", VEC_EF_ROWS,
                                (0xCD, VEC_EF_ROWS), dict(esp=0x7F8, esi=5, edi=6), 2)
                 self.assertEqual([mu.reg_read(getattr(r, "UC_X86_REG_" + x)) for x in ("DI", "SI", "SP", "BP")],
                                  [0x1111, 0x2222, 0x7FC, BP])
@@ -2273,3 +2273,72 @@ class TomeTests(unittest.TestCase):
         self.assertEqual((regs["ip"], regs["sp"], regs["ax"]), (self.INT_AT + 5, 0x7FC, 0x1111))
         self.assertEqual(struct.unpack("<HH", self.mu.mem_read(SS * 16 + 0x7FC, 4)), (0x3440, GAME_DS))
         self.assertEqual((text, sheet), (b"", 18))
+
+
+@unittest.skipIf(Uc is None, "unicorn is not installed")
+class KitTests(unittest.TestCase):
+    """The kits' routines against kitpages.py: WP_IDS (the panel's windows for the classes being
+    made, the rules on or off) as panel_windows, and KIT_OF_SHEET (the Effects screen's line) as
+    kit_name."""
+    RULES, RULES_HI = 170, 270
+    CREATION, SHEET = 0x8000, 0x8100
+
+    def setUp(self):
+        self.image = load_image()
+        self.mu = mu = Uc(UC_ARCH_X86, UC_MODE_16)
+        mu.mem_map(0, 0x100000)
+        mu.mem_write(TSR * 16, self.image)
+        mu.mem_write(TSR * 16 + 0xFFF0, bytes((0xF4,)))
+        mu.mem_write(GAME_DS * 16 + 0x119C, struct.pack("<HH", 0, self.CREATION))
+        self.hdr = TSR * 16 + self.image.find(HDR_SIG)
+
+    def rules(self, rules):
+        self.mu.mem_write(self.hdr + self.RULES, struct.pack("<H", rules & 0xFFFF))
+        self.mu.mem_write(self.hdr + self.RULES_HI, struct.pack("<H", rules >> 16))
+
+    def call(self, pattern, **regs):
+        import re
+        at = re.search(pattern, self.image, re.S).start()
+        mu = self.mu
+        mu.mem_write(SS * 16 + 0x7FC, struct.pack("<H", 0xFFF0))
+        for name, value in dict(cs=TSR, ds=GAME_DS, ss=SS, esp=0x7FC, **regs).items():
+            mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+        mu.emu_start(TSR * 16 + at, TSR * 16 + 0xFFF0)
+
+    def test_panel_windows(self):
+        from dscompanion import kitpages
+        combos = [(c, 0, 0) for c in range(1, 9)] + [(3, 6, 0), (3, 8, 0), (7, 1, 0), (1, 5, 0), (5, 8, 0),
+                                                     (3, 5, 8), (4, 2, 0), (6, 8, 0)]
+        for rules in (0, game.RULE_SPECIALIZE, game.RULE_KITS, game.RULE_SPECIALIZE | game.RULE_KITS):
+            self.rules(rules)
+            for classes in combos:
+                with self.subTest(rules=rules, classes=classes):
+                    sheet = bytearray(game.SHEET_SIZE)
+                    sheet[0x21:0x24] = bytes(classes)
+                    self.mu.mem_write(self.CREATION * 16, bytes(sheet))
+                    self.call(rb"\x53\x51\xe8..\x89\xc1\xe8..\x88\xc3\xb8\xc4\x0b")
+                    got = (self.mu.reg_read(r.UC_X86_REG_AX), self.mu.reg_read(r.UC_X86_REG_DX))
+                    self.assertEqual(got, kitpages.panel_windows(classes, rules))
+        self.assertEqual(kitpages.panel_windows((8, 0, 0), game.RULE_KITS), (kitpages.KIT_DISCIPLINES,
+                                                                              kitpages.KIT_SPHERES))
+
+    def test_effects_line(self):
+        from dscompanion import kitpages
+        sheets = [(c, 0, kit) for c in range(1, 18) for kit in range(0, 5)] + [(9, 12, 1), (13, 5, 2)]
+        for rules in (game.RULE_KITS, 0):
+            self.rules(rules)
+            for c1, c2, kit in sheets:
+                with self.subTest(rules=rules, classes=(c1, c2), kit=kit):
+                    sheet = bytearray(game.SHEET_SIZE)
+                    sheet[0x21], sheet[0x22], sheet[kitpages.KIT_BYTE] = c1, c2, kit
+                    self.mu.mem_write(self.SHEET * 16, bytes(sheet))
+                    self.call(rb"\x50\x51\x57\x2e\xf7\x06..\x01\x00", es=self.SHEET, ebx=0)
+                    zf = self.mu.reg_read(r.UC_X86_REG_EFLAGS) & 0x40
+                    want = kitpages.kit_name(bytes(sheet)) if rules else None
+                    if want is None:
+                        self.assertTrue(zf)
+                        continue
+                    self.assertFalse(zf)
+                    si = self.mu.reg_read(r.UC_X86_REG_SI)
+                    text = bytes(self.mu.mem_read(TSR * 16 + si, 24)).split(b"\0")[0].decode()
+                    self.assertEqual(text, "KIT: " + want.upper())
