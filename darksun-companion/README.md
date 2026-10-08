@@ -18,13 +18,15 @@ GOG release) in DOSBox.
   - [The Dialogue tab](#the-dialogue-tab)
 - [The dice log](#the-dice-log)
   - [Initiative](#initiative)
-  - [Two weapons](#two-weapons)
   - [Spells and effects](#spells-and-effects)
   - [Psionics](#psionics)
   - [Character creation](#character-creation)
   - [Monsters' defences](#monsters-defences)
   - [Searching junk, hay and wardrobes](#searching-junk-hay-and-wardrobes)
   - [No critical hits](#no-critical-hits)
+- [Two weapons](#two-weapons)
+  - [The game's two weapons](#the-games-two-weapons)
+  - [AD&D's penalties](#adds-penalties)
 - [Thieves](#thieves)
   - [How the game works out thief skills](#how-the-game-works-out-thief-skills)
   - [Where the game rolls them](#where-the-game-rolls-them)
@@ -504,36 +506,6 @@ highest score acts first; a second roll, 0-199, decides between equal scores
 (the log shows it only for those). Choosing Wait lowers the character's score
 to 10 (or by one, if it's 10 or less already) so they act later in the round.
 
-### Two weapons
-
-The manual says a character with two weapons ready uses the second "at a
-disadvantage", unless a ranger or dextrous. The game's code does something
-else: with two weapons ready (in melee), every attack, first hand and second
-alike, is adjusted by the DEX table used for initiative with its sign flipped
-and never below 0, and rangers are left out. That comes to a **bonus** of +6 at
-DEX 1, +4 at 2, +3 at 3, +2 at 4 and +1 at 5, and nothing at DEX 6 and up, so
-in practice there is no off-hand penalty at all: both weapons hit as well as a
-single one would. The log names it, e.g. `+2 two weapons at DEX 4`. (Tested
-in an arena fight by changing DEX in memory: +6 on both weapons at DEX 1,
-nothing at 15 or 25, nothing with one weapon.) It looks like a sign slip:
-AD&D uses the same DEX adjustment to make two-weapon fighting *harder* at low
-DEX.
-
-**AD&D's penalties** (a [rule change](#rule-changes), its box **Two weapons**):
-with two melee weapons ready, a character who isn't a ranger attacks at -2
-with the main (right) hand and -4 with the off (left) hand, and the DEX
-reaction adjustment (the table under [Initiative](#initiative)) is added. It
-can lessen the penalty to 0 but never make it a bonus, and low DEX
-makes it worse: DEX 17 is 0 and -2, DEX 21 0 and 0, DEX 3 -5 and -7. Rangers
-have no penalty (in any armour). It takes a melee weapon in each hand: one
-weapon, a two-handed weapon, a weapon and a shield, or a weapon and a bow or
-sling (the missile slot) have no penalty. The game's own rule, a small bonus
-at DEX 5 or less, is gone. The dice log names it (`-4 two weapons, off hand at
-DEX 15`), as do the THAC0 lines on the Characters tab and the inventory
-screen.
-
-How it works: [DEVELOPMENT.md](DEVELOPMENT.md#two-weapons-adds-penalties).
-
 ### Spells and effects
 
 What the log says about spells comes from the game's own spell records and
@@ -767,6 +739,42 @@ that is all the d20 does: the game has no critical hits or fumbles. Its attack
 routine uses the d20 only for those two checks and the comparison with THAC0,
 and never passes it to the damage routine, so a hit on a 20 rolls the same
 damage as any other. A backstab is the only thing that multiplies damage.
+
+## Two weapons
+
+The game's rule for fighting with two weapons, then the rule change for it (its
+box under Rule changes on the Options tab).
+
+### The game's two weapons
+
+The manual says a character with two weapons ready uses the second "at a
+disadvantage", unless a ranger or dextrous. The game's code does something
+else: with two weapons ready (in melee), every attack, first hand and second
+alike, is adjusted by the DEX table used for initiative with its sign flipped
+and never below 0, and rangers are left out. That comes to a **bonus** of +6 at
+DEX 1, +4 at 2, +3 at 3, +2 at 4 and +1 at 5, and nothing at DEX 6 and up, so
+in practice there is no off-hand penalty at all: both weapons hit as well as a
+single one would. The log names it, e.g. `+2 two weapons at DEX 4`. (Tested
+in an arena fight by changing DEX in memory: +6 on both weapons at DEX 1,
+nothing at 15 or 25, nothing with one weapon.) It looks like a sign slip:
+AD&D uses the same DEX adjustment to make two-weapon fighting *harder* at low
+DEX.
+
+### AD&D's penalties
+
+With **Two weapons** ticked, and two melee weapons ready, a character who isn't a ranger attacks at -2
+with the main (right) hand and -4 with the off (left) hand, and the DEX
+reaction adjustment (the table under [Initiative](#initiative)) is added. It
+can lessen the penalty to 0 but never make it a bonus, and low DEX
+makes it worse: DEX 17 is 0 and -2, DEX 21 0 and 0, DEX 3 -5 and -7. Rangers
+have no penalty (in any armour). It takes a melee weapon in each hand: one
+weapon, a two-handed weapon, a weapon and a shield, or a weapon and a bow or
+sling (the missile slot) have no penalty. The game's own rule, a small bonus
+at DEX 5 or less, is gone. The dice log names it (`-4 two weapons, off hand at
+DEX 15`), as do the THAC0 lines on the Characters tab and the inventory
+screen.
+
+How it works: [DEVELOPMENT.md](DEVELOPMENT.md#two-weapons-adds-penalties).
 
 ## Thieves
 

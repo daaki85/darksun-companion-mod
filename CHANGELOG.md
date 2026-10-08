@@ -12,6 +12,8 @@ Released pull requests are summarised in a line or two each; the release notes
   shows of the game's hidden rolls, how it brings the rules closer to AD&D,
   what it adds to Athas and on the screen, and its quality of life changes,
   in place of the old description and lists.
+- **Two weapons** is a section of its own, beside Thieves and Saving throws
+  (the game's rule, then AD&D's penalties), rather than under The dice log.
 
 ## Pull request #28 ([merged 2026-10-08](https://github.com/daaki85/darksun-companion-mod/pull/28))
 
