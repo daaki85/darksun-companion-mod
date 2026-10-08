@@ -153,6 +153,7 @@ SPELL_HANDLER_RETURNS = (
     (bytes.fromhex("83c40440e988"), 1),  # Cure Serious Wounds: 2d8 + 1
     (bytes.fromhex("83c404050300eb"), 3),  # Cure Critical Wounds: 3d8 + 3
     (bytes.fromhex("83c4045057900e"), 0),  # Cure Light Wounds 1d8, Blood Flow 2d6 (healing)
+    (bytes.fromhex("83c4045057cdb1"), 0),  # (the same with DSCLOG's PROBE_CURE, as the patched game has it)
     (bytes.fromhex("83c40450ff7608"), 0),  # Aid 1d8, Vampiric Touch (level / 2)d6, drains
 )
 # ... and a name picked at random from the game's lists (the code after the dice call)
@@ -1837,9 +1838,17 @@ class DiceLog:
                 spell = e.parent_arg(0x0E)
                 self._spell_cast(spell, now)
                 total = sum(faces) + handler
+                kit = ""
+                caster = self.game.combatant_creature(e.parent_arg(8)) if e.parent_arg(8) is not None else None
+                kid = self.game.kit_id(caster) if caster is not None else 0
+                if kits.cure_bonus(kid, spell):  # (DSCLOG's PROBE_CURE)
+                    total += kits.cure_bonus(kid, spell)
+                    kit = f" {signed(kits.cure_bonus(kid, spell))} {kits.name(kid)}"
+                elif kits.cure_die(kid, spell):
+                    kit = f" + 1d{kits.cure_die(kid, spell)} {kits.name(kid)} (the helper's roll)"
                 return self.flush(now, force=True) + [
                     f"{self.game.spell_name(spell)}: {count}d{sides} = [" + " + ".join(map(str, faces)) + "]"
-                    + (f" {signed(handler)}" if handler else "") + f" = {total}"]
+                    + (f" {signed(handler)}" if handler else "") + kit + (f" = {total}" if "1d" not in kit else "")]
             if e.parent_code.startswith(SPELL_DURATION_RETURN) or self._overlay_duration(e, count, sides):
                 return self._spell_duration(e, count, sides, faces)
             if e.parent_code.startswith(SPELL_DAMAGE_RETURN):
@@ -1956,14 +1965,22 @@ class DiceLog:
         text = f"{name} damage: {count}d{sides} = [" + " + ".join(map(str, faces)) + "]"
         rule = g.spell_damage(spell) if spell is not None else None
         self._last_damage = (spell, sum(faces))
+        turn = g.combatant_creature(g.whose_turn()) if g.whose_turn() is not None else None
+        kid = g.kit_id(turn) if turn is not None else 0
         if rule is None or rule.sides != sides:
-            return f"{text} = {sum(faces)}"
+            total = kits.harm(kid, count, sum(faces))
+            self._last_damage = (spell, total)
+            kit = f" {signed(total - sum(faces))} {kits.name(kid)}" if total != sum(faces) else ""
+            return f"{text}{kit} = {total}"
         steps = rule.steps(level) if missile_steps is None else missile_steps
         bonus = rule.step_bonus * steps
-        self._last_damage = (spell, sum(faces) + bonus)
+        total = kits.harm(kid, count, sum(faces) + bonus)  # (DSCLOG's PROBE_HARM: a Healer's)
+        self._last_damage = (spell, total)
         if bonus:
             text += f" {signed(bonus)}"
-        text += f" = {sum(faces) + bonus}"
+        if total != sum(faces) + bonus:
+            text += f" {signed(total - sum(faces) - bonus)} {kits.name(kid)}"
+        text += f" = {total}"
         per = (f"{rule.step_dice}d{sides}" if rule.step_dice else "") + \
             (f"{signed(rule.step_bonus)}" if rule.step_dice and rule.step_bonus else
              f"{rule.step_bonus}" if rule.step_bonus else "")

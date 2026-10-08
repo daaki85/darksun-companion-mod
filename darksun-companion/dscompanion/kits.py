@@ -23,6 +23,10 @@ MIND_BENDER, KINETICIST = KIT_IDS["Mind Bender"], KIT_IDS["Kineticist"]
 # the psionic powers' disciplines, by power (0-33: spells 138-171): psychokinesis to PK_LAST,
 # psychometabolism, telepathy from TP_FIRST (the defences among them)
 PK_LAST, TP_FIRST = 5, 20
+HEALER = KIT_IDS["Healer"]
+# the healing spells' dice (DSCLOG's CURE_SPELLS): Cure Light, Serious and Critical Wounds, Blood Flow
+CURE_LIGHT, CURE_SERIOUS, CURE_CRITICAL, BLOOD_FLOW = 71, 112, 127, 108
+CURE_DICE = {CURE_LIGHT: (1, 8), CURE_SERIOUS: (2, 8), CURE_CRITICAL: (3, 8), BLOOD_FLOW: (2, 6)}
 # the kits with a warrior's THAC0 (PROBE_THAC0)
 WARRIOR_THAC0 = frozenset((SWASHBUCKLER, CRUSADER, BATTLE_MAGE, MIND_WARRIOR))
 TWIN_BLADE, BRUTE = KIT_IDS["Twin-blade"], KIT_IDS["Brute"]
@@ -131,6 +135,26 @@ def psp_cost(kid: int, power: int, cost: int) -> int:
     elif power < TP_FIRST:
         change = 0
     return max(1, cost + change)
+
+
+def cure_bonus(kid: int, spell: int) -> int:
+    """Added to the healing of SPELL cast by a character of kit KID (PROBE_CURE): a Healer's 1 a
+    die of Cure Light, Serious and Critical Wounds."""
+    if kid == HEALER and spell in CURE_DICE and spell != BLOOD_FLOW:
+        return CURE_DICE[spell][0]
+    return 0
+
+
+def cure_die(kid: int, spell: int) -> int:
+    """The sides of the die more a Lifebinder's SPELL heals (PROBE_CURE: the cures and Blood
+    Flow), or 0."""
+    return CURE_DICE[spell][1] if kid == LIFEBINDER and spell in CURE_DICE else 0
+
+
+def harm(kid: int, dice: int, damage: int) -> int:
+    """A spell's DAMAGE of DICE dice (and the bonus with them) when a character of kit KID casts it
+    (PROBE_HARM): a Healer's 1 less a die, never less than 1 a die."""
+    return max(dice, damage - dice) if kid == HEALER else damage
 
 
 def move(kid: int) -> int:

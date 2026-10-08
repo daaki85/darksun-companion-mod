@@ -67,6 +67,7 @@ VEC_INIT = 0xB8
 VEC_THAC0 = 0xB7
 VEC_SLOTS, VEC_SLOT_LEVEL = 0xB6, 0xB5
 VEC_PSP_USE, VEC_PSP_TABLE, VEC_PSP_DEFENCE = 0xB4, 0xB3, 0xB2
+VEC_CURE, VEC_HARM = 0xB1, 0xB0
 
 
 SCRIPT_BUFFER = 0x2E00  # the scripts' buffer, made bigger (the game's: 10000 bytes)
@@ -349,6 +350,10 @@ PATCHES = (
     Patch("psp_can_use", 0x5CAA3, bytes.fromhex("268a870100"), _interrupt(VEC_PSP_TABLE, 5)),
     Patch("psp_failed", 0x5CCA2, bytes.fromhex("268a870100"), _interrupt(VEC_PSP_TABLE, 5)),
     Patch("psp_defence", 0x5D820, bytes.fromhex("26294702"), _interrupt(VEC_PSP_DEFENCE, 4)),
+    # a cure's healing (the spells' own handler, as it goes to be healed) and a spell's damage dice:
+    # a Healer's and a Lifebinder's (kits.cure_bonus, kits.cure_die, kits.harm)
+    Patch("cure", 0x79619, bytes.fromhex("900e"), _interrupt(VEC_CURE, 2)),
+    Patch("harm", 0x76EBE, bytes.fromhex("8bc2"), _interrupt(VEC_HARM, 2)),
     # A bug of the game's own: the roster's DELETE (DSUN.EXE 54AC1h) picked the character by the
     # row clicked alone, where ADD takes the row plus how far the list is scrolled; with the list
     # scrolled, another character was deleted (the row's from the top). The same code, the scroll

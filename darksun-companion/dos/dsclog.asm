@@ -105,6 +105,8 @@ VEC_SLOT_LEVEL equ 0xB5    ; PROBE_SLOT_LEVEL
 VEC_PSP_USE equ 0xB4       ; PROBE_PSP_USE
 VEC_PSP_TABLE equ 0xB3     ; PROBE_PSP_TABLE
 VEC_PSP_DEFENCE equ 0xB2   ; PROBE_PSP_DEFENCE
+VEC_CURE equ 0xB1          ; PROBE_CURE
+VEC_HARM equ 0xB0          ; PROBE_HARM
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 96          ; entries in the ring (96: the helper and it fit in upper memory)
@@ -4712,6 +4714,7 @@ probe_slot_level:
 ; 2 less, its psychokinesis 2 more, a Kineticist's the other way about, never below 1 (a cost of
 ; 0 or less as it was). KIT_PSP_OF: the same for the kit in CL. DS the game's; others kept.
 PSP_PK_LAST  equ 5
+WHOSE_TURN   equ 0x4979         ; DS: the combatant whose turn it is in a fight
 PSP_TP_FIRST equ 20
 kit_psp:
         push cx
@@ -4806,6 +4809,119 @@ probe_psp_defence:
         pop cx
         pop bx
         sub [es:bx + 2], ax
+        iret
+
+; GAME_DIE: AX a roll of 1 to AX from the game's own rand() seed (as its "rand()*N/32768 + 1"),
+; not recorded in the ring. DS the game's; others kept (EAX's upper half too).
+game_die:
+        push ebx
+        push ecx
+        push edx
+        movzx ecx, ax
+        push eax
+        mov bx, [cs:seed_off]
+        mov eax, [bx]
+        imul eax, eax, 0x015A4E35
+        inc eax
+        mov [bx], eax
+        shr eax, 16
+        and eax, 0x7FFF
+        imul eax, ecx
+        shr eax, 15
+        inc eax
+        mov cx, ax
+        pop eax
+        mov ax, cx
+        pop edx
+        pop ecx
+        pop ebx
+        ret
+
+; PROBE_CURE: INT VEC_CURE replaces "nop / push cs" (2 bytes; DSUN.EXE 79619h) in the handler for
+; spells with rules of their own, where the healing it has rolled (the word pushed last but one;
+; DI the target, the game's [BP+8] the caster, [BP+0Eh] the spell) goes to the routine that heals:
+; the caster's kit's (kits.cure): a Healer's Cure Light, Serious and Critical Wounds 1 more a die,
+; a Lifebinder's those and Blood Flow a die more (CURE_DICE). Then CS pushed, as the code was.
+CURE_SPELLS: ; spell, dice, sides (kits.CURE_DICE)
+        db 71, 1, 8,  112, 2, 8,  127, 3, 8,  108, 2, 6
+CURE_SPELLS_END:
+probe_cure:
+        sub sp, 2
+        push bp
+        mov bp, sp              ; [BP+4] the INT's IP, CS, flags; [BP+0Ah] DI pushed, [BP+0Ch] the healing
+        pusha
+        mov ax, [bp + 4]
+        mov [bp + 2], ax
+        mov ax, [bp + 6]
+        mov [bp + 4], ax
+        mov ax, [bp + 8]
+        mov [bp + 6], ax
+        mov ax, [bp + 4]
+        mov [bp + 8], ax        ; (the CS the code pushed)
+        mov di, [bp]            ; the game's BP
+        mov ax, [ss:di + 0x0E]
+        mov bx, CURE_SPELLS
+.find:  cmp [cs:bx], al
+        je .spell
+        add bx, 3
+        cmp bx, CURE_SPELLS_END
+        jb .find
+        jmp .out
+.spell: or ah, ah
+        jnz .out
+        push bx
+        push es
+        mov ax, ds
+        add ax, THINGS_SEG
+        mov es, ax
+        imul bx, [ss:di + 8], 3
+        mov ax, [es:bx + COMBATANT_CREATURE]
+        pop es
+        call kit_of_creature
+        pop bx
+        jz .out
+        cmp al, KIT_HEALER
+        jne .lifebinder
+        cmp byte [cs:bx], 108   ; (Blood Flow: not a cure)
+        je .out
+        movzx ax, byte [cs:bx + 1]
+        add [bp + 0x0C], ax
+        jmp .out
+.lifebinder:
+        cmp al, KIT_LIFEBINDER
+        jne .out
+        movzx ax, byte [cs:bx + 2]
+        call game_die
+        add [bp + 0x0C], ax
+.out:   popa
+        pop bp
+        iret
+
+; PROBE_HARM: INT VEC_HARM replaces "mov ax,dx" (2 bytes; DSUN.EXE 76EBEh) at the end of the routine
+; that rolls a spell's damage (DX the dice and its bonus, DI the dice): AX that, a Healer's (the
+; combatant whose turn it is) 1 less a die, never less than 1 a die (kits.harm).
+probe_harm:
+        push bx
+        push cx
+        push es
+        mov cx, dx
+        mov ax, ds
+        add ax, THINGS_SEG
+        mov es, ax
+        imul bx, [WHOSE_TURN], 3
+        mov ax, [es:bx + COMBATANT_CREATURE]
+        call kit_of_creature
+        jz .out
+        cmp al, KIT_HEALER
+        jne .out
+        sub cx, di
+        cmp cx, di
+        jge .out
+        mov cx, di
+.out:   mov ax, cx
+        pop es
+        pop cx
+        pop bx
         iret
 
 ; KIT_SAVE: SI (a saving throw's modifiers) with the kit's of the one saving (thing DI) against
@@ -9803,6 +9919,12 @@ install:                        ; DS = ES = PSP, CS = the image
         int 21h
         mov ax, 2500h + VEC_PSP_DEFENCE
         mov dx, probe_psp_defence
+        int 21h
+        mov ax, 2500h + VEC_CURE
+        mov dx, probe_cure
+        int 21h
+        mov ax, 2500h + VEC_HARM
+        mov dx, probe_harm
         int 21h
         mov ax, 3516h           ; the keyboard's (TARGETING)
         int 21h

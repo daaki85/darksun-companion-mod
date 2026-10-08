@@ -1625,7 +1625,8 @@ and costs something.
 | **Wanderer** (druid) | resists fire and cold as the Resist Fire and Resist Cold spells do: +3 on saves against fire and cold spells | AC 1 worse |
 | **Arcanist** (preserver) | a spell slot more at each spell level it has slots at | −2 CON |
 | **Shinobi** (thief) | *to come:* a few preserver spells | dagger, short sword, quarterstaff, chatkcha, sling, staff sling and bow only; light armour only; no shield |
-| **Lifebinder** (druid) | *to come:* healing spells heal a die more | blunt weapons only (club, mace, quarterstaff, sling, staff sling) |
+| **Lifebinder** (druid) | Cure Light, Serious and Critical Wounds heal a d8 more, Blood Flow a d6 | blunt weapons only (club, mace, quarterstaff, sling, staff sling) |
+| **Healer** (cleric) | Cure Light, Serious and Critical Wounds heal 1 more a die (+1, +2, +3) | damaging spells do 1 less a die, never less than 1 a die |
 | **Scholar** (preserver) | *to come:* a spell more learnt at each level up | −1 to hit (THAC0 1 worse) |
 | **Crusader** (cleric) | a warrior's THAC0 | one fewer spell slot at each spell level |
 | **Elementalist** (cleric) | *to come:* a second sphere: its spells and its weapons | spell slots a level behind (a 7th-level Elementalist has a 6th-level cleric's; none at 1st level) |
@@ -1636,8 +1637,14 @@ and costs something.
 | **Mind Bender** (psionicist) | telepathy powers (the defence modes too) cost 2 PSP less to use | psychokinesis powers cost 2 PSP more |
 | **Kineticist** (psionicist) | psychokinesis powers cost 2 PSP less to use | telepathy powers (the defence modes too) cost 2 PSP more |
 
-Still to come: the Healer (cleric), the Shinobi's spells (thief), and the
-parts marked *to come* above.
+Still to come: the Shinobi's spells (thief), and the parts marked *to come*
+above.
+
+The Healer's lesser damage is for the spells whose damage the game rolls by
+the caster's level (Fireball, Lightning Bolt, the Cause Wounds...), when it is
+the Healer's turn; the dice log shows it (`-3 Healer`). The Lifebinder's die
+is rolled by the helper from the game's own random numbers; the dice log notes
+it, and the HP line shows what was healed.
 
 The Mind Bender's and Kineticist's PSP is the cost to use a power, never less
 than 1; keeping a power up round after round costs what it always did, and

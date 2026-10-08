@@ -44,6 +44,9 @@ Released pull requests are summarised in a line or two each; the release notes
   cost 2 PSP less and its psychokinesis 2 more, the Kineticist's the other way
   about, through three new probes where the game prices a power (INT B4h,
   B3h, B2h).
+- **Kits' healing:** the Healer's Cure Light, Serious and Critical Wounds heal
+  1 more a die and its damaging spells do 1 less a die; the Lifebinder's cures
+  heal a die more (INT B1h, INT B0h). The dice log shows each.
 
 **Changed** (for the kits)
 - **The dice log's ring holds 96 entries** (was 128), making room in upper

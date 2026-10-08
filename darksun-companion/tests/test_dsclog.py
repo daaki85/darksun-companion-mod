@@ -2838,6 +2838,74 @@ class KitTests(unittest.TestCase):
         self.assertEqual([kits.psp_cost(kits.MIND_BENDER, p, 9) for p in (0, 6, 20)], [11, 9, 7])
         self.assertEqual([kits.psp_cost(kits.KINETICIST, p, 2) for p in (0, 6, 20)], [1, 2, 4])
 
+    SEED = 0x4122  # (DS: the game's rand() seed, the header's seed_off)
+
+    def test_cure(self):
+        """PROBE_CURE: the healing pushed for the routine that heals (with DI after it) as the
+        caster's kit has it (kits.cure_bonus; a Lifebinder's die from the game's seed, which moves
+        on), then CS pushed as the code did."""
+        from dscompanion import kits
+        from dscompanion.gamepatch import VEC_CURE
+        at = self.image.find(bytes.fromhex("83ec025589e560"))
+        self.assertGreater(at, 0)
+        self.mu.mem_write(VEC_CURE * 4, struct.pack("<HH", at, TSR))
+        self.mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
+        site = 0x480
+        for rules in (game.RULE_KITS, 0):
+            self.rules(rules)
+            for cls, kit in ((1, 2), (5, 2), (1, 1), (5, 0), (9, 1)):
+                kid = self.kit_of(cls, kit, rules)
+                self.creature(cls, kit)
+                for spell in (kits.CURE_LIGHT, kits.CURE_SERIOUS, kits.CURE_CRITICAL, kits.BLOOD_FLOW, 72, 71 + 256):
+                    with self.subTest(rules=rules, cls=cls, kit=kit, spell=spell):
+                        self.mu.mem_write(SS * 16 + BP + 8, struct.pack("<H", 7))
+                        self.mu.mem_write(SS * 16 + BP + 0x0E, struct.pack("<H", spell))
+                        seed = 0x12345678
+                        self.mu.mem_write(self.DS * 16 + self.SEED, struct.pack("<I", seed))
+                        site += 0x10  # (code the emulator hasn't seen)
+                        self.mu.mem_write(CALLER * 16 + site, bytes((0x50, 0x57, 0xCD, VEC_CURE, 0x90)))
+                        for name, value in dict(cs=CALLER, ds=self.DS, ss=SS, esp=0x7FC, ebp=BP, eflags=IF | 2,
+                                                eax=10, edi=0x0505, ebx=0x2222).items():
+                            self.mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+                        self.mu.emu_start(CALLER * 16 + site, CALLER * 16 + site + 4)
+                        sp = self.mu.reg_read(r.UC_X86_REG_SP)
+                        self.assertEqual(sp, 0x7FC - 6)
+                        pushed_cs, pushed_di, healing = struct.unpack("<HHH", self.mu.mem_read(SS * 16 + sp, 6))
+                        die = 0
+                        sides = kits.cure_die(kid, spell % 256 if spell < 256 else 0)
+                        if sides:
+                            nxt = (seed * 0x015A4E35 + 1) & 0xFFFFFFFF
+                            die = ((nxt >> 16) & 0x7FFF) * sides // 32768 + 1
+                            self.assertEqual(struct.unpack("<I", self.mu.mem_read(self.DS * 16 + self.SEED, 4))[0], nxt)
+                        want = 10 + (kits.cure_bonus(kid, spell) if spell < 256 else 0) + die
+                        self.assertEqual((pushed_cs, pushed_di, healing), (CALLER, 0x0505, want))
+                        self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_AX, r.UC_X86_REG_BX,
+                                                                        r.UC_X86_REG_DI, r.UC_X86_REG_BP)],
+                                         [10, 0x2222, 0x0505, BP])
+        self.assertEqual([kits.cure_bonus(kits.HEALER, s) for s in (71, 112, 127, 108)], [1, 2, 3, 0])
+        self.assertEqual([kits.cure_die(kits.LIFEBINDER, s) for s in (71, 108, 72)], [8, 6, 0])
+
+    def test_harm(self):
+        """PROBE_HARM: a spell's damage (DX; DI the dice), a Healer's whose turn it is 1 less a die,
+        never less than 1 a die (kits.harm)."""
+        from dscompanion import kits
+        from dscompanion.gamepatch import VEC_HARM
+        for rules in (game.RULE_KITS, 0):
+            self.rules(rules)
+            for cls, kit in ((1, 2), (1, 0), (5, 2)):
+                kid = self.kit_of(cls, kit, rules)
+                self.creature(cls, kit)
+                self.mu.mem_write(self.DS * 16 + 0x4979, struct.pack("<H", 7))
+                for dice, damage in ((1, 1), (3, 3), (3, 10), (6, 21), (0, 5)):
+                    with self.subTest(rules=rules, cls=cls, kit=kit, dice=dice, damage=damage):
+                        self.run_int(VEC_HARM, "535106 89d1".replace(" ", ""), 2, edx=damage, edi=dice,
+                                     ebx=0x2222, ecx=0x3333, es=0x6666)
+                        self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), kits.harm(kid, dice, damage))
+                        self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_BX, r.UC_X86_REG_CX,
+                                                                        r.UC_X86_REG_DX, r.UC_X86_REG_ES)],
+                                         [0x2222, 0x3333, damage, 0x6666])
+        self.assertEqual([kits.harm(kits.HEALER, 3, d) for d in (3, 5, 10)], [3, 3, 7])
+
     def test_kit_id(self):
         from dscompanion import kitpages
         self.rules(game.RULE_KITS)
