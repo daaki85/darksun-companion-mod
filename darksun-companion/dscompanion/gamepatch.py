@@ -67,8 +67,8 @@ VEC_INIT = 0xB8
 VEC_THAC0 = 0xB7
 VEC_SLOTS, VEC_SLOT_LEVEL = 0xB6, 0xB5
 VEC_PSP_USE, VEC_PSP_TABLE, VEC_PSP_DEFENCE = 0xB4, 0xB3, 0xB2
-VEC_CURE, VEC_HARM = 0xB1, 0xB0
-VEC_RANGER_CAST = 0xAF
+VEC_CURE, VEC_PSP_KEEP = 0xB1, 0xB0
+VEC_RANGER_CAST, VEC_PSP_KEEP_DX, VEC_HIT_ROUND = 0xAF, 0xAE, 0xAD
 
 
 SCRIPT_BUFFER = 0x2E00  # the scripts' buffer, made bigger (the game's: 10000 bytes)
@@ -351,10 +351,14 @@ PATCHES = (
     Patch("psp_can_use", 0x5CAA3, bytes.fromhex("268a870100"), _interrupt(VEC_PSP_TABLE, 5)),
     Patch("psp_failed", 0x5CCA2, bytes.fromhex("268a870100"), _interrupt(VEC_PSP_TABLE, 5)),
     Patch("psp_defence", 0x5D820, bytes.fromhex("26294702"), _interrupt(VEC_PSP_DEFENCE, 4)),
-    # a cure's healing (the spells' own handler, as it goes to be healed) and a spell's damage dice:
-    # a Healer's and a Lifebinder's (kits.cure_bonus, kits.cure_die, kits.harm)
+    # a cure's healing (the spells' own handler, as it goes to be healed): a Healer's and a
+    # Lifebinder's (kits.cure_bonus, kits.cure_die)
     Patch("cure", 0x79619, bytes.fromhex("900e"), _interrupt(VEC_CURE, 2)),
-    Patch("harm", 0x76EBE, bytes.fromhex("8bc2"), _interrupt(VEC_HARM, 2)),
+    # a power's cost to keep it up: where it's taken, and the check whether it can be (kits.psp_cost)
+    Patch("psp_keep", 0x5CE49, bytes.fromhex("268a870200"), _interrupt(VEC_PSP_KEEP, 5)),
+    Patch("psp_can_keep", 0x5CB02, bytes.fromhex("268a870200"), _interrupt(VEC_PSP_KEEP_DX, 5)),
+    # a creature marked hit this round (no spell till the next): not a Battle Mage
+    Patch("hit_round", 0x58733, bytes.fromhex("26c684af0001"), _interrupt(VEC_HIT_ROUND, 6)),
     # the caster level routine's 7 off a ranger's level: a Seeker's 5, a Justifier's 9 (kits.py)
     Patch("ranger_cast", 0x81B6A, bytes.fromhex("83ea07"), _interrupt(VEC_RANGER_CAST, 3)),
     # A bug of the game's own: the roster's DELETE (DSUN.EXE 54AC1h) picked the character by the

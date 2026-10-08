@@ -107,15 +107,15 @@ def specialized_back(sheet: bytes, kind: int) -> bool:
     return any(classes[i] in WARRIORS and levels[i] < levels[0] for i in (1, 2))
 
 
-def kit_forbids(sheet: bytes, item_type: int, typ: bytes, spec: bool = False) -> bool:
+def kit_forbids(sheet: bytes, item_type: int, typ: bytes, spec: bool = False, off_hand: bool = False) -> bool:
     """Whether the character's kit (kits.py, the rule for kits in force) keeps it from an item
-    type, whatever the class restrictions; SPEC: choosing a weapon spec."""
+    type, whatever the class restrictions; SPEC: choosing a weapon spec; OFF_HAND: to the off hand."""
     from . import kitpages, kits
     if not game.RULES_IN_FORCE & game.RULE_KITS:
         return False
     kind = specialize.kind_of(item_type) if is_weapon(typ) else None
     half_giant = sheet[game.SHEET_RACE] == game.RACE_HALF_GIANT and bool(game.RULES_IN_FORCE & game.RULE_HALF_GIANT)
-    return kits.forbids(kitpages.kit_id(sheet), typ, kind, half_giant, spec)
+    return kits.forbids(kitpages.kit_id(sheet), typ, kind, half_giant, spec, off_hand)
 
 
 def allowed(sheet: bytes, item_type: int, typ: bytes) -> bool:

@@ -1965,22 +1965,14 @@ class DiceLog:
         text = f"{name} damage: {count}d{sides} = [" + " + ".join(map(str, faces)) + "]"
         rule = g.spell_damage(spell) if spell is not None else None
         self._last_damage = (spell, sum(faces))
-        turn = g.combatant_creature(g.whose_turn()) if g.whose_turn() is not None else None
-        kid = g.kit_id(turn) if turn is not None else 0
         if rule is None or rule.sides != sides:
-            total = kits.harm(kid, count, sum(faces))
-            self._last_damage = (spell, total)
-            kit = f" {signed(total - sum(faces))} {kits.name(kid)}" if total != sum(faces) else ""
-            return f"{text}{kit} = {total}"
+            return f"{text} = {sum(faces)}"
         steps = rule.steps(level) if missile_steps is None else missile_steps
         bonus = rule.step_bonus * steps
-        total = kits.harm(kid, count, sum(faces) + bonus)  # (DSCLOG's PROBE_HARM: a Healer's)
-        self._last_damage = (spell, total)
+        self._last_damage = (spell, sum(faces) + bonus)
         if bonus:
             text += f" {signed(bonus)}"
-        if total != sum(faces) + bonus:
-            text += f" {signed(total - sum(faces) - bonus)} {kits.name(kid)}"
-        text += f" = {total}"
+        text += f" = {sum(faces) + bonus}"
         per = (f"{rule.step_dice}d{sides}" if rule.step_dice else "") + \
             (f"{signed(rule.step_bonus)}" if rule.step_dice and rule.step_bonus else
              f"{rule.step_bonus}" if rule.step_bonus else "")

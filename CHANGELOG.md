@@ -41,12 +41,14 @@ Released pull requests are summarised in a line or two each; the release notes
   two new probes in the game's slot routine (INT B6h, INT B5h); the Ledger's
   Spells tab counts them the same way.
 - **Kits' PSP:** the Mind Bender's telepathy powers (the defence modes too)
-  cost 2 PSP less and its psychokinesis 2 more, the Kineticist's the other way
-  about, through three new probes where the game prices a power (INT B4h,
-  B3h, B2h).
+  cost 2 PSP less to use and to keep up and its psychokinesis 2 more, the
+  Kineticist's the other way about, through new probes where the game prices
+  a power (INT B4h, B3h, B2h, B0h, AEh).
 - **Kits' healing:** the Healer's Cure Light, Serious and Critical Wounds heal
-  1 more a die and its damaging spells do 1 less a die; the Lifebinder's cures
-  heal a die more (INT B1h, INT B0h). The dice log shows each.
+  1 more a die, and the Lifebinder's cures heal a die more (INT B1h); the dice
+  log shows each. The Healer may hold no weapon in the off hand.
+- **The Battle Mage** casts though hit earlier in the round (the game stops
+  anyone else: INT ADh), and holds nothing in the off hand.
 - **Kits' casting level:** the Seeker casts at its ranger level less 5 and the
   Justifier less 9 (a ranger's: less 7), which also lets a Seeker of 6th level
   choose 1st-level priest spells for its slots (INT AFh).

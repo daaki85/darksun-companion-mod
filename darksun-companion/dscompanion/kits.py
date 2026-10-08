@@ -151,12 +151,6 @@ def cure_die(kid: int, spell: int) -> int:
     return CURE_DICE[spell][1] if kid == LIFEBINDER and spell in CURE_DICE else 0
 
 
-def harm(kid: int, dice: int, damage: int) -> int:
-    """A spell's DAMAGE of DICE dice (and the bonus with them) when a character of kit KID casts it
-    (PROBE_HARM): a Healer's 1 less a die, never less than 1 a die."""
-    return max(dice, damage - dice) if kid == HEALER else damage
-
-
 def ranger_cast_drop(kid: int) -> int:
     """How much less than its ranger level a ranger casts at (PROBE_RANGER_CAST; the game's 7): a
     Seeker's 5 (1st at 6th level, 5th at 10th), a Justifier's 9 (1st at 10th)."""
@@ -208,16 +202,20 @@ def stealth(kid: int) -> int:
     return 15 if kid == STALKER else 0
 
 
-def forbids(kid: int, typ: bytes, kind: Optional[int], half_giant: bool, spec: bool = False) -> bool:
+def forbids(kid: int, typ: bytes, kind: Optional[int], half_giant: bool, spec: bool = False,
+            off_hand: bool = False) -> bool:
     """Whether the kit keeps a character from an item type (TYP its record; KIND its weapon kind,
     or None), as DSCLOG's KIT_FORBIDS: a Ravager a shield, a missile or thrown weapon and armour that isn't
     light; a Twin-blade a shield, and a two-handed weapon (but a
     half-giant's, HALF_GIANT: with the rule for its hands); a Brute a one-handed melee weapon, a
     shield (but a half-giant's), and, choosing a weapon spec (SPEC), a missile weapon; a Stalker
     armour that isn't light; a Grove Warden a metal weapon; a Lifebinder a weapon of a kind not
-    blunt; a Shinobi a shield, armour that isn't light, a weapon not of SHINOBI_KINDS."""
+    blunt; a Shinobi a shield, armour that isn't light, a weapon not of SHINOBI_KINDS. Going to the
+    off hand (OFF_HAND): nothing for a Battle Mage, no weapon for a Healer."""
     flags, kinds, mat = typ[0], typ[0x0F], typ[8] & 0x4F
     weapon = bool(flags & (MELEE | MISSILE))
+    if off_hand and (kid == BATTLE_MAGE or kid == HEALER and flags & (MELEE | MISSILE | THROWN)):
+        return True
     light = not kinds & ARMOUR or bool(flags & SHIELD) or mat in (LEATHER, NO_MATERIAL)
     if kid == RAVAGER:
         return bool(flags & (SHIELD | MISSILE | THROWN)) or not light

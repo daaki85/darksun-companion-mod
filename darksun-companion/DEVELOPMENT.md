@@ -951,13 +951,13 @@ header's +270) switches them all off.
 | | Assassin | hiding in shadows isn't halved in daylight | −15 pick pockets and open locks |
 | | Shinobi | preserver spells on the Seeker's table, cast in light armour too | the Seeker's few slots; its own short list of spells, one learnt at each level up from its first slots, none from scrolls; only the dagger, short sword, quarterstaff, chatkcha, sling, staff sling and bow; light armour only; no shield |
 | Cleric | Elementalist | a second sphere: its spells and its weapons | spell slots one level slower (none at 1st level) |
-| | Healer | Cure spells heal 1 more per die | harmful spells do 1 less per die |
+| | Healer | Cure spells heal 1 more per die | no weapon in the off hand |
 | | Crusader | a fighter's THAC0 | one fewer spell slot at each spell level |
 | Druid | Grove Warden | AC 1 better for every 3 druid levels | no metal weapons |
 | | Lifebinder | healing spells heal a die more | blunt weapons only |
 | | Wanderer | +3 on saves against fire and cold spells (the game's Resist Fire and Resist Cold) | AC 1 worse |
 | Preserver | Scholar | a spell more learnt at each level up | −1 to hit |
-| | Battle Mage | a warrior's THAC0, a d6 hit die, expertise in one weapon spec (a one-handed melee weapon: long sword, short sword, dagger, club, mace, axe or pick; no thrown weapon), which it may use as well as a preserver's own weapons; light armour worn and spells cast in it; spells cast though hit in a fight (if the game stops them) | one fewer spell slot at each spell level; nothing in the off hand |
+| | Battle Mage | a warrior's THAC0, a d6 hit die, expertise in one weapon spec (a one-handed melee weapon: long sword, short sword, dagger, club, mace, axe or pick; no thrown weapon), which it may use as well as a preserver's own weapons; light armour worn and spells cast in it; spells cast though hit earlier in the round (the game stops anyone else's) | one fewer spell slot at each spell level; nothing in the off hand |
 | | Arcanist | a spell slot more at each spell level | −2 CON |
 | Psionicist | Mind Bender | telepathy powers cost 2 PSP less | psychokinesis powers 2 more |
 | | Mind Warrior | a warrior's THAC0, a d8 hit die | a tenth fewer PSP |
@@ -1078,8 +1078,10 @@ emulated tests hold the helper to it:
 | spell slots | Arcanist (+1 wizard), Battle Mage (−1 wizard), Crusader (−1 priest), Seeker and Justifier (their priest tables, `SEEKER_SLOTS`, by ranger level, in place of the game's), Elementalist (a level behind) | `PROBE_SLOTS` (`INT B6h`, new: the end of the game's slot routine, `mov ax,[bp-2]` at DSUN.EXE 5E255h) and `PROBE_SLOT_LEVEL` (`INT B5h`, new: where it takes a class's level, `mov al,es:[bx+24h]` at 5E1F6h); `GameData.max_spell_slots` with `kits.slots` and `kits.slot_level` |
 | a power's PSP | Mind Bender, Kineticist (by discipline: powers 0-5 psychokinesis, 6-19 psychometabolism, 20-33 telepathy, the defence modes among them; never below 1) | the powers' table (8 bytes a power, at the load segment + 3FB9h: `+1` the cost to use, `+2` to keep up, 63h for none; `+5` FEh for a defence mode). `PROBE_PSP_USE` (`INT B4h`, new: where the routine using a power has its cost in DI, its table's or worked out for Enhanced Strength and Domination, DSUN.EXE 5CBE7h), `PROBE_PSP_TABLE` (`INT B3h`, new: the table's cost read in the check whether a power can be used, 5CAA3h, and for the half a failed power costs, 5CCA2h), `PROBE_PSP_DEFENCE` (`INT B2h`, new: a defence mode's cost taken off, 5D820h); `kits.psp_cost`. Monsters' powers (5A773h) are left alone |
 | a cure's healing | Healer (+1 a die of Cure Light, Serious, Critical Wounds: spells 71, 112, 127), Lifebinder (a die more: a d8, Blood Flow's, 108, a d6, rolled from the game's rand() seed by `GAME_DIE`) | `PROBE_CURE` (`INT B1h`, new: "nop / push cs" at DSUN.EXE 79619h in the handler for spells with rules of their own, where the healing, pushed with the target, goes to the routine that heals; the caster its `[BP+8]`, the spell `[BP+0Eh]`; the probe pushes CS itself). The Cell Adjustment's jump into 79618h is clear of it |
-| a spell's damage | Healer (1 less a die, never less than 1 a die) | `PROBE_HARM` (`INT B0h`, new: "mov ax,dx" at 76EBEh, the end of the routine rolling a spell's damage by caster level, whose arguments are the spell and the level only: the caster is the combatant whose turn it is, DS:4979h) |
 | casting level | Seeker (the ranger level less 5), Justifier (less 9) | `PROBE_RANGER_CAST` (`INT AFh`, new: "sub dx,7", a ranger's level counted 7 less, at 81B6Ah in the caster level routine, 81B16h, whose arguments are the combatant and the spell). The same routine sets the spell levels a priest may cast, half the caster level rounded up (81664h), so a Seeker of 6th level casts 1st-level spells, of 8th 2nd, of 10th 3rd, as its slots have them; `kits.ranger_cast_drop`, and `GameData.effect_caster_level` |
+| a power's PSP to keep it up | Mind Bender, Kineticist (as the cost to use it; 63h, none, left alone) | `PROBE_PSP_KEEP` (`INT B0h`, new: the table's `+2` read where the round's cost is taken, 5CE49h, the combatant in SI) and `PROBE_PSP_KEEP_DX` (`INT AEh`, new: the check whether a power can be kept up, 5CB02h, the combatant in DX). The monsters' cost lookups (5D4DAh, 5D4EFh) are left alone |
+| the off hand | Healer (no weapon), Battle Mage (nothing) | `PROBE_CAN_USE`'s `KIT_FORBIDS` with `KF_OFF_HAND`: the can-use routine's only caller is the equip routine (6EF52h), whose `[BP+8]` is the slot (the item's slot + 4: 7 the right hand, 14 the left, the off hand; 18 on the backpack), read through the can-use routine's saved BP |
+| casting though hit | Battle Mage | a hit's damage marks its creature hit this round (`mov byte es:[si+0AFh],1`, 58733h, in the routine taking damage off; cleared at a round's start, 57621h), and a marked character can't choose a spell on the USE screen (892F3h, 55898h) and has a queued one dropped (8991Bh): `PROBE_HIT_ROUND` (`INT ADh`, new) doesn't mark a Battle Mage |
 | THAC0 | Swashbuckler, Crusader, Battle Mage, Mind Warrior (a warrior's: 21 less the level, where better), Scholar (1 worse) | `PROBE_THAC0` (`INT B7h`, new: the end of the game's THAC0 routine, `mov ax,14h / sub ax,si` at DSUN.EXE 876BBh, which every write of a creature's THAC0, `+1Fh`, uses: on making a character, 66CE0h, and at a level up, 86D7Eh and 87A91h) |
 | initiative | Sentinel | `PROBE_INIT` (`INT B8h`, new: the round's 20 added at DSUN.EXE 5750Eh) |
 | saves | Myrmidon (charms), Sentinel (spells, 0-137), Wanderer (fire and cold: the spell record's `+1Ah`, 2 or 4, as the game's Resist Fire and Resist Cold read it) | `PROBE_RING_SAVE` (the modifier routine's start: `KIT_SAVE`) |
@@ -1124,9 +1126,8 @@ helper's code (emulated) to the Python.
    running game's memory. Left for later: the Scholar's spell learnt, with the
    CHOOSE A SPELL screen (the Shinobi's step), and whether the game lets a
    Seeker below 8th level choose priest spells for its slots.
-4. Done: PSP costs (Mind Bender, Kineticist), the cures' dice and harmful
-   spells' damage (Healer, Lifebinder), casting level (Seeker, Justifier). A
-   hit spoiling a spell (Battle Mage): nothing to build, the game has none: a
-   spell is cast and takes effect on its caster's turn, with nothing in
-   between that a hit could stop.
+4. Done: PSP costs (Mind Bender, Kineticist), the cures' dice
+   (Healer, Lifebinder), the cost to keep a power up (Mind Bender,
+   Kineticist), casting level (Seeker, Justifier), a spell cast though hit,
+   and nothing in the off hand (Battle Mage), no off-hand weapon (Healer).
 5. The Shinobi.

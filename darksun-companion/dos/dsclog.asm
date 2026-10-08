@@ -106,8 +106,10 @@ VEC_PSP_USE equ 0xB4       ; PROBE_PSP_USE
 VEC_PSP_TABLE equ 0xB3     ; PROBE_PSP_TABLE
 VEC_PSP_DEFENCE equ 0xB2   ; PROBE_PSP_DEFENCE
 VEC_CURE equ 0xB1          ; PROBE_CURE
-VEC_HARM equ 0xB0          ; PROBE_HARM
+VEC_PSP_KEEP equ 0xB0      ; PROBE_PSP_KEEP
 VEC_RANGER_CAST equ 0xAF   ; PROBE_RANGER_CAST
+VEC_PSP_KEEP_DX equ 0xAE   ; PROBE_PSP_KEEP_DX
+VEC_HIT_ROUND equ 0xAD     ; PROBE_HIT_ROUND
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 96          ; entries in the ring (96: the helper and it fit in upper memory)
@@ -2838,7 +2840,13 @@ probe_can_use:
         and ax, [es:bx + 0x12]
         jz .done
         mov byte [cs:kf_spec], 0
+        push si
+        mov si, [bp]            ; (the equip routine's frame: its [BP+8] the slot, 14 the off hand)
+        cmp word [ss:si + 8], EQUIP_OFF_HAND
+        pop si
+        sete [cs:kf_off_hand]
         call kit_forbids
+        mov byte [cs:kf_off_hand], 0
         jc .no
         test word [cs:rules], RULE_RESTRICT
         jz .done
@@ -2883,6 +2891,15 @@ kit_forbids:
         add bx, ax
         mov al, [es:bx]         ; AL the flags, AH the kind flags
         mov ah, [es:bx + 0x0F]
+        cmp byte [cs:kf_off_hand], 0    ; the off hand: nothing for a Battle Mage, no weapon for a Healer
+        je .ravager
+        cmp cl, KIT_BATTLE_MAGE
+        je .no
+        cmp cl, KIT_HEALER
+        jne .ravager
+        test al, KT_MELEE | KT_MISSILE | KT_THROWN
+        jnz .no
+.ravager:
         cmp cl, KIT_RAVAGER     ; a Ravager: no shield, no missile or thrown weapon, light armour only
         jne .twin
         test al, KT_SHIELD
@@ -2990,6 +3007,8 @@ kit_blunt  dw KIT_BLUNT
 kit_shinobi dw 0xF10C           ; bits by kind: dagger, short sword, quarterstaff, chatkcha, bow, sling,
                                 ;   staff sling
 kf_spec    db 0
+kf_off_hand db 0               ; (KIT_FORBIDS: the item going to the off hand)
+EQUIP_OFF_HAND equ 14          ; the equip routine's slot for the off (left) hand
 
 ; CLASS_FORBIDS: carry set if the classes of the character whose sheet is at ES:BX keep it from
 ; item type DX (dscompanion/restrict.py, which says why): a psionicist, a multiclass thief, a
@@ -4898,31 +4917,47 @@ probe_cure:
         pop bp
         iret
 
-; PROBE_HARM: INT VEC_HARM replaces "mov ax,dx" (2 bytes; DSUN.EXE 76EBEh) at the end of the routine
-; that rolls a spell's damage (DX the dice and its bonus, DI the dice): AX that, a Healer's (the
-; combatant whose turn it is) 1 less a die, never less than 1 a die (kits.harm).
-probe_harm:
+; PROBE_PSP_KEEP: INT VEC_PSP_KEEP replaces "mov al,es:[bx+2]" (5 bytes: INT + 3 NOPs; DSUN.EXE
+; 5CE49h) where the game takes a power's cost to keep it up another round from its table (ES:BX
+; the power's row; SI the combatant): AL the kit's (KIT_PSP), but 63h (none to keep up) as it is;
+; AH as it was. PROBE_PSP_KEEP_DX: the same with the combatant in DX (5CB02h, the check whether it
+; can be kept up).
+PSP_NO_UPKEEP equ 0x63
+probe_psp_keep_dx:
+        push si
+        mov si, dx
+        call psp_keep
+        pop si
+        iret
+probe_psp_keep:
+        call psp_keep
+        iret
+psp_keep:
         push bx
         push cx
-        push es
-        mov cx, dx
-        mov ax, ds
-        add ax, THINGS_SEG
-        mov es, ax
-        imul bx, [WHOSE_TURN], 3
-        mov ax, [es:bx + COMBATANT_CREATURE]
-        call kit_of_creature
-        jz .out
-        cmp al, KIT_HEALER
-        jne .out
-        sub cx, di
-        cmp cx, di
-        jge .out
-        mov cx, di
-.out:   mov ax, cx
-        pop es
+        mov ch, ah
+        movzx ax, byte [es:bx + 2]
+        cmp al, PSP_NO_UPKEEP
+        je .out
+        shr bx, 3
+        call kit_psp
+.out:   mov ah, ch
         pop cx
         pop bx
+        ret
+
+; PROBE_HIT_ROUND: INT VEC_HIT_ROUND replaces "mov byte es:[si+0AFh],1" (6 bytes: INT + 4 NOPs;
+; DSUN.EXE 58733h) where the routine taking a hit's damage off marks creature SI hit this round
+; (ES the segment of those marks), which keeps it from casting a spell until the next round (the
+; USE screen's refusal, 892F3h; a queued spell dropped, 8991Bh): a Battle Mage isn't marked.
+probe_hit_round:
+        push ax
+        mov ax, si
+        call kit_of_creature
+        cmp al, KIT_BATTLE_MAGE
+        je .out
+        mov byte [es:si + 0xAF], 1
+.out:   pop ax
         iret
 
 ; PROBE_RANGER_CAST: INT VEC_RANGER_CAST replaces "sub dx,7" (3 bytes: INT + NOP; DSUN.EXE 81B6Ah)
@@ -9954,8 +9989,14 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_CURE
         mov dx, probe_cure
         int 21h
-        mov ax, 2500h + VEC_HARM
-        mov dx, probe_harm
+        mov ax, 2500h + VEC_PSP_KEEP
+        mov dx, probe_psp_keep
+        int 21h
+        mov ax, 2500h + VEC_PSP_KEEP_DX
+        mov dx, probe_psp_keep_dx
+        int 21h
+        mov ax, 2500h + VEC_HIT_ROUND
+        mov dx, probe_hit_round
         int 21h
         mov ax, 2500h + VEC_RANGER_CAST
         mov dx, probe_ranger_cast

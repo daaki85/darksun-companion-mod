@@ -1112,9 +1112,13 @@ class CanUseTests(unittest.TestCase):
             mu.mem_write(self.TYPES_SEG * 16 + t * 0x14, test_restrict.record(t))
         mu.mem_write(CALLER * 16 + 0x600, bytes((0xCD, VEC_CAN_USE, 0x90, 0x90)))
 
-    def can_use(self, sheet, t, rules=8192):
+    def can_use(self, sheet, t, rules=8192, slot=7):
+        """The equip routine putting item type T in SLOT (7 the right hand, 14 the off hand: its
+        [BP+8], BP the can-use routine's [BP])."""
         mu = self.mu
         mu.mem_write(TSR * 16 + load_image().find(HDR_SIG) + self.RULES, struct.pack("<H", rules))
+        mu.mem_write(SS * 16 + BP, struct.pack("<H", PARENT_BP))
+        mu.mem_write(SS * 16 + PARENT_BP + 8, struct.pack("<H", slot))
         mu.mem_write(self.SHEET * 16 + 0x100, sheet)
         for name, value in dict(cs=CALLER, ds=GAME_DS, ss=SS, esp=0x7FC, ebp=BP, eflags=IF | 2, eax=test_restrict.TYPES[t][3],
                                 ebx=0x100, ecx=0x3333, edx=t, esi=0x5555, edi=0x7777, es=self.SHEET).items():
@@ -1174,7 +1178,24 @@ class CanUseTests(unittest.TestCase):
                                 ok = mask and restrict.allowed(bytes(s), t, test_restrict.record(t)) \
                                     and not restrict.kit_forbids(bytes(s), t, test_restrict.record(t))
                                 self.assertEqual(self.can_use(bytes(s), t, rules=rules), mask if ok else 0)
+            # the off hand: a Healer no weapon, a Battle Mage nothing (the right hand as before)
+            for cls, kit in ((1, 2), (11, 2), (1, 0), (11, 1)):
+                s = bytearray(test_restrict.sheet(cls))
+                s[0x43] = kit
+                for t in test_restrict.TYPES:
+                    for slot in (7, 14):
+                        with self.subTest(cls=cls, kit=kit, type=t, slot=slot):
+                            mask = test_restrict.TYPES[t][3] & int.from_bytes(s[0x12:0x14], "little")
+                            ok = mask and restrict.allowed(bytes(s), t, test_restrict.record(t)) \
+                                and not restrict.kit_forbids(bytes(s), t, test_restrict.record(t), off_hand=slot == 14)
+                            self.assertEqual(self.can_use(bytes(s), t, rules=rules, slot=slot), mask if ok else 0)
             game.RULES_IN_FORCE = game.RULE_KITS
+            healer, mage = bytearray(test_restrict.sheet(1)), bytearray(test_restrict.sheet(11))
+            healer[0x43], mage[0x43] = 2, 2
+            self.assertTrue(restrict.kit_forbids(bytes(healer), 22, test_restrict.record(22), off_hand=True))
+            self.assertFalse(restrict.kit_forbids(bytes(healer), 22, test_restrict.record(22)))
+            self.assertFalse(restrict.kit_forbids(bytes(healer), 4, test_restrict.record(4), off_hand=True))  # (a shield)
+            self.assertTrue(restrict.kit_forbids(bytes(mage), 4, test_restrict.record(4), off_hand=True))
             brute = bytearray(test_restrict.sheet(10))
             brute[0x43] = 3
             self.assertFalse(restrict.kit_forbids(bytes(brute), 1, test_restrict.record(1)))  # (a bow, to use ...)
@@ -2885,27 +2906,6 @@ class KitTests(unittest.TestCase):
         self.assertEqual([kits.cure_bonus(kits.HEALER, s) for s in (71, 112, 127, 108)], [1, 2, 3, 0])
         self.assertEqual([kits.cure_die(kits.LIFEBINDER, s) for s in (71, 108, 72)], [8, 6, 0])
 
-    def test_harm(self):
-        """PROBE_HARM: a spell's damage (DX; DI the dice), a Healer's whose turn it is 1 less a die,
-        never less than 1 a die (kits.harm)."""
-        from dscompanion import kits
-        from dscompanion.gamepatch import VEC_HARM
-        for rules in (game.RULE_KITS, 0):
-            self.rules(rules)
-            for cls, kit in ((1, 2), (1, 0), (5, 2)):
-                kid = self.kit_of(cls, kit, rules)
-                self.creature(cls, kit)
-                self.mu.mem_write(self.DS * 16 + 0x4979, struct.pack("<H", 7))
-                for dice, damage in ((1, 1), (3, 3), (3, 10), (6, 21), (0, 5)):
-                    with self.subTest(rules=rules, cls=cls, kit=kit, dice=dice, damage=damage):
-                        self.run_int(VEC_HARM, "535106 89d1".replace(" ", ""), 2, edx=damage, edi=dice,
-                                     ebx=0x2222, ecx=0x3333, es=0x6666)
-                        self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), kits.harm(kid, dice, damage))
-                        self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_BX, r.UC_X86_REG_CX,
-                                                                        r.UC_X86_REG_DX, r.UC_X86_REG_ES)],
-                                         [0x2222, 0x3333, damage, 0x6666])
-        self.assertEqual([kits.harm(kits.HEALER, 3, d) for d in (3, 5, 10)], [3, 3, 7])
-
     def test_ranger_cast(self):
         """PROBE_RANGER_CAST: DX (a ranger's level) 7 less, a Seeker's 5, a Justifier's 9."""
         from dscompanion import kits
@@ -2921,6 +2921,53 @@ class KitTests(unittest.TestCase):
                     self.assertEqual(self.mu.reg_read(r.UC_X86_REG_DX), 10 - kits.ranger_cast_drop(kid))
                     self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_AX, r.UC_X86_REG_BX,
                                                                     r.UC_X86_REG_ES)], [0x1111, 0x2222, 0x6666])
+
+    def test_psp_keep(self):
+        """PROBE_PSP_KEEP (SI the combatant) and PROBE_PSP_KEEP_DX (DX): the table's cost to keep a
+        power up (+2) as kits.psp_cost, 63h (none) as it is."""
+        from dscompanion import kits
+        from dscompanion.gamepatch import VEC_PSP_KEEP, VEC_PSP_KEEP_DX
+        table = 0x8500
+        for rules in (game.RULE_KITS, 0):
+            self.rules(rules)
+            for cls, kit in self.PSP_CASES:
+                kid = self.kit_of(cls, kit, rules)
+                self.creature(cls, kit)
+                for power in (0, 6, 20):
+                    for keep in (0, 1, 4, 0x63):
+                        with self.subTest(rules=rules, cls=cls, kit=kit, power=power, keep=keep):
+                            want = keep if keep == 0x63 else kits.psp_cost(kid, power, keep)
+                            self.mu.mem_write(table * 16 + power * 8 + 2, bytes((keep,)))
+                            for vector, regs in ((VEC_PSP_KEEP, dict(esi=7, edx=0x4444)),
+                                                 (VEC_PSP_KEEP_DX, dict(esi=0x5555, edx=7))):
+                                self.run_vector(vector, 5, eax=0x7700, es=table, ebx=power * 8, **regs)
+                                self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), 0x7700 | want)
+                                self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_BX, r.UC_X86_REG_SI,
+                                                                                r.UC_X86_REG_DX)],
+                                                 [power * 8, regs["esi"], regs["edx"]])
+
+    def run_vector(self, vector, code_len, **regs):
+        """INT VECTOR as run_int, its handler where the helper's install sets it (the vectors read
+        from the image's own install code: "mov ax,25xxh / mov dx,handler")."""
+        at = self.image.find(bytes((0xB8, vector, 0x25, 0xBA)))
+        self.assertGreater(at, 0)
+        handler = struct.unpack_from("<H", self.image, at + 4)[0]
+        self.run_int(vector, self.image[handler:handler + 8].hex(), code_len, **regs)
+
+    def test_hit_round(self):
+        """PROBE_HIT_ROUND: creature SI marked hit this round (ES:SI+0AFh), but not a Battle Mage."""
+        from dscompanion.gamepatch import VEC_HIT_ROUND
+        marks = 0x8600
+        for rules in (game.RULE_KITS, 0):
+            self.rules(rules)
+            for cls, kit in ((11, 2), (11, 1), (11, 0), (1, 2)):
+                self.creature(cls, kit)  # (creature 5)
+                with self.subTest(rules=rules, cls=cls, kit=kit):
+                    self.mu.mem_write(marks * 16 + 5 + 0xAF, b"\0")
+                    self.run_vector(VEC_HIT_ROUND, 6, esi=5, es=marks, eax=0x1111)
+                    battle_mage = rules and (cls, kit) == (11, 2)
+                    self.assertEqual(self.mu.mem_read(marks * 16 + 5 + 0xAF, 1)[0], 0 if battle_mage else 1)
+                    self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), 0x1111)
 
     def test_kit_id(self):
         from dscompanion import kitpages
