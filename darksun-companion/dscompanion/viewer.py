@@ -1,12 +1,13 @@
 """Templar's Ledger's window (tkinter), in the colours of the game's own screens.
 
-Left: one column per party slot showing the fields mapped in the layout. For
-Shattered Lands the party is found automatically; other layouts locate a
-character by name (linked records such as the character sheet are then found
-automatically).
-Right: the dice log (when the game was started with DSCLOG), and memory tools:
-name search and a live hex view of a record that highlights bytes as they
-change. Click a byte to see it decoded as each value type.
+Left: the party, a card for each character (partyview.py) and every field the
+layout maps in a table. For Shattered Lands the party is found automatically;
+other layouts locate a character by name (linked records such as the character
+sheet are then found automatically).
+Right: the dice log (when the game was started with DSCLOG), the dialogue, the
+spells, the memory tools (name search, the layout's buttons, and a live hex
+view of a record that highlights bytes as they change; click a byte to see it
+decoded as each value type) and the Options tab.
 """
 
 import re

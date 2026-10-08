@@ -270,7 +270,7 @@ mapping new fields, or for other layouts:
    in memory, as they do in save files. Otherwise assign each slot by name.
 3. The **character sheet** (XP, classes, levels, saves) is found automatically:
    it carries the same ability scores and entity ID as the creature record.
-4. **Save layout** stores the addresses. They may change when you load a save
+4. **Save layout** (beside **Search**) stores the addresses. They may change when you load a save
    or restart the game. If a slot starts showing garbage, locate it again.
 
 The **Record bytes** panel shows the raw record. Bytes that change light up

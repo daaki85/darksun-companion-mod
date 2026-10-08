@@ -25,6 +25,8 @@ Released pull requests are summarised in a line or two each; the release notes
   Save layout and Reload layout are on the Memory tools tab, leaving the top
   row to starting the game, its window, the text size and Reconnect; a byte's
   decoding has a line of its own.
+- **"Not connected"** says to start the game with Start the game, rather than
+  naming a command-line option.
 - **A character's card** leaves out empty lines (a non-warrior's weapon
   specs), rather than showing a blank one.
 

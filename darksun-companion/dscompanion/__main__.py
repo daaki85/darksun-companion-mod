@@ -26,7 +26,7 @@ def connect(args) -> GuestMemory:
     if pid is None:
         found = find_dosbox_processes()
         if not found:
-            raise CliError("No DOSBox process found. Start the game first, or pass --pid.")
+            raise CliError("No DOSBox process found: start the game (Start the game, top left).")
         if len(found) > 1:
             listing = ", ".join(f"{p} ({n})" for p, n in found)
             raise CliError(f"Several DOSBox processes are running: {listing}. Pick one with --pid.")

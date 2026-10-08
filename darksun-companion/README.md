@@ -257,7 +257,8 @@ there is no report.
 ## The Ledger's window
 
 The window has the party on one side and the logs and tools on the other, with
-**Start the game**, the game window's size and the text size along the top. The
+**Start the game**, the game window's size, the text size and **Reconnect** (to
+find the game again) along the top. The
 party pane has two tabs:
 
 - **Characters** (Alt+C): a card for each character, laid out like the game's
