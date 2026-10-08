@@ -101,7 +101,7 @@ show the weapons and armour the party wears, have characters cast shadows, and
 kick up dirt as they walk ([On the screen](#on-the-screen)).
 
 Quality of life changes: choosing an enemy with Tab and attacking it with Enter,
-scrolling the map with the mouse ([Controls](#controls)), 40 saves and 29 saved
+scrolling the map with the mouse wheel ([Controls](#controls)), 40 saves and 29 saved
 characters ([More saves and characters](#more-saves-and-characters)), a game
 speed setting ([Game speed](#game-speed)), crash reports, and no dragon asking for a word from the manual, the game's copy protection ([No manual check](#no-manual-check)).
 
