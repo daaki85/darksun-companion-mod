@@ -26,9 +26,11 @@ KITS = {1: ("Elementalist", "Healer", "Crusader"),
         7: ("Stalker", "Justifier", "Seeker"),
         8: ("Swashbuckler", "Assassin", "Shinobi")}
 # the rows' text where the name is too long for the panel
-SHORT = {"Arena Champion": "CHAMPION", "Swashbuckler": "SWASHBUCK", "Elementalist": "ELEMENTLST",
-         "Grove Warden": "GRV WARDEN", "Mind Bender": "M-BENDER", "Mind Warrior": "M-WARRIOR"}
-ROW_WIDTH = 96  # (a row's picture, its mark's room in: the panel's button VIEW SPHERES is 93)
+SHORT = {"Arena Champion": "CHAMPION", "Swashbuckler": "SWASHBUCK", "Elementalist": "ELEMENTAL",
+         "Grove Warden": "WARDEN", "Battle Mage": "BATTLMAGE", "Mind Bender": "M-BENDER", "Mind Warrior": "M-WARRIOR"}
+# the widest a row's picture may be, its mark's room in: the panel's frame comes in to about 95
+# pixels past the rows' left at the second kit's row, and a few more are kept clear of it
+ROW_WIDTH = 88
 # a sheet's class (game.CLASS_NAMES, 1-17) as the creation screen numbers them
 CREATION_CLASS = {**{c: 1 for c in range(1, 5)}, **{c: 2 for c in range(5, 9)}, 9: 3, 10: 4, 11: 5, 12: 6,
                   **{c: 7 for c in range(13, 17)}, 17: 8}

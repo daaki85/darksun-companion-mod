@@ -29,7 +29,19 @@ class KitPageTests(unittest.TestCase):
         self.assertEqual(len(texts), 24)
         self.assertIn("CHAMPION", texts)
         self.assertIn("M-WARRIOR", texts)
+        self.assertIn("BATTLMAGE", texts)
+        self.assertIn("WARDEN", texts)
+        self.assertIn("ELEMENTAL", texts)
         self.assertTrue(all(len(t) <= 11 for t in texts))
+
+    @unittest.skipUnless(os.environ.get("DSUN_RESOURCE"), "DSUN_RESOURCE (the game's RESOURCE.GFF) not given")
+    def test_row_widths(self):
+        """Every row within ROW_WIDTH in the game's own letters, clear of the panel's frame."""
+        from dscompanion import gff
+        with open(os.environ["DSUN_RESOURCE"], "rb") as f:
+            widths = kitpages.row_widths(gff.read_gff(f.read()))
+        self.assertEqual(len(widths), 25)
+        self.assertEqual({n: w for n, w in widths.items() if w > kitpages.ROW_WIDTH}, {})
 
     def test_kit_name(self):
         sheet = bytearray(game.SHEET_SIZE)

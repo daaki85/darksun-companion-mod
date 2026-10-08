@@ -1047,10 +1047,12 @@ whenever the disciplines' window is opened other than on the way back to it
 (`KIT_KEEP`, set by VIEW PSIONICS): for a new character, or another class.
 
 The rows' letters are carved from the game's own labels, as the weapon
-pages' (`kitpages.py`, with a J and a hyphen drawn), and the panel takes
-about 96 pixels: ARENA CHAMPION, SWASHBUCKLER, ELEMENTALIST, GROVE WARDEN,
-MIND BENDER and MIND WARRIOR are shortened, the last two as the game's
-P-KINESIS.
+pages' (`kitpages.py`, with a J and a hyphen drawn). The panel's frame comes
+in to about 95 pixels past the rows' left at the second kit's row, so a row
+is held to 88 (`ROW_WIDTH`, its mark's room in), clear of it: ARENA CHAMPION,
+SWASHBUCKLER, ELEMENTALIST, GROVE WARDEN, BATTLE MAGE, MIND BENDER and MIND
+WARRIOR are shortened (CHAMPION, SWASHBUCK, ELEMENTAL, WARDEN, BATTLMAGE,
+M-BENDER, M-WARRIOR), the last two as the game's P-KINESIS.
 
 The Effects screen's lower panel (`PROBE_EF_ROWS`) has the kit's line first,
 `KIT: RAVAGER`, before the weapon specs; the Characters tab has `Kit: Ravager`

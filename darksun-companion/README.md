@@ -1664,7 +1664,7 @@ last weapon page for a fighter, gladiator or ranger choosing weapon specs.
 NO KIT, the first row, is what a new character has. As with the clerical
 spheres, the rows not chosen are greyed: click the marked row to take it back,
 then click the kit you want. A few names are shortened to fit the panel
-(CHAMPION, SWASHBUCK, ELEMENTLST, GRV WARDEN, M-BENDER, M-WARRIOR). Choosing
+(CHAMPION, SWASHBUCK, ELEMENTAL, WARDEN, BATTLMAGE, M-BENDER, M-WARRIOR). Choosing
 another class puts the kit back to none. The Effects screen names the kit
 (`KIT: RAVAGER`), as does the Ledger's Characters tab.
 
