@@ -973,21 +973,24 @@ level, not the ranger's:
 
 ### Room in the helper
 
-DSCLOG keeps its code, its data and the dice log's ring buffer in one 64 KB
-segment, all reached through CS. The resident part ends at 0D840h: about 30 KB
-of code and data, then the ring (`NENT` 128 entries of `ESIZE` 192 bytes,
-24 KB); the install code follows, and the image ends at about 63 KB, with
-about 1 KB to spare. The kits need several KB. The way out: allocate the ring
-as a block of its own when installing (DOS function 48h), and give its segment
-in the header beside `ring_off`, for `dicelog.py` to read it there. That frees
-24 KB of the segment and leaves the memory used as it is. Shrinking the ring
-to 96 entries would free 6 KB, but a busy fight could overrun it between the
-Ledger's reads.
+Done. DSCLOG keeps its code and data in one 64 KB segment, all reached
+through CS; the dice log's ring buffer (`NENT` 128 entries of `ESIZE` 192
+bytes, 24 KB) was in it too, and the image had grown to 63 KB. The ring now
+follows the resident part in memory, in a segment of its own: the install code
+sets `ring_seg` (the header's +268, read by `dicelog.py`) to the paragraphs
+after the resident image, and its last step (`KEEP`, in the resident part, as
+the ring lies over the install code) clears the ring and stays resident with
+it. The image is 40 KB, about 25 KB short of the segment's end.
 
-DSCLOG is loaded high (`LH`). Whether a larger resident part still fits in
-DOSBox's upper memory, and so leaves the game its conventional memory, has to
-be measured (`mem` in DOSBox), as the opening fight's crash came from memory
-running short.
+Measured with `mem` in DOSBox (GOG's settings: one upper memory block of
+63 KB): the old helper, asking for its 63 KB image and a stack when loaded,
+didn't fit in upper memory, so `LH` loaded it low, and the game had 570 KB of
+conventional memory free rather than 632 KB. Now it asks for the resident part
+and the ring (`LOAD_EXTRA`), 63 KB in all with its PSP, and loads high: 632 KB
+free, and 1 KB of upper memory left. More code for the kits than that goes
+low again (the game losing 62 KB, as before) unless room is made in upper
+memory too: the ring at 96 entries would give 6 KB, the text buffer
+(`TSIZE`, 8 KB) a little more.
 
 ### The kit's byte
 

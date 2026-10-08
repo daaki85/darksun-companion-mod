@@ -32,6 +32,7 @@ except ImportError:  # optional dependency
 
 EXE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "dos", "DSCLOG.EXE")
 TSR, GAME_DS, SS, CALLER, PARENT, RAND = 0x2000, 0x3000, 0x4000, 0x5000, 0x6000, 0x7000
+RING_SEG = 0xC000  # where the tests put the ring (DSCLOG's install puts it past its image)
 IF = 0x200  # the interrupt flag
 BP, PARENT_BP = 0x1000, 0x1100
 
@@ -45,7 +46,9 @@ def borland_rand(seed):
 def load_image():
     with open(EXE, "rb") as f:
         exe = f.read()
-    return exe[struct.unpack_from("<H", exe, 8)[0] * 16:]
+    image = bytearray(exe[struct.unpack_from("<H", exe, 8)[0] * 16:])
+    image[268:270] = struct.pack("<H", RING_SEG)  # (the ring's segment, as DSCLOG's install sets it)
+    return bytes(image)
 
 
 def fill_probes(image):
@@ -137,7 +140,7 @@ class StubTests(unittest.TestCase):
                 self.assertEqual(mu.reg_read(reg), want)
 
             nent = struct.unpack("<H", mu.mem_read(TSR * 16 + hdr_off + 12, 2))[0]
-            e = Entry.parse(bytes(mu.mem_read(TSR * 16 + ring + (n % nent) * Entry.SIZE, Entry.SIZE)))
+            e = Entry.parse(bytes(mu.mem_read(RING_SEG * 16 + ring + (n % nent) * Entry.SIZE, Entry.SIZE)))
             self.assertEqual((e.seq, e.ip, e.cs, e.raw, e.bp, e.ss, e.ds, e.parent_bp),
                              (n + 1, 0x15, CALLER, value, BP, SS, GAME_DS, PARENT_BP))
             self.assertEqual(e.arg(2), 0x40)
@@ -198,7 +201,7 @@ class StubTests(unittest.TestCase):
             mu.emu_start(CALLER * 16 + at, CALLER * 16 + at + len(code) - 1)
             seq = struct.unpack("<H", mu.mem_read(TSR * 16 + hdr_off + 8, 2))[0]
             nent = struct.unpack("<H", mu.mem_read(TSR * 16 + hdr_off + 12, 2))[0]
-            e = Entry.parse(bytes(mu.mem_read(TSR * 16 + ring + ((seq - 1) % nent) * Entry.SIZE, Entry.SIZE)))
+            e = Entry.parse(bytes(mu.mem_read(RING_SEG * 16 + ring + ((seq - 1) % nent) * Entry.SIZE, Entry.SIZE)))
             return e
 
         # the save probe: [bp-2] = total 15, [bp-1] = needs 12 -> CMP leaves carry clear (JAE taken)
@@ -748,7 +751,7 @@ class ScriptRandTests(unittest.TestCase):
                                                    r.UC_X86_REG_DS, r.UC_X86_REG_ES)],
                          [0x7FC, 11, 11, 0x2222, 0x3333, 0x1111, 0x5555, BP, GAME_DS, 0x6666])
         seq, _, nent = struct.unpack("<HHH", mu.mem_read(TSR * 16 + self.hdr_off + 8, 6))
-        e = Entry.parse(bytes(mu.mem_read(TSR * 16 + self.ring + ((seq - 1) % nent) * Entry.SIZE, Entry.SIZE)))
+        e = Entry.parse(bytes(mu.mem_read(RING_SEG * 16 + self.ring + ((seq - 1) % nent) * Entry.SIZE, Entry.SIZE)))
         self.assertEqual((e.kind, e.raw & 0xFF, e.raw >> 8 & 0xFF, e.extra), (5, 0x7000 * 11 >> 15, 10, 2116))
         self.assertEqual((e.arg(2), e.arg(4), e.arg(6)), (4, 3, 2))
         self.assertEqual((e.ip, e.cs), (0x602, CALLER))  # (the code after the INT)
@@ -1380,7 +1383,7 @@ class ItemSaveTests(unittest.TestCase):
         seq, widx, nent = struct.unpack("<HHH", mu.mem_read(seq_at, 6))
         entry = None
         if seq != before:
-            entry = Entry.parse(bytes(mu.mem_read(TSR * 16 + self.ring + ((seq - 1) % nent) * Entry.SIZE,
+            entry = Entry.parse(bytes(mu.mem_read(RING_SEG * 16 + self.ring + ((seq - 1) % nent) * Entry.SIZE,
                                                   Entry.SIZE)))
         dx = struct.unpack("<h", struct.pack("<H", mu.reg_read(r.UC_X86_REG_DX)))[0]
         return dx, bool(mu.reg_read(r.UC_X86_REG_EFLAGS) & 0x40), entry

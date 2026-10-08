@@ -111,8 +111,8 @@ section mz start=0
         dw (file_len + 511) / 512               ; pages
         dw 0                                    ; relocations
         dw 2                                    ; header size in paragraphs
-        dw STACK / 16                           ; min extra paragraphs
-        dw STACK / 16                           ; max extra paragraphs
+        dw LOAD_EXTRA                           ; min extra paragraphs: the ring's end past the image
+        dw LOAD_EXTRA                           ; max extra paragraphs (so the whole fits in upper memory)
         dw 0                                    ; SS (relative to the image)
         dw image_len + STACK                    ; SP
         dw 0                                    ; checksum
@@ -131,7 +131,7 @@ seq      dw 0                   ; +8   entries written so far (wraps at 65536)
 widx     dw 0                   ; +10  ring slot the next entry goes to
 nent     dw NENT                ; +12
 esize    dw ESIZE               ; +14
-ring_off dw ring                ; +16  offset of the ring in this segment
+ring_off dw 0                   ; +16  offset of the ring in RING_SEG's segment
 stub_off dw stub                ; +18  offset of STUB in this segment
 hdr_off  dw hdr                 ; +20  offset of this header in this segment
 seed_off dw 0x4122              ; +22  DS offset of the game's 32-bit rand seed
@@ -257,6 +257,9 @@ skills_on  dw 0                 ; +266 the companion sets SKILLS_STEALTH to have
                                 ;      (PROBE_ITEM_BOX), SKILLS_BELT for a worn belt's to picking
                                 ;      pockets and opening locks (PROBE_BELT, and its box's line),
                                 ;      SKILLS_ELVEN the Cloak and Boots of Elvenkind's chances
+ring_seg   dw 0                 ; +268 the ring's segment: the paragraphs after the resident image,
+                                ;      outside this one, so the ring takes none of its 64 KB (set
+                                ;      when installed; RING_OFF its offset there)
 
 ; TEXT BUFFER: what the game sends to its dialogue window, as records of
 ;   byte 0FEh, byte kind (the dialogue window's: 0 = a reply to choose, the
@@ -371,11 +374,9 @@ record:
         push cx
         push di
         push es
-        push cs
-        pop es
+        mov es, [cs:ring_seg]
         mov di, [cs:widx]
         imul di, di, ESIZE
-        add di, ring
         mov word [es:di], 0xFFFF
         mov cx, [cs:kind]
         mov [es:di+184], cx
@@ -8359,10 +8360,26 @@ shadow_tab times MAP_COUNT db 0
 dark       times 256 db 0
 dac        times 768 db 0
 
-align 16
-ring:   times NENT*ESIZE db 0
 tbuf:   times TSIZE db 0
-resident_end:
+
+; KEEP: the last of installing, from here, as the ring is where the install code was: clear the
+; ring and stay resident, the ring with the image (DX the paragraphs). The stack goes to the PSP's
+; command tail first, out of the ring's way.
+keep:   mov ax, [cs:psp]
+        mov ss, ax
+        mov sp, 0x100
+        mov es, [cs:ring_seg]
+        xor di, di
+        xor ax, ax
+        mov cx, RING_BYTES / 2
+        cld
+        rep stosw
+        mov ax, 3100h
+        int 21h
+
+align 16
+resident_end:                   ; (the ring follows, in a segment of its own)
+RING_BYTES equ NENT * ESIZE
 
 install:                        ; DS = ES = PSP, CS = the image
         mov [cs:psp], es
@@ -8647,9 +8664,11 @@ install:                        ; DS = ES = PSP, CS = the image
         mov dx, msg
         mov ah, 9
         int 21h
-        mov dx, 0x10 + (resident_end - hdr + 15) / 16  ; PSP + resident image, in paragraphs
-        mov ax, 3100h
-        int 21h
+        mov ax, cs              ; the ring: the paragraphs after the resident image
+        add ax, (resident_end - hdr) / 16
+        mov [cs:ring_seg], ax
+        mov dx, 0x10 + (resident_end - hdr) / 16 + RING_BYTES / 16  ; PSP, image and ring, in paragraphs
+        jmp keep
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
@@ -8660,3 +8679,7 @@ all_vectors_end:
         align 16, db 0
 image_len equ $ - $$
 file_len  equ image_len + 32
+; the memory past the image to load in: up to the ring's end (the ring follows the resident part,
+; over the install code), and the install's stack beyond it (resident_end + RING_BYTES is the
+; larger: the install code and its stack are smaller than the ring)
+LOAD_EXTRA equ (resident_end - hdr + RING_BYTES - image_len + STACK + 15) / 16

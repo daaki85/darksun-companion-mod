@@ -7,6 +7,13 @@ Released pull requests are summarised in a line or two each; the release notes
 
 ## Pull request #31 (in progress)
 
+**Changed**
+- **The helper loads into upper memory again,** leaving the game 62 KB more
+  conventional memory (632 KB free, was 570): the dice log's ring buffer now
+  follows the helper in a segment of its own, so the helper's image is 40 KB
+  (was 63) and what it asks for fits DOSBox's upper memory. It also leaves
+  room in its segment for the kits' code.
+
 **Documentation**
 - **Kits, planned:** DEVELOPMENT.md has the design for kits (three for each
   class, for characters of one class) and what research says about building

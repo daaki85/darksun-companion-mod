@@ -55,6 +55,7 @@ TSR_XP_WHO, TSR_XP_AMOUNT = 262, 264  # a party member to be given XP with the p
 TSR_SKILLS_ON = 266  # bits: item boxes name a cloak's and boots' bonus to hiding and moving silently;
 SKILLS_STEALTH, SKILLS_BELT = 1, 2  # a worn belt adds to picking pockets and opening locks (and its box says)
 SKILLS_ELVEN = 4  # the Cloak and Boots of Elvenkind's boxes name their chances (the hiding rule on)
+TSR_RING_SEG = 268  # the ring's segment (past the image, so it takes none of DSCLOG's 64 KB)
 TSR_PICK_SEQ, TSR_PICK_REPLY, TSR_PICK_OFF, TSR_PICK_ON, PICK_SIZE = 172, 174, 176, 178, 240
 PICK_TOOLS, PICK_KEY = 1, 2  # (TSR_PICK_ON: the thieving tools on someone; P in a conversation too)
 TSR_USE_SEQ, TSR_USE_REPLY, TSR_USE_WHO, TSR_USE_TAKEN, TSR_USE_ITEM = 180, 182, 184, 186, 188
@@ -950,7 +951,8 @@ class DiceLog:
         new = (seq - self.last_seq) & 0xFFFF
         if not new:
             return []
-        ring_base = self.tsr_hdr - struct.unpack_from("<H", head, 20)[0] + ring_off
+        ring_seg = struct.unpack("<H", self.guest.read(self.tsr_hdr + TSR_RING_SEG, 2))[0]
+        ring_base = ring_seg * 16 + ring_off  # (the ring: a segment of its own, past the image)
         ring = self.guest.read(ring_base, nent * esize)
         entries = {}
         for i in range(nent):
