@@ -172,7 +172,7 @@ Released pull requests are summarised in a line or two each; the release notes
 
 **Changed**
 - **Cermak, of the game's own party, specializes in the long sword and the
-  axe** (was the club), his once his gladiator levels count again.
+  axe** (was the club), which count once his gladiator levels do again.
 
 ## Pull request #21 ([merged 2026-10-07](https://github.com/daaki85/darksun-companion-mod/pull/21))
 

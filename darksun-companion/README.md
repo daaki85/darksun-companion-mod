@@ -1902,7 +1902,7 @@ says so in the dice log:
 |---|---|---|
 | **Gerakis**, half-giant gladiator | specializes in the long sword and the gythka; with [half-giants' two-handed weapons](#half-giants-two-handed-weapons), his club is a bone gythka, a two-handed weapon beside his long sword | |
 | **K'ratchek**, thri-kreen fighter, druid and psionicist | specializes in the chatkcha, her only weapon | |
-| **Cermak**, human preserver, once a gladiator | specializes in the long sword and the axe, his once his gladiator levels count again | |
+| **Cermak**, human preserver, once a gladiator | specializes in the long sword and the axe, which count once his gladiator levels do again (when his preserver level passes them) | |
 | **Cilla**, elf preserver, druid and thief | | no leather armour (a druid wears none), and she knows **Armor**, the spell Old One-Eye's scroll teaches |
 
 ![The USE screen in the game: Cilla's 1st-level mage spells, the first named ARMOR in the bar below, WIZ 2/2](docs/default-party-armor.png)
