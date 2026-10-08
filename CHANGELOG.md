@@ -5,6 +5,14 @@ Released pull requests are summarised in a line or two each; the release notes
 ([1.1.0](release-notes/v1.1.0.md): #14 to #18; [1.0.0](release-notes/v1.0.0.md):
 #1 to #13) and the pull requests themselves have the detail.
 
+## Pull request #31 (in progress)
+
+**Documentation**
+- **Kits, planned:** DEVELOPMENT.md has the design for kits (three for each
+  class, for characters of one class) and what research says about building
+  them: room in the helper, the sheet byte for the kit, the creation page, and
+  each effect's hook, found or still to find.
+
 ## Pull request #30 ([merged 2026-10-08](https://github.com/daaki85/darksun-companion-mod/pull/30))
 
 **Release**

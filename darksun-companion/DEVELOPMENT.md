@@ -923,3 +923,146 @@ characters" check counts to 19. The patched game has 30 and 29 there
 
 A New character counts as Okay wherever the game tests for Okay: a jump each
 (`NEW_AS_OKAY` in `dscompanion/gamepatch.py`), and `game.py` does the same.
+
+## Planned: kits
+
+Not built yet: the design, and what the research so far says about building
+it. A kit is a choice a single-class character makes at creation: three for
+each class, or none (the class as it is). Each gives something and costs
+something, as AD&D's kits do. A rule change on the Options tab would switch
+them all off.
+
+### The kits
+
+| Class | Kit | Benefit | Drawback |
+|---|---|---|---|
+| Fighter | Myrmidon | a second weapon spec at 1st level | −1 on saves against charm and fear |
+| | Sentinel | +2 AC with a shield, +2 initiative | −1 on saves against spells |
+| | Raider | +2 movement in a fight, +1 damage on every attack | −1 AC |
+| Gladiator | Arena Champion | +1 to hit and damage on open ground | −1 to hit and damage underground |
+| | Twin-blade | no two-weapon penalty | no shield; no two-handed weapon, but a half-giant's held in one hand |
+| | Brute | +1 DEX, +1 CON | −1 INT, −1 WIS; two-handed melee weapons only (a half-giant may add a shield); missile weapons, but not as a weapon spec |
+| Ranger | Stalker | +2 movement in a fight, +10 hide in shadows, +10 move silently | light armour only |
+| | Justifier | the bow's expertise and the chosen weapon spec's become specialization | priest spells on the Justifier's table: one 1st-level slot at 10th level |
+| | Seeker | priest spells on the Seeker's table: from 6th level | its sphere's weapon limits (but it keeps the bow) |
+| Thief | Swashbuckler | a warrior's THAC0 | −10 to all thief skills |
+| | Assassin | hiding in shadows isn't halved in daylight | −15 pick pockets and open locks |
+| | Shinobi | preserver spells on the Seeker's table, illusions only | the Seeker's few slots |
+| Cleric | Elementalist | a second sphere: its spells and its weapons | spell slots one level slower (none at 1st level) |
+| | Healer | Cure spells heal 1 more per die | harmful spells do 1 less per die |
+| | Crusader | a fighter's THAC0 | one fewer spell slot at each spell level |
+| Druid | Grove Warden | AC 1 better for every 3 druid levels | no metal weapons |
+| | Lifebinder | regenerates as a character with CON 20 does | −2 on saves against poison and draining |
+| | Wanderer | +1 WIS, +1 CON | −1 CHA, −1 STR |
+| Preserver | Scholar | a spell more learnt at each level up | −1 to hit |
+| | Battle Mage | a warrior's THAC0, a d6 hit die, expertise in one weapon spec | one fewer spell slot at each spell level |
+| | Arcanist | a spell slot more at each spell level | a d3 hit die |
+| Psionicist | Mind Bender | telepathy powers cost 2 PSP less | psychokinesis powers 2 more |
+| | Mind Warrior | a warrior's THAC0, a d8 hit die | a tenth fewer PSP |
+| | Kineticist | psychokinesis powers cost 2 PSP less | telepathy powers 2 more |
+
+The Seeker's and the Justifier's tables are AD&D's (*The Complete Ranger's
+Handbook*), up to 10th level; their spells are cast at the table's casting
+level, not the ranger's:
+
+| Ranger level | 6 | 7 | 8 | 9 | 10 |
+|---|---|---|---|---|---|
+| Seeker: casting level | 1 | 2 | 3 | 4 | 5 |
+| Seeker: 1st, 2nd, 3rd level slots | 1 | 2 | 2, 1 | 2, 2 | 2, 2, 1 |
+| Justifier: casting level, slots | | | | | 1; one 1st-level |
+
+### Room in the helper
+
+DSCLOG keeps its code, its data and the dice log's ring buffer in one 64 KB
+segment, all reached through CS. The resident part ends at 0D840h: about 30 KB
+of code and data, then the ring (`NENT` 128 entries of `ESIZE` 192 bytes,
+24 KB); the install code follows, and the image ends at about 63 KB, with
+about 1 KB to spare. The kits need several KB. The way out: allocate the ring
+as a block of its own when installing (DOS function 48h), and give its segment
+in the header beside `ring_off`, for `dicelog.py` to read it there. That frees
+24 KB of the segment and leaves the memory used as it is. Shrinking the ring
+to 96 entries would free 6 KB, but a busy fight could overrun it between the
+Ledger's reads.
+
+DSCLOG is loaded high (`LH`). Whether a larger resident part still fits in
+DOSBox's upper memory, and so leaves the game its conventional memory, has to
+be measured (`mem` in DOSBox), as the opening fight's crash came from memory
+running short.
+
+### The kit's byte
+
+Sheet `+43h`: zero in every sheet of the saves and saved characters at hand
+(176), and nothing in DSUN.EXE reads or writes it (no `es:[bx+43h]` access of
+any kind), as with the weapon specs' `+14h` to `+17h`, which saves and the
+roster keep. `+45h` is the same, if a second byte is needed. 0: no kit; 1 to 3
+the class's kits.
+
+### Choosing one
+
+A **KIT** page on the creation panel, as the WEAPON SPEC pages are made
+(`INT C8h` to `INT C3h`, a window of its own in the Ledger's copy of
+`RESOURCE.GFF`), offered to a character of one class, of any class. To find
+out: what the panel shows for a preserver or a thief, and whether a button
+fits there. The Brute's and the Wanderer's scores are changed in the sheet
+being made (the creation sheet's pointer, `DS:119Ch`) when the kit is picked
+and back when it isn't, within the race's limits. The Effects screen lists the
+kit (`INT BBh`, as the weapon specs), the Characters tab and the dice log name
+it (`+1 Raider`).
+
+### Where each effect goes
+
+Already hooked:
+
+| Effect | Kits | Hook |
+|---|---|---|
+| to hit and damage with a weapon | Raider, Arena Champion | `INT D1h`, `INT D0h` (weapon specialization's) |
+| open ground or underground | Arena Champion | the regions and the map's floors, as for daylight (`stealth.py`) |
+| AC | Sentinel, Raider, Grove Warden | `INT F8h` (the ring's AC) |
+| movement | Raider, Stalker | `INT FBh` (boots) |
+| saves, by kind of spell | Myrmidon, Sentinel, Lifebinder | `INT F9h`, `INT 61h` |
+| thief skills | Swashbuckler, Stalker | `INT E4h`; hiding and moving silently are the Ledger's own rolls |
+| hiding in daylight | Assassin | `stealth.py` |
+| weapons and armour allowed | Twin-blade, Brute, Grove Warden, Stalker, Seeker | `CLASS_FORBIDS`, `restrict.py` |
+| the two-weapon penalty | Twin-blade | `INT FEh` |
+| hit dice | Battle Mage, Arcanist, Mind Warrior | `INT E6h`, `INT CBh` |
+| weapon specs: how many, which | Myrmidon, Brute, Justifier, Battle Mage | the creation pages, `KINDS_ALLOWED`, `SPEC_OF_SHEET` |
+
+A new hook at a place already found:
+
+| Effect | Kits | Where |
+|---|---|---|
+| THAC0 | Swashbuckler, Crusader, Battle Mage, Mind Warrior | the game writes a creature's THAC0 (`mov es:[bx+1Fh],al`) after one routine, at DSUN.EXE 66CE0h, 86D7Eh and 87A91h |
+| regeneration | Lifebinder | `cmp byte es:[bx+24h],14h` at 2289Dh (CON against 20), five bytes, as `PROBE_LEVEL` replaces its compare |
+| initiative | Sentinel | the roll's code (`INITIATIVE_ROLL` in `dicelog.py`) |
+| spell slots | Elementalist, Crusader, Battle Mage, Arcanist, Seeker, Justifier | the slots given on resting (5E0ACh) and the classes' rule words, which `GameData.max_spell_slots` reads |
+| max PSP | Mind Warrior | the level-up's sum at 873B2h |
+| scores at creation | Brute, Wanderer | the creation sheet (`DS:119Ch`) |
+| spells learnt at a level up | Scholar | the CHOOSE A SPELL screen (see levels up to 10) |
+
+Still to find:
+
+| Effect | Kits | What |
+|---|---|---|
+| a power's PSP cost | Mind Bender, Kineticist | where the game takes the cost off: the costs are one table for everyone, so a kit's is a change there, by who uses the power |
+| a spell's dice | Healer | where the game rolls a spell's damage or healing (the dice log reads it; nothing changes it yet) |
+| casting level | Seeker, Justifier, Shinobi | where the game takes it from the class level |
+| a second sphere | Elementalist | how the game gives a priest its element's spells (the USE screen) and counts caster level 0 for another's |
+| wizard spells for a thief | Shinobi | slots, spells known and learning for a class that has none, and which of the game's spells are illusions |
+
+Every kit also needs its Python side: the Characters tab and the in-game
+THAC0 and saves (`game.py`), the dice log's lines, and tests that hold the
+helper's code (emulated) to the Python.
+
+### Order
+
+1. The ring out of the segment, the memory measured; the kit's byte, the KIT
+   page, the Effects screen's line, the Characters tab, the rule switch.
+2. The kits on hooks there already: Raider, Sentinel (with an initiative
+   hook), Myrmidon, Arena Champion, Twin-blade, Brute, Stalker, Assassin,
+   Grove Warden, Wanderer.
+3. THAC0, regeneration and spell slot hooks: Swashbuckler, Crusader, Battle
+   Mage, Mind Warrior, Lifebinder, Arcanist, Elementalist, Justifier, Seeker,
+   Scholar.
+4. After finding them: PSP costs (Mind Bender, Kineticist), spell dice
+   (Healer), casting level (Seeker, Justifier).
+5. The Shinobi.
