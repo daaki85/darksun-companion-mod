@@ -79,5 +79,6 @@ gets the bow back; and a new description of what the Ledger does.
 
 Earlier changes, pull request by pull request, are in
 [`CHANGELOG.md`](CHANGELOG.md). Releases have notes of their own:
-[1.1.0](release-notes/v1.1.0.md) (pull requests #14 to #18) and
+[1.2.0](release-notes/v1.2.0.md) (pull requests #19 to #29),
+[1.1.0](release-notes/v1.1.0.md) (#14 to #18) and
 [1.0.0](release-notes/v1.0.0.md) (#1 to #13).

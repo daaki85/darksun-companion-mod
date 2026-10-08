@@ -5,6 +5,13 @@ Released pull requests are summarised in a line or two each; the release notes
 ([1.1.0](release-notes/v1.1.0.md): #14 to #18; [1.0.0](release-notes/v1.0.0.md):
 #1 to #13) and the pull requests themselves have the detail.
 
+## Pull request #30 (in progress)
+
+**Release**
+- **Templar's Ledger 1.2.0:** the version is 1.2.0, with its notes in
+  `release-notes/v1.2.0.md` (pull requests #19 to #29), listed on the front
+  page with the others.
+
 ## Pull request #29 ([merged 2026-10-08](https://github.com/daaki85/darksun-companion-mod/pull/29))
 
 **Changed**
