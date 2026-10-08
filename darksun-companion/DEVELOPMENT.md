@@ -452,6 +452,11 @@ How: the helper adds the classes' limits where the game checks an item against
 the classes allowed to use it (`INT CDh`), and a multiclass preserver's armour
 where the game checks for "No spell use" (`INT CCh`). (`dscompanion/restrict.py`
 says the same in Python, for the tests.)
+A weapon the character has made its own is left as the game has it, past the
+classes' limits (`SPECIALIZED_BACK`, `restrict.specialized_back`): a dual-classed
+human's chosen weapon specs once its new class's level has passed the warrior
+class's, and a ranger's bow (every ranger has expertise with it, but never
+chooses it): a multiclass ranger's always, a human's while a ranger or once past.
 
 ### Multiclass hit points
 

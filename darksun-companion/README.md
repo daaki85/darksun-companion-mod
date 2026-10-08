@@ -1625,7 +1625,9 @@ heads its spell slots **NO SPELLS IN ARMOUR**, and the Characters tab adds
 changed class is held by the class it has now; another race by all of its
 classes. A ranger turned cleric uses both spheres' weapons, and a warrior who
 dual-classed uses the weapons it specialized in once the new class's level
-passes the old.
+passes the old (a fighter's, gladiator's or ranger's chosen weapon specs, and a
+ranger's bow). A ranger's bow is always its own: a fire ranger/cleric, whose
+fire sphere allows only obsidian weapons, may still use bows.
 
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#class-restrictions).
 

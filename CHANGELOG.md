@@ -7,6 +7,13 @@ Released pull requests are summarised in a line or two each; the release notes
 
 ## Pull request #29 (in progress)
 
+**Changed**
+- **A ranger's bow is its own** with class restrictions: a multiclass ranger
+  may use bows whatever its cleric sphere allows (a fire cleric/ranger, whose
+  sphere allows only obsidian), and a human ranger turned cleric gets the bow
+  back with its chosen weapon spec, once the cleric level passes the ranger's.
+  Before, its bow expertise was there but no bow could be readied.
+
 **Documentation**
 - **What it does**, on the front page and in the guide alike: what the Ledger
   shows of the game's hidden rolls, how it brings the rules closer to AD&D,

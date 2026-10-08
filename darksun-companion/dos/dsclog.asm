@@ -2904,13 +2904,35 @@ class_forbids:
 
 ; SPECIALIZED_BACK: carry set if CU_KIND is a kind the character (sheet ES:BX) specialized in as a
 ; fighter, gladiator or ranger, a human who has dual-classed and whose new class's level has
-; passed the old (restrict.specialized_back). All registers kept.
+; passed the old; or the bow, for a ranger (a multiclass one always, a human while a ranger or
+; once its new class's level has passed its ranger level): restrict.specialized_back. All
+; registers kept.
 specialized_back:
         pusha
         mov al, [cs:cu_kind]
         cmp al, 0xFF
         je .no
-        cmp byte [es:bx + 0x18], 1
+        cmp al, BOW_KIND - 1
+        jne .spec
+        xor si, si                      ; (the bow: a ranger's own)
+.rclass:
+        mov al, [es:bx + si + 0x21]
+        cmp al, 13
+        jb .rnext
+        cmp al, 16
+        ja .rnext
+        cmp byte [es:bx + 0x18], 1      ; (not human: multiclass, always)
+        jne .yes
+        or si, si                       ; (a human ranger now)
+        jz .yes
+        mov al, [es:bx + si + 0x24]
+        cmp al, [es:bx + 0x24]
+        jb .yes
+.rnext: inc si
+        cmp si, 3
+        jb .rclass
+        mov al, [cs:cu_kind]
+.spec:  cmp byte [es:bx + 0x18], 1
         jne .no
         inc al
         cmp [es:bx + SPEC_SLOTS], al

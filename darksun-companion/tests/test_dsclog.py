@@ -1018,6 +1018,22 @@ class CanUseTests(unittest.TestCase):
                         expected = mask if mask and restrict.allowed(bytes(s), t, test_restrict.record(t)) else 0
                         self.assertEqual(self.can_use(bytes(s), t), expected)
 
+    def test_rangers_bow(self):
+        """A ranger's bow, whatever a fire cleric's sphere forbids (restrict.specialized_back)."""
+        cases = [(test_restrict.sheet(3, 15), None), (test_restrict.sheet(15, 3), None)]
+        for first in (4, 6):
+            cases.append((test_restrict.sheet(3, 15, race=game.HUMAN), (first, 5)))
+        for s, levels in cases:
+            s = bytearray(s)
+            if levels:
+                s[0x24:0x26] = bytes(levels)
+            for t in (1, 22):
+                with self.subTest(classes=tuple(s[0x21:0x23]), levels=levels, type=t):
+                    mask = test_restrict.TYPES[t][3] & int.from_bytes(s[0x12:0x14], "little")
+                    expected = mask if mask and restrict.allowed(bytes(s), t, test_restrict.record(t)) else 0
+                    self.assertEqual(self.can_use(bytes(s), t), expected)
+        self.assertNotEqual(self.can_use(test_restrict.sheet(3, 15), 1), 0)
+
     def test_off_as_the_game(self):
         psi = test_restrict.sheet(12)
         self.assertEqual(self.can_use(psi, 57, rules=0), 0x100 & 0x126F)
