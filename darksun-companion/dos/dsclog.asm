@@ -2972,7 +2972,8 @@ kit_forbids:
         clc
         ret
 kit_blunt  dw KIT_BLUNT
-kit_shinobi dw 0xE10C           ; bits by kind: dagger, short sword, quarterstaff, bow, sling, staff sling
+kit_shinobi dw 0xF10C           ; bits by kind: dagger, short sword, quarterstaff, chatkcha, bow, sling,
+                                ;   staff sling
 kf_spec    db 0
 
 ; CLASS_FORBIDS: carry set if the classes of the character whose sheet is at ES:BX keep it from

@@ -25,8 +25,8 @@ MELEE, MISSILE, SHIELD, TWO_HANDED, ARMOUR = 0x01, 0x02, 0x04, 0x40, 0x80
 METAL, LEATHER, NO_MATERIAL = 4, 5, 0x40
 # a Lifebinder's weapon kinds (specialize.KINDS' numbers): club, mace, quarterstaff, sling, staff sling
 BLUNT = frozenset((1, 4, 8, 14, 15))
-# a Shinobi's: dagger, short sword, quarterstaff, bow, sling, staff sling
-SHINOBI_KINDS = frozenset((2, 3, 8, 13, 14, 15))
+# a Shinobi's: dagger, short sword, quarterstaff, chatkcha, bow, sling, staff sling
+SHINOBI_KINDS = frozenset((2, 3, 8, 12, 13, 14, 15))
 SHINOBI = KIT_IDS["Shinobi"]
 # the charms (DSCLOG's KIT_CHARMS): Charm Person, Charm Monster, Domination, Charm Person or
 # Mammal, and the psionic Domination and Mass Domination

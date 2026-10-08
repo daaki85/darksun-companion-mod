@@ -1623,7 +1623,7 @@ and costs something.
 | **Grove Warden** (druid) | AC 1 better for every 3 druid levels | no metal weapons |
 | **Wanderer** (druid) | +1 WIS, +1 CON | −1 CHA, −1 STR |
 | **Arcanist** (preserver) | *to come:* a spell slot more at each spell level | −2 CON |
-| **Shinobi** (thief) | *to come:* a few preserver spells | dagger, short sword, quarterstaff, sling, staff sling and bow only; light armour only; no shield |
+| **Shinobi** (thief) | *to come:* a few preserver spells | dagger, short sword, quarterstaff, chatkcha, sling, staff sling and bow only; light armour only; no shield |
 | **Lifebinder** (druid) | *to come:* healing spells heal a die more | blunt weapons only (club, mace, quarterstaff, sling, staff sling) |
 
 Still to come: the Elementalist, Healer and Crusader (cleric), the Justifier

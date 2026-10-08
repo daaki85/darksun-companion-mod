@@ -1142,7 +1142,7 @@ class CanUseTests(unittest.TestCase):
             shinobi[0x43] = 3
             self.assertEqual([t for t in (17, 1, 3, 0, 6, 90, 22, 45, 4, 57, 48)
                               if not restrict.kit_forbids(bytes(shinobi), t, test_restrict.record(t))],
-                             [17, 1, 3, 0, 6, 90])  # (dagger, bow, quarterstaff, staff sling, leather, silk)
+                             [17, 1, 3, 0, 6, 90, 48])  # (dagger, bow, quarterstaff, staff sling, leather, silk, chatkcha)
         finally:
             game.RULES_IN_FORCE = old
             self.mu.mem_write(hdr + 270, struct.pack("<H", 0))

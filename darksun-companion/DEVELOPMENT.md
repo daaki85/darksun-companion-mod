@@ -949,7 +949,7 @@ header's +270) switches them all off.
 | | Seeker | priest spells on the Seeker's table: from 6th level | its sphere's weapon limits (but it keeps the bow) |
 | Thief | Swashbuckler | a warrior's THAC0 | −10 to all thief skills |
 | | Assassin | hiding in shadows isn't halved in daylight | −15 pick pockets and open locks |
-| | Shinobi | preserver spells on the Seeker's table, cast in light armour too | the Seeker's few slots; its own short list of spells, one learnt at each level up from its first slots, none from scrolls; only the dagger, short sword, quarterstaff, sling, staff sling and bow; light armour only; no shield |
+| | Shinobi | preserver spells on the Seeker's table, cast in light armour too | the Seeker's few slots; its own short list of spells, one learnt at each level up from its first slots, none from scrolls; only the dagger, short sword, quarterstaff, chatkcha, sling, staff sling and bow; light armour only; no shield |
 | Cleric | Elementalist | a second sphere: its spells and its weapons | spell slots one level slower (none at 1st level) |
 | | Healer | Cure spells heal 1 more per die | harmful spells do 1 less per die |
 | | Crusader | a fighter's THAC0 | one fewer spell slot at each spell level |
