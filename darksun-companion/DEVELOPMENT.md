@@ -965,7 +965,9 @@ header's +270) switches them all off.
 
 The Seeker's and the Justifier's tables are AD&D's (*The Complete Ranger's
 Handbook*), up to 10th level; their spells are cast at the table's casting
-level, not the ranger's:
+level, not the ranger's (the game's own rangers' spell levels count the
+ranger level 7 less, but their spells' durations and damage take the whole
+of it):
 
 | Ranger level | 6 | 7 | 8 | 9 | 10 |
 |---|---|---|---|---|---|
@@ -1078,7 +1080,9 @@ emulated tests hold the helper to it:
 | spell slots | Arcanist (+1 wizard), Battle Mage (−1 wizard), Crusader (−1 priest), Seeker and Justifier (their priest tables, `SEEKER_SLOTS`, by ranger level, in place of the game's), Elementalist (a level behind) | `PROBE_SLOTS` (`INT B6h`, new: the end of the game's slot routine, `mov ax,[bp-2]` at DSUN.EXE 5E255h) and `PROBE_SLOT_LEVEL` (`INT B5h`, new: where it takes a class's level, `mov al,es:[bx+24h]` at 5E1F6h); `GameData.max_spell_slots` with `kits.slots` and `kits.slot_level` |
 | a power's PSP | Mind Bender, Kineticist (by discipline: powers 0-5 psychokinesis, 6-19 psychometabolism, 20-33 telepathy, the defence modes among them; never below 1) | the powers' table (8 bytes a power, at the load segment + 3FB9h: `+1` the cost to use, `+2` to keep up, 63h for none; `+5` FEh for a defence mode). `PROBE_PSP_USE` (`INT B4h`, new: where the routine using a power has its cost in DI, its table's or worked out for Enhanced Strength and Domination, DSUN.EXE 5CBE7h), `PROBE_PSP_TABLE` (`INT B3h`, new: the table's cost read in the check whether a power can be used, 5CAA3h, and for the half a failed power costs, 5CCA2h), `PROBE_PSP_DEFENCE` (`INT B2h`, new: a defence mode's cost taken off, 5D820h); `kits.psp_cost`. Monsters' powers (5A773h) are left alone |
 | a cure's healing | Healer (+1 a die of Cure Light, Serious, Critical Wounds: spells 71, 112, 127), Lifebinder (a die more: a d8, Blood Flow's, 108, a d6, rolled from the game's rand() seed by `GAME_DIE`) | `PROBE_CURE` (`INT B1h`, new: "nop / push cs" at DSUN.EXE 79619h in the handler for spells with rules of their own, where the healing, pushed with the target, goes to the routine that heals; the caster its `[BP+8]`, the spell `[BP+0Eh]`; the probe pushes CS itself). The Cell Adjustment's jump into 79618h is clear of it |
-| casting level | Seeker (the ranger level less 5), Justifier (less 9) | `PROBE_RANGER_CAST` (`INT AFh`, new: "sub dx,7", a ranger's level counted 7 less, at 81B6Ah in the caster level routine, 81B16h, whose arguments are the combatant and the spell). The same routine sets the spell levels a priest may cast, half the caster level rounded up (81664h), so a Seeker of 6th level casts 1st-level spells, of 8th 2nd, of 10th 3rd, as its slots have them; `kits.ranger_cast_drop`, and `GameData.effect_caster_level` |
+| casting level | Seeker (the ranger level less 5), Justifier (less 9), Shinobi (for its wizard spells, the thief level less 5) | the game works it out in two places, both with the combatant and the spell as arguments. The caster level routine, 81B16h, counts a ranger's level 7 less: `PROBE_RANGER_CAST` (`INT AFh`, new: that "sub dx,7", 81B6Ah) makes it the kits' 5 and 9, and `PROBE_CAST_LEVEL` (`INT ACh`, new: its end, `mov ax,[bp-2]`, 81C06h) gives a Shinobi its level for a wizard spell. That routine sets the spell levels a caster may cast, half the caster level rounded up (81664h, which asks for spell 0: the USE screen's lists and slots), and weighs a spell against Dispel Magic. The level a spell's duration and damage take is another routine's, 5E25Ch (the best level of the caster's classes that cast it, a ranger's whole; the cast passes it down to the duration, 76CB3h, and the damage dice, 76DA2h): `PROBE_SPELL_LEVEL` (`INT A8h`, new: its end, `mov ax,di`, 5E3D1h) takes the Seeker's 5 and the Justifier's 9 off a priest spell's and gives the Shinobi its own. `kits.ranger_cast_drop`, `kits.cast_level`, `kits.spell_level`, and `GameData.effect_caster_level` |
+| wizard spells for a thief | Shinobi | slots: `PROBE_SLOTS` gives a Shinobi's wizard slots the Seeker's table by its thief level (`kits.slots`). Its spells known are the party's table of them (at the load segment + 3800h, from 168h: 8Ah bytes a member, a byte a spell, not 0 if known), and the USE screen lists and casts them as any preserver's. Learning: a level up as a thief from 6th goes on as a preserver's would (`PROBE_LV_PICK`'s `LV_SHINOBI`) to the routine that offers a preserver its spell (620:5Ch, 85560h), which takes the preserver level and goes on only for one, and then only if the game's list (500:2Ah) has a spell to learn: `PROBE_PICK_ANY` (`INT A7h`, new: `mov [bp-2],ax / or ax,ax`, 85580h) opens CHOOSE A SPELL (85771h) for a Shinobi with one of its spells unknown up to the level it casts. There `PROBE_PICK_LEVEL` (`INT ABh`, new: `inc al`, 85861h, the preserver level the highest spell level on offer is half of) gives it its casting level, and `PROBE_PICK_LIST` (`INT AAh`, new: `mov di,ax`, 8563Fh, after the game fills the list, at the segment of the `mov ax,348h` before it, `+7`, a word a spell; the character at its `+25Bh`; the highest spell level `DS:[4AECh]`) puts its own unknown spells in the list (`kits.pick_list`). A scroll: the game's check whether the character on show may learn its spell (8B6D3h, `or ax,ax` before the jump to CANNOT LEARN FROM THIS ITEM) says no for a Shinobi (`PROBE_SCROLL_LEARN`, `INT A9h`, new). Armour: the game has no armour rule for a single class's spells (the multiclass preserver's is the class restrictions'), so it casts in the light armour it may wear |
+| spells learnt at a level up | Scholar (one more) | `PROBE_LV_PICK`'s `LV_SCHOLAR`: at a preserver's level up, the routine offering its spell (620:5Ch, its far call read from the code after the probe) called once before the game's own |
 | a power's PSP to keep it up | Mind Bender, Kineticist (as the cost to use it; 63h, none, left alone) | `PROBE_PSP_KEEP` (`INT B0h`, new: the table's `+2` read where the round's cost is taken, 5CE49h, the combatant in SI) and `PROBE_PSP_KEEP_DX` (`INT AEh`, new: the check whether a power can be kept up, 5CB02h, the combatant in DX). The monsters' cost lookups (5D4DAh, 5D4EFh) are left alone |
 | the off hand | Healer (no weapon), Battle Mage (nothing) | `PROBE_CAN_USE`'s `KIT_FORBIDS` with `KF_OFF_HAND`: the can-use routine's only caller is the equip routine (6EF52h), whose `[BP+8]` is the slot (the item's slot + 4: 7 the right hand, 14 the left, the off hand; 18 on the backpack), read through the can-use routine's saved BP |
 | casting though hit | Battle Mage | a hit's damage marks its creature hit this round (`mov byte es:[si+0AFh],1`, 58733h, in the routine taking damage off; cleared at a round's start, 57621h), and a marked character can't choose a spell on the USE screen (892F3h, 55898h) and has a queued one dropped (8991Bh): `PROBE_HIT_ROUND` (`INT ADh`, new) doesn't mark a Battle Mage |
@@ -1097,15 +1101,12 @@ Still to build, a new hook at a place already found:
 | Effect | Kits | Where |
 |---|---|---|
 | max PSP | Mind Warrior | the level-up's sum at 873B2h |
-| spells learnt at a level up | Scholar, Shinobi (one, from its list) | the CHOOSE A SPELL screen (see levels up to 10) |
 
 Still to find:
 
 | Effect | Kits | What |
 |---|---|---|
-| casting level | Shinobi | where the game takes it from the class level: the caster level routine, 81B16h, with its thief's level |
 | a second sphere | Elementalist | how the game gives a priest its element's spells (the USE screen) and counts caster level 0 for another's |
-| wizard spells for a thief | Shinobi | slots, spells known and learning for a class that has none; learning from a scroll refused (where the game learns one: the tome's probe is beside it, 8B80Ch) |
 
 Every kit also needs its Python side: the Characters tab and the in-game
 THAC0 and saves (`game.py`), the dice log's lines, and tests that hold the
@@ -1130,4 +1131,13 @@ helper's code (emulated) to the Python.
    (Healer, Lifebinder), the cost to keep a power up (Mind Bender,
    Kineticist), casting level (Seeker, Justifier), a spell cast though hit,
    and nothing in the off hand (Battle Mage), no off-hand weapon (Healer).
-5. The Shinobi.
+5. Done: the Shinobi (wizard slots, spells known, cast and learnt, its
+   casting level, no scrolls) and the Scholar's spell more. Found on the way:
+   the level a spell's duration and damage take is worked out apart from the
+   caster level routine (5E25Ch), with a ranger's whole level, so the
+   Seeker's and Justifier's casting levels are now there too. Checked in the
+   game: the Shinobi's slots (the game's slot routine run on a running
+   game's memory), its spells on the USE screen and cast, Blur's duration at
+   thief level 8 (caster level 3), and its level up to 6th after a fight:
+   CHOOSE A SPELL with its four 1st-level spells it didn't know, one learnt.
+   Not yet in the game: a scroll refused, the Scholar's second pick.

@@ -1531,7 +1531,7 @@ class ItemSaveTests(unittest.TestCase):
         self.hdr_off = struct.unpack_from("<H", image, 20)[0]
         self.ring = struct.unpack_from("<H", image, 16)[0]
         for vec, head in ((VEC_ITEM_WEAPON, "5650535157ba08002b56fe"), (VEC_ITEM_ARMOUR, "5650535157ba0a002b56fe"),
-                          (VEC_ITEM_SKIP, "5589e5836606bf")):
+                          (VEC_ITEM_SKIP, "5589e5836606bf5d2ef706")):
             at = image.find(bytes.fromhex(head))
             self.assertGreater(at, 0, head)
             mu.mem_write(vec * 4, struct.pack("<HH", at, TSR))
@@ -2263,8 +2263,9 @@ class LevelPickTests(unittest.TestCase):
     weapons are bone: none for a fire cleric); the PROBE_PK_* probes in that pop-up, out of weapon
     mode, do just what they replaced."""
     SHEETS, TYPES_SEG = 0x8000, 0x9000
-    RULES = 170
+    RULES, RULES_HI = 170, 270
     STAND_IN, CALLS = 0x700, 0x7F0
+    SPELL_STAND_IN, SPELL_CALLS = 0x720, 0x7F2
     PLAIN_TYPES = (81, 18, 17, 115, 20, 22, 2, 112, 3, 19, 44, 21, 48, 1, 64, 0)
 
     def setUp(self):
@@ -2289,6 +2290,9 @@ class LevelPickTests(unittest.TestCase):
         mu.mem_write(CALLER * 16 + 0x600, bytes((0xCD, VEC_LV_PICK, 0x90, 0x90, 0x75, 0x07)))
         mu.mem_write(CALLER * 16 + 0x602 + 0x13, struct.pack("<HH", self.STAND_IN, CALLER))
         mu.mem_write(CALLER * 16 + self.STAND_IN, bytes.fromhex("2eff06f007cb"))  # inc word [cs:7F0h]; retf
+        # CHOOSE A SPELL's far call ("push si; lcall"), past the JNZ: its stand-in counts at 7F2h
+        mu.mem_write(CALLER * 16 + 0x606, bytes((0x56, 0x9A)) + struct.pack("<HH", self.SPELL_STAND_IN, CALLER))
+        mu.mem_write(CALLER * 16 + self.SPELL_STAND_IN, bytes.fromhex("2eff06f207cb"))
         self.stops = []
 
         def stop(uc, address, size, _):
@@ -2297,12 +2301,15 @@ class LevelPickTests(unittest.TestCase):
         mu.hook_add(UC_HOOK_CODE, stop, begin=CALLER * 16 + 0x606, end=CALLER * 16 + 0x606)
         mu.hook_add(UC_HOOK_CODE, stop, begin=CALLER * 16 + 0x60D, end=CALLER * 16 + 0x60D)
 
-    def level_up(self, classes, levels, chosen=(), member=1, cls=None, rules=4096, race=2):
+    def level_up(self, classes, levels, chosen=(), member=1, cls=None, rules=4096, race=2, kit=0):
         """(the pop-up's calls, where the routine went on) for a level gained in class CLS."""
+        from dscompanion import kitpages
         mu = self.mu
-        mu.mem_write(TSR * 16 + self.image.find(HDR_SIG) + self.RULES, struct.pack("<H", rules))
-        mu.mem_write(CALLER * 16 + self.CALLS, bytes(2))
+        mu.mem_write(TSR * 16 + self.image.find(HDR_SIG) + self.RULES, struct.pack("<H", rules & 0xFFFF))
+        mu.mem_write(TSR * 16 + self.image.find(HDR_SIG) + self.RULES_HI, struct.pack("<H", rules >> 16))
+        mu.mem_write(CALLER * 16 + self.CALLS, bytes(4))
         sheet = bytearray(test_restrict.sheet(*classes, race=race))
+        sheet[kitpages.KIT_BYTE] = kit
         sheet[0x24:0x24 + len(levels)] = bytes(levels)
         sheet[0x12:0x14] = b"\xff\x07"
         for i, k in enumerate(chosen):
@@ -2335,6 +2342,30 @@ class LevelPickTests(unittest.TestCase):
         # a human fighter turned preserver: not until the preserver's level passes the fighter's
         self.assertEqual(self.level_up((11, 9), (3, 4), race=game.HUMAN)[0], 0)
         self.assertEqual(self.level_up((11, 9), (5, 4), race=game.HUMAN)[0], 1)
+
+    def spell_calls(self):
+        return struct.unpack("<H", self.mu.mem_read(CALLER * 16 + self.SPELL_CALLS, 2))[0]
+
+    def test_shinobi_picks_a_spell(self):
+        """A Shinobi gone up a thief level, from SHINOBI_FIRST, on to the preservers' CHOOSE A
+        SPELL (past the JNZ); before that, or the kits off, or another thief, to the JNZ's target."""
+        from dscompanion import kits
+        for level, kit, rules, to in ((6, 3, game.RULE_KITS, 0x606), (10, 3, game.RULE_KITS, 0x606),
+                                      (5, 3, game.RULE_KITS, 0x60D), (6, 1, game.RULE_KITS, 0x60D),
+                                      (6, 3, 0, 0x60D)):
+            with self.subTest(level=level, kit=kit, rules=rules):
+                self.assertEqual(self.level_up((17,), (level,), cls=17, kit=kit, rules=rules), (0, to))
+        self.assertEqual(self.level_up((17,), (8,), cls=17, kit=3, rules=game.RULE_KITS, member=4)[1], 0x60D)
+        self.assertEqual(kits.SHINOBI_FIRST, 6)
+
+    def test_scholar_picks_one_more(self):
+        """A Scholar gone up a preserver level has CHOOSE A SPELL once from the probe (then the
+        game's own, past the JNZ); another preserver, or the kits off, none from the probe."""
+        for kit, rules, calls in ((1, game.RULE_KITS, 1), (2, game.RULE_KITS, 0), (0, game.RULE_KITS, 0),
+                                  (1, 0, 0)):
+            with self.subTest(kit=kit, rules=rules):
+                self.assertEqual(self.level_up((11,), (5,), cls=11, kit=kit, rules=rules), (0, 0x606))
+                self.assertEqual(self.spell_calls(), calls)
 
     def test_goes_on_as_the_compare(self):
         """A preserver's level on to its spell (past the JNZ), any other to the JNZ's target."""
@@ -2740,7 +2771,7 @@ class KitTests(unittest.TestCase):
         self.mu.mem_write(CALLER * 16 + 0x600, bytes((0xCD, VEC_SLOTS, 0x90)))
         for rules in (game.RULE_KITS, 0):
             self.rules(rules)
-            for cls, kit in self.KIT_CASES:
+            for cls, kit in self.KIT_CASES + ((17, 3),):
                 kid = self.kit_of(cls, kit, rules)
                 for level in (1, 5, 6, 7, 8, 9, 10, 12):
                     self.creature(cls, kit, level=level)
@@ -2968,6 +2999,162 @@ class KitTests(unittest.TestCase):
                     battle_mage = rules and (cls, kit) == (11, 2)
                     self.assertEqual(self.mu.mem_read(marks * 16 + 5 + 0xAF, 1)[0], 0 if battle_mage else 1)
                     self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), 0x1111)
+
+    SHINOBI_CASES = ((17, 3), (17, 1), (11, 1), (13, 2))
+
+    def test_cast_level(self):
+        """PROBE_CAST_LEVEL and PROBE_SPELL_LEVEL: AX the level the routines' classes give ([BP-2],
+        DI), a Shinobi's for a wizard spell its thief level less 5 where better (kits.cast_level);
+        for the spell's duration and damage, a Seeker's priest spells 5 less, a Justifier's 9
+        (kits.spell_level)."""
+        from dscompanion import kits
+        from dscompanion.gamepatch import VEC_CAST_LEVEL, VEC_SPELL_LEVEL
+        for rules in (game.RULE_KITS, 0):
+            self.rules(rules)
+            for cls, kit in self.SHINOBI_CASES + ((13, 3),):
+                kid = self.kit_of(cls, kit, rules)
+                for level in (1, 5, 6, 8, 10):
+                    self.creature(cls, kit, level=level)
+                    for spell in (0, 30, 68, 69, 86, 137, 138):
+                        for given in (0, 2, 7, 10):
+                            with self.subTest(rules=rules, cls=cls, kit=kit, level=level, spell=spell, given=given):
+                                self.mu.mem_write(SS * 16 + BP - 2, struct.pack("<H", given))
+                                self.mu.mem_write(SS * 16 + BP + 6, struct.pack("<HH", 7, spell))
+                                for vector, length, di, want in (
+                                        (VEC_CAST_LEVEL, 3, 0x5555, kits.cast_level(kid, spell, given, level)),
+                                        (VEC_SPELL_LEVEL, 2, given, kits.spell_level(kid, spell, given, level))):
+                                    self.run_vector(vector, length, eax=0x1111, ebx=0x2222, ecx=0x3333, edi=di, es=0x6666)
+                                    self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), want)
+                                    self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_BX, r.UC_X86_REG_CX,
+                                                                                    r.UC_X86_REG_DI, r.UC_X86_REG_ES)],
+                                                     [0x2222, 0x3333, di, 0x6666])
+        self.assertEqual([kits.shinobi_cast(n) for n in (1, 5, 6, 8, 10)], [0, 0, 1, 3, 5])
+        self.assertEqual([kits.spell_level(kits.SEEKER, 86, 8, 0), kits.spell_level(kits.JUSTIFIER, 86, 10, 0),
+                          kits.spell_level(kits.JUSTIFIER, 86, 7, 0), kits.spell_level(0, 86, 8, 0)], [3, 1, 0, 8])
+
+    def picker_sheet(self, cls, kit, level):
+        from dscompanion import kitpages
+        sheet = bytearray(game.SHEET_SIZE)
+        sheet[0x21], sheet[0x24], sheet[kitpages.KIT_BYTE] = cls, level, kit
+        self.mu.mem_write(self.CREATION * 16, bytes(sheet))  # (DS:[119Ch] points at it)
+
+    def test_pick_level(self):
+        """PROBE_PICK_LEVEL: AL (the preserver level) + 1, a Shinobi's casting level + 1."""
+        from dscompanion import kits
+        from dscompanion.gamepatch import VEC_PICK_LEVEL
+        for rules in (game.RULE_KITS, 0):
+            self.rules(rules)
+            for cls, kit in self.SHINOBI_CASES:
+                kid = self.kit_of(cls, kit, rules)
+                for level in (5, 6, 8, 10):
+                    with self.subTest(rules=rules, cls=cls, kit=kit, level=level):
+                        self.picker_sheet(cls, kit, level)
+                        al = level if cls == 11 else 0
+                        self.run_vector(VEC_PICK_LEVEL, 2, eax=0x1100 | al, ebx=0x2222, es=0x6666)
+                        want = (kits.shinobi_cast(level) if kid == kits.SHINOBI else al) + 1
+                        self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AL), want)
+                        self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_BX, r.UC_X86_REG_ES)],
+                                         [0x2222, 0x6666])
+
+    def test_pick_list(self):
+        """PROBE_PICK_LIST: DI the list's length (AX), for a Shinobi its own spells up to the spell
+        level on offer it doesn't know, put in the list (kits.pick_list)."""
+        from dscompanion import kits
+        from dscompanion.gamepatch import VEC_PICK_LIST
+        seg, who = 0x8700, 2
+        site = 0x400 + (VEC_PICK_LIST & 0x1F) * 0x10
+        self.mu.mem_write(CALLER * 16 + site + 2 + (0x8562E - 0x85641), struct.pack("<H", seg))
+        self.mu.mem_write(seg * 16 + 0x25B, struct.pack("<H", who))
+        known_at = (self.DS - (0x4356 - 0x3800)) * 16 + 0x168 + who * 0x8A
+        known = {2, 17, 29}
+        self.mu.mem_write(known_at, bytes(1 if n in known else 0 for n in range(0x8A)))
+        for rules in (game.RULE_KITS, 0):
+            self.rules(rules)
+            for cls, kit in self.SHINOBI_CASES:
+                kid = self.kit_of(cls, kit, rules)
+                for most in (1, 2, 3):
+                    with self.subTest(rules=rules, cls=cls, kit=kit, most=most):
+                        self.picker_sheet(cls, kit, 10)
+                        self.mu.mem_write(self.DS * 16 + 0x4AEC, bytes((most,)))
+                        self.mu.mem_write(seg * 16 + 7, struct.pack("<3H", 40, 41, 42))
+                        self.run_vector(VEC_PICK_LIST, 2, eax=3, ebx=0x2222, ecx=0x3333, esi=0x4444, es=0x6666)
+                        want = kits.pick_list(kid, known.__contains__, most)
+                        if want is None:
+                            want = [40, 41, 42]
+                        di = self.mu.reg_read(r.UC_X86_REG_DI)
+                        self.assertEqual(list(struct.unpack("<%dH" % di, self.mu.mem_read(seg * 16 + 7, 2 * di))), want)
+                        self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_AX, r.UC_X86_REG_BX, r.UC_X86_REG_CX,
+                                                                        r.UC_X86_REG_SI, r.UC_X86_REG_ES, r.UC_X86_REG_DS)],
+                                         [3, 0x2222, 0x3333, 0x4444, 0x6666, self.DS])
+        self.assertEqual(kits.pick_list(kits.SHINOBI, known.__contains__, 2), [6, 9, 4, 11, 19, 12, 13, 15])
+
+    def test_pick_any(self):
+        """PROBE_PICK_ANY: [BP-2] and flags as "mov [bp-2],ax / or ax,ax" (the JG after going on for
+        a preserver level); for a Shinobi, CHOOSE A SPELL (on PICK_OPEN past the INT, DI 1) while it
+        has a spell to learn up to its spell level (kits.pick_list), else AX 0."""
+        from dscompanion import kits
+        from dscompanion.gamepatch import VEC_PICK_ANY
+        who, site, open_at = 5, 0x700, 0x855CB - 0x85582
+        at = self.image.find(bytes((0xB8, VEC_PICK_ANY, 0x25, 0xBA)))
+        self.mu.mem_write(VEC_PICK_ANY * 4, struct.pack("<HH", struct.unpack_from("<H", self.image, at + 4)[0], TSR))
+        if not getattr(self, "hooked", False):
+            self.mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
+            self.hooked = True
+        self.mu.mem_write(CALLER * 16 + site, bytes((0xCD, VEC_PICK_ANY, 0x90, 0x90, 0x90, 0xF4)))
+        self.mu.mem_write(CALLER * 16 + site + 2 + open_at, bytes((0xF4,)))
+        known_at = (self.DS - (0x4356 - 0x3800)) * 16 + 0x168 + who * 0x8A
+        for rules in (game.RULE_KITS, 0):
+            self.rules(rules)
+            for cls, kit in self.SHINOBI_CASES:
+                kid = self.kit_of(cls, kit, rules)
+                for level, known in ((5, ()), (6, ()), (6, (6, 2, 9, 4, 11)), (8, (6, 2, 9, 4, 11)),
+                                     (10, tuple(n for n, _ in kits.SHINOBI_SPELLS))):
+                    for ax in (0, 3):
+                        with self.subTest(rules=rules, cls=cls, kit=kit, level=level, known=known, ax=ax):
+                            self.creature(cls, kit, index=who, level=level)
+                            self.mu.mem_write(known_at, bytes(1 if n in known else 0 for n in range(0x8A)))
+                            self.mu.mem_write(SS * 16 + BP - 2, b"\xff\xff")
+                            for name, value in dict(cs=CALLER, ds=self.DS, ss=SS, esp=0x7FC, ebp=BP, eflags=IF | 2,
+                                                    eax=ax, ebx=0x2222, ecx=0x3333, esi=who, edi=0, es=0x6666).items():
+                                self.mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+                            self.mu.emu_start(CALLER * 16 + site, 0, count=5000)
+                            ip = self.mu.reg_read(r.UC_X86_REG_IP)
+                            opens = kid == kits.SHINOBI and bool(
+                                kits.pick_list(kid, known.__contains__, kits.shinobi_pick_level(level)))
+                            want_ax = (0 if kid == kits.SHINOBI else ax)
+                            self.assertEqual(ip, site + 2 + open_at + 1 if opens else site + 6)
+                            self.assertEqual(self.mu.reg_read(r.UC_X86_REG_DI), 1 if opens else 0)
+                            if not opens:
+                                self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), want_ax)
+                                flags = self.mu.reg_read(r.UC_X86_REG_EFLAGS)
+                                self.assertEqual((bool(flags & 0x40), bool(flags & 0x800)), (want_ax == 0, False))
+                            self.assertEqual(struct.unpack("<H", self.mu.mem_read(SS * 16 + BP - 2, 2))[0], ax)
+                            self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_BX, r.UC_X86_REG_CX, r.UC_X86_REG_SI,
+                                                                            r.UC_X86_REG_ES, r.UC_X86_REG_SP, r.UC_X86_REG_BP)],
+                                             [0x2222, 0x3333, who, 0x6666, 0x7FC, BP])
+        self.assertEqual([kits.shinobi_pick_level(n) for n in (5, 6, 7, 8, 9, 10)], [0, 1, 1, 2, 2, 3])
+
+    def test_scroll_learn(self):
+        """PROBE_SCROLL_LEARN: AX and ZF as "or ax,ax", but a Shinobi learns no scroll (AX 0, ZF)."""
+        from dscompanion import kits
+        from dscompanion.gamepatch import VEC_SCROLL_LEARN
+        seg, who = 0x8700, 5
+        site = 0x400 + (VEC_SCROLL_LEARN & 0x1F) * 0x10
+        self.mu.mem_write(CALLER * 16 + site + 2 + (0x8B6C2 - 0x8B6D5), struct.pack("<H", seg))
+        self.mu.mem_write(seg * 16 + 0x25B, struct.pack("<H", who))
+        for rules in (game.RULE_KITS, 0):
+            self.rules(rules)
+            for cls, kit in self.SHINOBI_CASES:
+                kid = self.kit_of(cls, kit, rules)
+                self.creature(cls, kit, index=who, level=8)
+                for ax in (0, 1):
+                    with self.subTest(rules=rules, cls=cls, kit=kit, ax=ax):
+                        self.run_vector(VEC_SCROLL_LEARN, 2, eax=ax, ebx=0x2222, esi=0x4444, es=0x6666)
+                        want = 0 if kid == kits.SHINOBI else ax
+                        self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), want)
+                        self.assertEqual(bool(self.mu.reg_read(r.UC_X86_REG_EFLAGS) & 0x40), not want)
+                        self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_BX, r.UC_X86_REG_SI,
+                                                                        r.UC_X86_REG_ES)], [0x2222, 0x4444, 0x6666])
 
     def test_kit_id(self):
         from dscompanion import kitpages

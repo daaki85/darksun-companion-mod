@@ -46,6 +46,13 @@ BLUNT = frozenset((1, 4, 8, 14, 15))
 # a Shinobi's: dagger, short sword, quarterstaff, chatkcha, bow, sling, staff sling
 SHINOBI_KINDS = frozenset((2, 3, 8, 12, 13, 14, 15))
 SHINOBI = KIT_IDS["Shinobi"]
+# the Shinobi's wizard spells (DSCLOG's SHINOBI_SPELLS): (spell, spell level). It learns one at each
+# level up from thief level SHINOBI_FIRST, none from scrolls; it casts at its thief level less 5
+SHINOBI_SPELLS = ((6, 1), (2, 1), (9, 1), (4, 1), (11, 1),  # Gaze Reflection, Charm Person, Shield, Color Spray, Wall of Fog
+                  (17, 2), (19, 2), (12, 2), (13, 2), (15, 2),  # Invisibility, Mirror Image, Blur, Detect Invisibility, Fog Cloud
+                  (25, 3), (29, 3), (36, 3), (30, 3))  # Blink, Haste, Protection from Normal Missiles, Hold Person
+SHINOBI_FIRST, WIZARD_LAST = 6, 68  # (wizard spells are 0 to WIZARD_LAST)
+KIT_SPELL_LAST = 137  # (priest spells to it)
 # the charms (DSCLOG's KIT_CHARMS): Charm Person, Charm Monster, Domination, Charm Person or
 # Mammal, and the psionic Domination and Mass Domination
 CHARMS = (2, 40, 61, 82, 158, 159)
@@ -107,12 +114,17 @@ def slots(kid: int, magic: int, level: int, spell_level: int, game_slots: int) -
     """The spell slots at SPELL_LEVEL of a character of kit KID and class level LEVEL, the game
     giving GAME_SLOTS of MAGIC (WIZARD or PRIEST) (PROBE_SLOTS): an Arcanist's wizard slots 1 more
     at each spell level it has any, a Battle Mage's 1 fewer, a Crusader's priest slots 1 fewer; a
-    Seeker's and a Justifier's priest slots their own tables' (SEEKER_SLOTS), WIS's left out."""
+    Seeker's and a Justifier's priest slots their own tables' (SEEKER_SLOTS), WIS's left out, and a
+    Shinobi's wizard slots the Seeker's by its thief level."""
     if kid == ARCANIST and magic == WIZARD:
         return game_slots + 1 if game_slots else 0
     if (kid == BATTLE_MAGE and magic == WIZARD) or (kid == CRUSADER and magic == PRIEST):
         return max(0, game_slots - 1)
-    if kid in (SEEKER, JUSTIFIER) and magic == PRIEST:
+    if kid == SHINOBI and magic == WIZARD:
+        kid = SEEKER
+    elif kid in (SEEKER, JUSTIFIER) and magic != PRIEST:
+        return game_slots
+    if kid in (SEEKER, JUSTIFIER):
         if not 1 <= spell_level <= 3:
             return 0
         if kid == JUSTIFIER:
@@ -155,6 +167,49 @@ def ranger_cast_drop(kid: int) -> int:
     """How much less than its ranger level a ranger casts at (PROBE_RANGER_CAST; the game's 7): a
     Seeker's 5 (1st at 6th level, 5th at 10th), a Justifier's 9 (1st at 10th)."""
     return {SEEKER: 5, JUSTIFIER: 9}.get(kid, 7)
+
+
+def shinobi_cast(level: int) -> int:
+    """The level a Shinobi of thief level LEVEL casts its wizard spells at (DSCLOG's SHINOBI_CAST):
+    5 less, 1st at 6th level."""
+    return max(0, level - (SHINOBI_FIRST - 1))
+
+
+def cast_level(kid: int, spell: int, level: int, thief_level: int) -> int:
+    """The level a spell is cast at, LEVEL from the classes, with the kit's: a Shinobi's for a
+    wizard spell its thief level's (shinobi_cast) if better. As the game's caster level routine
+    (81B16h: the spell levels it may cast, half that rounded up; Dispel Magic) has it with
+    PROBE_CAST_LEVEL (and spell_level, for its duration and damage)."""
+    if kid == SHINOBI and spell <= WIZARD_LAST:
+        return max(level, shinobi_cast(thief_level))
+    return level
+
+
+def spell_level(kid: int, spell: int, level: int, thief_level: int) -> int:
+    """The level a spell's duration and damage take (the game's routine at 5E25Ch, LEVEL the best of
+    the caster's classes that cast it, a ranger's whole), with the kit's (PROBE_SPELL_LEVEL): a
+    Shinobi's as cast_level, a Seeker's and a Justifier's priest spells (to KIT_SPELL_LAST) at
+    their ranger level less ranger_cast_drop."""
+    if spell <= WIZARD_LAST:
+        return cast_level(kid, spell, level, thief_level)
+    if spell <= KIT_SPELL_LAST and kid in (SEEKER, JUSTIFIER):
+        return max(0, level - ranger_cast_drop(kid))
+    return level
+
+
+def shinobi_pick_level(level: int) -> int:
+    """The highest spell level a Shinobi of thief level LEVEL may learn (CHOOSE A SPELL's), half its
+    casting level rounded up, as the game's for a preserver."""
+    return (shinobi_cast(level) + 1) // 2
+
+
+def pick_list(kid: int, known, most: int):
+    """The spells a character of kit KID may pick at a level up, for a Shinobi (PROBE_PICK_LIST):
+    its own up to spell level MOST that it doesn't know (KNOWN(spell) true); None for others (the
+    game's list)."""
+    if kid != SHINOBI:
+        return None
+    return [spell for spell, lvl in SHINOBI_SPELLS if lvl <= most and not known(spell)]
 
 
 def move(kid: int) -> int:

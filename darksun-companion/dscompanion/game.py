@@ -1132,7 +1132,8 @@ class GameData:
     def effect_caster_level(self, creature: int, spell: int) -> Optional[int]:
         """The level a spell effect counts as having been cast at, as Dispel Magic weighs it (the
         game's routine at 81B16h): the caster's best level in a class sharing a sphere with the
-        spell, rangers 7 levels less (a Seeker 5, a Justifier 9: kits.ranger_cast_drop). None for
+        spell, rangers 7 levels less (a Seeker 5, a Justifier 9: kits.ranger_cast_drop), a Shinobi's
+        wizard spells its thief level less 5 (kits.cast_level). None for
         psionic powers and monsters' own powers."""
         if not 0 < spell < PSIONIC_FIRST:
             return None
@@ -1140,13 +1141,14 @@ class GameData:
             (self.load_seg + SPELL_SPHERES_SEG) * 16 + SPELL_SPHERES_OFF + spell * SPELL_SPHERES_SIZE, 4))
         classes = self.guest.read((self.load_seg + CLASS_MAGIC_SEG) * 16 + CLASS_MAGIC_OFF, 4 * 20)
         from . import kits
-        drop = kits.ranger_cast_drop(self.kit_id(creature))  # (the game's 7; DSCLOG's PROBE_RANGER_CAST)
+        kid = self.kit_id(creature)
+        drop = kits.ranger_cast_drop(kid)  # (the game's 7; DSCLOG's PROBE_RANGER_CAST)
         best = 0
         for cls in range(1, 20):
             if struct.unpack_from("<I", classes, cls * 4)[0] & spheres:
                 level = self.class_level(creature, cls) - (drop if cls in RANGER_CLASSES else 0)
                 best = max(best, level)
-        return best
+        return kits.cast_level(kid, spell, best, self.class_level(creature, THIEF))
 
     def thief_skill_parts(self, creature: int, skill: int) -> Optional[List[Tuple[str, int]]]:
         """What a thief skill's chance (percent) is made of, before armour, effects and the

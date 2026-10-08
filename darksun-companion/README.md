@@ -1624,10 +1624,10 @@ and costs something.
 | **Grove Warden** (druid) | AC 1 better for every 3 druid levels | no metal weapons |
 | **Wanderer** (druid) | resists fire and cold as the Resist Fire and Resist Cold spells do: +3 on saves against fire and cold spells | AC 1 worse |
 | **Arcanist** (preserver) | a spell slot more at each spell level it has slots at | −2 CON |
-| **Shinobi** (thief) | *to come:* a few preserver spells | dagger, short sword, quarterstaff, chatkcha, sling, staff sling and bow only; light armour only; no shield |
+| **Shinobi** (thief) | preserver spells from 6th level, on the Seeker's slots (one 1st-level slot at 6th, two at 7th, and a 2nd-level slot at 8th, two at 9th, and a 3rd-level slot at 10th), cast at the thief level less 5, in light armour too: its own 14 (Gaze Reflection, Charm Person, Shield, Color Spray, Wall of Fog; Invisibility, Mirror Image, Blur, Detect Invisibility, Fog Cloud; Blink, Haste, Protection from Normal Missiles, Hold Person), one learnt at each level up from 6th | none learnt from scrolls; dagger, short sword, quarterstaff, chatkcha, sling, staff sling and bow only; light armour only; no shield |
 | **Lifebinder** (druid) | Cure Light, Serious and Critical Wounds heal a d8 more, Blood Flow a d6 | blunt weapons only (club, mace, quarterstaff, sling, staff sling) |
 | **Healer** (cleric) | Cure Light, Serious and Critical Wounds heal 1 more a die (+1, +2, +3) | no weapon in the off hand (a shield is fine) |
-| **Scholar** (preserver) | *to come:* a spell more learnt at each level up | −1 to hit (THAC0 1 worse) |
+| **Scholar** (preserver) | a spell more learnt at each level up (CHOOSE A SPELL comes up twice) | −1 to hit (THAC0 1 worse) |
 | **Crusader** (cleric) | a warrior's THAC0 | one fewer spell slot at each spell level |
 | **Elementalist** (cleric) | *to come:* a second sphere: its spells and its weapons | spell slots a level behind (a 7th-level Elementalist has a 6th-level cleric's; none at 1st level) |
 | **Seeker** (ranger) | priest spell slots from 6th level: one 1st-level slot at 6th, two at 7th, and a 2nd-level slot at 8th, two at 9th, and a 3rd-level slot at 10th (and on), in place of a ranger's, cast at the ranger level less 5 (a ranger's: less 7) | *to come:* its sphere's weapon limits (but it keeps the bow) |
@@ -1637,8 +1637,7 @@ and costs something.
 | **Mind Bender** (psionicist) | telepathy powers (the defence modes too) cost 2 PSP less to use | psychokinesis powers cost 2 PSP more |
 | **Kineticist** (psionicist) | psychokinesis powers cost 2 PSP less to use | telepathy powers (the defence modes too) cost 2 PSP more |
 
-Still to come: the Shinobi's spells (thief), and the parts marked *to come*
-above.
+Still to come: the parts marked *to come* above.
 
 The Lifebinder's die
 is rolled by the helper from the game's own random numbers; the dice log notes
@@ -1653,7 +1652,11 @@ won't let it choose one, and drops one it chose before the hit. The Battle
 Mage isn't stopped.
 
 The kits' spell slots are the game's own wherever it counts them (on resting,
-in the spell lists), and the Ledger's Spells tab shows the same. WIS's bonus
+in the spell lists), and the Ledger's Spells tab shows the same. A kit's
+casting level is the one a spell's duration and damage take, and the one
+that sets the spell levels it may cast, half of it rounded up (the dice log's
+spell lines show it); the game's own rangers cast with their whole level,
+though their spell levels count it 7 less. WIS's bonus
 slots count for the Arcanist, Crusader and Elementalist as for their classes,
 not for the Seeker's and Justifier's own tables.
 

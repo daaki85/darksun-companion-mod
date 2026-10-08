@@ -51,11 +51,23 @@ Released pull requests are summarised in a line or two each; the release notes
   anyone else: INT ADh), and holds nothing in the off hand.
 - **Kits' casting level:** the Seeker casts at its ranger level less 5 and the
   Justifier less 9 (a ranger's: less 7), which also lets a Seeker of 6th level
-  choose 1st-level priest spells for its slots (INT AFh).
+  choose 1st-level priest spells for its slots (INT AFh). The level a
+  spell's duration and damage take, which the game works out apart from
+  that (with a ranger's whole level), now has the kits' too (INT A8h).
+- **The Shinobi's spells:** preserver spells from 6th thief level on the
+  Seeker's slots, cast at the thief level less 5, from its own list of 14:
+  one learnt at each level up from 6th, on the game's CHOOSE A SPELL screen,
+  which shows its spells only, up to the spell level it casts; none learnt
+  from scrolls (INT ACh, A8h, A7h, ABh, AAh, A9h, and the level-up's probe).
+  The Ledger's Spells tab shows its slots.
+- **The Scholar** learns a spell more at each level up: CHOOSE A SPELL comes
+  up twice.
 
 **Changed** (for the kits)
 - **The dice log's ring holds 96 entries** (was 128), making room in upper
   memory for the kits' code.
+- **The helper's interrupts** are now A7h to FEh (and 60h to 65h); the
+  message when they are in use says so.
 
 **Documentation**
 - **Kits, planned:** DEVELOPMENT.md has the design for kits (three for each

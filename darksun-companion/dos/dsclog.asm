@@ -110,6 +110,12 @@ VEC_PSP_KEEP equ 0xB0      ; PROBE_PSP_KEEP
 VEC_RANGER_CAST equ 0xAF   ; PROBE_RANGER_CAST
 VEC_PSP_KEEP_DX equ 0xAE   ; PROBE_PSP_KEEP_DX
 VEC_HIT_ROUND equ 0xAD     ; PROBE_HIT_ROUND
+VEC_CAST_LEVEL equ 0xAC    ; PROBE_CAST_LEVEL
+VEC_PICK_LEVEL equ 0xAB    ; PROBE_PICK_LEVEL
+VEC_PICK_LIST equ 0xAA     ; PROBE_PICK_LIST
+VEC_SCROLL_LEARN equ 0xA9  ; PROBE_SCROLL_LEARN
+VEC_SPELL_LEVEL equ 0xA8   ; PROBE_SPELL_LEVEL
+VEC_PICK_ANY equ 0xA7      ; PROBE_PICK_ANY
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 96          ; entries in the ring (96: the helper and it fit in upper memory)
@@ -3790,6 +3796,8 @@ kinds_allowed:
 LV_SHEETS   equ 0x1661          ; DS: the sheets (far, 47h bytes each) and creatures (3Ah each)
 LV_PARTY    equ 4
 LV_PSI_CALL equ 0x87AB0 - 0x87A9D  ; the psionicists' pop-up's far call's address, less the INT's
+LV_SPELL_CALL equ 0x87AA3 - 0x87A9D ; the preservers' CHOOSE A SPELL's (620:5Ch), as that
+LV_THIEF    equ 17
 probe_lv_pick:
         sti
         pushad
@@ -3800,18 +3808,30 @@ probe_lv_pick:
         lds si, [ss:bx + 34]
         mov eax, [si + LV_PSI_CALL]
         mov [cs:lv_psi], eax
+        mov eax, [si + LV_SPELL_CALL]
+        mov [cs:lv_spell], eax
         pop si
         pop ds
         mov ax, [ss:bx + 34]
-        add ax, 4               ; past the NOPs and the JNZ for a preserver ...
+        add ax, 4               ; past the NOPs and the JNZ for a preserver (and a Shinobi) ...
+        mov byte [cs:lv_class], 0x0B
         cmp word [bp + 8], 0x0B
         je .frame
-        add ax, 7               ; ... and to its target for any other class
+        mov byte [cs:lv_class], 0
+        cmp word [bp + 8], LV_THIEF
+        jne .other
+        call lv_shinobi
+        je .frame
+.other: add ax, 7               ; ... and to its target for any other class
 .frame: push word [ss:bx + 36]
         push ax
         push bp
         mov bp, sp
         call lv_check
+        cmp byte [cs:lv_class], 0x0B
+        jne .scholar_done
+        call lv_scholar
+.scholar_done:
         pop bp
         pop ax                  ; the way back, as the overlay manager has left it
         pop dx
@@ -3882,6 +3902,54 @@ lv_check:
 .left:  mov [cs:lv_left], cl
         call lv_ask
 .ret:   ret
+
+; LV_SHINOBI: ZF set if character SI, gone up a level as a thief, is a Shinobi of SHINOBI_FIRST or
+; more, who learns a spell of its own (as a preserver: CHOOSE A SPELL, with PROBE_PICK_LEVEL and
+; PROBE_PICK_LIST). All registers kept.
+lv_shinobi:
+        push ax
+        push bx
+        push es
+        cmp si, LV_PARTY
+        jae .no
+        les bx, [LV_SHEETS]
+        imul ax, si, 0x47
+        add bx, ax
+        call kit_id
+        jnz .kit
+        or al, 1                ; (none: ZF clear)
+        jmp .out
+.kit:   cmp al, KIT_SHINOBI
+        jne .out
+        cmp byte [es:bx + 0x24], SHINOBI_FIRST
+        jb .no
+        cmp al, al              ; (ZF set)
+        jmp .out
+.no:    or al, 1
+.out:   pop es
+        pop bx
+        pop ax
+        ret
+
+; LV_SCHOLAR: for character SI gone up a level as a preserver, a Scholar's spell more: the game's
+; CHOOSE A SPELL (LV_SPELL) once before the game's own. All registers kept.
+lv_scholar:
+        pusha
+        push es
+        cmp si, LV_PARTY
+        jae .out
+        les bx, [LV_SHEETS]
+        imul ax, si, 0x47
+        add bx, ax
+        call kit_id
+        cmp al, KIT_SCHOLAR
+        jne .out
+        push si
+        call far [cs:lv_spell]
+        add sp, 2
+.out:   pop es
+        popa
+        ret
 
 ; LV_DUE: CX the weapon kinds the character whose sheet is ES:BX is due: a gladiator 2, 3 from 6th
 ; level, 4 from 9th; a fighter or ranger 1; 0 for others. A human's earlier classes (dual-classed)
@@ -4158,6 +4226,8 @@ pk_take:
         ret
 
 lv_psi    dd 0                  ; the psionicists' pop-up (620:57h, as fixed up)
+lv_spell  dd 0                  ; the preservers' CHOOSE A SPELL (620:5Ch, as fixed up)
+lv_class  db 0                  ; 0Bh while PROBE_LV_PICK has a preserver gone up a level
 lv_op_call dd 0                 ; 140:71Ah, a button's state (0 in use, 1 out of use)
 lv_label_call dd 0              ; 140:7FAh, a button's text
 lv_mode   db 0                  ; 1 while LV_ASK has the pop-up up for weapons
@@ -4615,7 +4685,8 @@ probe_thac0:
 ; priest, [BP+0Ah] the spell level; [BP-2] the slots its classes give): AX the slots, with the
 ; kit's (kits.slots): an Arcanist's wizard slots 1 more at each spell level it has any, a Battle
 ; Mage's 1 fewer, a Crusader's priest slots 1 fewer; a Seeker's and a Justifier's priest slots
-; their own tables' (SEEKER_SLOTS), by ranger level.
+; their own tables' (SEEKER_SLOTS), by ranger level; a Shinobi's wizard slots the Seeker's, by
+; thief level.
 SLOT_WIZARD  equ 1
 SLOT_PRIEST  equ 2
 probe_slots:
@@ -4656,12 +4727,20 @@ probe_slots:
         dec cx
         jmp .out
 .seeker:
+        cmp al, KIT_SHINOBI     ; (a Shinobi's wizard slots: the Seeker's table, by thief level)
+        jne .ranger
+        cmp byte [bp + 8], SLOT_WIZARD
+        jne .out
+        mov al, KIT_SEEKER
+        jmp .levels
+.ranger:
         cmp al, KIT_SEEKER
         je .table
         cmp al, KIT_JUSTIFIER
         jne .out
 .table: cmp byte [bp + 8], SLOT_PRIEST
         jne .out
+.levels:
         push dx
         mov dl, al
         mov ax, bx
@@ -4958,6 +5037,309 @@ probe_hit_round:
         je .out
         mov byte [es:si + 0xAF], 1
 .out:   pop ax
+        iret
+
+; The Shinobi's spells (kits.SHINOBI_SPELLS): spell, spell level. Wizard spells are 0 to WIZARD_LAST.
+SHINOBI_SPELLS:
+        db 6, 1,  2, 1,  9, 1,  4, 1,  11, 1           ; Gaze Reflection, Charm Person, Shield, Color Spray, Wall of Fog
+        db 17, 2,  19, 2,  12, 2,  13, 2,  15, 2       ; Invisibility, Mirror Image, Blur, Detect Invisibility, Fog Cloud
+        db 25, 3,  29, 3,  36, 3,  30, 3               ; Blink, Haste, Protection from Normal Missiles, Hold Person
+SHINOBI_SPELLS_END:
+WIZARD_LAST  equ 68
+SHINOBI_FIRST equ 6             ; (the thief level its spells start at; it casts at that less 5)
+KNOWN_FROM_DS equ 0x4356 - 0x3800  ; the spells each party member knows: DS less this, from KNOWN_OFF,
+KNOWN_OFF    equ 0x168          ;   8Ah bytes a member, a byte a spell (not 0: known)
+KNOWN_SIZE   equ 0x8A
+
+; SHINOBI_CAST: AX the level a Shinobi of thief level AX casts at (less SHINOBI_FIRST - 1, no less
+; than 0). Others kept.
+shinobi_cast:
+        sub ax, SHINOBI_FIRST - 1
+        jns .ret
+        xor ax, ax
+.ret:   ret
+
+; PROBE_CAST_LEVEL: INT VEC_CAST_LEVEL replaces "mov ax,[bp-2]" (3 bytes: INT + NOP; DSUN.EXE 81C06h)
+; at the end of the caster level routine (its [BP+6] the combatant, [BP+8] the spell; [BP-2] the
+; level its classes give, a ranger's 7 less: PROBE_RANGER_CAST), which sets the spell levels a
+; caster may cast (half it rounded up: 81664h asks for spell 0) and weighs a spell against Dispel
+; Magic: AX that, a Shinobi's for a wizard spell its thief level less 5 where more (SHINOBI_LEVEL).
+probe_cast_level:
+        mov ax, [bp - 2]
+        jmp shinobi_wizard
+
+; PROBE_SPELL_LEVEL: INT VEC_SPELL_LEVEL replaces "mov ax,di" (2 bytes; DSUN.EXE 5E3D1h) at the end of
+; the routine giving the level a spell is cast at, for its duration and damage (5E25Ch; the same
+; arguments; DI the best level of the caster's classes that cast it, a ranger's whole): AX that,
+; for a wizard spell a Shinobi's as PROBE_CAST_LEVEL's, for a priest spell (to KIT_SPELL_LAST) a
+; Seeker's 5 less and a Justifier's 9 (kits.spell_level).
+probe_spell_level:
+        mov ax, di
+        cmp word [bp + 8], WIZARD_LAST
+        jbe shinobi_wizard
+        cmp word [bp + 8], KIT_SPELL_LAST
+        ja .ret
+        push bx
+        push cx
+        mov cx, 5
+        call combatant_kit
+        cmp al, KIT_SEEKER
+        je .less
+        mov cx, 9
+        cmp al, KIT_JUSTIFIER
+        je .less
+        xor cx, cx
+.less:  mov ax, di
+        sub ax, cx
+        jns .out
+        xor ax, ax
+.out:   pop cx
+        pop bx
+.ret:   iret
+
+; SHINOBI_WIZARD: AX (a level), for wizard spell [BP+8] the level a Shinobi (combatant [BP+6])
+; casts it at where more; then IRET.
+shinobi_wizard:
+        cmp word [bp + 8], WIZARD_LAST
+        ja .ret
+        push cx
+        mov cx, ax
+        call shinobi_level
+        cmp ax, cx
+        jge .out
+        mov ax, cx
+.out:   pop cx
+.ret:   iret
+
+; COMBATANT_KIT: AL the kit (KIT_ID) of combatant [BP+6], BX its creature. DS the game's; others
+; but AX and BX kept.
+combatant_kit:
+        push es
+        mov ax, ds
+        add ax, THINGS_SEG
+        mov es, ax
+        imul bx, [bp + 6], 3
+        mov bx, [es:bx + COMBATANT_CREATURE]
+        mov ax, bx
+        call kit_of_creature
+        pop es
+        ret
+
+; SHINOBI_LEVEL: AX the level a Shinobi casts at (SHINOBI_CAST) if combatant [BP+6] is one, else 0.
+; DS the game's; others kept.
+shinobi_level:
+        push bx
+        push es
+        call combatant_kit
+        cmp al, KIT_SHINOBI
+        mov ax, 0
+        jne .out
+        mov ax, bx
+        les bx, [CREATURES]
+        imul ax, ax, 0x3A
+        add bx, ax
+        mov ax, [es:bx + 4]
+        les bx, [0x1661]
+        imul ax, ax, 0x47
+        add bx, ax
+        movzx ax, byte [es:bx + 0x24]
+        call shinobi_cast
+.out:   pop es
+        pop bx
+        ret
+
+; PROBE_PICK_ANY: INT VEC_PICK_ANY replaces "mov [bp-2],ax / or ax,ax" (5 bytes: INT + 3 NOPs;
+; DSUN.EXE 85580h) in the routine a level up calls for a preserver's spell (620:5Ch, 85560h; SI the
+; character, AX its preserver level), which goes on (the JG after) only for a level, and then opens
+; CHOOSE A SPELL (85771h) if the game's list (500:2Ah) has a spell to learn. A Shinobi has no
+; preserver level and nothing on that list: for one, CHOOSE A SPELL (DI 1, on at PICK_OPEN) if one
+; of its spells (SHINOBI_SPELLS) up to the spell level it casts is unknown (SHINOBI_UNKNOWN), else
+; nothing (AX 0). Flags as "or ax,ax".
+PICK_OPEN equ 0x855CB - 0x85582   ; ("or di,di", then "push si / call 5771h")
+probe_pick_any:
+        mov [bp - 2], ax
+        push bp
+        mov bp, sp              ; (the INT's frame: [BP+2] IP, [BP+6] flags)
+        push bx
+        push cx
+        push es
+        mov cx, ax
+        les bx, [0x1661]
+        imul ax, si, 0x47
+        add bx, ax
+        call kit_id
+        xchg ax, cx             ; (CL the kit)
+        cmp cl, KIT_SHINOBI
+        jne .flags
+        movzx ax, byte [es:bx + 0x24]
+        call shinobi_cast
+        inc ax
+        shr ax, 1
+        mov cl, al              ; (CL the highest spell level it casts)
+        xor ax, ax
+        call shinobi_unknown
+        jnc .flags
+        mov di, 1
+        add word [bp + 2], PICK_OPEN
+.flags: or ax, ax
+        pushf
+        pop cx
+        and cx, 0x08D5          ; (OF, SF, ZF, AF, PF, CF)
+        and word [bp + 6], ~0x08D5
+        or [bp + 6], cx
+        pop es
+        pop cx
+        pop bx
+        pop bp
+        iret
+
+; SHINOBI_UNKNOWN: CF set if character SI doesn't know one of the Shinobi's spells (SHINOBI_SPELLS)
+; of spell level CL or less. DS the game's; all registers kept.
+shinobi_unknown:
+        push ax
+        push bx
+        push si
+        push ds
+        imul bx, si, KNOWN_SIZE
+        add bx, KNOWN_OFF
+        mov ax, ds
+        sub ax, KNOWN_FROM_DS
+        mov ds, ax
+        mov si, SHINOBI_SPELLS
+.spell: cmp [cs:si + 1], cl
+        ja .next
+        movzx ax, byte [cs:si]
+        push bx
+        add bx, ax
+        cmp byte [bx], 0
+        pop bx
+        stc
+        je .out
+.next:  add si, 2
+        cmp si, SHINOBI_SPELLS_END
+        jb .spell
+        clc
+.out:   pop ds
+        pop si
+        pop bx
+        pop ax
+        ret
+
+; PROBE_PICK_LEVEL: INT VEC_PICK_LEVEL replaces "inc al" (2 bytes; DSUN.EXE 85861h) in the CHOOSE A
+; SPELL window, where AL is the character's preserver level and the spell levels on offer are up to
+; (AL + 1) / 2 (DS:[119Ch] its sheet, far): a Shinobi's its casting level (SHINOBI_CAST). Then
+; AL + 1, as the code was.
+PICK_SHEET   equ 0x119C
+probe_pick_level:
+        push bx
+        push es
+        les bx, [PICK_SHEET]
+        push ax
+        call kit_id
+        cmp al, KIT_SHINOBI
+        pop ax
+        jne .out
+        movzx ax, byte [es:bx + 0x24]
+        call shinobi_cast
+.out:   inc al
+        pop es
+        pop bx
+        iret
+
+; PROBE_PICK_LIST: INT VEC_PICK_LIST replaces "mov di,ax" (2 bytes; DSUN.EXE 8563Fh) in the CHOOSE A
+; SPELL window, after the game's routine put the spells the character may learn in the list (the
+; segment of "mov ax,348h" before, PICK_LIST_SEG, at 7, a word each; AX how many; the character at
+; that segment's 25Bh; the highest spell level DS:[4AECh]): for a Shinobi, its own spells
+; (SHINOBI_SPELLS) up to that level that it doesn't know yet. DI how many, as the code had it.
+PICK_LIST_SEG equ 0x8562E - 0x85641   ; (the segment's word in "mov ax,348h", less the INT's way back)
+PICK_LIST    equ 7
+PICK_WHO     equ 0x25B
+PICK_MOST    equ 0x4AEC
+probe_pick_list:
+        mov di, ax
+        push ax
+        push bx
+        push cx
+        push dx
+        push si
+        push es
+        push bp
+        les bx, [PICK_SHEET]
+        call kit_id
+        cmp al, KIT_SHINOBI
+        jne .out
+        mov bp, sp
+        les si, [ss:bp + 14]    ; (the INT's way back: CS:IP)
+        mov es, [es:si + PICK_LIST_SEG]
+        mov cx, [es:PICK_WHO]   ; the character's known spells: CX their offset
+        imul cx, cx, KNOWN_SIZE
+        add cx, KNOWN_OFF
+        mov dl, [PICK_MOST]     ; (DL the highest spell level on offer)
+        mov ax, ds
+        sub ax, KNOWN_FROM_DS
+        push ds
+        mov ds, ax
+        xor di, di              ; (the list's length)
+        mov si, SHINOBI_SPELLS
+.spell: cmp [cs:si + 1], dl
+        ja .next
+        movzx bx, byte [cs:si]
+        add bx, cx
+        cmp byte [bx], 0
+        jne .next               ; (known)
+        sub bx, cx
+        mov [es:PICK_LIST + di], bx
+        add di, 2
+.next:  add si, 2
+        cmp si, SHINOBI_SPELLS_END
+        jb .spell
+        pop ds
+        shr di, 1
+.out:   pop bp
+        pop es
+        pop si
+        pop dx
+        pop cx
+        pop bx
+        pop ax
+        iret
+
+; PROBE_SCROLL_LEARN: INT VEC_SCROLL_LEARN replaces "or ax,ax" (2 bytes; DSUN.EXE 8B6D3h, then the
+; game's "jz", to "CANNOT LEARN FROM THIS ITEM") after the game's check whether the character on
+; show (the segment of "mov ax,348h" before, its 25Bh) may learn a scroll's spell: none for a
+; Shinobi, who learns only at a level up. ZF as "or ax,ax" leaves it.
+SCROLL_WHO_SEG equ 0x8B6C2 - 0x8B6D5
+probe_scroll_learn:
+        or ax, ax
+        jz .flags
+        push bx
+        push si
+        push es
+        push bp
+        mov bp, sp
+        les si, [ss:bp + 8]     ; (the INT's way back)
+        mov es, [es:si + SCROLL_WHO_SEG]
+        mov bx, [es:PICK_WHO]
+        imul bx, bx, 0x47
+        les si, [0x1661]
+        add bx, si
+        push ax
+        call kit_id
+        cmp al, KIT_SHINOBI
+        pop ax
+        jne .keep
+        xor ax, ax
+.keep:  pop bp
+        pop es
+        pop si
+        pop bx
+.flags: push bp                 ; (ZF in the flags IRET gives back)
+        mov bp, sp
+        and word [bp + 6], ~0x40
+        or ax, ax
+        jnz .done
+        or word [bp + 6], 0x40
+.done:  pop bp
         iret
 
 ; PROBE_RANGER_CAST: INT VEC_RANGER_CAST replaces "sub dx,7" (3 bytes: INT + NOP; DSUN.EXE 81B6Ah)
@@ -9998,6 +10380,24 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_HIT_ROUND
         mov dx, probe_hit_round
         int 21h
+        mov ax, 2500h + VEC_CAST_LEVEL
+        mov dx, probe_cast_level
+        int 21h
+        mov ax, 2500h + VEC_SPELL_LEVEL
+        mov dx, probe_spell_level
+        int 21h
+        mov ax, 2500h + VEC_PICK_ANY
+        mov dx, probe_pick_any
+        int 21h
+        mov ax, 2500h + VEC_PICK_LEVEL
+        mov dx, probe_pick_level
+        int 21h
+        mov ax, 2500h + VEC_PICK_LIST
+        mov dx, probe_pick_list
+        int 21h
+        mov ax, 2500h + VEC_SCROLL_LEARN
+        mov dx, probe_scroll_learn
+        int 21h
         mov ax, 2500h + VEC_RANGER_CAST
         mov dx, probe_ranger_cast
         int 21h
@@ -10043,8 +10443,10 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or BAh-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
-all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS, VEC_LV_PICK, VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK, VEC_EF_ROWS, VEC_HP_BEST, VEC_TOME
+busy    db 'DSCLOG: interrupts 60h-65h or A7h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS, VEC_LV_PICK, VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK, VEC_EF_ROWS, VEC_HP_BEST, VEC_TOME, VEC_INIT, VEC_THAC0, VEC_SLOTS, VEC_SLOT_LEVEL
+            db VEC_PSP_USE, VEC_PSP_TABLE, VEC_PSP_DEFENCE, VEC_CURE, VEC_PSP_KEEP, VEC_RANGER_CAST, VEC_PSP_KEEP_DX
+            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY
 all_vectors_end:
 
         align 16, db 0
