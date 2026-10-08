@@ -34,7 +34,7 @@ kick up dirt as they walk ([On the screen](darksun-companion/README.md#on-the-sc
 Quality of life changes: choosing an enemy with Tab and attacking it with Enter,
 scrolling the map with the mouse ([Controls](darksun-companion/README.md#controls)), 40 saves and 29 saved
 characters ([More saves and characters](darksun-companion/README.md#more-saves-and-characters)), a game
-speed setting ([Game speed](darksun-companion/README.md#game-speed)), crash reports, and no manual check.
+speed setting ([Game speed](darksun-companion/README.md#game-speed)), crash reports, and no copy-protection quiz from the manual ([No manual check](darksun-companion/README.md#no-manual-check)).
 
 The game's own files are never modified: the Ledger runs a patched copy of the
 game, and copies of its data files, from its own folder. Play writes to the game
