@@ -781,7 +781,7 @@ class SpecializeTests(unittest.TestCase):
         self.mu = mu = Uc(UC_ARCH_X86, UC_MODE_16)
         mu.mem_map(0, 0x100000)
         mu.mem_write(TSR * 16, image)
-        attacks = image.find(bytes.fromhex("982ef706"))
+        attacks = image.find(bytes.fromhex("9850e8"))
         damage = image.find(bytes.fromhex("0146eee8"))
         self.assertGreater(attacks, 0)
         self.assertGreater(damage, 0)
@@ -791,13 +791,13 @@ class SpecializeTests(unittest.TestCase):
         mu.mem_write(GAME_DS * 16 + 0x1661, struct.pack("<HH", 0, self.SHEETS))
 
     def attack(self, halves, weapon, chosen=(), classes=(9, 0, 0), levels=(5, 0, 0), rules=4096, missile=False, race=0,
-               kit=0):
+               kit=0, ground=(0, 0)):
         """(attacks in halves, THAC0, damage bonus, sides) after both probes, with THAC0 15, a
         damage bonus of 1 before the STR bonus of 2 is added, 1d8."""
         mu = self.mu
         hdr = TSR * 16 + load_image().find(HDR_SIG)
         mu.mem_write(hdr + self.RULES, struct.pack("<H", rules & 0xFFFF))
-        mu.mem_write(hdr + 270, struct.pack("<H", rules >> 16))
+        mu.mem_write(hdr + 270, struct.pack("<HHH", rules >> 16, *ground))
         sheet = bytearray(0x47)
         sheet[0x43] = kit
         for i, k in enumerate(chosen):
@@ -853,6 +853,41 @@ class SpecializeTests(unittest.TestCase):
 
     def test_grand_mastery(self):
         self.assertEqual(self.attack(4, self.LONG_SWORD, chosen=(0,), levels=(9, 0, 0)), (6, 12, 6, 10))
+
+    def test_arena_champion(self):
+        """An Arena Champion (sheet 3: bit 3 of the ground words) +1 to hit and damage under the
+        open sky, -1 under a roof or underground, melee or missile (kits.champion); nothing when
+        the ground isn't known, or for another kit."""
+        from dscompanion import kits
+        glad, on = dict(classes=(10, 0, 0), levels=(3, 0, 0), rules=game.RULE_KITS, kit=1), 8
+        self.assertEqual(self.attack(3, self.AXE, ground=(on, 0), **glad), (3, 14, 4, 8))
+        self.assertEqual(self.attack(3, self.AXE, ground=(0, on), **glad), (3, 16, 2, 8))
+        self.assertEqual(self.attack(2, self.AXE, ground=(on, 0), missile=True, **glad)[1:3], (14, 4))
+        self.assertEqual(self.attack(3, self.AXE, ground=(0, 0), **glad), (3, 15, 3, 8))
+        self.assertEqual(self.attack(3, self.AXE, ground=(1, 0), **glad), (3, 15, 3, 8))  # (another sheet's bit)
+        self.assertEqual(self.attack(3, self.AXE, ground=(on, 0), **dict(glad, kit=2)), (3, 15, 3, 8))
+        self.assertEqual((kits.champion(kits.CHAMPION, True), kits.champion(kits.CHAMPION, False),
+                          kits.champion(kits.CHAMPION, None), kits.champion(kits.RAIDER, True)), (1, -1, 0, 0))
+
+    def test_myrmidon(self):
+        """A Myrmidon's second kind goes on to mastery and grand mastery as the first does (as
+        specialize.skill); another fighter's second (none should have one) doesn't."""
+        kits = 4096 | game.RULE_KITS
+        self.assertEqual(self.attack(3, self.AXE, chosen=(0, 5), levels=(5, 0, 0), rules=kits, kit=1), (3, 12, 6, 8))
+        self.assertEqual(self.attack(4, self.AXE, chosen=(0, 5), levels=(9, 0, 0), rules=kits, kit=1), (6, 12, 6, 10))
+        self.assertEqual(self.attack(3, self.AXE, chosen=(0, 5), levels=(5, 0, 0), rules=kits, kit=2), (3, 14, 5, 8))
+        self.assertEqual(self.attack(3, self.AXE, chosen=(0, 5), levels=(5, 0, 0), rules=4096, kit=1), (3, 14, 5, 8))
+        from dscompanion import specialize
+        sheet = bytearray(game.SHEET_SIZE)
+        sheet[0x14:0x16], sheet[0x21], sheet[0x24], sheet[0x43] = bytes((1, 6)), 9, 9, 1
+        old = game.RULES_IN_FORCE
+        try:
+            game.RULES_IN_FORCE = kits
+            self.assertEqual(specialize.skill(bytes(sheet), self.AXE), specialize.GRAND)
+            game.RULES_IN_FORCE = 4096
+            self.assertEqual(specialize.skill(bytes(sheet), self.AXE), specialize.SPECIAL)
+        finally:
+            game.RULES_IN_FORCE = old
 
     def test_gladiator_weapons(self):
         """A gladiator: specialization with each chosen kind, never mastery."""

@@ -191,6 +191,7 @@ def kind_to_save(kind: int, rules: int) -> int:
 
 # The rules in force (DiceLog.set_rules): GameData objects made without rules of their own use these
 RULES_IN_FORCE = 0
+OPEN_GROUND: Dict[int, bool] = {}  # an Arena Champion in the party: under the open sky (DiceLog._write_ground)
 # ... and whether a worn belt adds BELT_BONUS to picking pockets and opening locks (the Options tab's
 # cloak, boots and belt switch; DSCLOG adds it where the game works the chance out: PROBE_BELT)
 BELT_IN_FORCE = False
@@ -1373,6 +1374,10 @@ class GameData:
         prayer = self._prayer(creature, mine)
         if prayer is not None:
             common.append(("Prayer", prayer))
+        from . import kits
+        champion = kits.champion(self.kit_id(creature), OPEN_GROUND.get(creature))
+        if champion:  # (an Arena Champion: DSCLOG's KIT_CHAMPION, the ground as the dice log has it)
+            common.append(("Arena Champion, " + ("open ground" if champion > 0 else "under a roof"), champion))
         strength, dex = rec[CREATURE_ABILITIES], rec[CREATURE_ABILITIES + 1]
         table = lambda off, score: struct.unpack("b", self.guest.read(self.ds * 16 + off + score, 1))[0] \
             if score < 26 else 0

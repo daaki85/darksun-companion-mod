@@ -172,6 +172,20 @@ class NewCharacterTests(unittest.TestCase):
         s = sheet((2,), classes=(9, 12, 0))  # (the dagger: allowed)
         self.assertEqual(weaponchoice.kinds_for(s, psi_kinds), [3, 0, 0, 0])
 
+    def test_myrmidon_keeps_its_second(self):
+        """A Myrmidon (kits on) keeps a second kind marked; another fighter doesn't."""
+        from dscompanion import weaponchoice
+        s = bytearray(sheet((0, 5), classes=(9, 0, 0)))
+        s[0x43] = 1
+        old = game.RULES_IN_FORCE
+        try:
+            game.RULES_IN_FORCE = game.RULE_KITS
+            self.assertEqual(weaponchoice.kinds_for(bytes(s)), [1, 6, 0, 0])
+            s[0x43] = 2
+            self.assertEqual(weaponchoice.kinds_for(bytes(s)), [1, 0, 0, 0])
+        finally:
+            game.RULES_IN_FORCE = old
+
     def test_extra_kinds_cleared(self):
         self.assertEqual(self.kinds((2, 5), (9, 0, 0)), [3, 0, 0, 0])
         self.assertEqual(self.kinds((2,), (11, 0, 0)), [0, 0, 0, 0])

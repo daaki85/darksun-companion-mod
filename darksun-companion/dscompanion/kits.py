@@ -4,10 +4,12 @@ A kit is a sheet's KIT_BYTE (kitpages.py, which also numbers them: kitpages.kit_
 that number, 0 for none (the rule off, more than one class, none chosen).
 """
 
+from typing import Optional
+
 from .kitpages import KIT_IDS, KITS
 
 RAIDER, SENTINEL, STALKER = KIT_IDS["Raider"], KIT_IDS["Sentinel"], KIT_IDS["Stalker"]
-MYRMIDON = KIT_IDS["Myrmidon"]
+MYRMIDON, CHAMPION = KIT_IDS["Myrmidon"], KIT_IDS["Arena Champion"]
 # the charms (DSCLOG's KIT_CHARMS): Charm Person, Charm Monster, Domination, Charm Person or
 # Mammal, and the psionic Domination and Mass Domination
 CHARMS = (2, 40, 61, 82, 158, 159)
@@ -51,3 +53,11 @@ def save(kid: int, spell: int) -> int:
     if kid == MYRMIDON and spell in CHARMS:
         return -4
     return 0
+
+
+def champion(kid: int, open_ground: Optional[bool]) -> int:
+    """Added to hit and to damage (KIT_CHAMPION): an Arena Champion's 1 under the open sky
+    (stealth.daylight), -1 under a roof or underground; 0 when that isn't known (None)."""
+    if kid != CHAMPION or open_ground is None:
+        return 0
+    return 1 if open_ground else -1

@@ -22,7 +22,7 @@ import struct
 import time
 from collections import Counter, deque
 from dataclasses import dataclass
-from typing import Callable, Deque, Dict, List, NamedTuple, Optional, Tuple
+from typing import Callable, Deque, Dict, List, NamedTuple, Optional, Sequence, Tuple
 
 from . import defaultparty, dust, game, kits, rings, targeting, icons, kalzith, monsters, names, pickpocket, ring, scrolling, searches, semyon, shadows, specialize, sprites, stealth, tools, vulture, weaponchoice
 from .game import (CONVENTIONAL_AND_UPPER, CREATURE_ABILITIES, CREATURE_SIDE, CREATURE_THAC0, EFFECT_NAMES,
@@ -56,6 +56,8 @@ TSR_SKILLS_ON = 266  # bits: item boxes name a cloak's and boots' bonus to hidin
 SKILLS_STEALTH, SKILLS_BELT = 1, 2  # a worn belt adds to picking pockets and opening locks (and its box says)
 SKILLS_ELVEN = 4  # the Cloak and Boots of Elvenkind's boxes name their chances (the hiding rule on)
 TSR_RING_SEG = 268  # the ring's segment (past the image, so it takes none of DSCLOG's 64 KB)
+TSR_GROUND = 272  # bits by sheet: under the open sky, then under a roof (an Arena Champion's: kits.py)
+GROUND_INTERVAL = 0.25  # seconds between writing them
 TSR_RULES_HI = 270  # the rules' bits past 16 (game.RULE_KITS), shifted down
 TSR_PICK_SEQ, TSR_PICK_REPLY, TSR_PICK_OFF, TSR_PICK_ON, PICK_SIZE = 172, 174, 176, 178, 240
 PICK_TOOLS, PICK_KEY = 1, 2  # (TSR_PICK_ON: the thieving tools on someone; P in a conversation too)
@@ -393,6 +395,8 @@ class DiceLog:
         self._party: Optional[bytes] = None
         self._party_changed_at = 0.0
         self._next_effect_check = 0.0
+        self._next_ground = 0.0
+        self.open_ground: Dict[int, bool] = {}  # an Arena Champion in the party: under the open sky (kits.py)
         self._initiative: List[Tuple[int, int]] = []  # this round's (0-9 roll, 0-199 roll) pairs
         self._initiative_roll: Optional[int] = None
         self._initiative_at = 0.0
@@ -965,6 +969,31 @@ class DiceLog:
         self.last_seq = seq
         return [entries[s] for s in sorted(entries, key=lambda s: (s - seq - 1) & 0xFFFF)]
 
+    def _write_ground(self) -> None:
+        """For an Arena Champion in the party (kits.py): whether it stands under the open sky
+        (stealth.daylight) or not, in DSCLOG's GROUND_OPEN and GROUND_ROOF (a bit by sheet)."""
+        g, self.open_ground, game.OPEN_GROUND = self.game, {}, {}
+        if g is None or self.tsr_hdr is None or not self.rules & game.RULE_KITS:
+            return
+        masks = [0, 0]
+        try:
+            where = {i: c for c, i in g.combatants().items()}
+            for index in range(game.PARTY_SIZE):
+                if g.kit_id(index) != kits.CHAMPION or index not in where:
+                    continue
+                sheet_index = struct.unpack_from("<H", g.creature(index), game.CREATURE_SHEET_INDEX)[0]
+                open_ground = stealth.daylight(g, where[index])
+                self.open_ground[index] = open_ground
+                if sheet_index < 16:
+                    masks[0 if open_ground else 1] |= 1 << sheet_index
+        except (struct.error, IndexError, ValueError):
+            return
+        game.OPEN_GROUND = dict(self.open_ground)
+        self.guest.write(self.tsr_hdr + TSR_GROUND, struct.pack("<HH", *masks))
+
+    def _ground_why(self, kid: int, creature: Optional[int]) -> str:
+        return f"{kits.name(kid)}, " + ("open ground" if self.open_ground.get(creature) else "under a roof")
+
     def lines(self, show_all: bool = False, now: Optional[float] = None) -> List[str]:
         """Everything new since the last call, as log lines. Call it every few tens of ms."""
         now = time.monotonic() if now is None else now
@@ -993,6 +1022,9 @@ class DiceLog:
                 self._dialogue += self._not_ours(self.dialogue.add(rec, now))
         self._dialogue += self._not_ours(self.dialogue.idle(now))
         self._dialogue += self._not_ours(self._reply_choice(now))
+        if now >= self._next_ground:
+            self._next_ground = now + GROUND_INTERVAL
+            self._write_ground()
         if now >= self._next_effect_check:
             self._next_effect_check = now + EFFECT_INTERVAL
             out += self.effect_changes(now)
@@ -1666,8 +1698,11 @@ class DiceLog:
         head = (f"{g.creature_name(attacker)} attacks {target}{how}{with_what}: d20 = {d20}{note}, "
                 f"{needs} ({chance}%), hits AC {thac0 - d20}, target AC {ac} -> {'HIT' if hit else 'miss'}")
         skill = self.weapon_skill(attacker, item_type)
+        kid = g.kit_id(attacker) if attacker is not None else 0
+        champion = kits.champion(kid, self.open_ground.get(attacker))
         breakdown = self._thac0_breakdown(e, thac0, attacker, attacker_combatant, target_combatant, weapon, mode,
-                                          (specialize.SKILL_NAMES.get(skill, ""), specialize.to_hit(skill)))
+                                          (specialize.SKILL_NAMES.get(skill, ""), specialize.to_hit(skill)),
+                                          [(self._ground_why(kid, attacker), champion)] if champion else [])
         self._turn_attacks.setdefault(attacker, []).append(
             {"target": target, "d20": d20, "need": need, "hit": hit, "damage": None})
         return [head, "    " + breakdown]
@@ -1680,7 +1715,8 @@ class DiceLog:
         return specialize.skill(sheet, item_type) if len(sheet) >= game.SHEET_SIZE else specialize.NONE
 
     def _thac0_breakdown(self, e: Entry, thac0: int, attacker: int, attacker_combatant: int,
-                         target_combatant: int, weapon, mode: int, skill: Tuple[str, int] = ("", 0)) -> str:
+                         target_combatant: int, weapon, mode: int, skill: Tuple[str, int] = ("", 0),
+                         kit: Sequence[Tuple[str, int]] = ()) -> str:
         """'THAC0 16, +6 STR, +1 Blessed, ... = 9', from the attack setup's locals and the game's rules
         (and SKILL, weapon specialization's (name, to-hit), which DSCLOG takes off after them)."""
         g = self.game
@@ -1688,7 +1724,7 @@ class DiceLog:
         after_f1, hit_bonus = e.parent_local(-0x20), e.parent_local(-8)
         rear, backstab = e.parent_local(-0x1A), e.parent_local(-0x24)
         parts: List[Tuple[str, int]] = []
-        if None in (after_f1, hit_bonus) or after_f1 - hit_bonus != thac0 + skill[1]:
+        if None in (after_f1, hit_bonus) or after_f1 - hit_bonus != thac0 + skill[1] + sum(v for _, v in kit):
             return f"THAC0 {base} base, {signed(base - thac0)} in bonuses = {thac0}"
         if rear:
             parts.append(("from behind", 2))
@@ -1746,6 +1782,7 @@ class DiceLog:
             parts.append(("off-hand and other", rest))
         if skill[1]:
             parts.append(skill)
+        parts += kit
         text = ", ".join(f"{signed(v)} {name}" for name, v in parts if v)
         return f"THAC0 {base}" + (f", {text}" if text else "") + f" = {thac0}"
 
@@ -1841,9 +1878,12 @@ class DiceLog:
         extra = specialize.damage(skill)
         kid = g.kit_id(attacker) if attacker is not None else 0
         kit = kits.melee_damage(kid) if mode is not None and mode <= 1 and not g.missile_type(e.parent_arg(0x14)) else 0
-        steps = f"{count}d{sides} = {faces_text}" + (f" {signed(bonus - extra - kit)} weapon" if bonus - extra - kit else "") \
+        champion = kits.champion(kid, self.open_ground.get(attacker))
+        steps = f"{count}d{sides} = {faces_text}" \
+            + (f" {signed(bonus - extra - kit - champion)} weapon" if bonus - extra - kit - champion else "") \
             + (f" {signed(extra)} {specialize.SKILL_NAMES[skill]}" if extra else "") \
-            + (f" {signed(kit)} {kits.name(kid)}" if kit else "")
+            + (f" {signed(kit)} {kits.name(kid)}" if kit else "") \
+            + (f" {signed(champion)} {self._ground_why(kid, attacker)}" if champion else "")
         if skill == specialize.GRAND:
             steps += f" (d{sides} for d{sides - 2}: grand mastery)"
         if sum(faces) + bonus < 1:

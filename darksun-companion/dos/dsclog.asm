@@ -262,6 +262,9 @@ ring_seg   dw 0                 ; +268 the ring's segment: the paragraphs after 
                                 ;      outside this one, so the ring takes none of its 64 KB (set
                                 ;      when installed; RING_OFF its offset there)
 rules_hi   dw 0                 ; +270 more rule changes the companion turns on (RULE_HI_KITS)
+ground_open dw 0                ; +272 the companion sets bit N for sheet N under the open sky ...
+ground_roof dw 0                ; +274 ... or under a roof or underground (KIT_CHAMPION's; neither:
+                                ;      not known)
 
 ; TEXT BUFFER: what the game sends to its dialogue window, as records of
 ;   byte 0FEh, byte kind (the dialogue window's: 0 = a reply to choose, the
@@ -2560,6 +2563,10 @@ SPEC_MASTER equ 4
 SPEC_GRAND equ 5
 probe_attacks:
         cbw
+        push ax
+        call kit_champion       ; (an Arena Champion's +1 or -1 to hit)
+        sub [bp + 0x0A], ax
+        pop ax
         test word [cs:rules], RULE_SPECIALIZE
         jz .store
         push dx
@@ -4227,6 +4234,10 @@ kit_melee:
 ; (KIT_MELEE, for a melee attack: [BP+16h] 1 or less; the sheet [BP+10h], the item type
 ; [BP+14h]). All registers kept.
 kit_attack_damage:
+        push ax
+        call kit_champion
+        add [bp - 0x12], ax
+        pop ax
         cmp word [bp + 0x16], 1
         jg .ret
         push ax
@@ -4244,6 +4255,33 @@ kit_attack_damage:
         pop bx
         pop ax
 .ret:   ret
+
+; KIT_CHAMPION: AX what an Arena Champion attacking (the weapon attack routine's sheet, its
+; [BP+10h]) adds to hit and to damage: 1 under the open sky, -1 under a roof or underground (as the
+; companion has it: GROUND_OPEN, GROUND_ROOF), else 0. Others kept.
+kit_champion:
+        push bx
+        push es
+        les bx, [0x1661]
+        imul ax, [bp + 0x10], 0x47
+        add bx, ax
+        call kit_id
+        pop es
+        mov bx, [bp + 0x10]
+        cmp al, KIT_CHAMPION
+        mov ax, 0
+        jne .out
+        cmp bx, 16
+        jae .out
+        bt [cs:ground_open], bx
+        jnc .roof
+        inc ax
+        jmp .out
+.roof:  bt [cs:ground_roof], bx
+        jnc .out
+        dec ax
+.out:   pop bx
+        ret
 
 ; PROBE_INIT: INT VEC_INIT replaces "add dx,14h" (3 bytes: INT + NOP; DSUN.EXE 5750Eh) where a
 ; combatant's initiative for the round is made (DX the 0-9 roll and its adjustments, SI the
@@ -4415,6 +4453,24 @@ wp_gladiator:
         or al, 1                ; (ZF clear)
         pop ax
         ret
+
+; WP_TWO: ZF clear if the sheet being made (ES:BX) chooses two kinds: a gladiator, or a Myrmidon
+; (a fighter of one class, its kit the first; kits.py). All registers kept.
+wp_two:
+        call wp_gladiator
+        jnz .ret
+        push ax
+        call kit_class
+        cmp al, CR_FIGHTER
+        jne .no
+        cmp byte [es:bx + KIT_BYTE], 1
+        jne .no
+        or al, 1                ; (ZF clear)
+        pop ax
+        ret
+.no:    cmp al, al              ; (ZF set)
+        pop ax
+.ret:   ret
 
 ; WP_CLASSES: AL 1 if the sheet being made has a fighter, gladiator or ranger class, AH 1 if a
 ; cleric, druid or ranger one (a sphere). Others kept.
@@ -4853,8 +4909,10 @@ wp_marks:
 .put:   inc cx
         mov [es:bx + SPEC_SLOTS], cl
 .first: mov word [es:bx + SPEC_SLOTS + 2], 0
-        call wp_gladiator
+        call wp_two
         jz .one
+        call wp_gladiator                       ; (a Myrmidon's second: none put in)
+        jz .marked
         cmp byte [es:bx + SPEC_SLOTS + 1], 0
         jne .marked
         cmp byte [cs:wp_touched], 0
@@ -4873,7 +4931,7 @@ wp_marks:
         mov byte [cs:wp_full], 0                ; all its picks made (a gladiator's two, another's
         or al, al                               ;   one): the other kinds out of use until one is
         jz .count                               ;   taken back, as the game's classes and disciplines
-        call wp_gladiator
+        call wp_two
         jz .full
         or ah, ah
         jz .count
@@ -4980,7 +5038,7 @@ wp_page_button:
         je .second_off
         cmp byte [es:bx + SPEC_SLOTS], 0        ; another: chosen, where a pick is free
         je .put_first
-        call wp_gladiator
+        call wp_two
         jz .ret
         cmp byte [es:bx + SPEC_SLOTS + 1], 0
         jne .ret
@@ -5034,6 +5092,9 @@ kit_row:
         jne kit_marks
         mov dl, KIT_OPEN        ; the one chosen: taken back, the rest in use again
 .put:   mov [es:bx + KIT_BYTE], dl
+        call wp_two             ; (no Myrmidon now: its second kind gone)
+        jnz kit_marks
+        mov byte [es:bx + SPEC_SLOTS + 1], 0
 ; KIT_MARKS: the kit page's rows (NO KIT, then the class's three kits) marked as the creation
 ; sheet's kit, the rest not, as WP_MARKS marks a weapon page's
 kit_marks:
@@ -5140,7 +5201,8 @@ spec_of:
 ; SPEC_OF_SHEET: DL the skill with item type SI of the character whose sheet is at ES:BX:
 ; SPEC_NONE (it has chosen no kinds), SPEC_PLAIN (not this kind), SPEC_EXPERT (a ranger's: no
 ; fighter or gladiator class; and every ranger's with the bow, chosen or not), SPEC_SPECIAL,
-; SPEC_MASTER (a fighter's own kind, the first, from 5th level), SPEC_GRAND (9th).
+; SPEC_MASTER (a fighter's own kind, the first, from 5th level; a Myrmidon's second too),
+; SPEC_GRAND (9th).
 BOW_KIND equ 14                 ; (the bow's kind + 1)
 spec_of_sheet:
         push ax
@@ -5226,7 +5288,15 @@ spec_of_sheet:
         jz .ret
         mov dl, SPEC_SPECIAL
         or si, si
-        jnz .ret
+        jz .master
+        cmp si, 1               ; (a Myrmidon's second kind too)
+        jne .ret
+        push ax
+        call kit_id
+        cmp al, KIT_MYRMIDON
+        pop ax
+        jne .ret
+.master:
         cmp ch, MASTERY
         jb .ret
         mov dl, SPEC_MASTER

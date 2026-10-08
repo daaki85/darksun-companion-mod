@@ -98,10 +98,17 @@ def skill(sheet: bytes, item_type: Optional[int]) -> int:
         return PLAIN  # (a dual-classed warrior, until the new class's level passes the old)
     if not {FIGHTER, GLADIATOR} & classes:
         return EXPERT
-    if chosen.index(kind + 1):
-        return SPECIAL
+    first = chosen.index(kind + 1)
+    if first > 1 or first == 1 and not myrmidon(sheet):
+        return SPECIAL  # (a fighter's first kind goes on to mastery, a Myrmidon's second too)
     fighter = next((level for c, level in active if c == FIGHTER), 0)
     return GRAND if fighter >= GRAND_MASTERY else MASTER if fighter >= MASTERY else SPECIAL
+
+
+def myrmidon(sheet: bytes) -> bool:
+    """A Myrmidon (kits.py), the rule for kits in force (game.RULES_IN_FORCE)."""
+    from . import kitpages
+    return bool(game.RULES_IN_FORCE & game.RULE_KITS) and kitpages.kit_id(sheet) == kitpages.KIT_IDS["Myrmidon"]
 
 
 def attacks(halves: int, level: int, missile: bool = False) -> int:
