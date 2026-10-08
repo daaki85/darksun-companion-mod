@@ -47,7 +47,7 @@ Released pull requests are summarised in a line or two each; the release notes
   a two-handed melee weapon, in place of its score changes; the Wanderer
   resisting fire and cold (+3 on saves) for AC 1 worse; the Arena Champion
   by its shield (+1 to hit and damage in melee and AC 1 better with one, −1
-  to hit without) instead of by the ground under it.
+  to hit in melee without) instead of by the ground under it.
 
 ## Pull request #30 ([merged 2026-10-08](https://github.com/daaki85/darksun-companion-mod/pull/30))
 

@@ -941,7 +941,7 @@ header's +270) switches them all off.
 | Fighter | Myrmidon | a second weapon spec at 1st level, on to mastery and grand mastery as the first | −4 on saves against charm |
 | | Sentinel | +2 AC with a shield, +2 initiative | −1 on saves against spells |
 | | Ravager | +1 to hit and damage in melee; a base AC by level (7 at 1st, 1 better every 2 levels to 3 at 9th, then every 3 to 0 at 18th), armour bettering it | no missile or thrown weapons, no shield, light armour only |
-| Gladiator | Arena Champion | with a shield in a hand: +1 to hit and damage in melee, AC 1 better | −1 to hit with no shield |
+| Gladiator | Arena Champion | with a shield in a hand: +1 to hit and damage in melee, AC 1 better | −1 to hit in melee with no shield |
 | | Twin-blade | no two-weapon penalty | no shield; no two-handed weapon, but a half-giant's held in one hand |
 | | Brute | +2 to hit and damage with a two-handed melee weapon | two-handed melee weapons only (a half-giant may add a shield); missile weapons, but not as a weapon spec |
 | Ranger | Stalker | +2 movement in a fight, +15 hide in shadows, +15 move silently | light armour only |

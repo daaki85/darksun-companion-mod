@@ -92,13 +92,11 @@ def save(kid: int, spell: int, kinds: int = 0) -> int:
 
 
 def champion(kid: int, shield: bool, melee: bool) -> Tuple[int, int]:
-    """(to hit, damage) an Arena Champion adds to an attack (KIT_CHAMPION): with a shield in a
-    hand +1 and +1 in melee; with none, -1 to hit."""
-    if kid != CHAMPION:
+    """(to hit, damage) an Arena Champion adds to an attack (KIT_CHAMPION), in melee only: with a
+    shield in a hand +1 and +1; with none, -1 to hit."""
+    if kid != CHAMPION or not melee:
         return 0, 0
-    if shield:
-        return (1, 1) if melee else (0, 0)
-    return -1, 0
+    return (1, 1) if shield else (-1, 0)
 
 
 def thief_skill(kid: int, skill: int) -> int:

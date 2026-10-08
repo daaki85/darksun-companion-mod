@@ -31,7 +31,7 @@ class KitEffectTests(unittest.TestCase):
     def test_champion(self):
         self.assertEqual((kits.ac(kits.CHAMPION, True), kits.ac(kits.CHAMPION, False)), (-1, 0))
         self.assertEqual([kits.champion(kits.CHAMPION, s, m) for s in (True, False) for m in (True, False)],
-                         [(1, 1), (0, 0), (-1, 0), (-1, 0)])
+                         [(1, 1), (0, 0), (-1, 0), (0, 0)])
         self.assertEqual(kits.champion(kits.SENTINEL, False, True), (0, 0))
 
     def test_sentinel(self):

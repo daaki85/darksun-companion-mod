@@ -898,14 +898,14 @@ class SpecializeTests(unittest.TestCase):
         self.assertEqual(self.attack(4, self.LONG_SWORD, chosen=(0,), levels=(9, 0, 0)), (6, 12, 6, 10))
 
     def test_arena_champion(self):
-        """An Arena Champion with a shield in a hand +1 to hit and damage in melee, without one -1
-        to hit, melee or missile (kits.champion); nothing for another kit, or with kits off."""
+        """An Arena Champion in melee: with a shield in a hand +1 to hit and damage, without one -1
+        to hit; nothing with a missile (kits.champion), for another kit, or with kits off."""
         from dscompanion import kits
         glad = dict(classes=(10, 0, 0), levels=(3, 0, 0), rules=game.RULE_KITS, kit=1)
         self.assertEqual(self.attack(3, self.AXE, shield=True, **glad), (3, 14, 4, 8))
         self.assertEqual(self.attack(3, self.AXE, **glad), (3, 16, 3, 8))
         self.assertEqual(self.attack(2, self.BOW, missile=True, shield=True, **glad)[1:3], (15, 3))
-        self.assertEqual(self.attack(2, self.BOW, missile=True, **glad)[1:3], (16, 3))
+        self.assertEqual(self.attack(2, self.BOW, missile=True, **glad)[1:3], (15, 3))
         self.assertEqual(self.attack(3, self.AXE, **dict(glad, kit=2)), (3, 15, 3, 8))
         self.assertEqual(self.attack(3, self.AXE, **dict(glad, rules=0)), (3, 15, 3, 8))
         self.assertEqual(kits.champion(kits.CHAMPION, True, True), (1, 1))

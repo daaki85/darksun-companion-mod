@@ -4440,17 +4440,15 @@ kit_melee:
         ret
 
 ; KIT_TO_HIT: AX what the attacker's kit adds to hit in the weapon attack routine (the sheet its
-; [BP+10h], the item type [BP+14h], [BP+16h] above 1 for a missile): KIT_CHAMPION's, and for a
-; melee attack KIT_MELEE's. Others kept.
+; [BP+10h], the item type [BP+14h], [BP+16h] above 1 for a missile): for a melee attack
+; KIT_CHAMPION's and KIT_MELEE's, for a missile nothing. Others kept.
 kit_to_hit:
-        call kit_champion       ; (with a shield, +1 in melee only)
         cmp word [bp + 0x16], 1
         jle .melee
-        cmp ax, 1
-        jne .ret
-        xor ax, ax
+        xor ax, ax              ; (nothing for a missile)
         ret
 .melee:
+        call kit_champion
         push bx
         push dx
         push si
@@ -4498,7 +4496,7 @@ kit_attack_damage:
 
 ; KIT_CHAMPION: AX 1 if the attacker in the weapon attack routine (its thing [BP+18h], its sheet
 ; [BP+10h]) is an Arena Champion with a shield in a hand, -1 if one without, else 0 (kits.champion:
-; with one, +1 to hit and damage in melee; without, -1 to hit). DS the game's; others kept.
+; in melee, with one +1 to hit and damage, without one -1 to hit). DS the game's; others kept.
 kit_champion:
         push bx
         push es
