@@ -62,14 +62,23 @@ def row_text(name: str) -> str:
     return SHORT.get(name, name.upper())
 
 
+def kit_id(sheet: bytes) -> int:
+    """The kit of a sheet as DSCLOG's KIT_ID numbers it (the creation class x 4 + the kit: RAIDER
+    15), or 0: none chosen, or more than one class. (The rule is the caller's to weigh.)"""
+    if len(sheet) <= KIT_BYTE or sheet[0x22] or sheet[0x23]:
+        return 0
+    kit, cls = sheet[KIT_BYTE], CREATION_CLASS.get(sheet[0x21])
+    return cls * 4 + kit if cls is not None and 1 <= kit <= 3 else 0
+
+
+# KIT_ID's numbers, by name
+KIT_IDS = {name: cls * 4 + k + 1 for cls, names in KITS.items() for k, name in enumerate(names)}
+
+
 def kit_name(sheet: bytes) -> Optional[str]:
     """The kit of a sheet (the game's classes, 1-17), or None: none chosen, or more than one class."""
-    if len(sheet) <= KIT_BYTE or sheet[0x22] or sheet[0x23]:
-        return None
-    kit, cls = sheet[KIT_BYTE], CREATION_CLASS.get(sheet[0x21])
-    if cls is None or not 1 <= kit <= 3:
-        return None
-    return KITS[cls][kit - 1]
+    kid = kit_id(sheet)
+    return KITS[kid // 4][kid % 4 - 1] if kid else None
 
 
 def kit_class(classes: Sequence[int], rules: int) -> int:

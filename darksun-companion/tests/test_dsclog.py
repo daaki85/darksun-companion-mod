@@ -2332,7 +2332,7 @@ class KitTests(unittest.TestCase):
                     sheet = bytearray(game.SHEET_SIZE)
                     sheet[0x21], sheet[0x22], sheet[kitpages.KIT_BYTE] = c1, c2, kit
                     self.mu.mem_write(self.SHEET * 16, bytes(sheet))
-                    self.call(rb"\x50\x51\x57\x2e\xf7\x06..\x01\x00", es=self.SHEET, ebx=0)
+                    self.call(rb"\x50\x51\x57\xe8..\x74", es=self.SHEET, ebx=0)
                     zf = self.mu.reg_read(r.UC_X86_REG_EFLAGS) & 0x40
                     want = kitpages.kit_name(bytes(sheet)) if rules else None
                     if want is None:
@@ -2342,3 +2342,16 @@ class KitTests(unittest.TestCase):
                     si = self.mu.reg_read(r.UC_X86_REG_SI)
                     text = bytes(self.mu.mem_read(TSR * 16 + si, 24)).split(b"\0")[0].decode()
                     self.assertEqual(text, "KIT: " + want.upper())
+
+    def test_kit_id(self):
+        from dscompanion import kitpages
+        self.rules(game.RULE_KITS)
+        for c1, c2, kit in [(c, 0, kit) for c in range(1, 18) for kit in (0, 1, 2, 3, 4, 0xFF)] + [(9, 12, 1)]:
+            with self.subTest(classes=(c1, c2), kit=kit):
+                sheet = bytearray(game.SHEET_SIZE)
+                sheet[0x21], sheet[0x22], sheet[kitpages.KIT_BYTE] = c1, c2, kit
+                self.mu.mem_write(self.SHEET * 16, bytes(sheet))
+                self.call(rb"\x51\x57\x30\xc9\x2e\xf7\x06..\x01\x00", es=self.SHEET, ebx=0)
+                self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AL), kitpages.kit_id(bytes(sheet)))
+        self.assertEqual(kitpages.KIT_IDS["Raider"], 15)
+        self.assertEqual(kitpages.KIT_IDS["Shinobi"], 35)

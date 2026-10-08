@@ -100,7 +100,7 @@ VEC_HP_BEST equ 0xBA       ; PROBE_HP_BEST
 VEC_TOME equ 0xB9          ; PROBE_TOME
 TSIZE    equ 8192     ; bytes in the text buffer
 
-NENT    equ 128         ; entries in the ring
+NENT    equ 96          ; entries in the ring (96: the helper and it fit in upper memory)
 ESIZE   equ 192         ; bytes per entry (see ENTRY LAYOUT)
 STACK   equ 256         ; bytes of stack while installing
 
@@ -3291,6 +3291,31 @@ KIT_NONE     equ 0x888
 KIT_VIEW     equ 0x889
 KIT_BYTE     equ 0x43
 KIT_OPEN     equ 0xFF               ; (KIT_BYTE while the player has taken the kit back: none chosen)
+; The kits as KIT_ID numbers them (the creation screen's class x 4 + the kit)
+KIT_ELEMENTALIST equ 5
+KIT_HEALER   equ 6
+KIT_CRUSADER equ 7
+KIT_GROVE_WARDEN equ 9
+KIT_LIFEBINDER equ 10
+KIT_WANDERER equ 11
+KIT_MYRMIDON equ 13
+KIT_SENTINEL equ 14
+KIT_RAIDER   equ 15
+KIT_CHAMPION equ 17
+KIT_TWIN_BLADE equ 18
+KIT_BRUTE    equ 19
+KIT_SCHOLAR  equ 21
+KIT_BATTLE_MAGE equ 22
+KIT_ARCANIST equ 23
+KIT_MIND_BENDER equ 25
+KIT_MIND_WARRIOR equ 26
+KIT_KINETICIST equ 27
+KIT_STALKER  equ 29
+KIT_JUSTIFIER equ 30
+KIT_SEEKER   equ 31
+KIT_SWASHBUCKLER equ 33
+KIT_ASSASSIN equ 34
+KIT_SHINOBI  equ 35
 WP_DISC      equ 0xEA2              ; DS: the panel's windows (far)
 WP_SPHERE    equ 0xEA6
 WP_DISC_MASK equ 0x4980             ; DS: the disciplines and spheres marked, kept while hidden
@@ -4037,28 +4062,20 @@ ef_draw:
 .ret:   ret
 
 ; KIT_OF_SHEET: CS:SI the line naming the kit of sheet ES:BX ("KIT: RAIDER", in KIT_LINE), ZF
-; clear; ZF set if it has none (the rule off, more than one class, none chosen). Others kept.
+; clear; ZF set if it has none. Others kept.
 kit_of_sheet:
         push ax
         push cx
         push di
-        test word [cs:rules_hi], RULE_HI_KITS
+        call kit_id
         jz .out
-        cmp word [es:bx + 0x22], 0
-        jne .none
-        movzx cx, byte [es:bx + KIT_BYTE]
-        cmp cl, 3
-        ja .none
-        jcxz .none
-        movzx di, byte [es:bx + 0x21]   ; (the sheet's class, 1-17: the creation screen's)
-        cmp di, 17
-        ja .none
-        movzx ax, byte [cs:di + kit_class_of - 1]
-        or al, al
-        jz .none
-        imul ax, ax, 3
+        movzx cx, al            ; (the kit's place in KIT_NAMES, from 1: (class - 1) * 3 + kit)
+        and cl, 3
+        shr al, 2
+        dec al
+        mov ah, 3
+        mul ah
         add cx, ax
-        sub cx, 3               ; (the kit's place in KIT_NAMES, from 1)
         mov si, kit_names
 .skip:  dec cx
         jz .copy
@@ -4074,11 +4091,55 @@ kit_of_sheet:
         jnz .char
         mov si, kit_line
         or di, di               ; (ZF clear)
-        jmp .out
-.none:  cmp al, al              ; (ZF set)
 .out:   pop di
         pop cx
         pop ax
+        ret
+
+; KIT_ID: AL the kit of sheet ES:BX (KIT_RAIDER...: the creation screen's class x 4 + the kit,
+; kitpages.kit_id), ZF clear; 0 and ZF set if it has none (the rule off, more than one class,
+; none chosen). Others kept.
+kit_id:
+        push cx
+        push di
+        xor cl, cl
+        test word [cs:rules_hi], RULE_HI_KITS
+        jz .out
+        cmp word [es:bx + 0x22], 0
+        jne .out
+        mov ch, [es:bx + KIT_BYTE]
+        dec ch
+        cmp ch, 2
+        ja .out
+        movzx di, byte [es:bx + 0x21]   ; (the sheet's class, 1-17: the creation screen's)
+        dec di
+        cmp di, 16
+        ja .out
+        mov cl, [cs:di + kit_class_of]
+        shl cl, 2
+        add cl, ch
+        inc cl
+.out:   mov al, cl
+        pop di
+        pop cx
+        or al, al
+        ret
+
+; KIT_OF_CREATURE: AL the kit (KIT_ID) of creature AX (its record's number), ZF as KIT_ID's. DS
+; the game's; others but AX kept.
+kit_of_creature:
+        push bx
+        push es
+        les bx, [CREATURES]
+        imul ax, ax, 0x3A
+        add bx, ax
+        mov ax, [es:bx + 4]     ; (its sheet's number)
+        les bx, [0x1661]
+        imul ax, ax, 0x47
+        add bx, ax
+        call kit_id
+        pop es
+        pop bx
         ret
 
 ; CS:SI on the panel's next line (all registers kept: the game's text routine changes ES)
