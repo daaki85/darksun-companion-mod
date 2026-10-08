@@ -53,7 +53,12 @@ Released pull requests are summarised in a line or two each; the release notes
   Justifier less 9 (a ranger's: less 7), which also lets a Seeker of 6th level
   choose 1st-level priest spells for its slots (INT AFh). The level a
   spell's duration and damage take, which the game works out apart from
-  that (with a ranger's whole level), now has the kits' too (INT A8h).
+  that (with a ranger's whole level), now has the kits' too (INT A6h).
+- **Rangers' casting level (a rule, on by default):** a ranger's spells last
+  and do damage as cast at its level less 7, as the spell levels it may cast
+  already count it; the game took the whole ranger level (a 9th-level
+  ranger's spells lasted as a 9th-level priest's). A multiclass ranger casts
+  at the better of its classes, the ranger's counted 7 less (INT A6h).
 - **The Shinobi's spells:** preserver spells from 6th thief level on the
   Seeker's slots, cast at the thief level less 5, from its own list of 14:
   one learnt at each level up from 6th, on the game's CHOOSE A SPELL screen,
@@ -66,7 +71,7 @@ Released pull requests are summarised in a line or two each; the release notes
 **Changed** (for the kits)
 - **The dice log's ring holds 96 entries** (was 128), making room in upper
   memory for the kits' code.
-- **The helper's interrupts** are now A7h to FEh (and 60h to 65h); the
+- **The helper's interrupts** are now A6h to FEh (and 60h to 65h); the
   message when they are in use says so.
 
 **Documentation**

@@ -124,6 +124,9 @@ RULE_RESTRICT = 8192  # class restrictions on armour, shields and weapons (restr
 RULE_MULTI_HP = 16384  # multiclass hit points as in AD&D: each level's die and CON's bonus shared
 RULE_HP_BEST = 32768  # a hit die rolled twice, the better kept (DSCLOG's PROBE_HP_BEST)
 RULE_KITS = 65536  # kits for characters of one class (kitpages.py; DSCLOG's second rules word)
+# a ranger's spells' durations and damage at its level less 7, as the spell levels it may cast are
+# (the game takes the whole level: DSCLOG's PROBE_RANGER_LEVEL, kits.spell_class_level)
+RULE_RANGER_CAST = 131072
 SPEC_SLOTS, SPEC_COUNT = 0x14, 4
 # AD&D's item saving throws against acid (the DMG's table), by the game's materials: wood
 # (thick), bone, stone and obsidian (glass's), metal, leather; and cloth for no material
@@ -139,7 +142,8 @@ RULE_SETTINGS = (("helm_ac", RULE_HELMS), ("boots_move", RULE_BOOTS), ("two_weap
                  ("thief_table", RULE_THIEF_TABLE), ("half_giant_hands", RULE_HALF_GIANT),
                  ("protection_rules", RULE_PROTECTION), ("item_saves", RULE_ITEM_SAVES),
                  ("weapon_specialization", RULE_SPECIALIZE), ("class_restrictions", RULE_RESTRICT),
-                 ("multiclass_hp", RULE_MULTI_HP), ("best_hit_die", RULE_HP_BEST), ("kits", RULE_KITS))
+                 ("multiclass_hp", RULE_MULTI_HP), ("best_hit_die", RULE_HP_BEST), ("kits", RULE_KITS),
+                 ("ranger_casting_level", RULE_RANGER_CAST))
 # Cat's Grace (RULE_CATS_GRACE): Flaming Sphere (wizard level 2) gets Strength's record and the
 # name, and DSCLOG sends it to Strength's code, which rolls 1d6 into an effect of its own (54,
 # a number the game leaves unused) that adds to DEX, at most 24, as Strength's adds to STR.

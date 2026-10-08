@@ -3004,9 +3004,7 @@ class KitTests(unittest.TestCase):
 
     def test_cast_level(self):
         """PROBE_CAST_LEVEL and PROBE_SPELL_LEVEL: AX the level the routines' classes give ([BP-2],
-        DI), a Shinobi's for a wizard spell its thief level less 5 where better (kits.cast_level);
-        for the spell's duration and damage, a Seeker's priest spells 5 less, a Justifier's 9
-        (kits.spell_level)."""
+        DI), a Shinobi's for a wizard spell its thief level less 5 where better (kits.cast_level)."""
         from dscompanion import kits
         from dscompanion.gamepatch import VEC_CAST_LEVEL, VEC_SPELL_LEVEL
         for rules in (game.RULE_KITS, 0):
@@ -3022,15 +3020,14 @@ class KitTests(unittest.TestCase):
                                 self.mu.mem_write(SS * 16 + BP + 6, struct.pack("<HH", 7, spell))
                                 for vector, length, di, want in (
                                         (VEC_CAST_LEVEL, 3, 0x5555, kits.cast_level(kid, spell, given, level)),
-                                        (VEC_SPELL_LEVEL, 2, given, kits.spell_level(kid, spell, given, level))):
+                                        (VEC_SPELL_LEVEL, 2, given, kits.cast_level(kid, spell, given, level))):
                                     self.run_vector(vector, length, eax=0x1111, ebx=0x2222, ecx=0x3333, edi=di, es=0x6666)
                                     self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), want)
                                     self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_BX, r.UC_X86_REG_CX,
                                                                                     r.UC_X86_REG_DI, r.UC_X86_REG_ES)],
                                                      [0x2222, 0x3333, di, 0x6666])
         self.assertEqual([kits.shinobi_cast(n) for n in (1, 5, 6, 8, 10)], [0, 0, 1, 3, 5])
-        self.assertEqual([kits.spell_level(kits.SEEKER, 86, 8, 0), kits.spell_level(kits.JUSTIFIER, 86, 10, 0),
-                          kits.spell_level(kits.JUSTIFIER, 86, 7, 0), kits.spell_level(0, 86, 8, 0)], [3, 1, 0, 8])
+
 
     def picker_sheet(self, cls, kit, level):
         from dscompanion import kitpages
@@ -3087,6 +3084,28 @@ class KitTests(unittest.TestCase):
                                                                         r.UC_X86_REG_SI, r.UC_X86_REG_ES, r.UC_X86_REG_DS)],
                                          [3, 0x2222, 0x3333, 0x4444, 0x6666, self.DS])
         self.assertEqual(kits.pick_list(kits.SHINOBI, known.__contains__, 2), [6, 9, 4, 11, 19, 12, 13, 15])
+
+    def test_ranger_level(self):
+        """PROBE_RANGER_LEVEL: AL the class's level (ES:BX the sheet + the class's place), a ranger's
+        7 less with the rule, a Seeker's 5 and a Justifier's 9 whatever it (kits.spell_class_level)."""
+        from dscompanion import kits
+        from dscompanion.gamepatch import VEC_RANGER_LEVEL
+        for rules in (game.RULE_KITS | game.RULE_RANGER_CAST, game.RULE_KITS, game.RULE_RANGER_CAST, 0):
+            self.rules(rules)
+            for cls, kit in ((13, 0), (14, 1), (13, 3), (16, 2), (1, 0), (11, 3), (17, 3)):
+                kid = self.kit_of(cls, kit, rules)
+                for level in (1, 7, 8, 9, 12):
+                    with self.subTest(rules=rules, cls=cls, kit=kit, level=level):
+                        self.creature(cls, kit, level=level)
+                        self.mu.mem_write(SS * 16 + BP + 6, struct.pack("<H", 7))
+                        self.run_vector(VEC_RANGER_LEVEL, 4, eax=0x1100, ebx=5 * 0x47, ecx=0x3333, es=self.SHEET)
+                        want = kits.spell_class_level(kid, cls, level, bool(rules & game.RULE_RANGER_CAST))
+                        self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), 0x1100 | want)
+                        self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_BX, r.UC_X86_REG_CX,
+                                                                        r.UC_X86_REG_ES)], [5 * 0x47, 0x3333, self.SHEET])
+        self.assertEqual([kits.spell_class_level(0, 13, 9, True), kits.spell_class_level(0, 13, 9, False),
+                          kits.spell_class_level(kits.SEEKER, 13, 9, False), kits.spell_class_level(0, 1, 6, True),
+                          kits.spell_class_level(kits.JUSTIFIER, 13, 7, True)], [2, 9, 4, 6, 0])
 
     def test_pick_any(self):
         """PROBE_PICK_ANY: [BP-2] and flags as "mov [bp-2],ax / or ax,ax" (the JG after going on for

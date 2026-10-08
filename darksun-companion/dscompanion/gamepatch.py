@@ -70,7 +70,7 @@ VEC_PSP_USE, VEC_PSP_TABLE, VEC_PSP_DEFENCE = 0xB4, 0xB3, 0xB2
 VEC_CURE, VEC_PSP_KEEP = 0xB1, 0xB0
 VEC_RANGER_CAST, VEC_PSP_KEEP_DX, VEC_HIT_ROUND = 0xAF, 0xAE, 0xAD
 VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL = 0xAC, 0xAB, 0xAA, 0xA9, 0xA8
-VEC_PICK_ANY = 0xA7
+VEC_PICK_ANY, VEC_RANGER_LEVEL = 0xA7, 0xA6
 
 
 SCRIPT_BUFFER = 0x2E00  # the scripts' buffer, made bigger (the game's: 10000 bytes)
@@ -370,6 +370,10 @@ PATCHES = (
     # (its own spells); and no learning from scrolls
     Patch("cast_level", 0x81C06, bytes.fromhex("8b46fe"), _interrupt(VEC_CAST_LEVEL, 3)),
     Patch("spell_level", 0x5E3D1, bytes.fromhex("8bc7"), _interrupt(VEC_SPELL_LEVEL, 2)),
+    # The level a spell's duration and damage take, where the game takes each class's (5E25Ch): a
+    # ranger's whole (its spell levels count it 7 less), 7 less with the rule, a Seeker's 5 and a
+    # Justifier's 9 (kits.spell_class_level)
+    Patch("ranger_level", 0x5E3B8, bytes.fromhex("268a4724"), _interrupt(VEC_RANGER_LEVEL, 4)),
     Patch("pick_any", 0x85580, bytes.fromhex("8946fe0bc0"), _interrupt(VEC_PICK_ANY, 5)),
     Patch("pick_level", 0x85861, bytes.fromhex("fec0"), _interrupt(VEC_PICK_LEVEL, 2)),
     Patch("pick_list", 0x8563F, bytes.fromhex("8bf8"), _interrupt(VEC_PICK_LIST, 2)),

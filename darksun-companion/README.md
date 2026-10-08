@@ -1448,7 +1448,7 @@ How it works: [DEVELOPMENT.md](DEVELOPMENT.md#no-manual-check).
 
 ## Rule changes
 
-Seventeen changes to the game's rules, each with its own box on the Options tab,
+Eighteen changes to the game's rules, each with its own box on the Options tab,
 under **Rule changes** (the two thief rules under **Thieves**). All are on by
 default, and they take effect in games started with the dice log: with the
 Ledger running, or with **Play Dark Sun (in-game rolls)**, which uses the
@@ -1464,6 +1464,7 @@ game itself does, under [Two weapons](#two-weapons), [Thieves](#thieves) and
 | [Class restrictions](#class-restrictions) | each class's limits on armour, shields and weapons hold, the strictest winning; a multiclass preserver casts no spells in armour |
 | [Multiclass hit points](#multiclass-hit-points) | each level's die and CON's bonus shared between a character's classes |
 | [Hit dice: the better of two](#hit-dice-the-better-of-two) | each hit die rolled twice, the better kept, for every character |
+| [Rangers' casting level](#rangers-casting-level) | a ranger's spells last and do damage as cast at its level less 7, as the spell levels it may cast already count it |
 | [Spells saved against with the spell save](#spells-saved-against-with-the-spell-save) | the spell save rather than petrification/polymorph |
 | [Fire, cold and electricity: DEX instead of a doubled d20](#fire-cold-and-electricity-dex-instead-of-a-doubled-d20) | DEX's defensive adjustment on those saves rather than a doubled d20 |
 | [Two weapons](#two-weapons) | -2 main hand, -4 off hand, DEX's reaction adjustment added; rangers none |
@@ -1655,8 +1656,9 @@ The kits' spell slots are the game's own wherever it counts them (on resting,
 in the spell lists), and the Ledger's Spells tab shows the same. A kit's
 casting level is the one a spell's duration and damage take, and the one
 that sets the spell levels it may cast, half of it rounded up (the dice log's
-spell lines show it); the game's own rangers cast with their whole level,
-though their spell levels count it 7 less. WIS's bonus
+spell lines show it), and the Seeker's and Justifier's take their 5 and 9
+off both (see [Rangers' casting level](#rangers-casting-level) for a
+ranger's). WIS's bonus
 slots count for the Arcanist, Crusader and Elementalist as for their classes,
 not for the Seeker's and Justifier's own tables.
 
@@ -1752,6 +1754,22 @@ Character creation, hit points 18: Fighter d10 per level: 10 (the better of 2 an
 ```
 
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#hit-dice-the-better-of-two).
+
+### Rangers' casting level
+
+A ranger casts priest spells as a priest of its level less 7, as in AD&D: a
+9th-level ranger counts as 2nd level, so it may cast 1st-level spells. The
+game counts it so for the spell levels it may cast (and for Dispel Magic),
+but a spell's duration and damage take the whole ranger level: that ranger's
+spells lasted as a 9th-level priest's. With **Rangers' casting level**
+ticked, they take the level less 7 too. A character with another class that
+casts the spell (a cleric/ranger of the same element) casts it at the better
+of the two, the ranger's counted 7 less. The Seeker's and Justifier's kits
+take 5 and 9 off, ticked or not. A 9th-level ranger's Protection from Evil
+(3 rounds a level) lasts 6 rounds with the rule, 27 without. The dice log's
+duration and damage lines show the level wherever they roll dice.
+
+How it works: [DEVELOPMENT.md](DEVELOPMENT.md#rangers-casting-level).
 
 ### Levels up to 10
 

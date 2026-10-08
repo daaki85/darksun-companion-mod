@@ -347,6 +347,9 @@ class Viewer:
                                        "spheres); a multiclass preserver casts no spells in armour"),
                 ("multiclass_hp", "Multiclass hit points as in AD&D: each level's die and CON's bonus shared "
                                   "between the classes"),
+                ("ranger_casting_level", "Rangers' spells last and do damage as cast at the ranger level less 7, "
+                                         "as the spell levels they may cast count it (the game takes the whole "
+                                         "level)"),
                 ("best_hit_die", "Hit dice rolled twice, the better kept, at creation and at every level "
                                  "(every character)"),
                 ("spell_save", "Spells are saved against with the spell save (the game uses "

@@ -116,6 +116,7 @@ VEC_PICK_LIST equ 0xAA     ; PROBE_PICK_LIST
 VEC_SCROLL_LEARN equ 0xA9  ; PROBE_SCROLL_LEARN
 VEC_SPELL_LEVEL equ 0xA8   ; PROBE_SPELL_LEVEL
 VEC_PICK_ANY equ 0xA7      ; PROBE_PICK_ANY
+VEC_RANGER_LEVEL equ 0xA6  ; PROBE_RANGER_LEVEL
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 96          ; entries in the ring (96: the helper and it fit in upper memory)
@@ -5070,32 +5071,45 @@ probe_cast_level:
 
 ; PROBE_SPELL_LEVEL: INT VEC_SPELL_LEVEL replaces "mov ax,di" (2 bytes; DSUN.EXE 5E3D1h) at the end of
 ; the routine giving the level a spell is cast at, for its duration and damage (5E25Ch; the same
-; arguments; DI the best level of the caster's classes that cast it, a ranger's whole): AX that,
-; for a wizard spell a Shinobi's as PROBE_CAST_LEVEL's, for a priest spell (to KIT_SPELL_LAST) a
-; Seeker's 5 less and a Justifier's 9 (kits.spell_level).
+; arguments; DI the best level of the caster's classes that cast it, PROBE_RANGER_LEVEL's for a
+; ranger): AX that, for a wizard spell a Shinobi's as PROBE_CAST_LEVEL's.
 probe_spell_level:
         mov ax, di
-        cmp word [bp + 8], WIZARD_LAST
-        jbe shinobi_wizard
-        cmp word [bp + 8], KIT_SPELL_LAST
-        ja .ret
-        push bx
+        jmp shinobi_wizard
+
+; PROBE_RANGER_LEVEL: INT VEC_RANGER_LEVEL replaces "mov al,es:[bx+24h]" (4 bytes: INT + 2 NOPs;
+; DSUN.EXE 5E3B8h) where that routine takes the level of a class of the caster's that casts the
+; spell (ES:BX the sheet + the class's place; the combatant its [BP+6]), whole for a ranger (the
+; caster level routine counts it 7 less: PROBE_RANGER_CAST): AL that, a ranger's 7 less with
+; RULE_HI_RANGER, a Seeker's 5 less and a Justifier's 9 whatever the rule (no less than 0;
+; kits.spell_class_level).
+probe_ranger_level:
+        mov al, [es:bx + 0x24]
         push cx
-        mov cx, 5
+        mov cl, [es:bx + 0x21]
+        sub cl, 13
+        cmp cl, 3
+        ja .out                 ; (not a ranger: classes 13-16)
+        push ax
+        push bx
         call combatant_kit
+        mov cl, 5
         cmp al, KIT_SEEKER
-        je .less
-        mov cx, 9
+        je .take
+        mov cl, 9
         cmp al, KIT_JUSTIFIER
-        je .less
-        xor cx, cx
-.less:  mov ax, di
-        sub ax, cx
-        jns .out
-        xor ax, ax
+        je .take
+        mov cl, 7
+        test word [cs:rules_hi], RULE_HI_RANGER
+        jnz .take
+        xor cl, cl
+.take:  pop bx
+        pop ax
+        sub al, cl
+        jnc .out
+        xor al, al
 .out:   pop cx
-        pop bx
-.ret:   iret
+        iret
 
 ; SHINOBI_WIZARD: AX (a level), for wizard spell [BP+8] the level a Shinobi (combatant [BP+6])
 ; casts it at where more; then IRET.
@@ -6836,6 +6850,7 @@ RULE_RESTRICT equ 8192          ; class restrictions on armour, shields and weap
 RULE_MULTI_HP equ 16384         ; multiclass hit points as in AD&D (PROBE_MC_*)
 RULE_HP_BEST equ 32768          ; a hit die rolled twice, the better kept (PROBE_HP_BEST)
 RULE_HI_KITS equ 1              ; (RULES_HI) kits, chosen on the creation panel's KIT page (KIT_*)
+RULE_HI_RANGER equ 2            ; (RULES_HI) a ranger's spells' durations and damage at its level less 7 (PROBE_RANGER_LEVEL)
 FOOT      equ 13               ; the item's slot byte while worn on the feet
 THINGS_SEG equ 0x3972 - 0x4356  ; the things table's segment, relative to DS
 
@@ -10389,6 +10404,9 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_PICK_ANY
         mov dx, probe_pick_any
         int 21h
+        mov ax, 2500h + VEC_RANGER_LEVEL
+        mov dx, probe_ranger_level
+        int 21h
         mov ax, 2500h + VEC_PICK_LEVEL
         mov dx, probe_pick_level
         int 21h
@@ -10443,10 +10461,10 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or A7h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+busy    db 'DSCLOG: interrupts 60h-65h or A6h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
 all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS, VEC_LV_PICK, VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK, VEC_EF_ROWS, VEC_HP_BEST, VEC_TOME, VEC_INIT, VEC_THAC0, VEC_SLOTS, VEC_SLOT_LEVEL
             db VEC_PSP_USE, VEC_PSP_TABLE, VEC_PSP_DEFENCE, VEC_CURE, VEC_PSP_KEEP, VEC_RANGER_CAST, VEC_PSP_KEEP_DX
-            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY
+            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY, VEC_RANGER_LEVEL
 all_vectors_end:
 
         align 16, db 0

@@ -52,7 +52,7 @@ SHINOBI_SPELLS = ((6, 1), (2, 1), (9, 1), (4, 1), (11, 1),  # Gaze Reflection, C
                   (17, 2), (19, 2), (12, 2), (13, 2), (15, 2),  # Invisibility, Mirror Image, Blur, Detect Invisibility, Fog Cloud
                   (25, 3), (29, 3), (36, 3), (30, 3))  # Blink, Haste, Protection from Normal Missiles, Hold Person
 SHINOBI_FIRST, WIZARD_LAST = 6, 68  # (wizard spells are 0 to WIZARD_LAST)
-KIT_SPELL_LAST = 137  # (priest spells to it)
+RANGER_CLASSES = range(13, 17)
 # the charms (DSCLOG's KIT_CHARMS): Charm Person, Charm Monster, Domination, Charm Person or
 # Mammal, and the psionic Domination and Mass Domination
 CHARMS = (2, 40, 61, 82, 158, 159)
@@ -179,22 +179,22 @@ def cast_level(kid: int, spell: int, level: int, thief_level: int) -> int:
     """The level a spell is cast at, LEVEL from the classes, with the kit's: a Shinobi's for a
     wizard spell its thief level's (shinobi_cast) if better. As the game's caster level routine
     (81B16h: the spell levels it may cast, half that rounded up; Dispel Magic) has it with
-    PROBE_CAST_LEVEL (and spell_level, for its duration and damage)."""
+    PROBE_CAST_LEVEL, and the level a spell's duration and damage take (5E25Ch) with
+    PROBE_SPELL_LEVEL."""
     if kid == SHINOBI and spell <= WIZARD_LAST:
         return max(level, shinobi_cast(thief_level))
     return level
 
 
-def spell_level(kid: int, spell: int, level: int, thief_level: int) -> int:
-    """The level a spell's duration and damage take (the game's routine at 5E25Ch, LEVEL the best of
-    the caster's classes that cast it, a ranger's whole), with the kit's (PROBE_SPELL_LEVEL): a
-    Shinobi's as cast_level, a Seeker's and a Justifier's priest spells (to KIT_SPELL_LAST) at
-    their ranger level less ranger_cast_drop."""
-    if spell <= WIZARD_LAST:
-        return cast_level(kid, spell, level, thief_level)
-    if spell <= KIT_SPELL_LAST and kid in (SEEKER, JUSTIFIER):
-        return max(0, level - ranger_cast_drop(kid))
-    return level
+def spell_class_level(kid: int, cls: int, level: int, ranger_rule: bool) -> int:
+    """The level of class CLS (LEVEL) that a spell's duration and damage count (the game's routine
+    at 5E25Ch, which takes the best of the caster's classes that cast the spell), with
+    PROBE_RANGER_LEVEL's: a ranger's whole in the game, 7 less with the rule (RANGER_RULE), a
+    Seeker's 5 less and a Justifier's 9 (ranger_cast_drop) whatever the rule; no less than 0."""
+    if cls not in RANGER_CLASSES:
+        return level
+    drop = ranger_cast_drop(kid) if kid in (SEEKER, JUSTIFIER) or ranger_rule else 0
+    return max(0, level - drop)
 
 
 def shinobi_pick_level(level: int) -> int:
