@@ -1079,6 +1079,7 @@ emulated tests hold the helper to it:
 | a power's PSP | Mind Bender, Kineticist (by discipline: powers 0-5 psychokinesis, 6-19 psychometabolism, 20-33 telepathy, the defence modes among them; never below 1) | the powers' table (8 bytes a power, at the load segment + 3FB9h: `+1` the cost to use, `+2` to keep up, 63h for none; `+5` FEh for a defence mode). `PROBE_PSP_USE` (`INT B4h`, new: where the routine using a power has its cost in DI, its table's or worked out for Enhanced Strength and Domination, DSUN.EXE 5CBE7h), `PROBE_PSP_TABLE` (`INT B3h`, new: the table's cost read in the check whether a power can be used, 5CAA3h, and for the half a failed power costs, 5CCA2h), `PROBE_PSP_DEFENCE` (`INT B2h`, new: a defence mode's cost taken off, 5D820h); `kits.psp_cost`. Monsters' powers (5A773h) are left alone |
 | a cure's healing | Healer (+1 a die of Cure Light, Serious, Critical Wounds: spells 71, 112, 127), Lifebinder (a die more: a d8, Blood Flow's, 108, a d6, rolled from the game's rand() seed by `GAME_DIE`) | `PROBE_CURE` (`INT B1h`, new: "nop / push cs" at DSUN.EXE 79619h in the handler for spells with rules of their own, where the healing, pushed with the target, goes to the routine that heals; the caster its `[BP+8]`, the spell `[BP+0Eh]`; the probe pushes CS itself). The Cell Adjustment's jump into 79618h is clear of it |
 | a spell's damage | Healer (1 less a die, never less than 1 a die) | `PROBE_HARM` (`INT B0h`, new: "mov ax,dx" at 76EBEh, the end of the routine rolling a spell's damage by caster level, whose arguments are the spell and the level only: the caster is the combatant whose turn it is, DS:4979h) |
+| casting level | Seeker (the ranger level less 5), Justifier (less 9) | `PROBE_RANGER_CAST` (`INT AFh`, new: "sub dx,7", a ranger's level counted 7 less, at 81B6Ah in the caster level routine, 81B16h, whose arguments are the combatant and the spell). The same routine sets the spell levels a priest may cast, half the caster level rounded up (81664h), so a Seeker of 6th level casts 1st-level spells, of 8th 2nd, of 10th 3rd, as its slots have them; `kits.ranger_cast_drop`, and `GameData.effect_caster_level` |
 | THAC0 | Swashbuckler, Crusader, Battle Mage, Mind Warrior (a warrior's: 21 less the level, where better), Scholar (1 worse) | `PROBE_THAC0` (`INT B7h`, new: the end of the game's THAC0 routine, `mov ax,14h / sub ax,si` at DSUN.EXE 876BBh, which every write of a creature's THAC0, `+1Fh`, uses: on making a character, 66CE0h, and at a level up, 86D7Eh and 87A91h) |
 | initiative | Sentinel | `PROBE_INIT` (`INT B8h`, new: the round's 20 added at DSUN.EXE 5750Eh) |
 | saves | Myrmidon (charms), Sentinel (spells, 0-137), Wanderer (fire and cold: the spell record's `+1Ah`, 2 or 4, as the game's Resist Fire and Resist Cold read it) | `PROBE_RING_SAVE` (the modifier routine's start: `KIT_SAVE`) |
@@ -1100,10 +1101,9 @@ Still to find:
 
 | Effect | Kits | What |
 |---|---|---|
-| casting level | Seeker, Justifier, Shinobi | where the game takes it from the class level |
+| casting level | Shinobi | where the game takes it from the class level: the caster level routine, 81B16h, with its thief's level |
 | a second sphere | Elementalist | how the game gives a priest its element's spells (the USE screen) and counts caster level 0 for another's |
 | wizard spells for a thief | Shinobi | slots, spells known and learning for a class that has none; learning from a scroll refused (where the game learns one: the tome's probe is beside it, 8B80Ch) |
-| spells stopped by a hit | Battle Mage | whether the game spoils a spell when its caster is hit in a fight at all: none of the research so far has seen it do so (a spell is cast at once, on the caster's turn) |
 
 Every kit also needs its Python side: the Characters tab and the in-game
 THAC0 and saves (`game.py`), the dice log's lines, and tests that hold the
@@ -1124,7 +1124,9 @@ helper's code (emulated) to the Python.
    running game's memory. Left for later: the Scholar's spell learnt, with the
    CHOOSE A SPELL screen (the Shinobi's step), and whether the game lets a
    Seeker below 8th level choose priest spells for its slots.
-4. After finding them: PSP costs (Mind Bender, Kineticist), spell dice
-   (Healer, Lifebinder), casting level (Seeker, Justifier), a hit spoiling a
-   spell (Battle Mage, if the game has it).
+4. Done: PSP costs (Mind Bender, Kineticist), the cures' dice and harmful
+   spells' damage (Healer, Lifebinder), casting level (Seeker, Justifier). A
+   hit spoiling a spell (Battle Mage): nothing to build, the game has none: a
+   spell is cast and takes effect on its caster's turn, with nothing in
+   between that a hit could stop.
 5. The Shinobi.

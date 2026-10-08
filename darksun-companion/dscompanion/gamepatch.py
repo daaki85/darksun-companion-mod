@@ -68,6 +68,7 @@ VEC_THAC0 = 0xB7
 VEC_SLOTS, VEC_SLOT_LEVEL = 0xB6, 0xB5
 VEC_PSP_USE, VEC_PSP_TABLE, VEC_PSP_DEFENCE = 0xB4, 0xB3, 0xB2
 VEC_CURE, VEC_HARM = 0xB1, 0xB0
+VEC_RANGER_CAST = 0xAF
 
 
 SCRIPT_BUFFER = 0x2E00  # the scripts' buffer, made bigger (the game's: 10000 bytes)
@@ -354,6 +355,8 @@ PATCHES = (
     # a Healer's and a Lifebinder's (kits.cure_bonus, kits.cure_die, kits.harm)
     Patch("cure", 0x79619, bytes.fromhex("900e"), _interrupt(VEC_CURE, 2)),
     Patch("harm", 0x76EBE, bytes.fromhex("8bc2"), _interrupt(VEC_HARM, 2)),
+    # the caster level routine's 7 off a ranger's level: a Seeker's 5, a Justifier's 9 (kits.py)
+    Patch("ranger_cast", 0x81B6A, bytes.fromhex("83ea07"), _interrupt(VEC_RANGER_CAST, 3)),
     # A bug of the game's own: the roster's DELETE (DSUN.EXE 54AC1h) picked the character by the
     # row clicked alone, where ADD takes the row plus how far the list is scrolled; with the list
     # scrolled, another character was deleted (the row's from the top). The same code, the scroll

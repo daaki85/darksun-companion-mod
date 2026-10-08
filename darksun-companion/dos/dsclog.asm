@@ -107,6 +107,7 @@ VEC_PSP_TABLE equ 0xB3     ; PROBE_PSP_TABLE
 VEC_PSP_DEFENCE equ 0xB2   ; PROBE_PSP_DEFENCE
 VEC_CURE equ 0xB1          ; PROBE_CURE
 VEC_HARM equ 0xB0          ; PROBE_HARM
+VEC_RANGER_CAST equ 0xAF   ; PROBE_RANGER_CAST
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 96          ; entries in the ring (96: the helper and it fit in upper memory)
@@ -4922,6 +4923,36 @@ probe_harm:
         pop es
         pop cx
         pop bx
+        iret
+
+; PROBE_RANGER_CAST: INT VEC_RANGER_CAST replaces "sub dx,7" (3 bytes: INT + NOP; DSUN.EXE 81B6Ah)
+; in the game's caster level routine (its [BP+6] the combatant, [BP+8] the spell), where a ranger's
+; level counts 7 less: DX that much less, a Seeker's 5, a Justifier's 9 (kits.ranger_cast_drop),
+; which also sets the spell levels it may cast (half the caster level, rounded up). Others kept.
+probe_ranger_cast:
+        push ax
+        push bx
+        push es
+        push dx
+        mov ax, ds
+        add ax, THINGS_SEG
+        mov es, ax
+        imul bx, [bp + 6], 3
+        mov ax, [es:bx + COMBATANT_CREATURE]
+        call kit_of_creature
+        pop dx
+        mov bx, 7
+        cmp al, KIT_SEEKER
+        jne .justifier
+        mov bx, 5
+.justifier:
+        cmp al, KIT_JUSTIFIER
+        jne .take
+        mov bx, 9
+.take:  sub dx, bx
+        pop es
+        pop bx
+        pop ax
         iret
 
 ; KIT_SAVE: SI (a saving throw's modifiers) with the kit's of the one saving (thing DI) against
@@ -9925,6 +9956,9 @@ install:                        ; DS = ES = PSP, CS = the image
         int 21h
         mov ax, 2500h + VEC_HARM
         mov dx, probe_harm
+        int 21h
+        mov ax, 2500h + VEC_RANGER_CAST
+        mov dx, probe_ranger_cast
         int 21h
         mov ax, 3516h           ; the keyboard's (TARGETING)
         int 21h

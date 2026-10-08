@@ -47,6 +47,9 @@ Released pull requests are summarised in a line or two each; the release notes
 - **Kits' healing:** the Healer's Cure Light, Serious and Critical Wounds heal
   1 more a die and its damaging spells do 1 less a die; the Lifebinder's cures
   heal a die more (INT B1h, INT B0h). The dice log shows each.
+- **Kits' casting level:** the Seeker casts at its ranger level less 5 and the
+  Justifier less 9 (a ranger's: less 7), which also lets a Seeker of 6th level
+  choose 1st-level priest spells for its slots (INT AFh).
 
 **Changed** (for the kits)
 - **The dice log's ring holds 96 entries** (was 128), making room in upper

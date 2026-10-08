@@ -2906,6 +2906,22 @@ class KitTests(unittest.TestCase):
                                          [0x2222, 0x3333, damage, 0x6666])
         self.assertEqual([kits.harm(kits.HEALER, 3, d) for d in (3, 5, 10)], [3, 3, 7])
 
+    def test_ranger_cast(self):
+        """PROBE_RANGER_CAST: DX (a ranger's level) 7 less, a Seeker's 5, a Justifier's 9."""
+        from dscompanion import kits
+        from dscompanion.gamepatch import VEC_RANGER_CAST
+        for rules in (game.RULE_KITS, 0):
+            self.rules(rules)
+            for cls, kit in ((13, 3), (13, 2), (13, 1), (14, 0)):
+                kid = self.kit_of(cls, kit, rules)
+                self.creature(cls, kit)
+                with self.subTest(rules=rules, cls=cls, kit=kit):
+                    self.mu.mem_write(SS * 16 + BP + 6, struct.pack("<H", 7))
+                    self.run_int(VEC_RANGER_CAST, "50530652", 3, edx=10, eax=0x1111, ebx=0x2222, es=0x6666)
+                    self.assertEqual(self.mu.reg_read(r.UC_X86_REG_DX), 10 - kits.ranger_cast_drop(kid))
+                    self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_AX, r.UC_X86_REG_BX,
+                                                                    r.UC_X86_REG_ES)], [0x1111, 0x2222, 0x6666])
+
     def test_kit_id(self):
         from dscompanion import kitpages
         self.rules(game.RULE_KITS)

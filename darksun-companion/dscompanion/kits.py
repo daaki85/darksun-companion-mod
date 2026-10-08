@@ -157,6 +157,12 @@ def harm(kid: int, dice: int, damage: int) -> int:
     return max(dice, damage - dice) if kid == HEALER else damage
 
 
+def ranger_cast_drop(kid: int) -> int:
+    """How much less than its ranger level a ranger casts at (PROBE_RANGER_CAST; the game's 7): a
+    Seeker's 5 (1st at 6th level, 5th at 10th), a Justifier's 9 (1st at 10th)."""
+    return {SEEKER: 5, JUSTIFIER: 9}.get(kid, 7)
+
+
 def move(kid: int) -> int:
     """Added to Move in a fight (KIT_MOVE): a Stalker's 2."""
     return 2 if kid == STALKER else 0
