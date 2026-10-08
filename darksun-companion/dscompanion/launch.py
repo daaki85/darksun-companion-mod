@@ -200,8 +200,9 @@ def write_conf(game_dir: str, path: str = CONF, dice_log: bool = True) -> str:
 # The Options tab's new content and game changes (settings keys), each on unless switched off;
 # the game's copies are written with them as they stand when it is started
 CONTENT = ("kalzith", "semyon", "vulture", "pens_gear", "magic_arms", "world_gear", "world_magic", "effects_kept", "stealth_gear", "arena_ring")
-# the new items' parts (worldgear.data_chunks'), all switched by one box: NEW_ITEMS
-ITEM_PARTS, NEW_ITEMS = ("pens_gear", "magic_arms", "world_gear", "world_magic"), "new_items"
+# the new items' parts (worldgear.data_chunks', and the arena's ring, ring.py), all switched by
+# one box: NEW_ITEMS
+ITEM_PARTS, NEW_ITEMS = ("pens_gear", "magic_arms", "world_gear", "world_magic", "arena_ring"), "new_items"
 
 
 def content(settings: dict) -> dict:
@@ -340,7 +341,7 @@ def dosbox_output(game_dir: str, since: float) -> Dict[str, str]:
 
 
 # The Options tab's switches and their defaults (what a key missing from settings.json means)
-SWITCH_DEFAULTS = {"turn_popups": False, "monster_info": True, "arena_ring": True, "pickpockets": True,
+SWITCH_DEFAULTS = {"turn_popups": False, "monster_info": True, "pickpockets": True,
                    "pick_key": False, "show_gear": True, "shadows": True, "dust": True, "rings": "chosen",
                    "targeting": True, "scroll_map": True, "scroll_right": False, "cycles": DEFAULT_SPEED}
 

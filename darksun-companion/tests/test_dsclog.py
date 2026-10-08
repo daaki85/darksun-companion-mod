@@ -863,11 +863,15 @@ class SpecializeTests(unittest.TestCase):
                  (2, STAFF_SLING, 15, (9, 0, 0), (4, 0, 0), (3, 14, 5, 8)),   # staff sling 3/2 at 1-6
                  (2, STAFF_SLING, 15, (9, 0, 0), (8, 0, 0), (4, 12, 6, 8)),   # 2/1 at 7-12
                  (2, CHATKCHA, 12, (9, 0, 0), (7, 0, 0), (4, 12, 6, 8)),  # chatkcha, as the staff sling
-                 (4, BOW, 0, (9, 0, 0), (8, 0, 0), (4, 15, 3, 8)),        # another kind: the game's
+                 (4, BOW, 0, (9, 0, 0), (6, 0, 0), (4, 15, 3, 8)),        # another kind: the game's
+                 (4, BOW, 0, (9, 0, 0), (8, 0, 0), (6, 15, 3, 8)),        # from 7th, a specialist's 1-6
+                 (2, CHATKCHA, 0, (10, 0, 0), (7, 0, 0), (3, 15, 3, 8)),  # a gladiator's chatkcha 3/2
                  (4, BOW, 13, (13, 0, 0), (8, 0, 0), (8, 15, 3, 8)),      # a ranger's expertise: the rate
                  (4, BOW, 0, (13, 0, 0), (4, 0, 0), (6, 15, 3, 8)),       # every ranger's bow, chosen or not
                  (4, BOW, 0, (9, 14, 0), (8, 3, 0), (8, 15, 3, 8)),       # a fighter/ranger: the higher level
-                 (2, SLING, 0, (13, 0, 0), (8, 0, 0), (2, 15, 3, 8)))     # a ranger's unchosen sling: the game's
+                 (2, SLING, 0, (13, 0, 0), (6, 0, 0), (2, 15, 3, 8)),     # a ranger's unchosen sling: the game's
+                 (2, SLING, 0, (13, 0, 0), (8, 0, 0), (3, 15, 3, 8)),     # ... 3/2 from 7th
+                 (2, SLING, 0, (11, 0, 0), (8, 0, 0), (2, 15, 3, 8)))     # not a warrior: the game's
         for halves, weapon, kind, classes, levels, want in cases:
             with self.subTest(weapon=weapon, classes=classes, levels=levels):
                 self.assertEqual(self.attack(halves, weapon, chosen=(kind,), classes=classes, levels=levels,

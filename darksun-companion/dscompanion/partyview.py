@@ -72,11 +72,13 @@ class Card(ttk.Frame):
         right = ("who", "alignment", "classes", "xp", "ac", "thac0", "saves", "move", "attacks", "weapons",
                  "equipment", "slots", "thief")
         labels = []
+        self.rows: Dict[str, ttk.Label] = {}  # (an empty one is hidden, leaving no blank line)
         for row, key in enumerate(right):
             var = self.vars[key] = tk.StringVar()
             label = ttk.Label(sheet, textvariable=var, style="Card.TLabel")
             label.grid(row=row, column=2, sticky="nw")
             labels.append(label)
+            self.rows[key] = label
         # long lines (three classes) wrap at the card's edge rather than being cut off
         sheet.bind("<Configure>", lambda e: [l.configure(wraplength=max(e.width - l.winfo_x() - 6, 80))
                                              for l in labels])
@@ -134,6 +136,8 @@ class Card(ttk.Frame):
                                if thief else "")
         self.vars["slots"].set("\n".join(f"{kind} spells left: {game.slots_text(levels)}"
                                          + (" (no spells in armour)" if no_spells else "") for kind, levels in slots))
+        for row, label in self.rows.items():
+            label.grid() if self.vars[row].get() else label.grid_remove()
         key = (number(get("Race", "")) or 0, number(get("Gender", "")) or 0)
         zoom = 2 if theme.scale() >= 1.6 else 1
         if game_art and (key, zoom) != self.figure_key:

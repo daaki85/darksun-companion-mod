@@ -1,12 +1,13 @@
 """Templar's Ledger's window (tkinter), in the colours of the game's own screens.
 
-Left: one column per party slot showing the fields mapped in the layout. For
-Shattered Lands the party is found automatically; other layouts locate a
-character by name (linked records such as the character sheet are then found
-automatically).
-Right: the dice log (when the game was started with DSCLOG), and memory tools:
-name search and a live hex view of a record that highlights bytes as they
-change. Click a byte to see it decoded as each value type.
+Left: the party, a card for each character (partyview.py) and every field the
+layout maps in a table. For Shattered Lands the party is found automatically;
+other layouts locate a character by name (linked records such as the character
+sheet are then found automatically).
+Right: the dice log (when the game was started with DSCLOG), the dialogue, the
+spells, the memory tools (name search, the layout's buttons, and a live hex
+view of a record that highlights bytes as they change; click a byte to see it
+decoded as each value type) and the Options tab.
 """
 
 import re
@@ -86,8 +87,6 @@ class Viewer:
         self.status = tk.StringVar(value="Not connected")
         # on a line of its own, below the buttons, so it never pushes them off at larger text sizes
         ttk.Label(self.root, textvariable=self.status, style="Status.TLabel", padding=(8, 2)).pack(fill="x")
-        ttk.Button(top, text="Save layout", command=self.save_layout).pack(side="right")
-        ttk.Button(top, text="Reload layout", command=self.reload_layout).pack(side="right", padx=4)
         ttk.Button(top, text="Reconnect", command=self.reconnect).pack(side="right")
         # for when the Ledger was opened on its own: start the game (with the dice log) from here
         self.start_button = ttk.Button(top, text="Start the game", command=self.start_game)
@@ -139,9 +138,19 @@ class Viewer:
         ttk.Button(row, text="Clear", command=lambda: self.dice_text.delete("1.0", "end")).pack(side="right")
         ttk.Button(row, text="Save...", command=lambda: self.save_text(self.dice_text, "dice log")).pack(
             side="right", padx=4)
-        # (the switches are on the Options tab, leaving this one to the log)
         self.dice_status = tk.StringVar(value="Waiting for the game...")
         ttk.Label(row, textvariable=self.dice_status).pack(side="left", fill="x")
+        # what the log shows (the game's switches are on the Options tab)
+        row = ttk.Frame(dice)
+        row.pack(fill="x", pady=(4, 0))
+        # the indented lines under a roll (what a THAC0 or save was made of); hiding them leaves
+        # the rolls, results, turns and HP
+        self.show_details = tk.BooleanVar(value=True)
+        ttk.Checkbutton(row, text="Show details (the sums behind each roll)", variable=self.show_details,
+                        command=lambda: self.dice_text.tag_configure("detail", elide=not self.show_details.get())
+                        ).pack(side="left")
+        self.show_all = tk.BooleanVar(value=False)
+        ttk.Checkbutton(row, text="Show unlabelled rolls", variable=self.show_all).pack(side="left", padx=(12, 0))
         # the round's order stays here while the log scrolls on: who acts now, who is still to come
         self.round_line = tk.StringVar(value="")
         self.round_label = ttk.Label(dice, textvariable=self.round_line, style="Status.TLabel", wraplength=900,
@@ -237,6 +246,9 @@ class Viewer:
         entry.pack(side="left")
         entry.bind("<Return>", lambda _e: self.search_name())
         ttk.Button(row, text="Search", command=self.search_name).pack(side="left", padx=4)
+        # the field addresses found (layouts/), for mapping fields or other layouts
+        ttk.Button(row, text="Save layout", command=self.save_layout).pack(side="right")
+        ttk.Button(row, text="Reload layout", command=self.reload_layout).pack(side="right", padx=4)
         row = ttk.Frame(locate)
         row.pack(fill="x", pady=(6, 0))
         ttk.Label(row, text="Assign selected name hit to slot").pack(side="left", padx=(0, 2))
@@ -262,8 +274,9 @@ class Viewer:
         self.show_addresses = tk.BooleanVar(value=False)
         ttk.Checkbutton(row, text="Record addresses in the party table",
                         variable=self.show_addresses).pack(side="right")
+        # (a line of its own: the decoded values are long)
         self.inspect = tk.StringVar(value="Click a byte to decode it.")
-        ttk.Label(row, textvariable=self.inspect, font="TkFixedFont").pack(side="left", padx=8)
+        ttk.Label(hexframe, textvariable=self.inspect, font="TkFixedFont").pack(anchor="w", pady=(4, 0))
         self.hex = tk.Text(hexframe, font="TkFixedFont", height=20, wrap="none")
         theme.style_text(self.hex)
         self.hex.pack(fill="both", expand=True, pady=(6, 0))
@@ -276,7 +289,7 @@ class Viewer:
         self._apply_layout()
 
     def _build_options(self, tabs: ttk.Notebook) -> None:
-        """The Options tab: what the dice log shows, and what the Ledger adds to the game."""
+        """The Options tab: what the Ledger shows, changes and adds in the game."""
         # it scrolls, for a window too small (or text too large) to show it all
         area = theme.ScrollArea(tabs, padding=6)
         tabs.add(area, text="Options", underline=0)
@@ -294,15 +307,6 @@ class Viewer:
             self.sections[key] = part
             return part.body
 
-        log = section("dice_log", "Dice log")
-        self.show_all = tk.BooleanVar(value=False)
-        ttk.Checkbutton(log, text="Show unlabelled rolls", variable=self.show_all).pack(anchor="w")
-        # the indented lines under a roll (what a THAC0 or save was made of); hiding them leaves
-        # the rolls, results, turns and HP
-        self.show_details = tk.BooleanVar(value=True)
-        ttk.Checkbutton(log, text="Show details (the sums behind each roll)", variable=self.show_details,
-                        command=lambda: self.dice_text.tag_configure("detail", elide=not self.show_details.get())
-                        ).pack(anchor="w", pady=(4, 0))
         in_game = section("in_game", "In the game (when started with the dice log)")
         # long lines wrap to the window (as with larger text) instead of running out of it
         options.bind("<Configure>", lambda e: [ttk.Style().configure(
@@ -322,17 +326,19 @@ class Viewer:
         ttk.Checkbutton(in_game, text="Describe monsters when you Look at them in a fight (defences, then a window)",
                         variable=self.monster_info, command=self._popups_changed).pack(anchor="w", pady=(4, 0))
         rules = section("rules", "Rule changes (in games started with the dice log)")
+        # the thieves' rules and picking pockets together, as the guide's Thieves section has them
+        thieves = section("thieves", "Thieves (in games started with the dice log)")
+        thief_rules = ("thief_table", "stealth")
         # one switch for each of game.RULE_SETTINGS
         self.rule_vars: Dict[str, tk.BooleanVar] = {}
         self.stealth_gear = tk.BooleanVar(value=settings.get("stealth_gear", True) is not False)
         # (in the order the README's Rule changes has them: the ones that change most first)
         for n, (key, text) in enumerate((
                 ("weapon_specialization", "Weapon specialization: fighters and gladiators specialize (+1 to hit, +2 "
-                                          "damage), fighters on to mastery at 5th level and grand mastery at 9th, "
-                                          "rangers' expertise (every ranger's with the bow too); specialists "
-                                          "and rangers shoot missiles faster; warriors without it attack as AD&D's (chosen on the "
-                                          "creation panel's WEAPON SPEC pages, a gladiator's later ones at "
-                                          "a level gained; listed on the Effects screen)"),
+                                          "damage), fighters on to mastery at 5th level and grand mastery at 9th; "
+                                          "rangers have expertise, every ranger with the bow; specialists and "
+                                          "rangers shoot missiles faster; other weapons at a warrior's plain rate "
+                                          "(chosen on the creation panel's WEAPON SPEC pages)"),
                 ("class_restrictions", "Class restrictions on armour, shields and weapons, the strictest class "
                                        "winning (psionicists, multiclass thieves, preservers, druids, clerics' "
                                        "spheres); a multiclass preserver casts no spells in armour"),
@@ -362,19 +368,19 @@ class Viewer:
                 ("helm_ac", "Helms give AC 1 (the game's helms give none)"),
                 ("boots_move", "Boots give movement in a fight (1 more move each round)"))):
             self.rule_vars[key] = tk.BooleanVar(value=bool(settings.get(key, True)))
-            ttk.Checkbutton(rules, text=text, variable=self.rule_vars[key],
-                            command=self._popups_changed).pack(anchor="w", pady=(4 if n else 0, 0))
+            parent = thieves if key in thief_rules else rules
+            ttk.Checkbutton(parent, text=text, variable=self.rule_vars[key],
+                            command=self._popups_changed).pack(anchor="w", pady=(4 if parent.winfo_children()[:-1] else 0, 0))
             if key == "stealth":  # (under it: what worn gear adds)
-                ttk.Checkbutton(rules, text="... a worn cloak adds 10 to hiding, worn boots 10 to moving silently; "
+                ttk.Checkbutton(thieves, text="... a worn cloak adds 10 to hiding, worn boots 10 to moving silently; "
                                             "a worn belt adds 5 to picking pockets and opening locks (hiding or not)",
                                 variable=self.stealth_gear, command=self._popups_changed).pack(anchor="w", padx=(20, 0))
 
-        # the companion's own content: people, a quest and items in the game, and thief play. Some
+        # the companion's own content: people, a quest and items in the game. Some
         # are written into the game's files when it is started; what a save already has stays
         new = section("new_content", "New content")
-        ttk.Label(new, text="Kalzith, Semyon, the vulture and the new items: from the next time "
-                  "you start the game, in places not yet visited. What a saved game already has "
-                  "(people met, items given) stays in it.",
+        ttk.Label(new, text="From the next time you start the game, in places not yet visited. What a "
+                  "saved game already has (people met, items given) stays in it.",
                   wraplength=460).pack(anchor="w")
         options.bind("<Configure>", lambda e, label=new.winfo_children()[-1]: label.configure(
             wraplength=max(200, e.width - 60)), add="+")
@@ -389,16 +395,12 @@ class Viewer:
             self.content_vars[key] = tk.BooleanVar(value=settings.get(key, True) is not False)
             ttk.Checkbutton(new, text=text, variable=self.content_vars[key],
                             command=self._popups_changed).pack(anchor="w", pady=(4, 0))
-        # a Ring +1 on the Tied-up Prisoner in the arena (ring.py), picking pockets, and the tools
-        self.arena_ring = tk.BooleanVar(value=bool(settings.get("arena_ring", True)))
-        ttk.Checkbutton(new, text="A Ring of Protection +1 on the arena's Tied-up Prisoner (search his body)",
-                        variable=self.arena_ring, command=self._popups_changed).pack(anchor="w", pady=(4, 0))
         self.pickpockets = tk.BooleanVar(value=bool(settings.get("pickpockets", True)))
-        ttk.Checkbutton(new, text="Picking pockets: a thief uses Thieves' Tools on someone in sight (each "
+        ttk.Checkbutton(thieves, text="Picking pockets: a thief uses Thieves' Tools on someone in sight (each "
                         "thief gets a set), until caught", variable=self.pickpockets,
                         command=self._popups_changed).pack(anchor="w", pady=(4, 0))
         self.pick_key = tk.BooleanVar(value=bool(settings.get("pick_key", False)))
-        ttk.Checkbutton(new, text="... or the leader, a thief, presses P in a conversation",
+        ttk.Checkbutton(thieves, text="... or the leader, a thief, presses P in a conversation",
                         variable=self.pick_key, command=self._popups_changed).pack(anchor="w", padx=(20, 0))
 
         # how the game looks
@@ -413,13 +415,6 @@ class Viewer:
         self.show_dust = tk.BooleanVar(value=bool(settings.get("dust", True)))
         ttk.Checkbutton(looks, text="Dust raised behind the feet of anyone walking on sand or dirt",
                         variable=self.show_dust, command=self._popups_changed).pack(anchor="w", pady=(4, 0))
-        self.ring_mode = tk.StringVar(value=rings.mode(settings))
-        ttk.Label(looks, text="Red rings on the ground in a fight:").pack(anchor="w", pady=(4, 0))
-        for value, text in ((rings.OFF, "... none"),
-                            (rings.ONLY_CHOSEN, "... under the enemy chosen with Tab"),
-                            (rings.ALL, "... under all the enemies (the chosen one's redder)")):
-            ttk.Radiobutton(looks, text=text, value=value, variable=self.ring_mode,
-                            command=self._popups_changed).pack(anchor="w", padx=(20, 0))
 
         # the mouse and keys in the game
         controls = section("controls", "Controls (in the game)")
@@ -427,14 +422,21 @@ class Viewer:
         ttk.Checkbutton(controls, text="In a fight, Tab (Shift+Tab back) chooses an enemy, its ring brighter, and "
                         "Enter attacks it, even behind someone", variable=self.use_targeting,
                         command=self._popups_changed).pack(anchor="w")
+        self.ring_mode = tk.StringVar(value=rings.mode(settings))
+        ttk.Label(controls, text="Red rings on the ground in a fight:").pack(anchor="w", pady=(4, 0))
+        for value, text in ((rings.OFF, "... none"),
+                            (rings.ONLY_CHOSEN, "... under the enemy chosen with Tab"),
+                            (rings.ALL, "... under all the enemies (the chosen one's redder)")):
+            ttk.Radiobutton(controls, text=text, value=value, variable=self.ring_mode,
+                            command=self._popups_changed).pack(anchor="w", padx=(20, 0))
         self.scroll_map = tk.BooleanVar(value=bool(settings.get("scroll_map", True)))
         ttk.Checkbutton(controls, text="Scroll the map with the mouse wheel: press it and move, or turn it "
                         "(Shift: sideways)", variable=self.scroll_map,
                         command=self._popups_changed).pack(anchor="w", pady=(4, 0))
         self.scroll_right = tk.BooleanVar(value=bool(settings.get("scroll_right", False)))
-        ttk.Checkbutton(controls, text="Scroll it by holding the right mouse button and moving too (a right "
+        ttk.Checkbutton(controls, text="... or by holding the right mouse button and moving (a right "
                         "click still changes the pointer)", variable=self.scroll_right,
-                        command=self._popups_changed).pack(anchor="w", pady=(4, 0))
+                        command=self._popups_changed).pack(anchor="w", padx=(20, 0))
         self.effects_kept = tk.BooleanVar(value=settings.get("effects_kept", True) is not False)
         ttk.Checkbutton(controls, text="A click on a spell's icon on the Effects screen leaves it on (the game "
                         "ends it; psionic powers can still be stopped); from the next time you start the game",
@@ -766,7 +768,7 @@ class Viewer:
                 self.dice.popups = self.popups.get()
                 self.dice.popup_level = self.popup_level.get()
                 self.dice.monster_info = self.monster_info.get()
-                self.dice.arena_ring = self.arena_ring.get()
+                self.dice.arena_ring = self.content_vars[launch.NEW_ITEMS].get()
                 self.dice.pickpockets = self.pickpockets.get()
                 self.dice.pick_key = self.pick_key.get()
                 self.dice.show_gear = self.show_gear.get()
@@ -865,7 +867,6 @@ class Viewer:
         settings["turn_popups"] = on
         settings["turn_popups_level"] = self.popup_level.get()
         settings["monster_info"] = self.monster_info.get()
-        settings["arena_ring"] = self.arena_ring.get()
         settings["pickpockets"] = self.pickpockets.get()
         settings["pick_key"] = self.pick_key.get()
         settings["show_gear"] = self.show_gear.get()
@@ -886,7 +887,7 @@ class Viewer:
             self.dice.set_popups(on)
             self.dice.popup_level = self.popup_level.get()
             self.dice.set_monster_info(self.monster_info.get())
-            self.dice.arena_ring = self.arena_ring.get()
+            self.dice.arena_ring = self.content_vars[launch.NEW_ITEMS].get()
             self.dice.set_pickpockets(self.pickpockets.get(), self.pick_key.get())
             self.dice.show_gear = self.show_gear.get()
             self.dice.show_shadows = self.show_shadows.get()

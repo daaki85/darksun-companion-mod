@@ -213,7 +213,7 @@ class ThiefTests(unittest.TestCase):
 class SettingsTests(unittest.TestCase):
     def test_saved_options(self):
         log = dag()
-        log.use_settings({"helm_ac": False, "arena_ring": False, "no_doubled_save": False})
+        log.use_settings({"helm_ac": False, "new_items": False, "arena_ring": True, "no_doubled_save": False})
         self.assertEqual((log.rules, log.arena_ring, log.monster_info),
                          (game.RULE_BOOTS | game.RULE_TWO_WEAPONS | game.RULE_SPELL_SAVE | game.RULE_CATS_GRACE
                           | game.RULE_STEALTH | game.RULE_LEVEL_10 | game.RULE_THIEF_TABLE

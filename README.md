@@ -26,13 +26,15 @@ can be switched off on its Options tab.
   thief skills on the character screens, spell slots on the USE screen, each
   turn's rolls in a fight, and what hurts a monster in the Look box.
   ([In the game](darksun-companion/README.md#in-the-game))
-- **Changes rules, each one switchable:** fifteen of AD&D's, among them weapon
-  specialization, class restrictions, thief skills from AD&D's table, saving
-  throws and levels up to 10.
-  ([Rule changes](darksun-companion/README.md#rule-changes))
+- **Changes rules, each one switchable:** sixteen, most of them AD&D's,
+  among them weapon specialization, class restrictions, thief skills from
+  AD&D's table, saving throws and levels up to 10; and picking pockets for
+  thieves.
+  ([Rule changes](darksun-companion/README.md#rule-changes),
+  [Thieves](darksun-companion/README.md#thieves))
 - **Adds to the game:** new weapons, armour and magic items across Athas, with
   stories Alagorn tells; Kalzith, a defiler slave who sells scrolls; Semyon
-  keeping his word; picking pockets; a use for the cooked vulture.
+  keeping his word; a use for the cooked vulture.
   ([New content](darksun-companion/README.md#new-content))
 - **On the screen and at hand:** the party's gear drawn on their figures,
   shadows and dust on the map, choosing an enemy with Tab, and scrolling with
@@ -55,7 +57,8 @@ folder only what you'd expect: your saves (pages 2 to 4 as files of their own,
    [Releases page](https://github.com/daaki85/darksun-companion-mod/releases)
    (`Templars-Ledger-<version>.zip`) and unzip it anywhere. (Or this repository
    as it stands: **Code → Download ZIP**.)
-2. In the `darksun-companion` folder, double-click **`Start Templar's Ledger.bat`**.
+2. In the unzipped folder (`Templars-Ledger-<version>`, or `darksun-companion`
+   in a download of the repository), double-click **`Start Templar's Ledger.bat`**.
    The first time, it offers to install 64-bit Python if you don't have it.
    If Windows shows "Open File - Security Warning" (it does for any `.bat`
    from a download), press **Run**: the Ledger then unblocks its own files, so
@@ -71,8 +74,10 @@ double-click, with the options as last set.)
 
 ## What's new
 
-In pull request #27 (merged 2026-10-07): a ranger no longer has the bow to choose at
-creation, since every ranger has expertise with the bow already.
+In pull request #28 (merged 2026-10-08): the Options tab has a Thieves section
+of its own; warriors shoot faster from 7th level with missile weapons they
+haven't specialized in; the arena's ring comes with the new items; and the
+guide is reorganised and shorter.
 
 Earlier changes, pull request by pull request, are in
 [`CHANGELOG.md`](CHANGELOG.md). Releases have notes of their own:

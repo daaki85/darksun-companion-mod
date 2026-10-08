@@ -127,13 +127,17 @@ def warrior_level(sheet: bytes) -> int:
 
 def missile_attacks(halves: int, level: int, item_type: Optional[int], sheet: bytes) -> int:
     """A missile weapon's attacks a round (in halves): the weapon type's (HALVES, its +0Bh, as the
-    game has it), or a specialist's rate of fire (LEVEL EXPERT or above: a ranger's too) when greater."""
+    game has it), or a specialist's rate of fire (LEVEL EXPERT or above: a ranger's too) when greater;
+    a warrior's of a kind not chosen (PLAIN), from 7th level, the specialist's a band lower, as in melee."""
     kind = kind_of(item_type) if item_type is not None else None
     rates = MISSILE_RATES.get(KINDS[kind]) if kind is not None else None
-    if level < EXPERT or not rates:
+    if level < PLAIN or not rates:
         return halves
     warrior = warrior_level(sheet)
-    rate = max(halves, rates[0 if warrior < 7 else 1 if warrior < 13 else 2])
+    band = 0 if warrior < 7 else 1 if warrior < 13 else 2
+    if level == PLAIN:
+        return max(halves, rates[band - 1]) if band else halves
+    rate = max(halves, rates[band])
     return rate + 2 if level == GRAND else rate  # (a grand master one more, as in melee)
 
 

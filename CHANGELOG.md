@@ -5,6 +5,53 @@ Released pull requests are summarised in a line or two each; the release notes
 ([1.1.0](release-notes/v1.1.0.md): #14 to #18; [1.0.0](release-notes/v1.0.0.md):
 #1 to #13) and the pull requests themselves have the detail.
 
+## Pull request #28 ([merged 2026-10-08](https://github.com/daaki85/darksun-companion-mod/pull/28))
+
+**Changed**
+- **Options tab:** a **Thieves** section of its own, after Rule changes, with
+  AD&D's thief skills, hiding to backstab (and the cloak, boots and belt) and
+  picking pockets (and the P key), as the guide's Thieves section has them;
+  the weapon specialization box is shorter.
+- **Warriors shoot faster from 7th level** with a missile weapon they
+  haven't specialized in, as their melee goes from 1 to 3/2: a bow 3 a round
+  (was 2), a sling, staff sling or chatkcha 3/2 (was 1). Specialists keep their
+  rates, a step ahead at every level.
+- **The arena's ring is one of the new items:** New items, magical and mundane
+  switches it too; its own box is gone.
+- **The red rings are under Controls,** with Tab and Enter, as the guide has
+  them; scrolling with the right button is a line under the mouse wheel's.
+- **The Ledger's window:** Show details and Show unlabelled rolls are on the
+  Dice log tab, above the log, rather than in an Options section of their own;
+  Save layout and Reload layout are on the Memory tools tab, leaving the top
+  row to starting the game, its window, the text size and Reconnect; a byte's
+  decoding has a line of its own.
+- **"Not connected"** says to start the game with Start the game, rather than
+  naming a command-line option.
+- **A character's card** leaves out empty lines (a non-warrior's weapon
+  specs), rather than showing a blank one.
+
+**Documentation**
+- **Guide reorganised:** Every magic item and Every mundane weapon in a section
+  of their own, Item tables (they list the game's items too, not only new
+  content); Suggested system requirements under Requirements, linked from Game
+  speed; Picking pockets moved to Thieves; weapon specialization tidied
+  (repeated notes gone, one table heading for every warrior, "weapon spec" for
+  the kinds throughout, as the creation pages call them, and every ranger's bow
+  expertise said first).
+- The two Two weapons sections are one; the Effects screen's click (a spell
+  left on) has a section under Controls, where its box is.
+- **Guide read through:** the game's own saving throws (petrification/
+  polymorph, the doubled d20) explained once, under Saving throws; the crash
+  sections one; Show Save with the practice program under Without the game;
+  the Characters tab's card as a list; the backstab table with the new
+  weapons (a bone axe and a pick can backstab); sixteen rule changes, not
+  fifteen; technical notes (patch addresses, drawing costs) moved to
+  DEVELOPMENT; old-save notes gone.
+- **Screenshots retaken** with the game installed (its title lettering,
+  portraits and figures): the dice log, the Dialogue tab, the practice
+  program and a thief's card; the backstab table checked against the game's
+  item data (named long swords weigh 10 to 40).
+
 ## Pull request #27 ([merged 2026-10-07](https://github.com/daaki85/darksun-companion-mod/pull/27))
 
 **Changed**
@@ -24,13 +71,16 @@ Released pull requests are summarised in a line or two each; the release notes
   by level: a bow 3 a round, then 4 from 7th level; a sling, staff sling or
   chatkcha 3/2, then 2 (AD&D's specialist's rate for the sling, a step above
   it for the others). A grand master shoots once more a round, as in melee.
-  Before, missiles kept the game's rate.
-- **Guide:** a table of attacks a round by skill (non-warriors, a kind not
-  chosen, expertise, specialized, mastery, grand mastery) and level, for
-  melee, bows and the other missile weapons.
+  Before, missiles kept the game's rate. The Characters tab shows each missile
+  weapon's rate.
 - **Rangers and the bow:** every ranger has expertise with the bow on top of
   the kind it chooses, and a ranger's expertise with a missile weapon now
-  gives the same rate of fire (by ranger level), with no other bonus. The Characters tab shows each missile weapon's rate.
+  gives the same rate of fire, with no other bonus.
+
+**Documentation**
+- **Attacks a round:** a table in the guide by skill (non-warriors, a kind not
+  chosen, expertise, specialized, mastery, grand mastery) and level, for
+  melee, bows and the other missile weapons.
 
 ## Pull request #25 ([merged 2026-10-07](https://github.com/daaki85/darksun-companion-mod/pull/25))
 
