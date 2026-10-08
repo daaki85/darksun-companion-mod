@@ -1065,6 +1065,8 @@ class DiceLog:
             ring.name_items(self.game, self.rules)
             if not names.update(self.game, self.tsr_hdr):
                 return out  # no names for them yet: none given
+            if self.rules & game.RULE_KITS:  # (new characters' kits' scores)
+                out += kits.finish_new(self.game)
             if self.rules & game.RULE_SPECIALIZE:  # (new characters' weapon kinds and starting weapon)
                 out += weaponchoice.finish_new(self.game)
             out += defaultparty.ready(self.game, self.rules, self._party_done)  # (the game's own party, once)

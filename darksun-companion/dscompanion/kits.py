@@ -13,6 +13,13 @@ MYRMIDON, CHAMPION = KIT_IDS["Myrmidon"], KIT_IDS["Arena Champion"]
 ASSASSIN = KIT_IDS["Assassin"]
 TWIN_BLADE, BRUTE = KIT_IDS["Twin-blade"], KIT_IDS["Brute"]
 GROVE_WARDEN, LIFEBINDER = KIT_IDS["Grove Warden"], KIT_IDS["Lifebinder"]
+WANDERER, ARCANIST = KIT_IDS["Wanderer"], KIT_IDS["Arcanist"]
+# the scores a kit changes (STR, DEX, CON, INT, WIS, CHA), once, before the character is first
+# played (apply_scores); SCORES_DONE the sheet's byte that says it has been
+SCORES = {BRUTE: (0, 1, 1, -1, -1, 0), WANDERER: (-1, 0, 1, 0, 1, -1), ARCANIST: (0, 0, -2, 0, 0, 0)}
+SCORES_DONE = 0x45
+SCORE_LEAST, SCORE_MOST = 3, 25
+ABILITY_NAMES = ("STR", "DEX", "CON", "INT", "WIS", "CHA")
 # the item type's +00h flags and +0Fh kind flags, +08h material (restrict.py's)
 MELEE, MISSILE, SHIELD, TWO_HANDED, ARMOUR = 0x01, 0x02, 0x04, 0x40, 0x80
 METAL, LEATHER, NO_MATERIAL = 4, 5, 0x40
@@ -33,13 +40,15 @@ def melee_damage(kid: int) -> int:
     return 1 if kid == RAIDER else 0
 
 
-def ac(kid: int, shield: bool) -> int:
+def ac(kid: int, shield: bool, level: int = 0) -> int:
     """Added to AC (KIT_AC; lower is better): a Raider's 1 worse, a Sentinel's 2 better with a
-    shield in a hand."""
+    shield in a hand, a Grove Warden's 1 better for every 3 levels (LEVEL, its druid level)."""
     if kid == RAIDER:
         return 1
     if kid == SENTINEL and shield:
         return -2
+    if kid == GROVE_WARDEN:
+        return -(level // 3)
     return 0
 
 
@@ -107,3 +116,44 @@ def forbids(kid: int, typ: bytes, kind: Optional[int], half_giant: bool, spec: b
     if kid == LIFEBINDER:
         return kind is not None and kind not in BLUNT
     return False
+
+
+def scores_after(kid: int, scores) -> list:
+    """The six scores after the kit's changes (SCORES), each kept within 3 to 25."""
+    change = SCORES.get(kid, (0,) * 6)
+    return [max(SCORE_LEAST, min(SCORE_MOST, v + d)) if d else v for v, d in zip(scores, change)]
+
+
+def apply_scores(gd, member: int) -> list:
+    """A New party member's kit's score changes (SCORES), in its sheet and creature record, once
+    (the sheet's SCORES_DONE byte): lines for the log."""
+    import struct
+    from . import game
+    kid = gd.kit_id(member)
+    if kid not in SCORES:
+        return []
+    rec = gd.creature(member)
+    index = struct.unpack_from("<H", rec, game.CREATURE_SHEET_INDEX)[0]
+    at = game.far_pointer(gd.guest, gd.ds, game.SHEETS_PTR) + index * game.SHEET_SIZE
+    sheet = gd.guest.read(at, game.SHEET_SIZE)
+    if len(sheet) < game.SHEET_SIZE or sheet[SCORES_DONE]:
+        return []
+    before = list(sheet[game.SHEET_ABILITIES:game.SHEET_ABILITIES + 6])
+    after = scores_after(kid, before)
+    gd.guest.write(at + game.SHEET_ABILITIES, bytes(after))
+    table = game.far_pointer(gd.guest, gd.ds, game.CREATURES_PTR) + member * game.CREATURE_SIZE
+    gd.guest.write(table + game.CREATURE_ABILITIES, bytes(after))
+    gd.guest.write(at + SCORES_DONE, b"\x01")
+    changes = ", ".join(f"{ABILITY_NAMES[i]} {b} to {a}" for i, (b, a) in enumerate(zip(before, after)) if a != b)
+    return [f"{gd.creature_name(member)}, a {name(kid)}: {changes}"] if changes else []
+
+
+def finish_new(gd) -> list:
+    """The kits' score changes for the party's New characters (apply_scores): lines for the log."""
+    from . import game
+    out = []
+    for member in range(game.PARTY_SIZE):
+        rec = gd.creature(member)
+        if len(rec) >= game.CREATURE_SIZE and rec[game.CREATURE_NAME] and rec[game.CREATURE_STATUS] == game.STATUS_NEW:
+            out += apply_scores(gd, member)
+    return out

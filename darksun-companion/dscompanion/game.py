@@ -1430,7 +1430,8 @@ class GameData:
         """The to-hit adjustment for an attack with the weapon in SLOT while two are ready (in
         melee), and what it's called. The game's: its DEX table for initiative, sign flipped and
         never below 0 (a bonus at DEX 5 or less). With RULE_TWO_WEAPONS, AD&D's: -2 main hand,
-        -4 off hand, plus the DEX reaction adjustment, never above 0. Rangers: none either way."""
+        -4 off hand, plus the DEX reaction adjustment, never above 0. Rangers: none either way;
+        a Twin-blade (kits.py) none with the rule."""
         dex = self.creature(creature)[CREATURE_ABILITIES + 1]
         sheet = self.sheet(creature)
         ranger = len(sheet) >= SHEET_FLAGS + 2 and struct.unpack_from("<H", sheet, SHEET_FLAGS)[0] & SHEET_FLAG_RANGER
@@ -1439,6 +1440,9 @@ class GameData:
         hand = "off hand" if slot == WEAPON_HANDS[1] else "main hand"
         if ranger:
             return f"two weapons, {hand} (ranger)", 0
+        from . import kits
+        if self.kit_id(creature) == kits.TWIN_BLADE:
+            return f"two weapons, {hand} (Twin-blade)", 0
         if slot not in WEAPON_HANDS or not self.melee_weapon_in(creature, sum(WEAPON_HANDS) - slot):
             return "two weapons", 0  # not a hand's weapon, or nothing to fight with in the other hand
         return (f"two weapons, {hand} at DEX {dex}",

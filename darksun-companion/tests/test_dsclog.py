@@ -1605,6 +1605,26 @@ class RuleTests(RingTests):
         self.assertEqual([self.two(adj, 4) for adj in (-3, 0, 1, 2, 5)], [-5, -2, -1, 0, 0])
         self.assertEqual([self.two(adj, 7) for adj in (-3, 0, 2, 3, 4, 5)], [-7, -4, -2, -1, 0, 0])
 
+    def test_twin_blade(self):
+        """A Twin-blade (kits on): no AD&D two-weapon penalty, as kits.py's; the game's own bonus
+        without the rule kept."""
+        self.hands()
+        seg, off = struct.unpack("<HH", self.mu.mem_read(GAME_DS * 16 + 0x1665, 4))[::-1]
+        sheets = 0xB800
+        self.mu.mem_write(GAME_DS * 16 + 0x1661, struct.pack("<HH", 0, sheets))
+        self.mu.mem_write(seg * 16 + off + 0x3A + 4, struct.pack("<H", 1))  # (creature 1: sheet 1)
+        sheet = bytearray(game.SHEET_SIZE)
+        sheet[0x21], sheet[0x43] = 10, 2
+        self.mu.mem_write(sheets * 16 + 0x47, bytes(sheet))
+        self.mu.mem_write(TSR * 16 + self.RULES + 100, struct.pack("<H", 1))  # (RULES_HI, +270)
+        try:
+            self.rules(4)
+            self.assertEqual([self.two(adj, 4) for adj in (-3, 0)] + [self.two(adj, 7) for adj in (-3, 0)], [0] * 4)
+            self.rules(0)
+            self.assertEqual(self.two(-6, 4), 6)
+        finally:
+            self.mu.mem_write(TSR * 16 + self.RULES + 100, struct.pack("<H", 0))
+
     def test_one_weapon_no_penalty(self):
         """A shield in the other hand, a bow in the missile slot, or the weapon not in a hand:
         no penalty, whatever the DEX."""
@@ -2468,7 +2488,18 @@ class KitTests(unittest.TestCase):
 
     CREATURES = 0x8200
 
-    def creature(self, cls, kit, index=5):
+    def test_grove_warden_ac(self):
+        """KIT_AC for a Grove Warden: 1 better for every 3 druid levels (kits.ac)."""
+        from dscompanion import kits
+        self.rules(game.RULE_KITS)
+        for level in range(1, 11):
+            with self.subTest(level=level):
+                self.creature(5, 1, level=level)
+                self.mu.mem_write(SS * 16 + BP + 6, struct.pack("<H", 7))
+                self.call(rb"\x2e\xf7\x06..\x01\x00\x74.\x53\x51\x52\x06\x89\xc1", eax=10, ebp=BP)
+                self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), 10 + kits.ac(kits.GROVE_WARDEN, False, level))
+
+    def creature(self, cls, kit, index=5, level=1):
         """Creature INDEX (its sheet the same number) of class CLS with kit KIT; the things
         table's thing 7 is it."""
         from dscompanion import kitpages
@@ -2479,7 +2510,7 @@ class KitTests(unittest.TestCase):
         rec[4:6] = struct.pack("<H", index)
         mu.mem_write(self.CREATURES * 16 + index * 0x3A, bytes(rec))
         sheet = bytearray(game.SHEET_SIZE)
-        sheet[0x21], sheet[kitpages.KIT_BYTE] = cls, kit
+        sheet[0x21], sheet[0x24], sheet[kitpages.KIT_BYTE] = cls, level, kit
         mu.mem_write(self.SHEET * 16 + index * 0x47, bytes(sheet))
         things = ((GAME_DS + 0x3972 - 0x4356) & 0xFFFF) * 16 + 0xC36
         mu.mem_write(things + 7 * 3, struct.pack("<Bh", 2, index))
@@ -2496,7 +2527,7 @@ class KitTests(unittest.TestCase):
                     sheet[0x21], sheet[kitpages.KIT_BYTE] = cls, kit
                     kid = kitpages.kit_id(bytes(sheet)) if rules else 0
                     self.mu.mem_write(SS * 16 + BP + 6, struct.pack("<H", 7))
-                    self.call(rb"\x2e\xf7\x06..\x01\x00\x74.\x53\x51\x06\x89\xc1", eax=10, ebp=BP)
+                    self.call(rb"\x2e\xf7\x06..\x01\x00\x74.\x53\x51\x52\x06\x89\xc1", eax=10, ebp=BP)
                     self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), 10 + kits.ac(kid, False))
                     self.call(rb"\x50\x89\xf0\xe8..\x3c\x0f", eax=120, esi=5)
                     self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), 120 + 10 * kits.move(kid))

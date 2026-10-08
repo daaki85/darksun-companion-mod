@@ -4291,13 +4291,14 @@ kit_of_creature:
         ret
 
 ; KIT_AC: AX (the AC the game's AC routine has for its creature, whose thing is its [BP+6]) with
-; the creature's kit's: a Raider's 1 worse, a Sentinel's 2 better with a shield in a hand. DS the
-; game's; others kept.
+; the creature's kit's: a Raider's 1 worse, a Sentinel's 2 better with a shield in a hand, a Grove
+; Warden's 1 better for every 3 druid levels. DS the game's; others kept.
 kit_ac:
         test word [cs:rules_hi], RULE_HI_KITS
         jz .ret
         push bx
         push cx
+        push dx
         push es
         mov cx, ax
         mov ax, ds
@@ -4308,10 +4309,29 @@ kit_ac:
         cmp byte [es:bx + THINGS], 2
         jne .out                ; (not a creature)
         mov ax, [es:bx + THINGS + 1]
+        push ax
         call kit_of_creature
+        pop bx                  ; (BX the creature)
         cmp al, KIT_RAIDER
-        jne .sentinel
+        jne .warden
         inc cx
+        jmp .out
+.warden:
+        cmp al, KIT_GROVE_WARDEN
+        jne .sentinel
+        mov ax, bx              ; 1 better for every 3 druid levels (the sheet's +24h: one class)
+        les bx, [CREATURES]
+        imul ax, ax, 0x3A
+        add bx, ax
+        mov ax, [es:bx + 4]
+        les bx, [0x1661]
+        imul ax, ax, 0x47
+        add bx, ax
+        movzx ax, byte [es:bx + 0x24]
+        mov dl, 3
+        div dl
+        movzx ax, al
+        sub cx, ax
         jmp .out
 .sentinel:
         cmp al, KIT_SENTINEL
@@ -4327,6 +4347,7 @@ kit_ac:
         sub cx, 2
 .out:   mov ax, cx
         pop es
+        pop dx
         pop cx
         pop bx
 .ret:   ret
@@ -5954,6 +5975,11 @@ probe_two:
         cmp byte [es:bx+THINGS], 2
         jne .out                ; not a creature
         mov ax, [es:bx+THINGS+1]
+        push ax                 ; (a Twin-blade: none, as a ranger; kits.py)
+        call kit_of_creature
+        cmp al, KIT_TWIN_BLADE
+        pop ax
+        je .out
         call worn_scan
         xor dx, dx
         cmp word [cs:ws_count], 0
