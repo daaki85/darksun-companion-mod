@@ -469,8 +469,7 @@ class BeltTests(unittest.TestCase):
         mu.mem_map(0, 0x100000)
         mu.mem_write(TSR * 16, image)
         self.hdr = TSR * 16 + image.find(HDR_SIG)
-        skills_on = image.find(HDR_SIG) + 266
-        handler = image.find(bytes.fromhex("fb2ef606") + struct.pack("<H", skills_on) + b"\x02")
+        handler = image.find(bytes.fromhex("fb89f0837e0a00"))
         self.assertGreater(handler, 0)
         mu.mem_write(VEC_BELT * 4, struct.pack("<HH", handler, TSR))
         mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
@@ -513,6 +512,22 @@ class BeltTests(unittest.TestCase):
     def test_no_belt(self):
         self.wear(20)  # (in the pack)
         self.assertEqual(self.chance(1), 40)
+
+    def test_assassin(self):
+        """An Assassin (kits on): 15 less to pick pockets and open locks (kits.thief_skill), the
+        belt's 5 still added, never below 0."""
+        from dscompanion import kits
+        sheets = 0xB000
+        self.mu.mem_write(self.DS * 16 + 0x1661, struct.pack("<HH", 0, sheets))
+        self.mu.mem_write(self.CREATURES * 16 + 0x3A + 4, struct.pack("<H", 2))  # (creature 1: sheet 2)
+        sheet = bytearray(game.SHEET_SIZE)
+        sheet[0x21], sheet[0x43] = 17, 2
+        self.mu.mem_write(sheets * 16 + 2 * 0x47, bytes(sheet))
+        self.mu.mem_write(self.hdr + 270, struct.pack("<H", 1))
+        self.assertEqual([self.chance(skill) for skill in range(4)], [30, 30, 40, 40])
+        self.assertEqual(self.chance(0, si=5), 0)
+        self.assertEqual(self.chance(0, on=0), 25)
+        self.assertEqual([kits.thief_skill(kits.ASSASSIN, k) for k in range(4)], [-15, -15, 0, 0])
 
 
 @unittest.skipIf(Uc is None, "unicorn is not installed")
@@ -1095,6 +1110,38 @@ class CanUseTests(unittest.TestCase):
                     self.assertEqual(self.can_use(bytes(s), t), expected)
         self.assertNotEqual(self.can_use(test_restrict.sheet(3, 15), 1), 0)
 
+    def test_kits(self):
+        """KIT_FORBIDS in PROBE_CAN_USE as restrict.kit_forbids (kits.forbids): the Twin-blade,
+        Brute, Stalker, Grove Warden and Lifebinder, a half-giant or not, the rule for half-giants'
+        hands on or off, for every item type of tests/test_restrict.py."""
+        hdr = TSR * 16 + load_image().find(HDR_SIG)
+        old = game.RULES_IN_FORCE
+        try:
+            for half_rule in (game.RULE_HALF_GIANT, 0):
+                rules = game.RULE_RESTRICT | half_rule
+                game.RULES_IN_FORCE = rules | game.RULE_KITS
+                self.mu.mem_write(hdr + 270, struct.pack("<H", 1))
+                for cls, kit in ((10, 2), (10, 3), (13, 1), (5, 1), (5, 2), (9, 3)):
+                    for race in (2, game.RACE_HALF_GIANT):
+                        s = bytearray(test_restrict.sheet(cls, race=race))
+                        s[0x43] = kit
+                        for t in test_restrict.TYPES:
+                            with self.subTest(half_rule=half_rule, cls=cls, kit=kit, race=race, type=t):
+                                mask = test_restrict.TYPES[t][3] & int.from_bytes(s[0x12:0x14], "little")
+                                ok = mask and restrict.allowed(bytes(s), t, test_restrict.record(t)) \
+                                    and not restrict.kit_forbids(bytes(s), t, test_restrict.record(t))
+                                self.assertEqual(self.can_use(bytes(s), t, rules=rules), mask if ok else 0)
+            game.RULES_IN_FORCE = game.RULE_KITS
+            brute = bytearray(test_restrict.sheet(10))
+            brute[0x43] = 3
+            self.assertFalse(restrict.kit_forbids(bytes(brute), 1, test_restrict.record(1)))  # (a bow, to use ...)
+            self.assertTrue(restrict.kit_forbids(bytes(brute), 1, test_restrict.record(1), spec=True))  # (... not as a spec)
+            self.assertTrue(restrict.kit_forbids(bytes(brute), 22, test_restrict.record(22)))  # (an axe: one hand)
+            self.assertFalse(restrict.kit_forbids(bytes(brute), 3, test_restrict.record(3)))  # (a quarterstaff)
+        finally:
+            game.RULES_IN_FORCE = old
+            self.mu.mem_write(hdr + 270, struct.pack("<H", 0))
+
     def test_off_as_the_game(self):
         psi = test_restrict.sheet(12)
         self.assertEqual(self.can_use(psi, 57, rules=0), 0x100 & 0x126F)
@@ -1300,6 +1347,24 @@ class KindsAllowedTests(unittest.TestCase):
                 got = mu.reg_read(r.UC_X86_REG_AX)
                 want = restrict.allowed_kinds(s, self.record)
                 self.assertEqual([k for k in range(16) if got >> k & 1], want)
+        old, hdr = game.RULES_IN_FORCE, TSR * 16 + image.find(HDR_SIG)
+        try:  # the kits that limit weapons: a Brute's two-handed melee kinds (no missile spec), a Lifebinder's blunt
+            game.RULES_IN_FORCE = game.RULE_KITS
+            mu.mem_write(hdr + 270, struct.pack("<H", 1))
+            for classes, kit in (((10,), 3), ((10,), 2), ((5,), 2), ((5,), 1)):
+                s = bytearray(sheet(*classes))
+                s[0x43] = kit
+                with self.subTest(classes=classes, kit=kit):
+                    mu.mem_write(SS * 16 + 0x500, bytes(s))
+                    mu.mem_write(SS * 16 + 0x7FC, struct.pack("<H", 0xFFF0))
+                    for name, value in dict(cs=TSR, ds=GAME_DS, es=SS, ebx=0x500, ss=SS, esp=0x7FC).items():
+                        mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+                    mu.emu_start(TSR * 16 + start, TSR * 16 + 0xFFF0)
+                    got = mu.reg_read(r.UC_X86_REG_AX)
+                    self.assertEqual([k for k in range(16) if got >> k & 1], restrict.allowed_kinds(bytes(s), self.record))
+        finally:
+            game.RULES_IN_FORCE = old
+            mu.mem_write(hdr + 270, struct.pack("<H", 0))
         ranger = restrict.allowed_kinds(sheet(13), self.record)  # (no bow: a ranger's expertise already)
         self.assertNotIn(specialize.KINDS.index("bow"), ranger)
         self.assertIn(specialize.KINDS.index("bow"), restrict.allowed_kinds(sheet(9), self.record))

@@ -2831,12 +2831,128 @@ probe_view_dam:
 probe_can_use:
         and ax, [es:bx + 0x12]
         jz .done
+        mov byte [cs:kf_spec], 0
+        call kit_forbids
+        jc .no
         test word [cs:rules], RULE_RESTRICT
         jz .done
         call class_forbids
         jnc .done
-        xor ax, ax
+.no:    xor ax, ax
 .done:  iret
+
+; KIT_FORBIDS: carry set if the kit of the character whose sheet is at ES:BX keeps it from item
+; type DX (kits.forbids): a Twin-blade a shield, and a two-handed weapon (but a half-giant's,
+; with RULE_HALF_GIANT); a Brute a one-handed melee weapon, and a shield (but a half-giant's,
+; with the rule), and with KF_SPEC set (a weapon spec chosen) a missile weapon; a Stalker armour
+; that isn't light (leather, or of no material); a Grove Warden a metal weapon; a Lifebinder a
+; weapon of a kind not blunt (KIT_BLUNT). DS the game's; all registers kept.
+KT_MELEE   equ 0x01             ; (the item type's +0 flags, +0Fh kind flags)
+KT_MISSILE equ 0x02
+KT_SHIELD  equ 0x04
+KT_ARMOUR  equ 0x80
+KT_TWO_HANDED equ 0x40
+KIT_BLUNT  equ 0xC112           ; bits by kind: club, mace, quarterstaff, sling, staff sling
+HALF_GIANT equ 5
+kit_forbids:
+        push ax
+        push bx
+        push cx
+        push es
+        call kit_id
+        jz .ok
+        mov cl, al              ; CL the kit, CH 1 for a half-giant with RULE_HALF_GIANT
+        xor ch, ch
+        cmp byte [es:bx + 0x18], HALF_GIANT
+        jne .type
+        test word [cs:rules], RULE_HALF_GIANT
+        jz .type
+        inc ch
+.type:  les bx, [ITEM_TYPES]
+        imul ax, dx, 0x14
+        add bx, ax
+        mov al, [es:bx]         ; AL the flags, AH the kind flags
+        mov ah, [es:bx + 0x0F]
+        cmp cl, KIT_TWIN_BLADE
+        jne .brute
+        test al, KT_SHIELD
+        jnz .no
+        test al, KT_MELEE | KT_MISSILE
+        jz .ok
+        test ah, KT_TWO_HANDED
+        jz .ok
+        or ch, ch
+        jnz .ok
+        jmp .no
+.brute: cmp cl, KIT_BRUTE
+        jne .stalker
+        test al, KT_SHIELD
+        jz .melee
+        or ch, ch
+        jnz .ok
+        jmp .no
+.melee: test al, KT_MELEE
+        jz .missile
+        test ah, KT_TWO_HANDED
+        jz .no
+        jmp .ok
+.missile:
+        test al, KT_MISSILE
+        jz .ok
+        cmp byte [cs:kf_spec], 0
+        jne .no
+        jmp .ok
+.stalker:
+        cmp cl, KIT_STALKER
+        jne .warden
+        test ah, KT_ARMOUR
+        jz .ok
+        test al, KT_SHIELD
+        jnz .ok
+        mov al, [es:bx + 8]     ; (the material: leather, or none)
+        and al, 0x4F
+        cmp al, LEATHER
+        je .ok
+        cmp al, 0x40
+        je .ok
+        jmp .no
+.warden:
+        cmp cl, KIT_GROVE_WARDEN
+        jne .lifebinder
+        test al, KT_MELEE | KT_MISSILE
+        jz .ok
+        mov al, [es:bx + 8]
+        and al, 0x4F
+        cmp al, MATERIAL_METAL
+        je .no
+        jmp .ok
+.lifebinder:
+        cmp cl, KIT_LIFEBINDER
+        jne .ok
+        cmp dx, KIND_TYPES
+        jae .ok
+        push si
+        mov si, dx
+        movzx ax, byte [cs:si + kind_of_type]
+        pop si
+        dec ax
+        js .ok                  ; (no kind: as the game has it)
+        bt word [cs:kit_blunt], ax
+        jc .ok
+.no:    pop es
+        pop cx
+        pop bx
+        pop ax
+        stc
+        ret
+.ok:    pop es
+        pop cx
+        pop bx
+        pop ax
+        clc
+        ret
+kit_blunt  dw KIT_BLUNT
+kf_spec    db 0
 
 ; CLASS_FORBIDS: carry set if the classes of the character whose sheet is at ES:BX keep it from
 ; item type DX (dscompanion/restrict.py, which says why): a psionicist, a multiclass thief, a
@@ -3542,6 +3658,8 @@ wp_allowed:
         cmp si, 3
         jb .class
         mov [cs:wp_sheet + 0x12], dx
+        mov al, [es:bx + KIT_BYTE]          ; (its kit: what it keeps the sheet from)
+        mov [cs:wp_sheet + KIT_BYTE], al
         push cs
         pop es
         mov bx, wp_sheet
@@ -3583,6 +3701,9 @@ kinds_allowed:
         and ax, [es:bx + 0x12]
         jz .no
         call class_forbids
+        jc .no
+        mov byte [cs:kf_spec], 1
+        call kit_forbids
         jc .no
         movzx cx, cl
         bts di, cx
@@ -8855,43 +8976,53 @@ ib_elf_quiet db 'Move 95%', 0
 ; PROBE_BELT: INT VEC_BELT replaces "mov ax,si" (2 bytes) at the end of the game's thief skill
 ; routine (DSUN.EXE 803B2h: SI the chance, armour and effects counted; DI the thief's object; the
 ; game's [BP+8] the skill, a dword). With SKILLS_BELT, a thief wearing a belt (the waist slot)
-; gets BELT_BONUS more to pick pockets (0) and open locks (1), as the Ledger counts it
-; (game.py's thief_skills_now); then AX = the chance, as the code would have.
+; gets BELT_BONUS more to pick pockets (0) and open locks (1), and an Assassin (kits.py) 15 less,
+; no less than 0, as the Ledger counts them (game.py's thief_skills_now); then AX = the chance, as
+; the code would have.
 WAIST      equ 5                ; the item's slot byte while worn as a belt
 BELT_BONUS equ 5
 COMBATANT_CREATURE equ 0xC37    ; in the things table: an object's creature (3 bytes an object)
 probe_belt:
         sti
-        test byte [cs:skills_on], SKILLS_BELT
-        jz .chance
+        mov ax, si
         cmp word [bp + 0x0A], 0
-        jne .chance
+        jne .out
         cmp word [bp + 8], 1
-        ja .chance
+        ja .out
         push bx
         push cx
         push dx
         push es
+        mov dx, si              ; DX the chance
         mov ax, ds
         add ax, THINGS_SEG
         mov [cs:r_things], ax
         mov es, ax
         imul bx, di, 3
         mov ax, [es:bx + COMBATANT_CREATURE]
+        mov cx, ax
+        test byte [cs:skills_on], SKILLS_BELT
+        jz .kit
         mov word [cs:ws_slot], WAIST
         mov word [cs:ws_type], 0xFFFF
+        push dx
         call worn_scan
+        pop dx
+        cmp word [cs:ws_count], 0
+        je .kit
+        add dx, BELT_BONUS
+.kit:   mov ax, cx              ; an Assassin's 15 less (kits.thief_skill), no less than 0
+        call kit_of_creature
+        cmp al, KIT_ASSASSIN
+        jne .done
+        sub dx, 15
+        jns .done
+        xor dx, dx
+.done:  mov ax, dx
         pop es
         pop dx
         pop cx
         pop bx
-        mov ax, si
-        cmp word [cs:ws_count], 0
-        je .out
-        add ax, BELT_BONUS
-        iret
-.chance:
-        mov ax, si
 .out:   iret
 
 old16      dd 0

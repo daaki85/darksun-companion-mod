@@ -1214,6 +1214,10 @@ class GameData:
         if 1 <= race <= 8:
             parts.append((RACE_NAMES[race], signed_byte(THIEF_RACE + race * 8 + skill)))
         parts.append((f"DEX {dex}", self._dex_part(table, dex, skill)))
+        from . import kits
+        kid = self.kit_id(creature)
+        if kits.stealth(kid):  # (a Stalker's)
+            parts.append((kits.name(kid), kits.stealth(kid)))
         return [(what, n) for what, n in parts if n or what.startswith("ranger")]
 
     def ranger_skill_now(self, creature: int, skill: int) -> Optional[int]:
@@ -1249,6 +1253,8 @@ class GameData:
         ids = {e.id for e in self._mine(creature, self.effects())}
         okay = rec[CREATURE_STATUS] in STATUS_ABLE
         belt = self.belt and any(item[ITEM_SLOT] == WAIST for _, item, _ in self._worn(creature))
+        from . import kits
+        kid = self.kit_id(creature)
         out = []
         for skill in skills:
             parts = self.thief_skill_parts(creature, skill)
@@ -1257,6 +1263,8 @@ class GameData:
             chance = sum(n for _, n in parts) - (table[skill] if penalty and len(table) == 8 else 0)
             if belt and skill in BELT_SKILLS:
                 chance += BELT_BONUS
+            if kits.thief_skill(kid, skill):  # (an Assassin's: no less than 0, as DSCLOG's PROBE_BELT)
+                chance = max(0, chance + kits.thief_skill(kid, skill))
             if any(skill in THIEF_CERTAIN.get(e, ()) for e in ids):
                 chance = 100
             elif not okay or any(skill in THIEF_BLOCKED.get(e, ()) for e in ids):

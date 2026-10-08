@@ -107,8 +107,20 @@ def specialized_back(sheet: bytes, kind: int) -> bool:
     return any(classes[i] in WARRIORS and levels[i] < levels[0] for i in (1, 2))
 
 
+def kit_forbids(sheet: bytes, item_type: int, typ: bytes, spec: bool = False) -> bool:
+    """Whether the character's kit (kits.py, the rule for kits in force) keeps it from an item
+    type, whatever the class restrictions; SPEC: choosing a weapon spec."""
+    from . import kitpages, kits
+    if not game.RULES_IN_FORCE & game.RULE_KITS:
+        return False
+    kind = specialize.kind_of(item_type) if is_weapon(typ) else None
+    half_giant = sheet[game.SHEET_RACE] == game.RACE_HALF_GIANT and bool(game.RULES_IN_FORCE & game.RULE_HALF_GIANT)
+    return kits.forbids(kitpages.kit_id(sheet), typ, kind, half_giant, spec)
+
+
 def allowed(sheet: bytes, item_type: int, typ: bytes) -> bool:
-    """Whether the character may equip an item of this type, given that the game lets it."""
+    """Whether the character may equip an item of this type, given that the game lets it (the
+    class restrictions; the kit's are kit_forbids)."""
     classes = [c for c in sheet[game.SHEET_CLASSES:game.SHEET_CLASSES + 3] if c]
     human = sheet[game.SHEET_RACE] == game.HUMAN
     holding = classes[:1] if human else classes
@@ -150,10 +162,11 @@ def no_spells(sheet: bytes, worn: Iterable[bytes]) -> bool:
 
 
 def usable(sheet: bytes, type_: int, typ: bytes) -> bool:
-    """Whether the game's class lists and these restrictions both let the character use an item
-    of this type (TYP its record)."""
+    """Whether the game's class lists, these restrictions and the kit's let the character use an
+    item of this type (TYP its record)."""
     flags = int.from_bytes(sheet[game.SHEET_FLAGS:game.SHEET_FLAGS + 2], "little")
-    return bool(int.from_bytes(typ[TYPE_CLASSES:TYPE_CLASSES + 2], "little") & flags) and allowed(sheet, type_, typ)
+    return bool(int.from_bytes(typ[TYPE_CLASSES:TYPE_CLASSES + 2], "little") & flags) and allowed(sheet, type_, typ) \
+        and not kit_forbids(sheet, type_, typ)
 
 
 def allowed_kinds(sheet: bytes, type_record) -> List[int]:
@@ -164,4 +177,5 @@ def allowed_kinds(sheet: bytes, type_record) -> List[int]:
     ranger = int.from_bytes(sheet[game.SHEET_FLAGS:game.SHEET_FLAGS + 2], "little") & 0x200
     return [kind for kind, name in enumerate(specialize.KINDS)
             if not (ranger and name == "bow")
-            and any(usable(sheet, t, type_record(t)) for t in specialize._TYPES[name])]
+            and any(usable(sheet, t, type_record(t)) and not kit_forbids(sheet, t, type_record(t), spec=True)
+                    for t in specialize._TYPES[name])]

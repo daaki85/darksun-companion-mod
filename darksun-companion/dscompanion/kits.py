@@ -10,6 +10,14 @@ from .kitpages import KIT_IDS, KITS
 
 RAIDER, SENTINEL, STALKER = KIT_IDS["Raider"], KIT_IDS["Sentinel"], KIT_IDS["Stalker"]
 MYRMIDON, CHAMPION = KIT_IDS["Myrmidon"], KIT_IDS["Arena Champion"]
+ASSASSIN = KIT_IDS["Assassin"]
+TWIN_BLADE, BRUTE = KIT_IDS["Twin-blade"], KIT_IDS["Brute"]
+GROVE_WARDEN, LIFEBINDER = KIT_IDS["Grove Warden"], KIT_IDS["Lifebinder"]
+# the item type's +00h flags and +0Fh kind flags, +08h material (restrict.py's)
+MELEE, MISSILE, SHIELD, TWO_HANDED, ARMOUR = 0x01, 0x02, 0x04, 0x40, 0x80
+METAL, LEATHER, NO_MATERIAL = 4, 5, 0x40
+# a Lifebinder's weapon kinds (specialize.KINDS' numbers): club, mace, quarterstaff, sling, staff sling
+BLUNT = frozenset((1, 4, 8, 14, 15))
 # the charms (DSCLOG's KIT_CHARMS): Charm Person, Charm Monster, Domination, Charm Person or
 # Mammal, and the psionic Domination and Mass Domination
 CHARMS = (2, 40, 61, 82, 158, 159)
@@ -61,3 +69,41 @@ def champion(kid: int, open_ground: Optional[bool]) -> int:
     if kid != CHAMPION or open_ground is None:
         return 0
     return 1 if open_ground else -1
+
+
+def thief_skill(kid: int, skill: int) -> int:
+    """Added to a thief skill (game.THIEF_SKILLS' numbers; the helper's PROBE_BELT): an Assassin's
+    -15 to pick pockets (0) and open locks (1)."""
+    return -15 if kid == ASSASSIN and skill in (0, 1) else 0
+
+
+def stealth(kid: int) -> int:
+    """Added to a ranger's hiding in shadows and moving silently (the stealth rule's, rolled by
+    the Ledger): a Stalker's 15."""
+    return 15 if kid == STALKER else 0
+
+
+def forbids(kid: int, typ: bytes, kind: Optional[int], half_giant: bool, spec: bool = False) -> bool:
+    """Whether the kit keeps a character from an item type (TYP its record; KIND its weapon kind,
+    or None), as DSCLOG's KIT_FORBIDS: a Twin-blade a shield, and a two-handed weapon (but a
+    half-giant's, HALF_GIANT: with the rule for its hands); a Brute a one-handed melee weapon, a
+    shield (but a half-giant's), and, choosing a weapon spec (SPEC), a missile weapon; a Stalker
+    armour that isn't light; a Grove Warden a metal weapon; a Lifebinder a weapon of a kind not
+    blunt."""
+    flags, kinds, mat = typ[0], typ[0x0F], typ[8] & 0x4F
+    weapon = bool(flags & (MELEE | MISSILE))
+    if kid == TWIN_BLADE:
+        return bool(flags & SHIELD) or weapon and bool(kinds & TWO_HANDED) and not half_giant
+    if kid == BRUTE:
+        if flags & SHIELD:
+            return not half_giant
+        if flags & MELEE:
+            return not kinds & TWO_HANDED
+        return bool(flags & MISSILE) and spec
+    if kid == STALKER:
+        return bool(kinds & ARMOUR) and not flags & SHIELD and mat not in (LEATHER, NO_MATERIAL)
+    if kid == GROVE_WARDEN:
+        return weapon and mat == METAL
+    if kid == LIFEBINDER:
+        return kind is not None and kind not in BLUNT
+    return False

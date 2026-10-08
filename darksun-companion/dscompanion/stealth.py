@@ -30,7 +30,7 @@ square) says which, and the tile numbers of those maps' indoor floors are below.
 import struct
 from typing import Callable, List, Optional, Tuple
 
-from . import game
+from . import game, kits
 from .game import GameData
 
 HIDE, MOVE = 4, 3  # thief skill numbers (game.THIEF_SKILLS)
@@ -176,6 +176,8 @@ def turn(gd: GameData, combatant: int, roll: Callable[[], int], gear: bool = Tru
     if ranger:  # at home under the open sky
         need = hide if sun else hide // 2
         why = f"{shown}, a ranger under the open sky" if sun else f"{shown}, halved indoors for a ranger"
+    elif sun and gd.kit_id(creature) == kits.ASSASSIN:  # (kits.py: not halved in daylight)
+        need, why = hide, f"{shown}, an Assassin: not halved in daylight"
     else:
         need = hide // 2 if sun else hide
         why = f"{shown}, halved in daylight" if sun else f"{shown}, out of the sun"
