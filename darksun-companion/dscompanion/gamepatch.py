@@ -65,6 +65,7 @@ VEC_HP_BEST = 0xBA
 VEC_TOME = 0xB9
 VEC_INIT = 0xB8
 VEC_THAC0 = 0xB7
+VEC_SLOTS, VEC_SLOT_LEVEL = 0xB6, 0xB5
 
 
 SCRIPT_BUFFER = 0x2E00  # the scripts' buffer, made bigger (the game's: 10000 bytes)
@@ -338,6 +339,9 @@ PATCHES = (
     Patch("init", 0x5750E, bytes.fromhex("83c214"), _interrupt(VEC_INIT, 3)),
     # the end of the THAC0 routine: a kit's THAC0 (kits.thac0)
     Patch("thac0", 0x876BB, bytes.fromhex("b814002bc6"), _interrupt(VEC_THAC0, 5)),
+    # the spell slot routine: a kit's slots (kits.slots), and the level an Elementalist's count from
+    Patch("slots", 0x5E255, bytes.fromhex("8b46fe"), _interrupt(VEC_SLOTS, 3)),
+    Patch("slot_level", 0x5E1F6, bytes.fromhex("268a4724"), _interrupt(VEC_SLOT_LEVEL, 4)),
     # A bug of the game's own: the roster's DELETE (DSUN.EXE 54AC1h) picked the character by the
     # row clicked alone, where ADD takes the row plus how far the list is scrolled; with the list
     # scrolled, another character was deleted (the row's from the top). The same code, the scroll

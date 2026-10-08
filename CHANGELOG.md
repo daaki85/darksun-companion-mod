@@ -35,6 +35,11 @@ Released pull requests are summarised in a line or two each; the release notes
   end of the game's THAC0 routine (INT B7h); the Swashbuckler's −10 to every
   thief skill, named in the dice log's thief skill lines as the Assassin's
   now is.
+- **Kits' spell slots:** the Arcanist's wizard slots 1 more at each spell
+  level, the Battle Mage's and Crusader's 1 fewer, the Elementalist's a level
+  behind, the Seeker's and Justifier's priest slots their own tables, through
+  two new probes in the game's slot routine (INT B6h, INT B5h); the Ledger's
+  Spells tab counts them the same way.
 
 **Changed** (for the kits)
 - **The dice log's ring holds 96 entries** (was 128), making room in upper

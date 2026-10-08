@@ -1073,6 +1073,7 @@ emulated tests hold the helper to it:
 | to hit | Ravager, Brute, Arena Champion | `PROBE_ATTACKS` (`KIT_TO_HIT`: `KIT_CHAMPION`, and `KIT_MELEE` in melee) |
 | AC | Ravager (`RAVAGER_AC` by level against the sheet's base AC, `+27h`), Wanderer, Sentinel and Arena Champion (a shield in a hand: `PROT_SCAN`), Grove Warden | `PROBE_AC` (`INT 62h`, the end of the AC routine: `KIT_AC`) |
 | movement | Stalker | `PROBE_MOVE` (`KIT_MOVE`) |
+| spell slots | Arcanist (+1 wizard), Battle Mage (−1 wizard), Crusader (−1 priest), Seeker and Justifier (their priest tables, `SEEKER_SLOTS`, by ranger level, in place of the game's), Elementalist (a level behind) | `PROBE_SLOTS` (`INT B6h`, new: the end of the game's slot routine, `mov ax,[bp-2]` at DSUN.EXE 5E255h) and `PROBE_SLOT_LEVEL` (`INT B5h`, new: where it takes a class's level, `mov al,es:[bx+24h]` at 5E1F6h); `GameData.max_spell_slots` with `kits.slots` and `kits.slot_level` |
 | THAC0 | Swashbuckler, Crusader, Battle Mage, Mind Warrior (a warrior's: 21 less the level, where better), Scholar (1 worse) | `PROBE_THAC0` (`INT B7h`, new: the end of the game's THAC0 routine, `mov ax,14h / sub ax,si` at DSUN.EXE 876BBh, which every write of a creature's THAC0, `+1Fh`, uses: on making a character, 66CE0h, and at a level up, 86D7Eh and 87A91h) |
 | initiative | Sentinel | `PROBE_INIT` (`INT B8h`, new: the round's 20 added at DSUN.EXE 5750Eh) |
 | saves | Myrmidon (charms), Sentinel (spells, 0-137), Wanderer (fire and cold: the spell record's `+1Ah`, 2 or 4, as the game's Resist Fire and Resist Cold read it) | `PROBE_RING_SAVE` (the modifier routine's start: `KIT_SAVE`) |
@@ -1087,7 +1088,6 @@ Still to build, a new hook at a place already found:
 
 | Effect | Kits | Where |
 |---|---|---|
-| spell slots | Elementalist, Crusader, Battle Mage, Arcanist, Seeker, Justifier | the slots given on resting (5E0ACh) and the classes' rule words, which `GameData.max_spell_slots` reads |
 | max PSP | Mind Warrior | the level-up's sum at 873B2h |
 | spells learnt at a level up | Scholar, Shinobi (one, from its list) | the CHOOSE A SPELL screen (see levels up to 10) |
 
@@ -1116,8 +1116,11 @@ helper's code (emulated) to the Python.
    the ring at 96 entries, for room in upper memory.
 3. THAC0 and spell slot hooks. Done: the THAC0 (Swashbuckler, Crusader,
    Battle Mage, Mind Warrior, Scholar) and the Swashbuckler's thief skills.
-   Next: the spell slots (Crusader, Battle Mage, Arcanist, Elementalist,
-   Justifier, Seeker) and the Scholar's spell learnt.
+   Done too: the spell slots (Crusader, Battle Mage, Arcanist, Elementalist,
+   Justifier, Seeker), checked against the game's own routine run on a
+   running game's memory. Left for later: the Scholar's spell learnt, with the
+   CHOOSE A SPELL screen (the Shinobi's step), and whether the game lets a
+   Seeker below 8th level choose priest spells for its slots.
 4. After finding them: PSP costs (Mind Bender, Kineticist), spell dice
    (Healer, Lifebinder), casting level (Seeker, Justifier), a hit spoiling a
    spell (Battle Mage, if the game has it).

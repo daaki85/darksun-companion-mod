@@ -2700,6 +2700,87 @@ class KitTests(unittest.TestCase):
         self.assertEqual([kits.thac0(kits.SWASHBUCKLER, 9, 16), kits.thac0(kits.SCHOLAR, 9, 18),
                           kits.thac0(kits.CRUSADER, 25, 4), kits.thac0(0, 9, 16)], [12, 19, 1, 16])
 
+    KIT_CASES = ((11, 3), (11, 2), (11, 1), (1, 3), (1, 1), (13, 3), (13, 2), (13, 1), (17, 1), (9, 0))
+
+    def kit_of(self, cls, kit, rules=game.RULE_KITS):
+        from dscompanion import kitpages
+        sheet = bytearray(game.SHEET_SIZE)
+        sheet[0x21], sheet[kitpages.KIT_BYTE] = cls, kit
+        return kitpages.kit_id(bytes(sheet)) if rules & game.RULE_KITS else 0
+
+    def test_slots(self):
+        """PROBE_SLOTS: the slots the game's routine gives ([BP-2]), with kits.slots."""
+        from dscompanion import kits
+        from dscompanion.gamepatch import VEC_SLOTS
+        at = self.image.find(bytes.fromhex("5351068b4efe"))
+        self.assertGreater(at, 0)
+        self.mu.mem_write(VEC_SLOTS * 4, struct.pack("<HH", at, TSR))
+        self.mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
+        self.mu.mem_write(CALLER * 16 + 0x600, bytes((0xCD, VEC_SLOTS, 0x90)))
+        for rules in (game.RULE_KITS, 0):
+            self.rules(rules)
+            for cls, kit in self.KIT_CASES:
+                kid = self.kit_of(cls, kit, rules)
+                for level in (1, 5, 6, 7, 8, 9, 10, 12):
+                    self.creature(cls, kit, level=level)
+                    for magic in (kits.WIZARD, kits.PRIEST):
+                        for spell_level in (1, 2, 3, 4):
+                            for given in (0, 1, 3):
+                                with self.subTest(rules=rules, cls=cls, kit=kit, level=level, magic=magic,
+                                                  spell_level=spell_level, given=given):
+                                    self.mu.mem_write(SS * 16 + BP - 2, struct.pack("<H", given))
+                                    self.mu.mem_write(SS * 16 + BP + 6, struct.pack("<HHH", 7, magic, spell_level))
+                                    for name, value in dict(cs=CALLER, ds=self.DS, ss=SS, esp=0x7FC, ebp=BP,
+                                                            eflags=IF | 2, ebx=0x2222, ecx=0x3333, edx=0x4444,
+                                                            es=0x6666).items():
+                                        self.mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+                                    self.mu.emu_start(CALLER * 16 + 0x600, CALLER * 16 + 0x603)
+                                    self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX),
+                                                     kits.slots(kid, magic, level, spell_level, given))
+                                    self.assertEqual([self.mu.reg_read(x) for x in (
+                                        r.UC_X86_REG_BX, r.UC_X86_REG_CX, r.UC_X86_REG_DX, r.UC_X86_REG_ES,
+                                        r.UC_X86_REG_SP)], [0x2222, 0x3333, 0x4444, 0x6666, 0x7FC])
+        self.assertEqual([kits.slots(kits.SEEKER, kits.PRIEST, lv, sl, 9) for lv in (5, 6, 8, 10, 15) for sl in (1, 3)],
+                         [0, 0, 1, 0, 2, 0, 2, 1, 2, 1])
+        self.assertEqual([kits.slots(kits.ARCANIST, kits.WIZARD, 5, 1, n) for n in (0, 2)], [0, 3])
+
+    def test_slot_level(self):
+        """PROBE_SLOT_LEVEL: the class level the slot rules are given (ES:BX the sheet + DI), an
+        Elementalist's 1 less (kits.slot_level); AH kept."""
+        from dscompanion import kits
+        from dscompanion.gamepatch import VEC_SLOT_LEVEL
+        at = self.image.find(bytes.fromhex("535188e529fb"))
+        self.assertGreater(at, 0)
+        self.mu.mem_write(VEC_SLOT_LEVEL * 4, struct.pack("<HH", at, TSR))
+        self.mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
+        self.mu.mem_write(CALLER * 16 + 0x600, bytes((0xCD, VEC_SLOT_LEVEL, 0x90, 0x90)))
+        for rules in (game.RULE_KITS, 0):
+            self.rules(rules)
+            for cls, kit in self.KIT_CASES + ((1, 2),):
+                for level in (0, 1, 7):
+                    with self.subTest(rules=rules, cls=cls, kit=kit, level=level):
+                        sheet = bytearray(game.SHEET_SIZE)
+                        sheet[0x21], sheet[0x24], sheet[0x43] = cls, level, kit
+                        self.mu.mem_write(self.SHEET * 16, bytes(sheet))
+                        for name, value in dict(cs=CALLER, ds=self.DS, ss=SS, esp=0x7FC, eflags=IF | 2,
+                                                eax=0x5500, ebx=0, edi=0, es=self.SHEET, ecx=0x3333).items():
+                            self.mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+                        self.mu.emu_start(CALLER * 16 + 0x600, CALLER * 16 + 0x604)
+                        kid = self.kit_of(cls, kit, rules)
+                        self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), 0x5500 | kits.slot_level(kid, level))
+                        self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_BX, r.UC_X86_REG_CX,
+                                                                        r.UC_X86_REG_SP)], [0, 0x3333, 0x7FC])
+        # a second class's level (DI 1): the sheet's own kit, none for more than one class
+        sheet = bytearray(game.SHEET_SIZE)
+        sheet[0x21], sheet[0x22], sheet[0x25], sheet[0x43] = 1, 5, 7, 1
+        self.mu.mem_write(self.SHEET * 16, bytes(sheet))
+        self.rules(game.RULE_KITS)
+        for name, value in dict(cs=CALLER, ds=self.DS, ss=SS, esp=0x7FC, eflags=IF | 2, eax=0, ebx=1, edi=1,
+                                es=self.SHEET).items():
+            self.mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+        self.mu.emu_start(CALLER * 16 + 0x600, CALLER * 16 + 0x604)
+        self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), 7)
+
     def test_kit_id(self):
         from dscompanion import kitpages
         self.rules(game.RULE_KITS)

@@ -100,6 +100,8 @@ VEC_HP_BEST equ 0xBA       ; PROBE_HP_BEST
 VEC_TOME equ 0xB9          ; PROBE_TOME
 VEC_INIT equ 0xB8          ; PROBE_INIT
 VEC_THAC0 equ 0xB7         ; PROBE_THAC0
+VEC_SLOTS equ 0xB6         ; PROBE_SLOTS
+VEC_SLOT_LEVEL equ 0xB5    ; PROBE_SLOT_LEVEL
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 96          ; entries in the ring (96: the helper and it fit in upper memory)
@@ -4578,6 +4580,126 @@ probe_thac0:
         mov cx, ax
 .out:   mov ax, cx
         pop es
+        pop cx
+        pop bx
+        iret
+
+; PROBE_SLOTS: INT VEC_SLOTS replaces "mov ax,[bp-2]" (3 bytes: INT + NOP; DSUN.EXE 5E255h) at the
+; end of the game's spell slot routine (the slots a combatant has at a spell level, on resting
+; and wherever the most is wanted: [BP+6] the combatant, [BP+8] the kind of magic, 1 wizard and 2
+; priest, [BP+0Ah] the spell level; [BP-2] the slots its classes give): AX the slots, with the
+; kit's (kits.slots): an Arcanist's wizard slots 1 more at each spell level it has any, a Battle
+; Mage's 1 fewer, a Crusader's priest slots 1 fewer; a Seeker's and a Justifier's priest slots
+; their own tables' (SEEKER_SLOTS), by ranger level.
+SLOT_WIZARD  equ 1
+SLOT_PRIEST  equ 2
+probe_slots:
+        push bx
+        push cx
+        push es
+        mov cx, [bp - 2]
+        mov ax, ds
+        add ax, THINGS_SEG
+        mov es, ax
+        imul bx, [bp + 6], 3
+        mov ax, [es:bx + COMBATANT_CREATURE]
+        push ax
+        call kit_of_creature
+        pop bx                  ; (BX the creature)
+        jz .out
+        cmp al, KIT_ARCANIST
+        jne .battle
+        cmp byte [bp + 8], SLOT_WIZARD
+        jne .out
+        or cx, cx
+        jz .out
+        inc cx
+        jmp .out
+.battle:
+        cmp al, KIT_BATTLE_MAGE
+        jne .crusader
+        cmp byte [bp + 8], SLOT_WIZARD
+        je .fewer
+        jmp .out
+.crusader:
+        cmp al, KIT_CRUSADER
+        jne .seeker
+        cmp byte [bp + 8], SLOT_PRIEST
+        jne .out
+.fewer: or cx, cx
+        jz .out
+        dec cx
+        jmp .out
+.seeker:
+        cmp al, KIT_SEEKER
+        je .table
+        cmp al, KIT_JUSTIFIER
+        jne .out
+.table: cmp byte [bp + 8], SLOT_PRIEST
+        jne .out
+        push dx
+        mov dl, al
+        mov ax, bx
+        les bx, [CREATURES]
+        imul ax, ax, 0x3A
+        add bx, ax
+        mov ax, [es:bx + 4]
+        les bx, [0x1661]
+        imul ax, ax, 0x47
+        add bx, ax
+        movzx ax, byte [es:bx + 0x24]   ; (the ranger level)
+        xor cx, cx
+        movzx bx, byte [bp + 0x0A]
+        dec bx
+        cmp bx, 2
+        ja .table_out           ; (spell levels 1 to 3 only)
+        cmp dl, KIT_JUSTIFIER
+        jne .seeker_level
+        cmp ax, 10
+        jb .table_out
+        or bx, bx
+        jnz .table_out
+        inc cx                  ; (one 1st-level slot from 10th level)
+        jmp .table_out
+.seeker_level:
+        cmp ax, 6
+        jb .table_out
+        cmp ax, 10
+        jbe .row
+        mov ax, 10
+.row:   sub ax, 6
+        imul ax, ax, 3
+        add bx, ax
+        mov cl, [cs:bx + seeker_slots]
+.table_out:
+        pop dx
+.out:   mov ax, cx
+        pop es
+        pop cx
+        pop bx
+        iret
+; a Seeker's priest slots at spell levels 1, 2 and 3, by ranger level 6 to 10 (and on: kits.SEEKER_SLOTS)
+seeker_slots db 1, 0, 0,  2, 0, 0,  2, 1, 0,  2, 2, 0,  2, 2, 1
+
+; PROBE_SLOT_LEVEL: INT VEC_SLOT_LEVEL replaces "mov al,es:[bx+24h]" (4 bytes: INT + 2 NOPs;
+; DSUN.EXE 5E1F6h) in the game's spell slot routine, where it takes a class's level (ES:BX the
+; sheet + DI, the class's place): AL that level, an Elementalist's 1 less (kits.slot_level: its
+; slots a level behind). Others kept.
+probe_slot_level:
+        push bx
+        push cx
+        mov ch, ah
+        sub bx, di
+        call kit_id
+        mov cl, al
+        add bx, di
+        mov al, [es:bx + 0x24]
+        cmp cl, KIT_ELEMENTALIST
+        jne .out
+        or al, al
+        jz .out
+        dec al
+.out:   mov ah, ch
         pop cx
         pop bx
         iret
@@ -9562,6 +9684,12 @@ install:                        ; DS = ES = PSP, CS = the image
         int 21h
         mov ax, 2500h + VEC_THAC0
         mov dx, probe_thac0
+        int 21h
+        mov ax, 2500h + VEC_SLOTS
+        mov dx, probe_slots
+        int 21h
+        mov ax, 2500h + VEC_SLOT_LEVEL
+        mov dx, probe_slot_level
         int 21h
         mov ax, 3516h           ; the keyboard's (TARGETING)
         int 21h

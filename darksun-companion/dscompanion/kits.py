@@ -13,6 +13,12 @@ MYRMIDON, CHAMPION = KIT_IDS["Myrmidon"], KIT_IDS["Arena Champion"]
 ASSASSIN, SWASHBUCKLER = KIT_IDS["Assassin"], KIT_IDS["Swashbuckler"]
 CRUSADER, SCHOLAR, BATTLE_MAGE, MIND_WARRIOR = (KIT_IDS["Crusader"], KIT_IDS["Scholar"], KIT_IDS["Battle Mage"],
                                                 KIT_IDS["Mind Warrior"])
+ELEMENTALIST, SEEKER, JUSTIFIER = KIT_IDS["Elementalist"], KIT_IDS["Seeker"], KIT_IDS["Justifier"]
+WIZARD, PRIEST = 1, 2  # (the kinds of magic, as game.MAGIC_KINDS has their bits)
+# a Seeker's priest slots at spell levels 1, 2 and 3, by ranger level from 6 (the 10th's on: DSCLOG's
+# SEEKER_SLOTS); a Justifier's one 1st-level slot from 10th level
+SEEKER_SLOTS = ((1, 0, 0), (2, 0, 0), (2, 1, 0), (2, 2, 0), (2, 2, 1))
+SEEKER_FIRST, JUSTIFIER_FIRST = 6, 10
 # the kits with a warrior's THAC0 (PROBE_THAC0)
 WARRIOR_THAC0 = frozenset((SWASHBUCKLER, CRUSADER, BATTLE_MAGE, MIND_WARRIOR))
 TWIN_BLADE, BRUTE = KIT_IDS["Twin-blade"], KIT_IDS["Brute"]
@@ -81,6 +87,32 @@ def thac0(kid: int, level: int, game_thac0: int) -> int:
     if kid in WARRIOR_THAC0:
         return min(game_thac0, max(1, 21 - level))
     return game_thac0
+
+
+def slot_level(kid: int, level: int) -> int:
+    """The class level the spell slots are counted from (PROBE_SLOT_LEVEL): an Elementalist's a
+    level behind."""
+    return max(0, level - 1) if kid == ELEMENTALIST else level
+
+
+def slots(kid: int, magic: int, level: int, spell_level: int, game_slots: int) -> int:
+    """The spell slots at SPELL_LEVEL of a character of kit KID and class level LEVEL, the game
+    giving GAME_SLOTS of MAGIC (WIZARD or PRIEST) (PROBE_SLOTS): an Arcanist's wizard slots 1 more
+    at each spell level it has any, a Battle Mage's 1 fewer, a Crusader's priest slots 1 fewer; a
+    Seeker's and a Justifier's priest slots their own tables' (SEEKER_SLOTS), WIS's left out."""
+    if kid == ARCANIST and magic == WIZARD:
+        return game_slots + 1 if game_slots else 0
+    if (kid == BATTLE_MAGE and magic == WIZARD) or (kid == CRUSADER and magic == PRIEST):
+        return max(0, game_slots - 1)
+    if kid in (SEEKER, JUSTIFIER) and magic == PRIEST:
+        if not 1 <= spell_level <= 3:
+            return 0
+        if kid == JUSTIFIER:
+            return int(level >= JUSTIFIER_FIRST and spell_level == 1)
+        if level < SEEKER_FIRST:
+            return 0
+        return SEEKER_SLOTS[min(level, SEEKER_FIRST + len(SEEKER_SLOTS) - 1) - SEEKER_FIRST][spell_level - 1]
+    return game_slots
 
 
 def move(kid: int) -> int:

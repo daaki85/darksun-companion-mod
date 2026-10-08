@@ -1091,7 +1091,8 @@ class GameData:
         casting this kind of magic, rules from its tables applied to the class level and then WIS.
         A rule word: bits 8-11 the most it gives, bits 4-7 one more than the spell level it
         starts below, bit 0 how odd values round. A human's later (dual) classes count only while
-        their level is below the first class's. Without `wis`, the class levels' alone."""
+        their level is below the first class's. Without `wis`, the class levels' alone. Then the
+        kit's (kits.slot_level, kits.slots), as DSCLOG's PROBE_SLOT_LEVEL and PROBE_SLOTS."""
         if member < 4 and self._word(SLOTS_ALL_19) == 1:  # the game's own test switch
             return 19
         sheet = self.sheet(member)
@@ -1099,9 +1100,11 @@ class GameData:
             return 0
         ability = self.creature(member)[CREATURE_ABILITIES + 4]
         magic = self.guest.read((self.load_seg + CLASS_MAGIC_SEG) * 16 + CLASS_MAGIC_OFF, 4 * 32)
+        from . import kits
+        kid = self.kit_id(member)
         total = 0
         for n in range(3):
-            cls, level = sheet[SHEET_CLASSES + n], sheet[SHEET_LEVELS + n]
+            cls, level = sheet[SHEET_CLASSES + n], kits.slot_level(kid, sheet[SHEET_LEVELS + n])
             if not cls or cls >= 32 or not magic[cls * 4] & bit:
                 continue
             if n and sheet[SHEET_RACE] == HUMAN and level >= sheet[SHEET_LEVELS]:
@@ -1117,7 +1120,7 @@ class GameData:
                     count += 1
                 total += min(max(count, 0), most)
                 rules >>= 4
-        return total
+        return kits.slots(kid, bit, sheet[SHEET_LEVELS], spell_level, total)
 
     def class_level(self, creature: int, cls: int) -> int:
         """The creature's level in one class (0 if it hasn't that class)."""

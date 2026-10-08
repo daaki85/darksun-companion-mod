@@ -1623,17 +1623,24 @@ and costs something.
 | **Swashbuckler** (thief) | a warrior's THAC0 (21 less its level) | −10 to every thief skill |
 | **Grove Warden** (druid) | AC 1 better for every 3 druid levels | no metal weapons |
 | **Wanderer** (druid) | resists fire and cold as the Resist Fire and Resist Cold spells do: +3 on saves against fire and cold spells | AC 1 worse |
-| **Arcanist** (preserver) | *to come:* a spell slot more at each spell level | −2 CON |
+| **Arcanist** (preserver) | a spell slot more at each spell level it has slots at | −2 CON |
 | **Shinobi** (thief) | *to come:* a few preserver spells | dagger, short sword, quarterstaff, chatkcha, sling, staff sling and bow only; light armour only; no shield |
 | **Lifebinder** (druid) | *to come:* healing spells heal a die more | blunt weapons only (club, mace, quarterstaff, sling, staff sling) |
 | **Scholar** (preserver) | *to come:* a spell more learnt at each level up | −1 to hit (THAC0 1 worse) |
-| **Crusader** (cleric) | a warrior's THAC0 | *to come:* one fewer spell slot at each spell level |
-| **Battle Mage** (preserver) | a warrior's THAC0; *to come:* a d6 hit die, expertise in a one-handed melee weapon, spells cast in light armour | *to come:* one fewer spell slot at each spell level; nothing in the off hand |
+| **Crusader** (cleric) | a warrior's THAC0 | one fewer spell slot at each spell level |
+| **Elementalist** (cleric) | *to come:* a second sphere: its spells and its weapons | spell slots a level behind (a 7th-level Elementalist has a 6th-level cleric's; none at 1st level) |
+| **Seeker** (ranger) | priest spell slots from 6th level: one 1st-level slot at 6th, two at 7th, and a 2nd-level slot at 8th, two at 9th, and a 3rd-level slot at 10th (and on), in place of a ranger's; *to come:* cast at a casting level of the ranger level less 5 | *to come:* its sphere's weapon limits (but it keeps the bow) |
+| **Justifier** (ranger) | *to come:* the bow's and its weapon spec's expertise become specialization | one 1st-level priest spell slot from 10th level, in place of a ranger's slots |
+| **Battle Mage** (preserver) | a warrior's THAC0; *to come:* a d6 hit die, expertise in a one-handed melee weapon, spells cast in light armour | one fewer spell slot at each spell level; *to come:* nothing in the off hand |
 | **Mind Warrior** (psionicist) | a warrior's THAC0; *to come:* a d8 hit die | *to come:* a tenth fewer PSP |
 
-Still to come: the Elementalist and Healer (cleric), the Justifier and Seeker
-(ranger), the Shinobi's spells (thief), the Mind Bender and Kineticist
-(psionicist), and the parts marked *to come* above.
+Still to come: the Healer (cleric), the Shinobi's spells (thief), the Mind
+Bender and Kineticist (psionicist), and the parts marked *to come* above.
+
+The kits' spell slots are the game's own wherever it counts them (on resting,
+in the spell lists), and the Ledger's Spells tab shows the same. WIS's bonus
+slots count for the Arcanist, Crusader and Elementalist as for their classes,
+not for the Seeker's and Justifier's own tables.
 
 A warrior's THAC0 is the game's own for a fighter, given where it is better
 than the character's class's; it and the Scholar's are in the THAC0 the game
