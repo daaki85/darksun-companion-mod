@@ -8,9 +8,10 @@ Released pull requests are summarised in a line or two each; the release notes
 ## Pull request #29 (in progress)
 
 **Documentation**
-- The guide opens with what the Ledger does: shows what the game hides,
-  brings the rules closer to AD&D, and adds to Athas, in place of the one-line
-  description and the list under What it does.
+- **What it does**, on the front page and in the guide alike: what the Ledger
+  shows of the game's hidden rolls, how it brings the rules closer to AD&D,
+  what it adds to Athas and on the screen, and its quality of life changes,
+  in place of the old description and lists.
 
 ## Pull request #28 ([merged 2026-10-08](https://github.com/daaki85/darksun-companion-mod/pull/28))
 

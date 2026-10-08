@@ -80,9 +80,7 @@ GOG release) in DOSBox.
 
 ## What it does
 
-Templar's Ledger runs beside Dark Sun: Shattered Lands, in DOSBox:
-
-- **It shows what the game hides.** A window wIt shows what the game keeps hidden. Every roll is logged as it happens:
+It shows what the game keeps hidden. Every roll is logged as it happens:
 attacks, damage, saving throws, thief skills, initiative, even the dice at
 character creation. Each comes with what it needed and where every bonus came
 from ([the dice log](#the-dice-log)). The game's own screens gain THAC0, saves,
@@ -98,10 +96,15 @@ It adds to Athas: new weapons in every material, magic items with stories of
 their own, Kalzith (a defiler who sells scrolls), more of Semyon's story, and a
 use for the cooked vulture ([New content](#new-content)). Graphical additions
 show the weapons and armour the party wears, have characters cast shadows, and
-kick up dirt as they walk ([On the screen](#on-the-screen)). There's more:
-choosing an enemy with Tab, 40 saves, a game speed setting and no manual check.
+kick up dirt as they walk ([On the screen](#on-the-screen)).
 
-s of their own beside the game's,
+Quality of life changes: choosing an enemy with Tab and attacking it with Enter,
+scrolling the map with the mouse ([Controls](#controls)), 40 saves and 29 saved
+characters ([More saves and characters](#more-saves-and-characters)), a game
+speed setting ([Game speed](#game-speed)), crash reports, and no manual check.
+
+Nothing in the game folder or your save files is changed, except what play
+writes there: save pages 2 to 4 as files of their own beside the game's,
 characters 20 to 29 in the game's `CHARSAVE.GFF`, and, in a game you save,
 the new items (untick **New items** to go without). Some of them the
 original game doesn't know (the item types it lacks, such as the Short Sword,

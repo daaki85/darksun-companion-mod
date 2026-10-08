@@ -1,10 +1,7 @@
-# Templar's Ledger: a companion and mod for Dark Sun: Shattered Lands
+# Templar's Ledger
 
-Templar's Ledger runs next to **Dark Sun: Shattered Lands** (the GOG release, in
-DOSBox) and shows what the game keeps to itself: every roll it makes, what each
-roll was compared against, and where every bonus comes from. It also adds to the
-game itself, in the game's own lettering and windows. Nearly everything it adds
-can be switched off on its Options tab.
+Templar's Ledger is a companion and mod for **Dark Sun: Shattered Lands** (the
+GOG release) in DOSBox.
 
 ## Contents
 
@@ -16,34 +13,28 @@ can be switched off on its Options tab.
 
 ## What it does
 
-- **Shows what the game hides.** A window beside the game shows the party as
-  they stand: THAC0 with each weapon, saves, AC and what makes it up, spell
-  slots and thief skills. A dice log lists every roll, what it needed and where
-  each bonus came from. Tabs keep every conversation and what each spell really
-  does. ([The Ledger's window](darksun-companion/README.md#the-ledgers-window),
-  [the dice log](darksun-companion/README.md#the-dice-log))
-- **Shows it in the game too**, in the game's own lettering: THAC0, saves and
-  thief skills on the character screens, spell slots on the USE screen, each
-  turn's rolls in a fight, and what hurts a monster in the Look box.
-  ([In the game](darksun-companion/README.md#in-the-game))
-- **Changes rules, each one switchable:** sixteen, most of them AD&D's,
-  among them weapon specialization, class restrictions, thief skills from
-  AD&D's table, saving throws and levels up to 10; and picking pockets for
-  thieves.
-  ([Rule changes](darksun-companion/README.md#rule-changes),
-  [Thieves](darksun-companion/README.md#thieves))
-- **Adds to the game:** new weapons, armour and magic items across Athas, with
-  stories Alagorn tells; Kalzith, a defiler slave who sells scrolls; Semyon
-  keeping his word; a use for the cooked vulture.
-  ([New content](darksun-companion/README.md#new-content))
-- **On the screen and at hand:** the party's gear drawn on their figures,
-  shadows and dust on the map, choosing an enemy with Tab, and scrolling with
-  the mouse. ([On the screen](darksun-companion/README.md#on-the-screen),
-  [Controls](darksun-companion/README.md#controls))
-- **Smoother play:** 40 saves and 29 saved characters, a game speed setting,
-  no manual check, two of the game's bugs fixed, and crash reports.
-  ([More saves and characters](darksun-companion/README.md#more-saves-and-characters),
-  [Game speed](darksun-companion/README.md#game-speed))
+It shows what the game keeps hidden. Every roll is logged as it happens:
+attacks, damage, saving throws, thief skills, initiative, even the dice at
+character creation. Each comes with what it needed and where every bonus came
+from ([the dice log](darksun-companion/README.md#the-dice-log)). The game's own screens gain THAC0, saves,
+thief skills and spell slots, and the Look box tells you what can hurt a
+monster ([In the game](darksun-companion/README.md#in-the-game)).
+
+It brings the rules closer to AD&D: weapon specialization and mastery, class
+restrictions, thief skills from the Player's Handbook, saving throws as the
+books have them, and levels up to 10 ([Rule changes](darksun-companion/README.md#rule-changes)). Thieves
+can pick pockets, and hide in shadows to backstab ([Thieves](darksun-companion/README.md#thieves)).
+
+It adds to Athas: new weapons in every material, magic items with stories of
+their own, Kalzith (a defiler who sells scrolls), more of Semyon's story, and a
+use for the cooked vulture ([New content](darksun-companion/README.md#new-content)). Graphical additions
+show the weapons and armour the party wears, have characters cast shadows, and
+kick up dirt as they walk ([On the screen](darksun-companion/README.md#on-the-screen)).
+
+Quality of life changes: choosing an enemy with Tab and attacking it with Enter,
+scrolling the map with the mouse ([Controls](darksun-companion/README.md#controls)), 40 saves and 29 saved
+characters ([More saves and characters](darksun-companion/README.md#more-saves-and-characters)), a game
+speed setting ([Game speed](darksun-companion/README.md#game-speed)), crash reports, and no manual check.
 
 The game's own files are never modified: the Ledger runs a patched copy of the
 game, and copies of its data files, from its own folder. Play writes to the game
