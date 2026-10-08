@@ -940,10 +940,10 @@ header's +270) switches them all off.
 |---|---|---|---|
 | Fighter | Myrmidon | a second weapon spec at 1st level, on to mastery and grand mastery as the first | −4 on saves against charm |
 | | Sentinel | +2 AC with a shield, +2 initiative | −1 on saves against spells |
-| | Raider | +2 movement in a fight, +1 damage on every melee attack | −1 AC |
-| Gladiator | Arena Champion | +1 to hit and damage on open ground | −1 to hit and damage underground |
+| | Ravager | +1 to hit and damage in melee; a base AC by level (7 at 1st, 1 better every 2 levels to 3 at 9th, then every 3 to 0 at 18th), armour bettering it | no missile or thrown weapons, no shield, light armour only |
+| Gladiator | Arena Champion | with a shield in a hand: +1 to hit and damage in melee, AC 1 better | −1 to hit with no shield |
 | | Twin-blade | no two-weapon penalty | no shield; no two-handed weapon, but a half-giant's held in one hand |
-| | Brute | +1 DEX, +1 CON | −1 INT, −1 WIS; two-handed melee weapons only (a half-giant may add a shield); missile weapons, but not as a weapon spec |
+| | Brute | +2 to hit and damage with a two-handed melee weapon | two-handed melee weapons only (a half-giant may add a shield); missile weapons, but not as a weapon spec |
 | Ranger | Stalker | +2 movement in a fight, +15 hide in shadows, +15 move silently | light armour only |
 | | Justifier | the bow's expertise and the chosen weapon spec's become specialization | priest spells on the Justifier's table: one 1st-level slot at 10th level |
 | | Seeker | priest spells on the Seeker's table: from 6th level | its sphere's weapon limits (but it keeps the bow) |
@@ -955,7 +955,7 @@ header's +270) switches them all off.
 | | Crusader | a fighter's THAC0 | one fewer spell slot at each spell level |
 | Druid | Grove Warden | AC 1 better for every 3 druid levels | no metal weapons |
 | | Lifebinder | healing spells heal a die more | blunt weapons only |
-| | Wanderer | +1 WIS, +1 CON | −1 CHA, −1 STR |
+| | Wanderer | +3 on saves against fire and cold spells (the game's Resist Fire and Resist Cold) | AC 1 worse |
 | Preserver | Scholar | a spell more learnt at each level up | −1 to hit |
 | | Battle Mage | a warrior's THAC0, a d6 hit die, expertise in one weapon spec (a one-handed melee weapon: long sword, short sword, dagger, club, mace, axe or pick; no thrown weapon), which it may use as well as a preserver's own weapons; light armour worn and spells cast in it; spells cast though hit in a fight (if the game stops them) | one fewer spell slot at each spell level; nothing in the off hand |
 | | Arcanist | a spell slot more at each spell level | −2 CON |
@@ -1053,7 +1053,7 @@ MIND BENDER and MIND WARRIOR are shortened, the last two as the game's
 P-KINESIS.
 
 The Effects screen's lower panel (`PROBE_EF_ROWS`) has the kit's line first,
-`KIT: RAIDER`, before the weapon specs; the Characters tab has `Kit: Raider`
+`KIT: RAVAGER`, before the weapon specs; the Characters tab has `Kit: Ravager`
 (`GameData.kit`).
 
 The kits' score changes are made when the character is first played, not on
@@ -1069,19 +1069,18 @@ emulated tests hold the helper to it:
 
 | Effect | Kits | Where |
 |---|---|---|
-| damage with a weapon | Raider (melee), Arena Champion | `PROBE_SPEC_DAMAGE` (`KIT_ATTACK_DAMAGE`), and the DAM lines (`PROBE_DAM_LINE`, `PROBE_VIEW_DAM`: `KIT_MELEE`) |
-| to hit | Arena Champion | `PROBE_ATTACKS` (`KIT_CHAMPION`) |
-| open ground or not | Arena Champion | the dice log's `stealth.daylight`, four times a second, in the header's `GROUND_OPEN` and `GROUND_ROOF` (+272, +274: a bit by sheet) |
-| AC | Raider, Sentinel, Grove Warden | `PROBE_AC` (`INT 62h`, the end of the AC routine: `KIT_AC`) |
-| movement | Raider, Stalker | `PROBE_MOVE` (`KIT_MOVE`) |
+| damage with a weapon | Ravager, Brute (melee: `KIT_MELEE`, by the item type), Arena Champion (melee, a shield in a hand: `KIT_CHAMPION`, by `PROT_SCAN` of the attacker's thing, `[BP+18h]`) | `PROBE_SPEC_DAMAGE` (`KIT_ATTACK_DAMAGE`), and the DAM lines (`PROBE_DAM_LINE`, `PROBE_VIEW_DAM`: `KIT_MELEE` only) |
+| to hit | Ravager, Brute, Arena Champion | `PROBE_ATTACKS` (`KIT_TO_HIT`: `KIT_CHAMPION`, and `KIT_MELEE` in melee) |
+| AC | Ravager (`RAVAGER_AC` by level against the sheet's base AC, `+27h`), Wanderer, Sentinel and Arena Champion (a shield in a hand: `PROT_SCAN`), Grove Warden | `PROBE_AC` (`INT 62h`, the end of the AC routine: `KIT_AC`) |
+| movement | Stalker | `PROBE_MOVE` (`KIT_MOVE`) |
 | initiative | Sentinel | `PROBE_INIT` (`INT B8h`, new: the round's 20 added at DSUN.EXE 5750Eh) |
-| saves | Myrmidon (charms), Sentinel (spells, 0-137) | `PROBE_RING_SAVE` (the modifier routine's start: `KIT_SAVE`) |
+| saves | Myrmidon (charms), Sentinel (spells, 0-137), Wanderer (fire and cold: the spell record's `+1Ah`, 2 or 4, as the game's Resist Fire and Resist Cold read it) | `PROBE_RING_SAVE` (the modifier routine's start: `KIT_SAVE`) |
 | pick pockets, open locks | Assassin | `PROBE_BELT` (the thief skill routine's end) |
 | hiding, moving silently | Stalker, Assassin | the stealth rule's rolls (`stealth.py`, `GameData.ranger_skill_parts`) |
 | the two-weapon penalty | Twin-blade | `PROBE_TWO` |
-| gear allowed | Twin-blade, Brute, Stalker, Grove Warden, Lifebinder, Shinobi | `PROBE_CAN_USE` and `KINDS_ALLOWED` (`KIT_FORBIDS`: `restrict.kit_forbids`), whatever the class restrictions |
+| gear allowed | Ravager, Twin-blade, Brute, Stalker, Grove Warden, Lifebinder, Shinobi | `PROBE_CAN_USE` and `KINDS_ALLOWED` (`KIT_FORBIDS`: `restrict.kit_forbids`), whatever the class restrictions |
 | weapon specs | Myrmidon (two, the second to grand mastery), Brute (no missile spec) | `WP_TWO`, `SPEC_OF_SHEET`, `KIT_FORBIDS` |
-| scores | Brute, Wanderer, Arcanist | `kits.finish_new`, once, before the character is first played (the sheet's `+45h` marks it) |
+| scores | Arcanist | `kits.finish_new`, once, before the character is first played (the sheet's `+45h` marks it) |
 
 Still to build, a new hook at a place already found:
 
@@ -1111,7 +1110,7 @@ helper's code (emulated) to the Python.
 
 1. Done: the ring out of the segment, the memory measured; the kit's byte, the
    KIT page, the Effects screen's line, the Characters tab, the rule switch.
-2. Done: the kits on hooks there already: Raider, Sentinel (with an
+2. Done: the kits on hooks there already: Ravager, Sentinel (with an
    initiative hook), Myrmidon, Arena Champion, Twin-blade, Brute, Stalker,
    Assassin, Grove Warden, Wanderer, Arcanist's CON, Lifebinder's weapons; and
    the ring at 96 entries, for room in upper memory.

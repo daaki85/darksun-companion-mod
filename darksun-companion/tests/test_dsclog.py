@@ -787,9 +787,12 @@ class KindTableTests(unittest.TestCase):
 class SpecializeTests(unittest.TestCase):
     """Weapon specialization in the weapon attack routine (PROBE_ATTACKS, PROBE_SPEC_DAMAGE): the
     attacks a round, the THAC0, the damage bonus and dice, by the attacker's chosen kinds."""
+    DS = 0x9000  # (the game's DS: its things table 9E4h paragraphs below, its spells' 6A2h, clear of DSCLOG's image)
     SHEETS = 0x8000
     RULES = 170
     LONG_SWORD, AXE = 45, 22  # (item types: obsidian long sword, axe)
+    TWO_HANDED, SHIELD, BOW = 60, 4, 13  # (item types as these tests make them)
+    CREATURES, ITEMS, ITEM_TYPES = 0x8A00, 0x8B00, 0x8C00
 
     def setUp(self):
         image = load_image()
@@ -803,16 +806,25 @@ class SpecializeTests(unittest.TestCase):
         mu.mem_write(VEC_ATTACKS * 4, struct.pack("<HH", attacks, TSR))
         mu.mem_write(VEC_SPEC_DAMAGE * 4, struct.pack("<HH", damage, TSR))
         mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
-        mu.mem_write(GAME_DS * 16 + 0x1661, struct.pack("<HH", 0, self.SHEETS))
+        mu.mem_write(self.DS * 16 + 0x1661, struct.pack("<HH", 0, self.SHEETS))
+        mu.mem_write(self.DS * 16 + 0x1665, struct.pack("<HH", 0, self.CREATURES))
+        mu.mem_write(self.DS * 16 + 0x165D, struct.pack("<HH", 0, self.ITEMS))
+        mu.mem_write(self.DS * 16 + 0x1669, struct.pack("<HH", 0, self.ITEM_TYPES))
+        for typ, flags, kinds in ((self.AXE, 1, 0), (self.LONG_SWORD, 1, 0), (self.TWO_HANDED, 1, 0x40),
+                                  (self.SHIELD, 4, 0x80), (self.BOW, 2, 0x40)):
+            rec = bytearray(0x14)
+            rec[0], rec[0x0F] = flags, kinds
+            mu.mem_write(self.ITEM_TYPES * 16 + typ * 0x14, bytes(rec))
 
     def attack(self, halves, weapon, chosen=(), classes=(9, 0, 0), levels=(5, 0, 0), rules=4096, missile=False, race=0,
-               kit=0, ground=(0, 0)):
+               kit=0, shield=False):
         """(attacks in halves, THAC0, damage bonus, sides) after both probes, with THAC0 15, a
-        damage bonus of 1 before the STR bonus of 2 is added, 1d8."""
+        damage bonus of 1 before the STR bonus of 2 is added, 1d8; the attacker (thing 7,
+        creature 5) with a shield in its left hand or none (SHIELD)."""
         mu = self.mu
         hdr = TSR * 16 + load_image().find(HDR_SIG)
         mu.mem_write(hdr + self.RULES, struct.pack("<H", rules & 0xFFFF))
-        mu.mem_write(hdr + 270, struct.pack("<HHH", rules >> 16, *ground))
+        mu.mem_write(hdr + 270, struct.pack("<H", rules >> 16))
         sheet = bytearray(0x47)
         sheet[0x43] = kit
         for i, k in enumerate(chosen):
@@ -820,12 +832,24 @@ class SpecializeTests(unittest.TestCase):
         sheet[0x21:0x24], sheet[0x24:0x27] = bytes(classes), bytes(levels)
         sheet[0x18] = race
         mu.mem_write(self.SHEETS * 16 + 3 * 0x47, bytes(sheet))  # (sheet 3)
+        rec = bytearray(0x3A)
+        struct.pack_into("<HHHH", rec, 4, 3, 0, 0, 0)
+        struct.pack_into("<HHH", rec, 8, 8 if shield else 0x270F, 0x270F, 0x270F)
+        mu.mem_write(self.CREATURES * 16 + 5 * 0x3A, bytes(rec))
+        things = (self.DS + 0x3972 - 0x4356) * 16 + 0xC36
+        mu.mem_write(things + 7 * 3, struct.pack("<Bh", 2, 5))
+        mu.mem_write(things + 8 * 3, struct.pack("<Bh", 1, 3))
+        item = bytearray(0x15)
+        struct.pack_into("<H", item, 4, 0x270F)
+        struct.pack_into("<H", item, 0x0A, self.SHIELD)
+        item[0x11] = 10  # (the left hand)
+        mu.mem_write(self.ITEMS * 16 + 3 * 0x15, bytes(item))
         mu.mem_write(SS * 16 + BP + 0x0A, struct.pack("<H", 15))
         mu.mem_write(SS * 16 + BP + 0x10, struct.pack("<H", 3))
-        mu.mem_write(SS * 16 + BP + 0x14, struct.pack("<HH", weapon, 2 if missile else 0))
+        mu.mem_write(SS * 16 + BP + 0x14, struct.pack("<HHH", weapon, 2 if missile else 0, 7))
         mu.mem_write(SS * 16 + BP - 0x12, struct.pack("<HHH", 1, 8, 1))  # damage bonus, sides, count
         mu.mem_write(CALLER * 16 + 0x600, bytes((0xCD, VEC_ATTACKS, 0x90, 0x90, 0xB8, 2, 0, 0xCD, VEC_SPEC_DAMAGE, 0x90)))
-        for name, value in dict(cs=CALLER, ds=GAME_DS, ss=SS, esp=0x7FC, ebp=BP, eflags=IF | 2, eax=halves,
+        for name, value in dict(cs=CALLER, ds=self.DS, ss=SS, esp=0x7FC, ebp=BP, eflags=IF | 2, eax=halves,
                                 ebx=0x2222, ecx=0x3333, edx=0x4444, esi=0x5555, es=0x6666).items():
             mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
         mu.emu_start(CALLER * 16 + 0x600, CALLER * 16 + 0x60A)
@@ -840,16 +864,20 @@ class SpecializeTests(unittest.TestCase):
     def test_off(self):
         self.assertEqual(self.attack(3, self.AXE, chosen=(0,), rules=0), (3, 15, 3, 8))
 
-    def test_raider(self):
-        """A Raider's +1 damage in melee, kits on (as kits.melee_damage); none with a missile, or
-        with kits off."""
+    def test_ravager(self):
+        """A Ravager's +1 to hit and damage in melee, kits on (kits.melee); none with a missile,
+        or with kits off; a Brute's +2 with a two-handed melee weapon only."""
         kits = game.RULE_KITS
-        self.assertEqual(self.attack(3, self.AXE, rules=kits, kit=3), (3, 15, 4, 8))
+        self.assertEqual(self.attack(3, self.AXE, rules=kits, kit=3), (3, 14, 4, 8))
         self.assertEqual(self.attack(3, self.LONG_SWORD, chosen=(0,), levels=(4, 0, 0), rules=4096 | kits, kit=3),
-                         (3, 14, 6, 8))
-        self.assertEqual(self.attack(2, self.AXE, rules=kits, kit=3, missile=True)[2], 3)
-        self.assertEqual(self.attack(3, self.AXE, rules=0, kit=3)[2], 3)
-        self.assertEqual(self.attack(3, self.AXE, rules=kits, kit=2)[2], 3)  # (a Sentinel)
+                         (3, 13, 6, 8))
+        self.assertEqual(self.attack(2, self.AXE, rules=kits, kit=3, missile=True)[1:3], (15, 3))
+        self.assertEqual(self.attack(3, self.AXE, rules=0, kit=3)[1:3], (15, 3))
+        self.assertEqual(self.attack(3, self.AXE, rules=kits, kit=2)[1:3], (15, 3))  # (a Sentinel)
+        glad = dict(classes=(10, 0, 0), levels=(3, 0, 0), rules=kits, kit=3)
+        self.assertEqual(self.attack(3, self.TWO_HANDED, **glad)[1:3], (13, 5))
+        self.assertEqual(self.attack(3, self.AXE, **glad)[1:3], (15, 3))
+        self.assertEqual(self.attack(2, self.BOW, missile=True, **glad)[1:3], (15, 3))
 
     def test_no_choices_as_the_game(self):
         """Monsters, and characters who haven't chosen yet: the game's own numbers."""
@@ -870,19 +898,17 @@ class SpecializeTests(unittest.TestCase):
         self.assertEqual(self.attack(4, self.LONG_SWORD, chosen=(0,), levels=(9, 0, 0)), (6, 12, 6, 10))
 
     def test_arena_champion(self):
-        """An Arena Champion (sheet 3: bit 3 of the ground words) +1 to hit and damage under the
-        open sky, -1 under a roof or underground, melee or missile (kits.champion); nothing when
-        the ground isn't known, or for another kit."""
+        """An Arena Champion with a shield in a hand +1 to hit and damage in melee, without one -1
+        to hit, melee or missile (kits.champion); nothing for another kit, or with kits off."""
         from dscompanion import kits
-        glad, on = dict(classes=(10, 0, 0), levels=(3, 0, 0), rules=game.RULE_KITS, kit=1), 8
-        self.assertEqual(self.attack(3, self.AXE, ground=(on, 0), **glad), (3, 14, 4, 8))
-        self.assertEqual(self.attack(3, self.AXE, ground=(0, on), **glad), (3, 16, 2, 8))
-        self.assertEqual(self.attack(2, self.AXE, ground=(on, 0), missile=True, **glad)[1:3], (14, 4))
-        self.assertEqual(self.attack(3, self.AXE, ground=(0, 0), **glad), (3, 15, 3, 8))
-        self.assertEqual(self.attack(3, self.AXE, ground=(1, 0), **glad), (3, 15, 3, 8))  # (another sheet's bit)
-        self.assertEqual(self.attack(3, self.AXE, ground=(on, 0), **dict(glad, kit=2)), (3, 15, 3, 8))
-        self.assertEqual((kits.champion(kits.CHAMPION, True), kits.champion(kits.CHAMPION, False),
-                          kits.champion(kits.CHAMPION, None), kits.champion(kits.RAIDER, True)), (1, -1, 0, 0))
+        glad = dict(classes=(10, 0, 0), levels=(3, 0, 0), rules=game.RULE_KITS, kit=1)
+        self.assertEqual(self.attack(3, self.AXE, shield=True, **glad), (3, 14, 4, 8))
+        self.assertEqual(self.attack(3, self.AXE, **glad), (3, 16, 3, 8))
+        self.assertEqual(self.attack(2, self.BOW, missile=True, shield=True, **glad)[1:3], (15, 3))
+        self.assertEqual(self.attack(2, self.BOW, missile=True, **glad)[1:3], (16, 3))
+        self.assertEqual(self.attack(3, self.AXE, **dict(glad, kit=2)), (3, 15, 3, 8))
+        self.assertEqual(self.attack(3, self.AXE, **dict(glad, rules=0)), (3, 15, 3, 8))
+        self.assertEqual(kits.champion(kits.CHAMPION, True, True), (1, 1))
 
     def test_myrmidon(self):
         """A Myrmidon's second kind goes on to mastery and grand mastery as the first does (as
@@ -980,7 +1006,7 @@ class SpecializeTests(unittest.TestCase):
         mu.mem_write(self.SHEETS * 16, bytes(sheet))
         mu.mem_write(SS * 16 + 0x7F6, struct.pack("<HHH", 1, 8, 4))  # pushed: count, sides, bonus
         mu.mem_write(CALLER * 16 + 0x600, bytes((0xCD, VEC_DAM_LINE, 0x90, 0x90)))
-        for name, value in dict(cs=CALLER, ds=GAME_DS, ss=SS, esp=0x7F6, ebp=BP, eflags=IF | 2, eax=0x1200,
+        for name, value in dict(cs=CALLER, ds=self.DS, ss=SS, esp=0x7F6, ebp=BP, eflags=IF | 2, eax=0x1200,
                                 ebx=0, edx=0x4444, esi=weapon, es=self.SHEETS).items():
             mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
         mu.emu_start(CALLER * 16 + 0x600, CALLER * 16 + 0x604)
@@ -1014,15 +1040,15 @@ class SpecializeTests(unittest.TestCase):
             sheet[0x14 + i] = k + 1
         sheet[0x21:0x24], sheet[0x24:0x27] = bytes(classes), bytes(levels)
         mu.mem_write(self.SHEETS * 16 + 2 * 0x47, bytes(sheet))
-        mu.mem_write(GAME_DS * 16 + 0x165D, struct.pack("<HH", 0, self.ITEMS))
-        mu.mem_write(GAME_DS * 16 + 0x1669, struct.pack("<HH", 0, self.TYPES))
+        mu.mem_write(self.DS * 16 + 0x165D, struct.pack("<HH", 0, self.ITEMS))
+        mu.mem_write(self.DS * 16 + 0x1669, struct.pack("<HH", 0, self.TYPES))
         mu.mem_write(self.ITEMS * 16 + 0x15 + 0x0A, struct.pack("<H", weapon))
         mu.mem_write(self.TYPES * 16 + weapon * 0x14, bytes((2 if missile else 1,)))
         mu.mem_write(self.WHO * 16 + 0x25B, struct.pack("<H", 2))
         mu.mem_write(CALLER * 16 + 0x602 - 0x84, struct.pack("<H", self.WHO))
         mu.mem_write(SS * 16 + BP - 0x0E, struct.pack("<HHHHHHH", 0, 0, 1, 0, halves, 8, 1))  # bonus .. count
         mu.mem_write(CALLER * 16 + 0x600, bytes((0xCD, VEC_VIEW_DAM, 0x90)))
-        for name, value in dict(cs=CALLER, ds=GAME_DS, ss=SS, esp=0x7FC, ebp=BP, eflags=IF | 2, eax=0x1111,
+        for name, value in dict(cs=CALLER, ds=self.DS, ss=SS, esp=0x7FC, ebp=BP, eflags=IF | 2, eax=0x1111,
                                 ebx=0x2222, ecx=0x3333, edx=4, esi=0x5555, edi=0x7777, es=0x6666).items():
             mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
         mu.emu_start(CALLER * 16 + 0x600, CALLER * 16 + 0x603)
@@ -1040,7 +1066,7 @@ class SpecializeTests(unittest.TestCase):
         self.assertEqual(self.view_dam(4, self.LONG_SWORD, chosen=(0,), levels=(9, 0, 0)), (6, 7, 10))
         self.assertEqual(self.view_dam(4, 1, chosen=(13,), levels=(4, 0, 0), missile=True), (4, 6, 8))
         self.assertEqual(self.view_dam(3, 1, chosen=(0,), missile=True), (3, 4, 8))
-        kits = game.RULE_KITS  # (a Raider: +1 in melee, the rule for weapon specialization on or off)
+        kits = game.RULE_KITS  # (a Ravager: +1 in melee, the rule for weapon specialization on or off)
         self.assertEqual(self.view_dam(3, self.AXE, rules=kits, kit=3), (3, 5, 8))
         self.assertEqual(self.view_dam(3, self.LONG_SWORD, chosen=(0,), levels=(4, 0, 0), rules=4096 | kits, kit=3),
                          (3, 7, 8))
@@ -2428,6 +2454,7 @@ class KitTests(unittest.TestCase):
     """The kits' routines against kitpages.py: WP_IDS (the panel's windows for the classes being
     made, the rules on or off) as panel_windows, and KIT_OF_SHEET (the Effects screen's line) as
     kit_name."""
+    DS = 0x9000  # (the game's DS: its things table 9E4h paragraphs below, its spells' 6A2h, clear of DSCLOG's image)
     RULES, RULES_HI = 170, 270
     CREATION, SHEET = 0x8000, 0x8100
 
@@ -2437,7 +2464,7 @@ class KitTests(unittest.TestCase):
         mu.mem_map(0, 0x100000)
         mu.mem_write(TSR * 16, self.image)
         mu.mem_write(TSR * 16 + 0xFFF0, bytes((0xF4,)))
-        mu.mem_write(GAME_DS * 16 + 0x119C, struct.pack("<HH", 0, self.CREATION))
+        mu.mem_write(self.DS * 16 + 0x119C, struct.pack("<HH", 0, self.CREATION))
         self.hdr = TSR * 16 + self.image.find(HDR_SIG)
 
     def rules(self, rules):
@@ -2449,7 +2476,7 @@ class KitTests(unittest.TestCase):
         at = re.search(pattern, self.image, re.S).start()
         mu = self.mu
         mu.mem_write(SS * 16 + 0x7FC, struct.pack("<H", 0xFFF0))
-        for name, value in dict(cs=TSR, ds=GAME_DS, ss=SS, esp=0x7FC, **regs).items():
+        for name, value in dict(cs=TSR, ds=self.DS, ss=SS, esp=0x7FC, **regs).items():
             mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
         mu.emu_start(TSR * 16 + at, TSR * 16 + 0xFFF0)
 
@@ -2491,7 +2518,7 @@ class KitTests(unittest.TestCase):
                     text = bytes(self.mu.mem_read(TSR * 16 + si, 24)).split(b"\0")[0].decode()
                     self.assertEqual(text, "KIT: " + want.upper())
 
-    CREATURES = 0x8200
+    CREATURES, ITEMS, TYPES = 0x8200, 0x8300, 0x8400
 
     def test_grove_warden_ac(self):
         """KIT_AC for a Grove Warden: 1 better for every 3 druid levels (kits.ac)."""
@@ -2500,25 +2527,67 @@ class KitTests(unittest.TestCase):
         for level in range(1, 11):
             with self.subTest(level=level):
                 self.creature(5, 1, level=level)
-                self.mu.mem_write(SS * 16 + BP + 6, struct.pack("<H", 7))
-                self.call(rb"\x2e\xf7\x06..\x01\x00\x74.\x53\x51\x52\x06\x89\xc1", eax=10, ebp=BP)
-                self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), 10 + kits.ac(kits.GROVE_WARDEN, False, level))
+                self.assertEqual(self.kit_ac(), 10 + kits.ac(kits.GROVE_WARDEN, False, level))
 
-    def creature(self, cls, kit, index=5, level=1):
-        """Creature INDEX (its sheet the same number) of class CLS with kit KIT; the things
-        table's thing 7 is it."""
+    def test_ravager_ac(self):
+        """KIT_AC for a Ravager: its table by level where better than the sheet's base AC (+27h),
+        the armour's improvement kept (kits.ac)."""
+        from dscompanion import kits
+        self.rules(game.RULE_KITS)
+        for level in (1, 2, 3, 8, 9, 12, 17, 18, 20):
+            for base in (10, 5, 0):
+                with self.subTest(level=level, base=base):
+                    self.creature(9, 3, level=level, base=base)
+                    self.assertEqual(self.kit_ac(), 10 + kits.ac(kits.RAVAGER, False, level, base))
+        self.creature(9, 3, level=1, base=10)
+        self.assertEqual(self.kit_ac(), 7)
+
+    def test_shield_ac(self):
+        """KIT_AC with a shield in a hand and without: a Sentinel's 2, an Arena Champion's 1;
+        a Wanderer's 1 worse, shield or not."""
+        from dscompanion import kits, kitpages
+        self.rules(game.RULE_KITS)
+        for cls, kit in ((9, 2), (10, 1), (5, 3), (10, 2), (9, 0)):
+            for shield in (True, False):
+                with self.subTest(cls=cls, kit=kit, shield=shield):
+                    self.creature(cls, kit, shield=shield)
+                    sheet = bytearray(game.SHEET_SIZE)
+                    sheet[0x21], sheet[kitpages.KIT_BYTE] = cls, kit
+                    self.assertEqual(self.kit_ac(), 10 + kits.ac(kitpages.kit_id(bytes(sheet)), shield))
+
+    def kit_ac(self):
+        """KIT_AC for thing 7, the game's AC 10: the AC."""
+        self.mu.mem_write(SS * 16 + BP + 6, struct.pack("<H", 7))
+        self.call(rb"\x2e\xf7\x06..\x01\x00(?:\x74.|\x0f\x84..)\x53\x51\x52\x06\x89\xc1", eax=10, ebp=BP)
+        return struct.unpack("<h", struct.pack("<H", self.mu.reg_read(r.UC_X86_REG_AX)))[0]
+
+    def creature(self, cls, kit, index=5, level=1, base=10, shield=False):
+        """Creature INDEX (its sheet the same number) of class CLS with kit KIT, its base AC BASE,
+        a shield in its left hand or not (SHIELD); the things table's thing 7 is it, thing 8 the
+        shield's item list."""
         from dscompanion import kitpages
         mu = self.mu
-        mu.mem_write(GAME_DS * 16 + 0x1665, struct.pack("<HH", 0, self.CREATURES))
-        mu.mem_write(GAME_DS * 16 + 0x1661, struct.pack("<HH", 0, self.SHEET))
+        mu.mem_write(self.DS * 16 + 0x1665, struct.pack("<HH", 0, self.CREATURES))
+        mu.mem_write(self.DS * 16 + 0x1661, struct.pack("<HH", 0, self.SHEET))
         rec = bytearray(0x3A)
         rec[4:6] = struct.pack("<H", index)
+        struct.pack_into("<HHH", rec, 8, 8 if shield else 0x270F, 0x270F, 0x270F)
         mu.mem_write(self.CREATURES * 16 + index * 0x3A, bytes(rec))
+        mu.mem_write(self.DS * 16 + 0x165D, struct.pack("<HH", 0, self.ITEMS))
+        mu.mem_write(self.DS * 16 + 0x1669, struct.pack("<HH", 0, self.TYPES))
+        item = bytearray(0x15)
+        struct.pack_into("<H", item, 4, 0x270F)
+        struct.pack_into("<H", item, 0x0A, 4)
+        item[0x11] = 10  # (a shield, type 4, in the left hand)
+        mu.mem_write(self.ITEMS * 16 + 3 * 0x15, bytes(item))
+        mu.mem_write(self.TYPES * 16 + 4 * 0x14, bytes((4,)) + bytes(14) + bytes((0x80,)))
         sheet = bytearray(game.SHEET_SIZE)
         sheet[0x21], sheet[0x24], sheet[kitpages.KIT_BYTE] = cls, level, kit
+        sheet[0x27] = base & 0xFF
         mu.mem_write(self.SHEET * 16 + index * 0x47, bytes(sheet))
-        things = ((GAME_DS + 0x3972 - 0x4356) & 0xFFFF) * 16 + 0xC36
+        things = ((self.DS + 0x3972 - 0x4356) & 0xFFFF) * 16 + 0xC36
         mu.mem_write(things + 7 * 3, struct.pack("<Bh", 2, index))
+        mu.mem_write(things + 8 * 3, struct.pack("<Bh", 1, 3))
 
     def test_ac_and_move(self):
         """KIT_AC and KIT_MOVE as kits.ac (without a shield) and kits.move."""
@@ -2532,9 +2601,8 @@ class KitTests(unittest.TestCase):
                     sheet[0x21], sheet[kitpages.KIT_BYTE] = cls, kit
                     kid = kitpages.kit_id(bytes(sheet)) if rules else 0
                     self.mu.mem_write(SS * 16 + BP + 6, struct.pack("<H", 7))
-                    self.call(rb"\x2e\xf7\x06..\x01\x00\x74.\x53\x51\x52\x06\x89\xc1", eax=10, ebp=BP)
-                    self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), 10 + kits.ac(kid, False))
-                    self.call(rb"\x50\x89\xf0\xe8..\x3c\x0f", eax=120, esi=5)
+                    self.assertEqual(self.kit_ac(), 10 + kits.ac(kid, False, 1))
+                    self.call(rb"\x50\x89\xf0\xe8..\x3c\x1d", eax=120, esi=5)
                     self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), 120 + 10 * kits.move(kid))
 
     def test_saves(self):
@@ -2542,15 +2610,21 @@ class KitTests(unittest.TestCase):
         and the charms."""
         from dscompanion import kits, kitpages
         self.rules(game.RULE_KITS)
-        for cls, kit in ((9, 1), (9, 2), (9, 3), (13, 1), (9, 0)):
+        spells = (self.DS - (0x4356 - 0x3CB4)) * 16 + 0x40  # (the spell records, 20h each)
+        kinds = {13: kits.FIRE, 40: kits.COLD, 61: kits.FIRE | 1, 137: 0x08, 177: kits.COLD}
+        for spell, k in kinds.items():
+            self.mu.mem_write(spells + spell * 0x20 + 0x1A, bytes((k,)))
+        for cls, kit in ((9, 1), (9, 2), (9, 3), (13, 1), (5, 3), (9, 0)):
             self.creature(cls, kit)
             sheet = bytearray(game.SHEET_SIZE)
             sheet[0x21], sheet[kitpages.KIT_BYTE] = cls, kit
             kid = kitpages.kit_id(bytes(sheet))
-            for spell in (0, 2, 13, 40, 61, 82, 137, 138, 158, 159, 177):
+            for spell in (0, 2, 13, 40, 61, 82, 137, 138, 158, 159, 177, 300):
                 with self.subTest(cls=cls, kit=kit, spell=spell):
                     self.call(rb"\x50\x53\x51\x06\x89\xc1\x8c\xd8", eax=spell, esi=3, edi=7)
-                    self.assertEqual(self.mu.reg_read(r.UC_X86_REG_SI), (3 + kits.save(kid, spell)) & 0xFFFF)
+                    want = 3 + kits.save(kid, spell, kinds.get(spell, 0))
+                    self.assertEqual(self.mu.reg_read(r.UC_X86_REG_SI), want & 0xFFFF)
+        self.assertEqual(kits.save(kits.WANDERER, 13, kits.FIRE), 3)
         self.assertEqual((kits.save(kits.SENTINEL, 13), kits.save(kits.SENTINEL, 158), kits.save(kits.MYRMIDON, 2),
                           kits.save(kits.MYRMIDON, 13)), (-1, 0, -4, 0))
 
@@ -2569,7 +2643,7 @@ class KitTests(unittest.TestCase):
                 self.creature(cls, kit)
                 sheet = bytearray(game.SHEET_SIZE)
                 sheet[0x21], sheet[kitpages.KIT_BYTE] = cls, kit
-                for name, value in dict(cs=CALLER, ds=GAME_DS, ss=SS, esp=0x7FC, eflags=IF | 2, edx=5, esi=5,
+                for name, value in dict(cs=CALLER, ds=self.DS, ss=SS, esp=0x7FC, eflags=IF | 2, edx=5, esi=5,
                                         eax=0x1111).items():
                     self.mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
                 self.mu.emu_start(CALLER * 16 + 0x600, CALLER * 16 + 0x603)
@@ -2586,5 +2660,5 @@ class KitTests(unittest.TestCase):
                 self.mu.mem_write(self.SHEET * 16, bytes(sheet))
                 self.call(rb"\x51\x57\x30\xc9\x2e\xf7\x06..\x01\x00", es=self.SHEET, ebx=0)
                 self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AL), kitpages.kit_id(bytes(sheet)))
-        self.assertEqual(kitpages.KIT_IDS["Raider"], 15)
+        self.assertEqual(kitpages.KIT_IDS["Ravager"], 15)
         self.assertEqual(kitpages.KIT_IDS["Shinobi"], 35)

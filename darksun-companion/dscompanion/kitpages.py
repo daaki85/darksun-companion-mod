@@ -19,7 +19,7 @@ KIT_BYTE = 0x43
 # By class as the creation screen numbers them (game.CREATION_CLASS_NAMES): the kits' names
 KITS = {1: ("Elementalist", "Healer", "Crusader"),
         2: ("Grove Warden", "Lifebinder", "Wanderer"),
-        3: ("Myrmidon", "Sentinel", "Raider"),
+        3: ("Myrmidon", "Sentinel", "Ravager"),
         4: ("Arena Champion", "Twin-blade", "Brute"),
         5: ("Scholar", "Battle Mage", "Arcanist"),
         6: ("Mind Bender", "Mind Warrior", "Kineticist"),
@@ -63,7 +63,7 @@ def row_text(name: str) -> str:
 
 
 def kit_id(sheet: bytes) -> int:
-    """The kit of a sheet as DSCLOG's KIT_ID numbers it (the creation class x 4 + the kit: RAIDER
+    """The kit of a sheet as DSCLOG's KIT_ID numbers it (the creation class x 4 + the kit: RAVAGER
     15), or 0: none chosen, or more than one class. (The rule is the caller's to weigh.)"""
     if len(sheet) <= KIT_BYTE or sheet[0x22] or sheet[0x23]:
         return 0

@@ -4,11 +4,11 @@ A kit is a sheet's KIT_BYTE (kitpages.py, which also numbers them: kitpages.kit_
 that number, 0 for none (the rule off, more than one class, none chosen).
 """
 
-from typing import Optional
+from typing import Optional, Tuple
 
 from .kitpages import KIT_IDS, KITS
 
-RAIDER, SENTINEL, STALKER = KIT_IDS["Raider"], KIT_IDS["Sentinel"], KIT_IDS["Stalker"]
+RAVAGER, SENTINEL, STALKER = KIT_IDS["Ravager"], KIT_IDS["Sentinel"], KIT_IDS["Stalker"]
 MYRMIDON, CHAMPION = KIT_IDS["Myrmidon"], KIT_IDS["Arena Champion"]
 ASSASSIN = KIT_IDS["Assassin"]
 TWIN_BLADE, BRUTE = KIT_IDS["Twin-blade"], KIT_IDS["Brute"]
@@ -16,12 +16,12 @@ GROVE_WARDEN, LIFEBINDER = KIT_IDS["Grove Warden"], KIT_IDS["Lifebinder"]
 WANDERER, ARCANIST = KIT_IDS["Wanderer"], KIT_IDS["Arcanist"]
 # the scores a kit changes (STR, DEX, CON, INT, WIS, CHA), once, before the character is first
 # played (apply_scores); SCORES_DONE the sheet's byte that says it has been
-SCORES = {BRUTE: (0, 1, 1, -1, -1, 0), WANDERER: (-1, 0, 1, 0, 1, -1), ARCANIST: (0, 0, -2, 0, 0, 0)}
+SCORES = {ARCANIST: (0, 0, -2, 0, 0, 0)}
 SCORES_DONE = 0x45
 SCORE_LEAST, SCORE_MOST = 3, 25
 ABILITY_NAMES = ("STR", "DEX", "CON", "INT", "WIS", "CHA")
 # the item type's +00h flags and +0Fh kind flags, +08h material (restrict.py's)
-MELEE, MISSILE, SHIELD, TWO_HANDED, ARMOUR = 0x01, 0x02, 0x04, 0x40, 0x80
+MELEE, MISSILE, SHIELD, THROWN, TWO_HANDED, ARMOUR = 0x01, 0x02, 0x04, 0x10, 0x40, 0x80
 METAL, LEATHER, NO_MATERIAL = 4, 5, 0x40
 # a Lifebinder's weapon kinds (specialize.KINDS' numbers): club, mace, quarterstaff, sling, staff sling
 BLUNT = frozenset((1, 4, 8, 14, 15))
@@ -32,32 +32,45 @@ SHINOBI = KIT_IDS["Shinobi"]
 # Mammal, and the psionic Domination and Mass Domination
 CHARMS = (2, 40, 61, 82, 158, 159)
 SPELL_LAST = 137  # (the wizards' and priests' spells: 0 to this; psionic powers and monsters' after)
+FIRE, COLD = 0x02, 0x04  # (a spell record's +1Ah: what it is, as the game's Resist Fire and Resist Cold read it)
+# a Ravager's base AC by level, 1-18 and on (DSCLOG's RAVAGER_AC)
+RAVAGER_AC = (7, 7, 6, 6, 5, 5, 4, 4, 3, 3, 3, 2, 2, 2, 1, 1, 1, 0)
 
 
 def name(kid: int) -> str:
     return KITS[kid // 4][kid % 4 - 1] if kid else ""
 
 
-def melee_damage(kid: int) -> int:
-    """Added to a melee attack's damage (KIT_MELEE): a Raider's 1."""
-    return 1 if kid == RAIDER else 0
+def melee(kid: int, two_handed: bool) -> int:
+    """Added to hit and to damage with a melee weapon (KIT_MELEE; TWO_HANDED: one that takes both
+    hands, its type's +0Fh 40h): a Ravager's 1, a Brute's 2 with a two-handed one."""
+    if kid == RAVAGER:
+        return 1
+    return 2 if kid == BRUTE and two_handed else 0
 
 
-def ac(kid: int, shield: bool, level: int = 0) -> int:
-    """Added to AC (KIT_AC; lower is better): a Raider's 1 worse, a Sentinel's 2 better with a
-    shield in a hand, a Grove Warden's 1 better for every 3 levels (LEVEL, its druid level)."""
-    if kid == RAIDER:
+def ac(kid: int, shield: bool, level: int = 0, base: int = 10) -> int:
+    """Added to AC (KIT_AC; lower is better): a Ravager's base AC by its level (RAVAGER_AC) where
+    better than its sheet's BASE, armour improving it as before; a Wanderer's 1 worse; a Sentinel's
+    2 better with a shield in a hand, an Arena Champion's 1; a Grove Warden's 1 better for every 3 levels (LEVEL, its
+    class level)."""
+    if kid == RAVAGER:
+        table = RAVAGER_AC[min(max(level, 1), len(RAVAGER_AC)) - 1]
+        return -max(0, base - table)
+    if kid == WANDERER:
         return 1
     if kid == SENTINEL and shield:
         return -2
+    if kid == CHAMPION and shield:
+        return -1
     if kid == GROVE_WARDEN:
         return -(level // 3)
     return 0
 
 
 def move(kid: int) -> int:
-    """Added to Move in a fight (KIT_MOVE): a Raider's and a Stalker's 2."""
-    return 2 if kid in (RAIDER, STALKER) else 0
+    """Added to Move in a fight (KIT_MOVE): a Stalker's 2."""
+    return 2 if kid == STALKER else 0
 
 
 def initiative(kid: int) -> int:
@@ -65,22 +78,27 @@ def initiative(kid: int) -> int:
     return 2 if kid == SENTINEL else 0
 
 
-def save(kid: int, spell: int) -> int:
-    """Added to a saving throw against SPELL (KIT_SAVE): a Sentinel's -1 against a wizard's or
-    priest's spell, a Myrmidon's -4 against a charm."""
+def save(kid: int, spell: int, kinds: int = 0) -> int:
+    """Added to a saving throw against SPELL (KIT_SAVE; KINDS its record's +1Ah): a Sentinel's -1
+    against a wizard's or priest's spell, a Myrmidon's -4 against a charm, a Wanderer's +3 against
+    fire and cold (as the game's Resist Fire and Resist Cold)."""
     if kid == SENTINEL and 0 <= spell <= SPELL_LAST:
         return -1
     if kid == MYRMIDON and spell in CHARMS:
         return -4
+    if kid == WANDERER and 0 <= spell < 256 and kinds & (FIRE | COLD):
+        return 3
     return 0
 
 
-def champion(kid: int, open_ground: Optional[bool]) -> int:
-    """Added to hit and to damage (KIT_CHAMPION): an Arena Champion's 1 under the open sky
-    (stealth.daylight), -1 under a roof or underground; 0 when that isn't known (None)."""
-    if kid != CHAMPION or open_ground is None:
-        return 0
-    return 1 if open_ground else -1
+def champion(kid: int, shield: bool, melee: bool) -> Tuple[int, int]:
+    """(to hit, damage) an Arena Champion adds to an attack (KIT_CHAMPION): with a shield in a
+    hand +1 and +1 in melee; with none, -1 to hit."""
+    if kid != CHAMPION:
+        return 0, 0
+    if shield:
+        return (1, 1) if melee else (0, 0)
+    return -1, 0
 
 
 def thief_skill(kid: int, skill: int) -> int:
@@ -97,13 +115,17 @@ def stealth(kid: int) -> int:
 
 def forbids(kid: int, typ: bytes, kind: Optional[int], half_giant: bool, spec: bool = False) -> bool:
     """Whether the kit keeps a character from an item type (TYP its record; KIND its weapon kind,
-    or None), as DSCLOG's KIT_FORBIDS: a Twin-blade a shield, and a two-handed weapon (but a
+    or None), as DSCLOG's KIT_FORBIDS: a Ravager a shield, a missile or thrown weapon and armour that isn't
+    light; a Twin-blade a shield, and a two-handed weapon (but a
     half-giant's, HALF_GIANT: with the rule for its hands); a Brute a one-handed melee weapon, a
     shield (but a half-giant's), and, choosing a weapon spec (SPEC), a missile weapon; a Stalker
     armour that isn't light; a Grove Warden a metal weapon; a Lifebinder a weapon of a kind not
     blunt; a Shinobi a shield, armour that isn't light, a weapon not of SHINOBI_KINDS."""
     flags, kinds, mat = typ[0], typ[0x0F], typ[8] & 0x4F
     weapon = bool(flags & (MELEE | MISSILE))
+    light = not kinds & ARMOUR or bool(flags & SHIELD) or mat in (LEATHER, NO_MATERIAL)
+    if kid == RAVAGER:
+        return bool(flags & (SHIELD | MISSILE | THROWN)) or not light
     if kid == TWIN_BLADE:
         return bool(flags & SHIELD) or weapon and bool(kinds & TWO_HANDED) and not half_giant
     if kid == BRUTE:

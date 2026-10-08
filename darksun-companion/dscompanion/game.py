@@ -191,7 +191,6 @@ def kind_to_save(kind: int, rules: int) -> int:
 
 # The rules in force (DiceLog.set_rules): GameData objects made without rules of their own use these
 RULES_IN_FORCE = 0
-OPEN_GROUND: Dict[int, bool] = {}  # an Arena Champion in the party: under the open sky (DiceLog._write_ground)
 # ... and whether a worn belt adds BELT_BONUS to picking pockets and opening locks (the Options tab's
 # cloak, boots and belt switch; DSCLOG adds it where the game works the chance out: PROBE_BELT)
 BELT_IN_FORCE = False
@@ -995,8 +994,8 @@ class GameData:
         out += self.protection(ti)
         from . import kits
         kid = self.kit_id(ti)
-        if kits.save(kid, spell):
-            out.append((kits.save(kid, spell), kits.name(kid)))
+        if kits.save(kid, spell, kinds):
+            out.append((kits.save(kid, spell, kinds), kits.name(kid)))
         if EFFECT_SAVE_PENALTY in mine:
             out.append((-1, EFFECT_NAMES[EFFECT_SAVE_PENALTY]))
         if EFFECT_SPIRIT_ARMOR in mine and save != PPD_SAVE:
@@ -1383,9 +1382,7 @@ class GameData:
         if prayer is not None:
             common.append(("Prayer", prayer))
         from . import kits
-        champion = kits.champion(self.kit_id(creature), OPEN_GROUND.get(creature))
-        if champion:  # (an Arena Champion: DSCLOG's KIT_CHAMPION, the ground as the dice log has it)
-            common.append(("Arena Champion, " + ("open ground" if champion > 0 else "under a roof"), champion))
+        kid, shield = self.kit_id(creature), self.holds_shield(creature)
         strength, dex = rec[CREATURE_ABILITIES], rec[CREATURE_ABILITIES + 1]
         table = lambda off, score: struct.unpack("b", self.guest.read(self.ds * 16 + off + score, 1))[0] \
             if score < 26 else 0
@@ -1411,6 +1408,11 @@ class GameData:
                 parts.append(self.two_weapons(creature, slot))
             skill = 0
             halves = typ[0x0B] if missile else None  # (the game's rate of fire: the weapon's own)
+            # the kit's (DSCLOG's KIT_TO_HIT): a Ravager's, a Brute's, an Arena Champion's
+            kit = kits.champion(kid, shield, not missile)[0] \
+                + (kits.melee(kid, bool(typ[0x0F] & 0x40)) if not missile and not typ[0] & 2 else 0)
+            if kit:
+                parts.append((kits.name(kid), kit))
             if self.rules & RULE_SPECIALIZE:  # (weapon specialization: DSCLOG's PROBE_ATTACKS)
                 from . import specialize
                 kind = struct.unpack_from("<H", item, ITEM_TYPE)[0]
@@ -1460,6 +1462,13 @@ class GameData:
             return False
         typ = self.guest.read(far_pointer(self.guest, self.ds, ITEM_TYPES_PTR) + item_type * ITEM_TYPE_SIZE, 1)
         return bool(typ[0] & 2)
+
+    def two_handed_type(self, item_type: Optional[int]) -> bool:
+        """An item type that takes both hands (its +0Fh, 40h), as DSCLOG's KIT_MELEE tells one."""
+        if item_type is None or not 0 <= item_type < 0x200:
+            return False
+        typ = self.guest.read(far_pointer(self.guest, self.ds, ITEM_TYPES_PTR) + item_type * ITEM_TYPE_SIZE, ITEM_TYPE_SIZE)
+        return len(typ) > 0x0F and bool(typ[0x0F] & 0x40)
 
     def holds_shield(self, creature: int) -> bool:
         """A shield in a hand (as DSCLOG's PROT_SCAN finds one)."""

@@ -262,9 +262,6 @@ ring_seg   dw 0                 ; +268 the ring's segment: the paragraphs after 
                                 ;      outside this one, so the ring takes none of its 64 KB (set
                                 ;      when installed; RING_OFF its offset there)
 rules_hi   dw 0                 ; +270 more rule changes the companion turns on (RULE_HI_KITS)
-ground_open dw 0                ; +272 the companion sets bit N for sheet N under the open sky ...
-ground_roof dw 0                ; +274 ... or under a roof or underground (KIT_CHAMPION's; neither:
-                                ;      not known)
 
 ; TEXT BUFFER: what the game sends to its dialogue window, as records of
 ;   byte 0FEh, byte kind (the dialogue window's: 0 = a reply to choose, the
@@ -2564,7 +2561,7 @@ SPEC_GRAND equ 5
 probe_attacks:
         cbw
         push ax
-        call kit_champion       ; (an Arena Champion's +1 or -1 to hit)
+        call kit_to_hit         ; (a Ravager's, a Brute's, an Arena Champion's)
         sub [bp + 0x0A], ax
         pop ax
         test word [cs:rules], RULE_SPECIALIZE
@@ -2715,7 +2712,7 @@ probe_dam_line:
         push bp
         mov bp, sp              ; BP+8 the count, +0Ah the sides, +0Ch the bonus
         push ax
-        call kit_melee          ; (a Raider's +1)
+        call kit_melee          ; (a Ravager's, a Brute's)
         add [bp + 0x0C], ax
         pop ax
         pop bp
@@ -2779,7 +2776,7 @@ probe_view_dam:
         les bx, [0x1661]
         add bx, ax
         push ax
-        call kit_melee          ; (a Raider's +1, the rule for kits being on)
+        call kit_melee          ; (a Ravager's, a Brute's: the rule for kits being on)
         add [bp - 0x0E], ax
         pop ax
         mov dl, SPEC_NONE
@@ -2842,7 +2839,8 @@ probe_can_use:
 .done:  iret
 
 ; KIT_FORBIDS: carry set if the kit of the character whose sheet is at ES:BX keeps it from item
-; type DX (kits.forbids): a Twin-blade a shield, and a two-handed weapon (but a half-giant's,
+; type DX (kits.forbids): a Ravager a shield, a missile or thrown weapon, and armour that isn't
+; light; a Twin-blade a shield, and a two-handed weapon (but a half-giant's,
 ; with RULE_HALF_GIANT); a Brute a one-handed melee weapon, and a shield (but a half-giant's,
 ; with the rule), and with KF_SPEC set (a weapon spec chosen) a missile weapon; a Stalker armour
 ; that isn't light (leather, or of no material); a Grove Warden a metal weapon; a Lifebinder a
@@ -2851,6 +2849,7 @@ probe_can_use:
 KT_MELEE   equ 0x01             ; (the item type's +0 flags, +0Fh kind flags)
 KT_MISSILE equ 0x02
 KT_SHIELD  equ 0x04
+KT_THROWN  equ 0x10
 KT_ARMOUR  equ 0x80
 KT_TWO_HANDED equ 0x40
 KIT_BLUNT  equ 0xC112           ; bits by kind: club, mace, quarterstaff, sling, staff sling
@@ -2875,7 +2874,14 @@ kit_forbids:
         add bx, ax
         mov al, [es:bx]         ; AL the flags, AH the kind flags
         mov ah, [es:bx + 0x0F]
-        cmp cl, KIT_TWIN_BLADE
+        cmp cl, KIT_RAVAGER     ; a Ravager: no shield, no missile or thrown weapon, light armour only
+        jne .twin
+        test al, KT_SHIELD
+        jnz .no
+        test al, KT_MISSILE | KT_THROWN
+        jnz .no
+        jmp .light
+.twin:  cmp cl, KIT_TWIN_BLADE
         jne .brute
         test al, KT_SHIELD
         jnz .no
@@ -2907,7 +2913,7 @@ kit_forbids:
 .stalker:
         cmp cl, KIT_STALKER
         jne .warden
-        test ah, KT_ARMOUR
+.light: test ah, KT_ARMOUR
         jz .ok
         test al, KT_SHIELD
         jnz .ok
@@ -3465,7 +3471,7 @@ KIT_LIFEBINDER equ 10
 KIT_WANDERER equ 11
 KIT_MYRMIDON equ 13
 KIT_SENTINEL equ 14
-KIT_RAIDER   equ 15
+KIT_RAVAGER  equ 15
 KIT_CHAMPION equ 17
 KIT_TWIN_BLADE equ 18
 KIT_BRUTE    equ 19
@@ -4231,7 +4237,7 @@ ef_draw:
         jb .slot
 .ret:   ret
 
-; KIT_OF_SHEET: CS:SI the line naming the kit of sheet ES:BX ("KIT: RAIDER", in KIT_LINE), ZF
+; KIT_OF_SHEET: CS:SI the line naming the kit of sheet ES:BX ("KIT: RAVAGER", in KIT_LINE), ZF
 ; clear; ZF set if it has none. Others kept.
 kit_of_sheet:
         push ax
@@ -4266,7 +4272,7 @@ kit_of_sheet:
         pop ax
         ret
 
-; KIT_ID: AL the kit of sheet ES:BX (KIT_RAIDER...: the creation screen's class x 4 + the kit,
+; KIT_ID: AL the kit of sheet ES:BX (KIT_RAVAGER...: the creation screen's class x 4 + the kit,
 ; kitpages.kit_id), ZF clear; 0 and ZF set if it has none (the rule off, more than one class,
 ; none chosen). Others kept.
 kit_id:
@@ -4313,8 +4319,10 @@ kit_of_creature:
         ret
 
 ; KIT_AC: AX (the AC the game's AC routine has for its creature, whose thing is its [BP+6]) with
-; the creature's kit's: a Raider's 1 worse, a Sentinel's 2 better with a shield in a hand, a Grove
-; Warden's 1 better for every 3 druid levels. DS the game's; others kept.
+; the creature's kit's (kits.ac): a Ravager's base AC by its level (RAVAGER_AC) where it is better
+; than its sheet's (+27h), its armour improving it as before; a Wanderer's 1 worse; a Sentinel's 2
+; better with a shield in a hand, an Arena Champion's 1; a Grove Warden's 1 better for every 3 druid levels. DS the game's;
+; others kept.
 kit_ac:
         test word [cs:rules_hi], RULE_HI_KITS
         jz .ret
@@ -4334,14 +4342,18 @@ kit_ac:
         push ax
         call kit_of_creature
         pop bx                  ; (BX the creature)
-        cmp al, KIT_RAIDER
-        jne .warden
+        cmp al, KIT_WANDERER
+        jne .levels
         inc cx
         jmp .out
-.warden:
+.levels:
+        cmp al, KIT_RAVAGER
+        je .sheet
         cmp al, KIT_GROVE_WARDEN
         jne .sentinel
-        mov ax, bx              ; 1 better for every 3 druid levels (the sheet's +24h: one class)
+.sheet: mov dl, al              ; (DL the kit; ES:BX the sheet, its +24h the level: one class)
+        push dx
+        mov ax, bx
         les bx, [CREATURES]
         imul ax, ax, 0x3A
         add bx, ax
@@ -4349,15 +4361,36 @@ kit_ac:
         les bx, [0x1661]
         imul ax, ax, 0x47
         add bx, ax
+        pop dx
         movzx ax, byte [es:bx + 0x24]
+        cmp dl, KIT_GROVE_WARDEN
+        jne .table
         mov dl, 3
         div dl
         movzx ax, al
         sub cx, ax
         jmp .out
+.table: dec ax
+        cmp ax, RAVAGER_LEVELS - 1
+        jbe .level
+        mov ax, RAVAGER_LEVELS - 1
+.level: push si
+        mov si, ax
+        movsx dx, byte [cs:si + ravager_ac]
+        pop si
+        movsx ax, byte [es:bx + 0x27]
+        sub ax, dx              ; (the sheet's base less the table's: what the table betters it by)
+        jle .out
+        sub cx, ax
+        jmp .out
 .sentinel:
+        mov dx, 2               ; (a Sentinel's 2 with a shield, an Arena Champion's 1)
         cmp al, KIT_SENTINEL
+        je .shield
+        dec dx
+        cmp al, KIT_CHAMPION
         jne .out
+.shield:
         push di
         mov di, [bp + 6]
         mov [cs:r_things], es
@@ -4366,44 +4399,87 @@ kit_ac:
         jc .out
         test byte [cs:p_flags], P_SHIELD
         jz .out
-        sub cx, 2
+        sub cx, dx
 .out:   mov ax, cx
         pop es
         pop dx
         pop cx
         pop bx
 .ret:   ret
+ravager_ac db 7, 7, 6, 6, 5, 5, 4, 4, 3, 3, 3, 2, 2, 2, 1, 1, 1, 0  ; (by level, 1-18 and on)
+RAVAGER_LEVELS equ $ - ravager_ac
 
-; KIT_MELEE: AX the damage the kit of sheet ES:BX adds with item type SI unless it is a missile
-; weapon's (its type's +0, bit 2): a Raider's 1; else 0. DS the game's; others kept.
+; KIT_MELEE: AX what the kit of sheet ES:BX adds to hit and to damage with item type SI unless it
+; is a missile weapon's (its type's +0, bit 2): a Ravager's 1; a Brute's 2 with a two-handed weapon
+; (+0Fh, 40h); else 0 (kits.melee). DS the game's; others kept.
 kit_melee:
         call kit_id
-        cmp al, KIT_RAIDER
-        jne .none
         push bx
         push es
+        mov ah, al
+        push ax
         les bx, [ITEM_TYPES]
         imul ax, si, 0x14
         add bx, ax
-        test byte [es:bx], 2
-        pop es
-        pop bx
+        pop ax
+        test byte [es:bx], KT_MISSILE
         jnz .none
-        mov ax, 1
-        ret
+        cmp ah, KIT_RAVAGER
+        je .one
+        cmp ah, KIT_BRUTE
+        jne .none
+        test byte [es:bx + 0x0F], KT_TWO_HANDED
+        jz .none
+        mov ax, 2
+        jmp .out
+.one:   mov ax, 1
+        jmp .out
 .none:  xor ax, ax
+.out:   pop es
+        pop bx
         ret
+
+; KIT_TO_HIT: AX what the attacker's kit adds to hit in the weapon attack routine (the sheet its
+; [BP+10h], the item type [BP+14h], [BP+16h] above 1 for a missile): KIT_CHAMPION's, and for a
+; melee attack KIT_MELEE's. Others kept.
+kit_to_hit:
+        call kit_champion       ; (with a shield, +1 in melee only)
+        cmp word [bp + 0x16], 1
+        jle .melee
+        cmp ax, 1
+        jne .ret
+        xor ax, ax
+        ret
+.melee:
+        push bx
+        push dx
+        push si
+        push es
+        mov dx, ax
+        les bx, [0x1661]
+        imul ax, [bp + 0x10], 0x47
+        add bx, ax
+        mov si, [bp + 0x14]
+        call kit_melee
+        add ax, dx
+        pop es
+        pop si
+        pop dx
+        pop bx
+.ret:   ret
 
 ; KIT_ATTACK_DAMAGE: the weapon attack's damage bonus ([BP-12h]) with the attacker's kit's
 ; (KIT_MELEE, for a melee attack: [BP+16h] 1 or less; the sheet [BP+10h], the item type
 ; [BP+14h]). All registers kept.
 kit_attack_damage:
-        push ax
-        call kit_champion
-        add [bp - 0x12], ax
-        pop ax
         cmp word [bp + 0x16], 1
         jg .ret
+        push ax
+        call kit_champion       ; (with a shield, +1 in melee)
+        cmp ax, 1
+        jne .kit
+        inc word [bp - 0x12]
+.kit:   pop ax
         push ax
         push bx
         push si
@@ -4420,9 +4496,9 @@ kit_attack_damage:
         pop ax
 .ret:   ret
 
-; KIT_CHAMPION: AX what an Arena Champion attacking (the weapon attack routine's sheet, its
-; [BP+10h]) adds to hit and to damage: 1 under the open sky, -1 under a roof or underground (as the
-; companion has it: GROUND_OPEN, GROUND_ROOF), else 0. Others kept.
+; KIT_CHAMPION: AX 1 if the attacker in the weapon attack routine (its thing [BP+18h], its sheet
+; [BP+10h]) is an Arena Champion with a shield in a hand, -1 if one without, else 0 (kits.champion:
+; with one, +1 to hit and damage in melee; without, -1 to hit). DS the game's; others kept.
 kit_champion:
         push bx
         push es
@@ -4431,21 +4507,23 @@ kit_champion:
         add bx, ax
         call kit_id
         pop es
-        mov bx, [bp + 0x10]
+        pop bx
         cmp al, KIT_CHAMPION
         mov ax, 0
-        jne .out
-        cmp bx, 16
-        jae .out
-        bt [cs:ground_open], bx
-        jnc .roof
-        inc ax
-        jmp .out
-.roof:  bt [cs:ground_roof], bx
-        jnc .out
-        dec ax
-.out:   pop bx
-        ret
+        jne .ret
+        push di
+        mov ax, ds
+        add ax, THINGS_SEG
+        mov [cs:r_things], ax
+        mov di, [bp + 0x18]
+        mov ax, -1
+        call prot_scan
+        jc .out
+        test byte [cs:p_flags], P_SHIELD
+        jz .out
+        mov ax, 1
+.out:   pop di
+.ret:   ret
 
 ; PROBE_INIT: INT VEC_INIT replaces "add dx,14h" (3 bytes: INT + NOP; DSUN.EXE 5750Eh) where a
 ; combatant's initiative for the round is made (DX the 0-9 roll and its adjustments, SI the
@@ -4463,8 +4541,11 @@ probe_init:
 
 ; KIT_SAVE: SI (a saving throw's modifiers) with the kit's of the one saving (thing DI) against
 ; spell AX: a Sentinel's -1 against a wizard's or priest's spell (0-137, not a psionic power or a
-; monster's), a Myrmidon's -4 against a charm (KIT_CHARMS). DS the game's; others kept.
+; monster's), a Myrmidon's -4 against a charm (KIT_CHARMS), a Wanderer's +3 against fire and cold
+; (kits.save). DS the game's; others kept.
 KIT_SPELL_LAST equ 137
+KIT_SPELLS equ 256              ; (the spell records: DS - SPELLS_FROM_DS, +40h, 20h each)
+SPELLS_FROM_DS equ 0x4356 - 0x3CB4
 kit_save:
         push ax
         push bx
@@ -4488,7 +4569,7 @@ kit_save:
         jmp .out
 .myrmidon:
         cmp al, KIT_MYRMIDON
-        jne .out
+        jne .wanderer
         mov bx, kit_charms
 .charm: cmp [cs:bx], cx
         je .charmed
@@ -4498,6 +4579,22 @@ kit_save:
         jmp .out
 .charmed:
         sub si, 4
+        jmp .out
+.wanderer:
+        cmp al, KIT_WANDERER    ; +3 against a fire or cold spell (its record's +1Ah: 2 fire, 4 cold),
+        jne .out                ;   as the game's Resist Fire and Resist Cold
+        cmp cx, KIT_SPELLS
+        jae .out
+        push ds
+        mov ax, ds
+        sub ax, SPELLS_FROM_DS
+        mov ds, ax
+        mov bx, cx
+        shl bx, 5
+        test byte [bx + 0x40 + 0x1A], 0x06
+        pop ds
+        jz .out
+        add si, 3
 .out:   pop es
         pop cx
         pop bx
@@ -4509,16 +4606,14 @@ kit_charms dw 2, 40, 61, 82, 158, 159
 kit_charms_end:
 
 ; KIT_MOVE: AX (a creature's movement for its turn in a fight, its Move x 10; SI the creature)
-; with its kit's: a Raider's and a Stalker's 2 more. Others kept.
+; with its kit's: a Stalker's 2 more. Others kept.
 kit_move:
         push ax
         mov ax, si
         call kit_of_creature
-        cmp al, KIT_RAIDER
-        je .two
         cmp al, KIT_STALKER
         jne .none
-.two:   pop ax
+        pop ax
         add ax, 20
         ret
 .none:  pop ax
@@ -4543,7 +4638,7 @@ ef_line:
 ; Each class's kits (kitpages.KITS), the creation screen's classes in order, three each
 kit_names    db 'ELEMENTALIST', 0, 'HEALER', 0, 'CRUSADER', 0
              db 'GROVE WARDEN', 0, 'LIFEBINDER', 0, 'WANDERER', 0
-             db 'MYRMIDON', 0, 'SENTINEL', 0, 'RAIDER', 0
+             db 'MYRMIDON', 0, 'SENTINEL', 0, 'RAVAGER', 0
              db 'ARENA CHAMPION', 0, 'TWIN-BLADE', 0, 'BRUTE', 0
              db 'SCHOLAR', 0, 'BATTLE MAGE', 0, 'ARCANIST', 0
              db 'MIND BENDER', 0, 'MIND WARRIOR', 0, 'KINETICIST', 0

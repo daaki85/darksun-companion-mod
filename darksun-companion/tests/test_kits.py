@@ -8,23 +8,56 @@ from dscompanion import kits  # noqa: E402
 
 
 class KitEffectTests(unittest.TestCase):
-    def test_raider(self):
-        self.assertEqual((kits.melee_damage(kits.RAIDER), kits.ac(kits.RAIDER, False), kits.move(kits.RAIDER)), (1, 1, 2))
-        self.assertEqual(kits.name(kits.RAIDER), "Raider")
+    def test_ravager(self):
+        self.assertEqual((kits.melee(kits.RAVAGER, False), kits.melee(kits.RAVAGER, True), kits.move(kits.RAVAGER)),
+                         (1, 1, 0))
+        self.assertEqual(kits.name(kits.RAVAGER), "Ravager")
+        # the table by level, where it betters the sheet's base AC
+        self.assertEqual([kits.ac(kits.RAVAGER, False, level) for level in (1, 2, 3, 9, 11, 12, 15, 18, 20)],
+                         [-3, -3, -4, -7, -7, -8, -9, -10, -10])
+        self.assertEqual(kits.ac(kits.RAVAGER, False, 1, base=5), 0)
+        self.assertEqual(kits.ac(kits.RAVAGER, False, 3, base=8), -2)
+
+    def test_brute(self):
+        self.assertEqual((kits.melee(kits.BRUTE, True), kits.melee(kits.BRUTE, False)), (2, 0))
+        self.assertEqual(kits.scores_after(kits.BRUTE, [16, 17, 15, 10, 12, 9]), [16, 17, 15, 10, 12, 9])
+
+    def test_wanderer(self):
+        self.assertEqual(kits.ac(kits.WANDERER, True), 1)
+        self.assertEqual([kits.save(kits.WANDERER, 0, k) for k in (kits.FIRE, kits.COLD, 1, 0x08)], [3, 3, 0, 0])
+        self.assertEqual(kits.save(kits.WANDERER, 300, kits.FIRE), 0)
+        self.assertEqual(kits.save(kits.SENTINEL, 0, kits.FIRE), -1)
+
+    def test_champion(self):
+        self.assertEqual((kits.ac(kits.CHAMPION, True), kits.ac(kits.CHAMPION, False)), (-1, 0))
+        self.assertEqual([kits.champion(kits.CHAMPION, s, m) for s in (True, False) for m in (True, False)],
+                         [(1, 1), (0, 0), (-1, 0), (-1, 0)])
+        self.assertEqual(kits.champion(kits.SENTINEL, False, True), (0, 0))
 
     def test_sentinel(self):
         self.assertEqual((kits.ac(kits.SENTINEL, True), kits.ac(kits.SENTINEL, False)), (-2, 0))
-        self.assertEqual((kits.melee_damage(kits.SENTINEL), kits.move(kits.SENTINEL)), (0, 0))
+        self.assertEqual((kits.melee(kits.SENTINEL, True), kits.move(kits.SENTINEL)), (0, 0))
 
     def test_none(self):
-        self.assertEqual((kits.melee_damage(0), kits.ac(0, True), kits.move(0), kits.name(0)), (0, 0, 0, ""))
+        self.assertEqual((kits.melee(0, True), kits.ac(0, True), kits.move(0), kits.name(0)), (0, 0, 0, ""))
 
     def test_scores(self):
-        self.assertEqual(kits.scores_after(kits.BRUTE, [16, 17, 15, 10, 12, 9]), [16, 18, 16, 9, 11, 9])
-        self.assertEqual(kits.scores_after(kits.WANDERER, [16, 17, 15, 10, 12, 9]), [15, 17, 16, 10, 13, 8])
         self.assertEqual(kits.scores_after(kits.ARCANIST, [16, 17, 4, 18, 12, 9]), [16, 17, 3, 18, 12, 9])
-        self.assertEqual(kits.scores_after(kits.BRUTE, [25, 25, 25, 3, 3, 3]), [25, 25, 25, 3, 3, 3])
-        self.assertEqual(kits.scores_after(kits.RAIDER, [1, 2, 3, 4, 5, 6]), [1, 2, 3, 4, 5, 6])
+        self.assertEqual(kits.scores_after(kits.ARCANIST, [16, 17, 15, 18, 12, 9]), [16, 17, 13, 18, 12, 9])
+        self.assertEqual(kits.scores_after(kits.RAVAGER, [1, 2, 3, 4, 5, 6]), [1, 2, 3, 4, 5, 6])
+
+    def test_forbids(self):
+        def typ(flags=0, kinds=0, mat=0x40):
+            t = bytearray(0x14)
+            t[0], t[0x0F], t[8] = flags, kinds, mat
+            return bytes(t)
+        R = kits.RAVAGER
+        self.assertTrue(kits.forbids(R, typ(kits.SHIELD), None, False))
+        self.assertTrue(kits.forbids(R, typ(kits.MISSILE), 13, False))
+        self.assertTrue(kits.forbids(R, typ(kits.MELEE | kits.THROWN), 2, False))
+        self.assertTrue(kits.forbids(R, typ(0, kits.ARMOUR, kits.METAL), None, False))
+        self.assertFalse(kits.forbids(R, typ(0, kits.ARMOUR, kits.LEATHER), None, False))
+        self.assertFalse(kits.forbids(R, typ(kits.MELEE, kits.TWO_HANDED, kits.METAL), 6, False))
 
 
 if __name__ == "__main__":

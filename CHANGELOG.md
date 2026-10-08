@@ -21,10 +21,10 @@ Released pull requests are summarised in a line or two each; the release notes
   spheres' for a cleric, druid or ranger, the last weapon page for a warrior
   with weapon specialization), NO KIT first and what a new character has, the
   rows not chosen greyed as the spheres' are. The kit is kept with the
-  character (sheet `+43h`), and the Effects screen (`KIT: RAIDER`) and the
+  character (sheet `+43h`), and the Effects screen (`KIT: RAVAGER`) and the
   Ledger's Characters tab name it. A new switch on the Options tab, under Rule
   changes.
-- **Kits that work so far:** the Myrmidon, Sentinel and Raider (fighter); the
+- **Kits that work so far:** the Myrmidon, Sentinel and Ravager (fighter); the
   Arena Champion, Twin-blade and Brute (gladiator); the Stalker (ranger); the
   Assassin (thief); the Grove Warden and Wanderer (druid); the Arcanist's CON,
   the Lifebinder's weapons, and the Shinobi's weapons and armour. The guide's
@@ -40,8 +40,14 @@ Released pull requests are summarised in a line or two each; the release notes
   class, for characters of one class) and what research says about building
   them: room in the helper, the sheet byte for the kit, the creation page, and
   each effect's hook, found or still to find. Revised: the Lifebinder's,
-  Battle Mage's, Arcanist's, Stalker's, Raider's, Myrmidon's and Shinobi's
-  kits (the Shinobi with a list of its own of 14 spells).
+  Battle Mage's, Arcanist's, Stalker's, Myrmidon's and Shinobi's kits (the
+  Shinobi with a list of its own of 14 spells); the Raider made the Ravager
+  (+1 to hit and damage in melee, a base AC by level; no missile or thrown
+  weapons, no shield, light armour only); the Brute +2 to hit and damage with
+  a two-handed melee weapon, in place of its score changes; the Wanderer
+  resisting fire and cold (+3 on saves) for AC 1 worse; the Arena Champion
+  by its shield (+1 to hit and damage in melee and AC 1 better with one, −1
+  to hit without) instead of by the ground under it.
 
 ## Pull request #30 ([merged 2026-10-08](https://github.com/daaki85/darksun-companion-mod/pull/30))
 

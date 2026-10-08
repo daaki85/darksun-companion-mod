@@ -1614,14 +1614,14 @@ and costs something.
 |---|---|---|
 | **Myrmidon** (fighter) | a second weapon spec at 1st level, on to mastery and grand mastery as the first | −4 on saves against charms (Charm Person, Charm Monster, Charm Person or Mammal, Domination, Mass Domination) |
 | **Sentinel** (fighter) | AC 2 better with a shield in a hand; +2 initiative | −1 on saves against wizards' and priests' spells |
-| **Raider** (fighter) | +2 movement in a fight; +1 damage in melee | AC 1 worse |
-| **Arena Champion** (gladiator) | +1 to hit and damage under the open sky | −1 to hit and damage under a roof or underground |
+| **Ravager** (fighter) | +1 to hit and damage in melee; a base AC by level (7 at 1st and 2nd level, 6 at 3rd and 4th, 5 at 5th and 6th, 4 at 7th and 8th, 3 at 9th to 11th, 2 at 12th to 14th, 1 at 15th to 17th, 0 from 18th), armour bettering it as usual | no missile or thrown weapons; no shield; light armour only (leather, or none) |
+| **Arena Champion** (gladiator) | with a shield in a hand: +1 to hit and damage in melee, and AC 1 better | −1 to hit with no shield |
 | **Twin-blade** (gladiator) | no penalty for two weapons (with the two-weapons rule) | no shield; no two-handed weapon (a half-giant may hold one in one hand, with the half-giants' rule) |
-| **Brute** (gladiator) | +1 DEX, +1 CON | −1 INT, −1 WIS; two-handed melee weapons only (a half-giant may add a shield); missile weapons, but not as a weapon spec |
+| **Brute** (gladiator) | +2 to hit and damage with a two-handed melee weapon | two-handed melee weapons only (a half-giant may add a shield); missile weapons, but not as a weapon spec |
 | **Stalker** (ranger) | +2 movement in a fight; +15 hide in shadows and move silently | light armour only (leather, or none) |
 | **Assassin** (thief) | hiding in shadows not halved in daylight | −15 pick pockets and open locks |
 | **Grove Warden** (druid) | AC 1 better for every 3 druid levels | no metal weapons |
-| **Wanderer** (druid) | +1 WIS, +1 CON | −1 CHA, −1 STR |
+| **Wanderer** (druid) | resists fire and cold as the Resist Fire and Resist Cold spells do: +3 on saves against fire and cold spells | AC 1 worse |
 | **Arcanist** (preserver) | *to come:* a spell slot more at each spell level | −2 CON |
 | **Shinobi** (thief) | *to come:* a few preserver spells | dagger, short sword, quarterstaff, chatkcha, sling, staff sling and bow only; light armour only; no shield |
 | **Lifebinder** (druid) | *to come:* healing spells heal a die more | blunt weapons only (club, mace, quarterstaff, sling, staff sling) |
@@ -1631,14 +1631,13 @@ and Seeker (ranger), the Swashbuckler and the Shinobi's spells (thief), the Scho
 Battle Mage (preserver), the Mind Bender, Mind Warrior and Kineticist
 (psionicist).
 
-The Brute's, Wanderer's and Arcanist's scores change once, when the character
-is first played, each kept within 3 to 25. The Arena Champion's ground is the
-stealth rule's: open desert, rock and the arena are under the open sky, the
-pens, sewers, caverns and buildings are not; the Ledger works it out several
-times a second and tells the game. The Myrmidon takes its second weapon spec on
+The Arcanist's CON changes once, when the character is first played, kept
+within 3 to 25. The Brute's +2 is for melee: a bow or staff sling, two-handed
+as it is, doesn't get it. The game's Resist Fire and Resist Cold don't halve
+fire's or cold's damage, so neither does the Wanderer's resistance. The Myrmidon takes its second weapon spec on
 the weapon pages after the kit is taken (go back to them from the KIT page),
 and loses it if another kit is taken. The dice log and the Ledger show each
-kit's part: a Raider's damage (`+1 Raider`), a Sentinel's initiative and saves,
+kit's part: a Ravager's to-hit and damage (`+1 Ravager`), a Sentinel's initiative and saves,
 a Stalker's hiding, the THAC0 shown for each weapon.
 
 The kit is chosen on the creation panel's **KIT** page, opened with **KITS**,
@@ -1651,7 +1650,7 @@ spheres, the rows not chosen are greyed: click the marked row to take it back,
 then click the kit you want. A few names are shortened to fit the panel
 (CHAMPION, SWASHBUCK, ELEMENTLST, GRV WARDEN, M-BENDER, M-WARRIOR). Choosing
 another class puts the kit back to none. The Effects screen names the kit
-(`KIT: RAIDER`), as does the Ledger's Characters tab.
+(`KIT: RAVAGER`), as does the Ledger's Characters tab.
 
 ### Class restrictions
 
