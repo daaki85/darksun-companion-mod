@@ -1164,5 +1164,7 @@ helper's code (emulated) to the Python.
    game: the Shinobi's slots (the game's slot routine run on a running
    game's memory), its spells on the USE screen and cast, Blur's duration at
    thief level 8 (caster level 3), and its level up to 6th after a fight:
-   CHOOSE A SPELL with its four 1st-level spells it didn't know, one learnt.
-   Not yet in the game: a scroll refused, the Scholar's second pick.
+   CHOOSE A SPELL with its four 1st-level spells it didn't know, one learnt;
+   a game scroll of Shield refused (nothing learnt, the scroll kept), where a
+   preserver learns its scroll with the same clicks; and a Scholar's level up
+   to 2nd: CHOOSE A SPELL twice, a spell learnt from each.
