@@ -25,6 +25,8 @@ Released pull requests are summarised in a line or two each; the release notes
   Save layout and Reload layout are on the Memory tools tab, leaving the top
   row to starting the game, its window, the text size and Reconnect; a byte's
   decoding has a line of its own.
+- **A character's card** leaves out empty lines (a non-warrior's weapon
+  specs), rather than showing a blank one.
 
 **Documentation**
 - **Guide reorganised:** Every magic item and Every mundane weapon in a section
@@ -43,6 +45,10 @@ Released pull requests are summarised in a line or two each; the release notes
   weapons (a bone axe and a pick can backstab); sixteen rule changes, not
   fifteen; technical notes (patch addresses, drawing costs) moved to
   DEVELOPMENT; old-save notes gone.
+- **Screenshots retaken** with the game installed (its title lettering,
+  portraits and figures): the dice log, the Dialogue tab, the practice
+  program and a thief's card; the backstab table checked against the game's
+  item data (named long swords weigh 10 to 40).
 
 ## Pull request #27 ([merged 2026-10-07](https://github.com/daaki85/darksun-companion-mod/pull/27))
 

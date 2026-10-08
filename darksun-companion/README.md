@@ -364,7 +364,7 @@ text, with the replies offered numbered underneath (and the list's title,
 such as "Answer Yes or No", above them), and then the one you picked:
 `You chose: No`.
 
-![The Dialogue tab](docs/dialogue.png)
+![The Dialogue tab at the start of a new game: the Announcer, with his portrait, introducing the Defiler's show](docs/dialogue.png)
 
 **Who's speaking.** The game's dialogue window gets only a portrait number,
 never a name. But when the game runs a script on someone (you click them, or
@@ -391,12 +391,11 @@ Each entry shows the speaker's portrait, as the game's own dialogue window
 does. Portraits and the title's lettering are read from your installed game
 at run time (GPLDATA.GFF and RESOURCE.GFF in the install folder the launcher
 remembers); nothing from the game is copied into Templar's Ledger. Without
-the game installed the window uses its own lettering and no portraits (the
-screenshots here are taken that way).
+the game installed the window uses its own lettering and no portraits.
 
 ## The dice log
 
-![Templar's Ledger during the first arena fight: the Characters tab, and the dice log with Cilla hiding in shadows and moving silently](docs/dicelog.png)
+![Templar's Ledger during the arena's opening show: the Characters tab with the game's own party, and the dice log of the Defiler's Fireball and Cone of Cold on the Rampager](docs/dicelog.png)
 
 **Reading it at a glance.** Lines at the left edge are the events: a round
 starting, whose turn it is, attack rolls, saves, spells, kills. Lines indented
@@ -898,8 +897,8 @@ From the game's code:
   attack of the round the damage, STR bonus included, is multiplied: x2 at
   thief levels 1-4, x3 at 5-8, x4 at 9-12, x5 from 13.
 
-Which weapons can backstab, the game's and the [Ledger's](#new-items) (a magic
-one weighs as its plain kind). Weight belongs to the weapon's kind and
+Which weapons can backstab, the game's and the [Ledger's](#new-items), magic
+ones included. Weight belongs to the weapon's kind and
 material, in the game's units, which look like tenths of a pound (a dagger is
 10, a club 30, a mace 100, as AD&D's 1, 3 and 10 lb), so the limit is 4 lb.
 Missile weapons (slings, bows, a thrown chatkcha) never backstab: it has to be
@@ -909,7 +908,7 @@ melee.
 |---|---|---|---|
 | Dagger | bone, stone, obsidian, metal (10) | 1d4 | yes |
 | Short sword | bone (15); obsidian, metal (30) | 1d6 | yes |
-| Long sword | bone (20), obsidian (30), metal (40, the limit); Dark Flame (40) | 1d8 | yes |
+| Long sword | bone, obsidian, metal (10 to 40, metal at the limit) | 1d8 | yes |
 | Club | wood (30) | 1d6 | yes |
 | Quarterstaff | wood (40) | 1d6 | yes |
 | Axe | bone (35) | 1d8 | yes |
@@ -2627,5 +2626,5 @@ python tests/make_fake_party.py
 dosbox FAKEPTY.COM
 ```
 
-![The viewer on the practice program](docs/viewer.png)
+![The Ledger on the practice program: All fields with Sadira and Rikus, and Memory tools with her record found and its bytes](docs/viewer.png)
 
