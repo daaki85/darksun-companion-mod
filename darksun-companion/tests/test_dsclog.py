@@ -2882,6 +2882,22 @@ class KitTests(unittest.TestCase):
                     self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), kits.thac0(kid, level, own))
                     self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_BX, r.UC_X86_REG_CX, r.UC_X86_REG_ES,
                                                                     r.UC_X86_REG_SP)], [0x2222, 0x3333, 0x6666, 0x7FC])
+        # A human Mind Warrior (psionicist 6) who became a thief: the kit asleep (the game's THAC0)
+        # until the thief level passes 6, then a warrior's by its psionicist level (21 - 6 = 15)
+        self.rules(game.RULE_KITS)
+        for thief, want in ((4, 18), (6, 18), (7, 15)):
+            with self.subTest(thief=thief):
+                sheet = bytearray(game.SHEET_SIZE)
+                sheet[0x18], sheet[0x21:0x23], sheet[0x24:0x26], sheet[kitpages.KIT_BYTE] = 1, bytes((17, 12)), bytes((thief, 6)), 2
+                self.mu.mem_write(self.SHEET * 16 + 5 * game.SHEET_SIZE, bytes(sheet))
+                self.assertEqual(kitpages.kit_id(bytes(sheet)), kits.MIND_WARRIOR if thief > 6 else 0)
+                self.assertEqual(kitpages.kit_any(bytes(sheet)), kits.MIND_WARRIOR)
+                self.mu.mem_write(SS * 16 + BP + 6, struct.pack("<H", 5))
+                for name, value in dict(cs=CALLER, ds=self.DS, ss=SS, esp=0x7FC, ebp=BP, eflags=IF | 2,
+                                        esi=2, ebx=0x2222, ecx=0x3333, es=0x6666).items():
+                    self.mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+                self.mu.emu_start(CALLER * 16 + 0x600, CALLER * 16 + 0x605)
+                self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), want)
         self.assertEqual([kits.thac0(kits.SWASHBUCKLER, 9, 16), kits.thac0(kits.SCHOLAR, 9, 18),
                           kits.thac0(kits.CRUSADER, 25, 4), kits.thac0(0, 9, 16)], [12, 19, 1, 16])
 
@@ -2934,7 +2950,7 @@ class KitTests(unittest.TestCase):
         Elementalist's 1 less (kits.slot_level); AH kept."""
         from dscompanion import kits
         from dscompanion.gamepatch import VEC_SLOT_LEVEL
-        at = self.image.find(bytes.fromhex("535188e529fb"))
+        at = self.image.find(bytes.fromhex("53515288e589fa29fb"))
         self.assertGreater(at, 0)
         self.mu.mem_write(VEC_SLOT_LEVEL * 4, struct.pack("<HH", at, TSR))
         self.mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
@@ -2955,6 +2971,24 @@ class KitTests(unittest.TestCase):
                         self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), 0x5500 | kits.slot_level(kid, level))
                         self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_BX, r.UC_X86_REG_CX,
                                                                         r.UC_X86_REG_SP)], [0, 0x3333, 0x7FC])
+        # A human Elementalist who became a fighter: its cleric slots (the class at place 1) a level
+        # behind once the fighter level passes the cleric's; the fighter's place as it is
+        from dscompanion import kitpages
+        self.rules(game.RULE_KITS)
+        for fighter, place in ((3, 1), (5, 1), (5, 0)):
+            with self.subTest(fighter=fighter, place=place):
+                sheet = bytearray(game.SHEET_SIZE)
+                sheet[0x18], sheet[0x21:0x23], sheet[0x24:0x26], sheet[0x43] = 1, bytes((9, 1)), bytes((fighter, 4)), 1
+                self.mu.mem_write(self.SHEET * 16, bytes(sheet))
+                for name, value in dict(cs=CALLER, ds=self.DS, ss=SS, esp=0x7FC, eflags=IF | 2, eax=0x5500,
+                                        ebx=place, edi=place, es=self.SHEET, ecx=0x3333, edx=0x4444).items():
+                    self.mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+                self.mu.emu_start(CALLER * 16 + 0x600, CALLER * 16 + 0x604)
+                level = sheet[0x24 + place]
+                behind = place == kitpages.kit_place(sheet) and kitpages.kit_awake(sheet)
+                self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), 0x5500 | (level - 1 if behind else level))
+                self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_BX, r.UC_X86_REG_CX, r.UC_X86_REG_DX,
+                                                                r.UC_X86_REG_DI)], [place, 0x3333, 0x4444, place])
         # a second class's level (DI 1): the sheet's own kit, none for more than one class
         sheet = bytearray(game.SHEET_SIZE)
         sheet[0x21], sheet[0x22], sheet[0x25], sheet[0x43] = 1, 5, 7, 1
@@ -3217,33 +3251,6 @@ class KitTests(unittest.TestCase):
         self.assertEqual(kits.spell_spheres(kits.ELEMENTALIST, 1, 2, 0x110112), 0x110116)  # (fire's: the air cleric's too)
         self.assertEqual(kits.spell_spheres(kits.ELEMENTALIST, 1, 2, 0x10808A), 0x10808A)
 
-
-    def test_dual(self):
-        """PROBE_DUAL: a human changing class (its classes moved down, +22h the one it leaves) loses
-        a kit chosen for that class alone; a Battle Mage its weapon spec too (kits.dual_class)."""
-        from dscompanion import kits, kitpages
-        from dscompanion.gamepatch import VEC_DUAL
-        cases = ((11, 0, 2, 0x06), (11, 0, 0, 0x06), (3, 0, 1, 0), (9, 0, 2, 0x0102), (14, 0, 2, 0x06),
-                 (17, 0, 3, 0), (11, 9, 2, 0x06), (12, 0, 0xFF, 0), (9, 0, 1, 0x0503), (9, 0, 3, 0x0503))
-        for old, older, kit, specs in cases:
-            with self.subTest(old=old, older=older, kit=kit):
-                sheet = bytearray(game.SHEET_SIZE)
-                sheet[0x21:0x24] = bytes((old, old, older))  # (the new class not yet put first)
-                sheet[kitpages.KIT_BYTE], sheet[kits.SPHERE2] = kit, 3
-                sheet[0x14:0x18] = struct.pack("<I", specs)
-                want = bytearray(sheet)
-                kits.dual_class(want)
-                self.mu.mem_write(self.SHEET * 16, bytes(sheet))
-                self.mu.mem_write(SS * 16 + BP + 8, struct.pack("<H", 9))
-                self.run_vector(VEC_DUAL, 3, eax=0x1234, ebx=0, ecx=0x5555, es=self.SHEET)
-                self.assertEqual(bytes(self.mu.mem_read(self.SHEET * 16, game.SHEET_SIZE)), bytes(want))
-                self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), 0x1209)
-                self.assertEqual(self.mu.reg_read(r.UC_X86_REG_CX), 0x5555)
-                ended = kit and not older
-                self.assertEqual(want[kitpages.KIT_BYTE], 0 if ended else kit)
-                self.assertEqual(want[0x14:0x18] == bytes(4), bool(ended and old not in (9, 14)) or not specs)
-                if old == 9:
-                    self.assertEqual(want[0x14:0x16], bytes((specs & 0xFF, 0 if kit == 1 else specs >> 8)))
 
     def picker_sheet(self, cls, kit, level):
         from dscompanion import kitpages

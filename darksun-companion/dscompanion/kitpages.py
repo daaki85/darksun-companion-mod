@@ -64,13 +64,54 @@ def row_text(name: str) -> str:
     return SHORT.get(name, name.upper())
 
 
-def kit_id(sheet: bytes) -> int:
-    """The kit of a sheet as DSCLOG's KIT_ID numbers it (the creation class x 4 + the kit: RAVAGER
-    15), or 0: none chosen, or more than one class. (The rule is the caller's to weigh.)"""
-    if len(sheet) <= KIT_BYTE or sheet[0x22] or sheet[0x23]:
+def kit_place(sheet: bytes) -> Optional[int]:
+    """The place (0-2) among the sheet's classes of the class its kit was chosen with, as DSCLOG's
+    KIT_PLACE: 0 for one class; for a human who has changed class (the classes move down, the new
+    one first) its first class, the last of its classes; None for more than one class otherwise."""
+    if len(sheet) <= KIT_BYTE:
+        return None
+    if not sheet[0x22] and not sheet[0x23]:
         return 0
-    kit, cls = sheet[KIT_BYTE], CREATION_CLASS.get(sheet[0x21])
+    if sheet[0x18] != 1:  # (a human's: game.HUMAN)
+        return None
+    return 2 if sheet[0x23] else 1
+
+
+def kit_awake(sheet: bytes) -> bool:
+    """Whether the sheet's kit counts, as DSCLOG's KIT_AWAKE: always for one class; for a human who
+    has changed class, once the class it has now is of a higher level than the kit's (as the game
+    counts its earlier classes). Asleep till then."""
+    place = kit_place(sheet)
+    return place == 0 or place is not None and sheet[0x24] > sheet[0x24 + place]
+
+
+def kit_any(sheet: bytes) -> int:
+    """The kit of a sheet as DSCLOG's KIT_ID numbers it (the creation class x 4 + the kit: RAVAGER
+    15), asleep or not (DSCLOG's KIT_ANY), or 0: none chosen, or more than one class but for a
+    human. (The rule is the caller's to weigh.)"""
+    place = kit_place(sheet)
+    if place is None:
+        return 0
+    kit, cls = sheet[KIT_BYTE], CREATION_CLASS.get(sheet[0x21 + place])
     return cls * 4 + kit if cls is not None and 1 <= kit <= 3 else 0
+
+
+def kit_id(sheet: bytes) -> int:
+    """The kit of a sheet (kit_any) while it is awake (kit_awake), else 0: DSCLOG's KIT_ID."""
+    return kit_any(sheet) if kit_awake(sheet) else 0
+
+
+def kit_level(sheet: bytes) -> int:
+    """The level of the class the sheet's kit was chosen with (kit_place), 0 for none: DSCLOG's
+    KIT_LEVEL (a Ravager's AC, a Seeker's slots, a Shinobi's casting go by it)."""
+    place = kit_place(sheet)
+    return 0 if place is None else sheet[0x24 + place]
+
+
+def kit_class_of(sheet: bytes) -> int:
+    """The class (1-17) the sheet's kit was chosen with, 0 for none: DSCLOG's KIT_CLASS_OF_SHEET."""
+    place = kit_place(sheet)
+    return 0 if place is None else sheet[0x21 + place]
 
 
 # KIT_ID's numbers, by name
@@ -78,8 +119,9 @@ KIT_IDS = {name: cls * 4 + k + 1 for cls, names in KITS.items() for k, name in e
 
 
 def kit_name(sheet: bytes) -> Optional[str]:
-    """The kit of a sheet (the game's classes, 1-17), or None: none chosen, or more than one class."""
-    kid = kit_id(sheet)
+    """The kit of a sheet (the game's classes, 1-17), asleep or not, or None: none chosen, or more
+    than one class but for a human."""
+    kid = kit_any(sheet)
     return KITS[kid // 4][kid % 4 - 1] if kid else None
 
 

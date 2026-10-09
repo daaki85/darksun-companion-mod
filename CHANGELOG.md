@@ -91,11 +91,13 @@ Released pull requests are summarised in a line or two each; the release notes
   works out its PSP again (the game did both only when a class was clicked),
   and the screen shows the new numbers (INT A5h, A4h, A3h, A2h). The dice
   log's hit point lines name the kit's die.
-- **A kit ends when a human dual-classes** (DUAL on a portrait's menu): it
-  belongs to the class it was chosen with. Its byte, an Elementalist's second
-  sphere, a Battle Mage's weapon spec and a Myrmidon's second are cleared, so
-  a Battle Mage who turns fighter doesn't take its kit's weapon for a
-  fighter's specialization (INT 9Dh).
+- **A kit sleeps when a human dual-classes** (DUAL on a portrait's menu), as
+  the class it was chosen with does, and wakes, gifts and costs, once the new
+  class's level passes the old one's. The Effects screen adds DORMANT under
+  the kit and the Characters tab names the level to pass. Awake, it goes by
+  its own class's level; its hit die counts only for its own class. A Battle
+  Mage's chosen weapon spec stays the kit's (expertise when awake, nothing
+  while asleep), not a new fighter's specialization.
 - **Starting gear fitted to the kit:** the game's class gear, given at DONE,
   is changed while the character is new where the kit can't use it: a
   Shinobi's long sword becomes a bone short sword, a Brute's a bone great axe
@@ -109,7 +111,7 @@ Released pull requests are summarised in a line or two each; the release notes
   place of −2 CON.
 - **The dice log's ring holds 96 entries** (was 128), making room in upper
   memory for the kits' code.
-- **The helper's interrupts** are now 9Dh to FEh (and 60h to 65h); the
+- **The helper's interrupts** are now 9Eh to FEh (and 60h to 65h); the
   message when they are in use says so.
 
 **Documentation**

@@ -1107,11 +1107,12 @@ class GameData:
             return 0
         ability = self.creature(member)[CREATURE_ABILITIES + 4]
         magic = self.guest.read((self.load_seg + CLASS_MAGIC_SEG) * 16 + CLASS_MAGIC_OFF, 4 * 32)
-        from . import kits
+        from . import kitpages, kits
         kid = self.kit_id(member)
+        place = kitpages.kit_place(sheet)
         total = 0
-        for n in range(3):
-            cls, level = sheet[SHEET_CLASSES + n], kits.slot_level(kid, sheet[SHEET_LEVELS + n])
+        for n in range(3):  # (an Elementalist's slots behind for its own class alone)
+            cls, level = sheet[SHEET_CLASSES + n], kits.slot_level(kid if n == place else 0, sheet[SHEET_LEVELS + n])
             if not cls or cls >= 32 or not magic[cls * 4] & bit:
                 continue
             if n and sheet[SHEET_RACE] == HUMAN and level >= sheet[SHEET_LEVELS]:
@@ -1127,7 +1128,7 @@ class GameData:
                     count += 1
                 total += min(max(count, 0), most)
                 rules >>= 4
-        return kits.slots(kid, bit, sheet[SHEET_LEVELS], spell_level, total)
+        return kits.slots(kid, bit, kitpages.kit_level(sheet), spell_level, total)
 
     def class_level(self, creature: int, cls: int) -> int:
         """The creature's level in one class (0 if it hasn't that class)."""
@@ -1147,11 +1148,11 @@ class GameData:
         spheres, = struct.unpack("<I", self.guest.read(
             (self.load_seg + SPELL_SPHERES_SEG) * 16 + SPELL_SPHERES_OFF + spell * SPELL_SPHERES_SIZE, 4))
         classes = self.guest.read((self.load_seg + CLASS_MAGIC_SEG) * 16 + CLASS_MAGIC_OFF, 4 * 20)
-        from . import kits
+        from . import kitpages, kits
         kid = self.kit_id(creature)
         sheet = self.sheet(creature)
         if len(sheet) >= SHEET_SIZE:  # (an Elementalist's second sphere: DSCLOG's PROBE_EL_CAST)
-            spheres = kits.spell_spheres(kid, sheet[SHEET_CLASSES], kits.second_sphere(kid, sheet), spheres)
+            spheres = kits.spell_spheres(kid, kitpages.kit_class_of(sheet), kits.second_sphere(kid, sheet), spheres)
         drop = kits.ranger_cast_drop(kid)  # (the game's 7; DSCLOG's PROBE_RANGER_CAST)
         best = 0
         for cls in range(1, 20):
@@ -1576,8 +1577,13 @@ class GameData:
         from . import kitpages, kits
         sheet = self.sheet(creature)
         name = kitpages.kit_name(sheet)
-        second = kits.second_sphere(kitpages.kit_id(sheet), sheet)
-        return f"{name} (and {SPHERE_NAMES[second]})" if name and second is not None else name
+        second = kits.second_sphere(kitpages.kit_any(sheet), sheet)
+        if name and second is not None:
+            name = f"{name} (and {SPHERE_NAMES[second]})"
+        if name and not kitpages.kit_awake(sheet):  # (a human's who has changed class)
+            name += (f", dormant until the {CLASS_NAMES[sheet[SHEET_CLASSES]].split(' (')[0].lower()} level passes "
+                     f"{kitpages.kit_level(sheet)}")
+        return name
 
     def specializations(self, creature: int) -> List[Tuple[str, str]]:
         """With weapon specialization, (kind, skill) for each weapon kind the creature has chosen:

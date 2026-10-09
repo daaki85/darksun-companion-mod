@@ -96,10 +96,16 @@ def justifier(sheet: bytes) -> bool:
 
 
 def _skill(sheet: bytes, item_type: Optional[int]) -> int:
+    from . import kitpages, kits
     chosen = sheet[game.SPEC_SLOTS:game.SPEC_SLOTS + game.SPEC_COUNT]
     if not any(chosen):
         return NONE
     kind = kind_of(item_type) if item_type is not None else None
+    if game.RULES_IN_FORCE & game.RULE_KITS and kitpages.kit_any(sheet) == kits.BATTLE_MAGE and sheet[0x22]:
+        # (a Battle Mage who has changed class: its weapon spec the kit's alone, nothing while asleep)
+        if not kitpages.kit_awake(sheet):
+            return NONE
+        return EXPERT if kind is not None and kind + 1 == chosen[0] else PLAIN
     if kind is None or kind + 1 not in chosen:
         # (every ranger's expertise with the bow, chosen or not)
         if kind == KINDS.index("bow") and any(c in RANGERS for c, _ in active_classes(sheet)):
@@ -135,9 +141,10 @@ def expert_attacks(halves: int, level: int, sheet: bytes) -> int:
     """The melee attacks a round (in halves) of a character who isn't a warrior (HALVES the game's,
     2 or fewer) with skill LEVEL, as DSCLOG's EXPERT_HALVES: a Battle Mage's chosen weapon spec
     (EXPERT) the expertise rate, 3/2 a round, 2 from 7th level; else HALVES."""
+    from . import kitpages
     if level != EXPERT or halves > 2:
         return halves
-    return 4 if sheet[game.SHEET_LEVELS] >= 7 else 3
+    return 4 if kitpages.kit_level(sheet) >= 7 else 3  # (the preserver level: a human's first class)
 
 
 def attacks(halves: int, level: int, missile: bool = False) -> int:

@@ -125,7 +125,6 @@ VEC_EL_GRANT equ 0xA1      ; PROBE_EL_GRANT
 VEC_EL_CAST equ 0xA0       ; PROBE_EL_CAST
 VEC_EL_LEVEL equ 0x9F      ; PROBE_EL_LEVEL
 VEC_EL_KNOW equ 0x9E       ; PROBE_EL_KNOW
-VEC_DUAL equ 0x9D          ; PROBE_DUAL
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 96          ; entries in the ring (96: the helper and it fit in upper memory)
@@ -2738,8 +2737,11 @@ expert_halves:
         jne .ret
         cmp ax, 2
         ja .ret
+        push ax
+        call kit_level
+        cmp al, 7
+        pop ax
         mov ax, 3
-        cmp byte [es:bx + 0x24], 7
         jb .ret
         inc ax
 .ret:   ret
@@ -2957,7 +2959,7 @@ kit_forbids:
         test word [cs:rules], RULE_HALF_GIANT
         jz .type
         inc ch
-.type:  mov al, [es:bx + 0x21]     ; (a ranger's sphere, for a Seeker: its class less 13)
+.type:  call kit_class_of_sheet     ; (a ranger's sphere, for a Seeker: its class less 13)
         sub al, 13
         mov [cs:kf_sphere], al
         les bx, [ITEM_TYPES]
@@ -4085,7 +4087,8 @@ lv_shinobi:
         jmp .out
 .kit:   cmp al, KIT_SHINOBI
         jne .out
-        cmp byte [es:bx + 0x24], SHINOBI_FIRST
+        call kit_level
+        cmp al, SHINOBI_FIRST
         jb .no
         cmp al, al              ; (ZF set)
         jmp .out
@@ -4471,6 +4474,10 @@ ef_draw:
         call kit_of_sheet
         jz .specs
         call ef_line
+        call kit_id             ; (a human's kit asleep: until its new class passes the old)
+        jnz .specs
+        mov si, kit_asleep
+        call ef_line
 .specs: test word [cs:rules], RULE_SPECIALIZE
         jz .ret
         xor di, di
@@ -4505,13 +4512,13 @@ ef_draw:
         jb .slot
 .ret:   ret
 
-; KIT_OF_SHEET: CS:SI the line naming the kit of sheet ES:BX ("KIT: RAVAGER", in KIT_LINE), ZF
-; clear; ZF set if it has none. Others kept.
+; KIT_OF_SHEET: CS:SI the line naming the kit of sheet ES:BX ("KIT: RAVAGER", in KIT_LINE), asleep
+; or not (KIT_ANY), ZF clear; ZF set if it has none. Others kept.
 kit_of_sheet:
         push ax
         push cx
         push di
-        call kit_id
+        call kit_any
         jz .out
         movzx cx, al            ; (the kit's place in KIT_NAMES, from 1: (class - 1) * 3 + kit)
         and cl, 3
@@ -4541,21 +4548,88 @@ kit_of_sheet:
         ret
 
 ; KIT_ID: AL the kit of sheet ES:BX (KIT_RAVAGER...: the creation screen's class x 4 + the kit,
-; kitpages.kit_id), ZF clear; 0 and ZF set if it has none (the rule off, more than one class,
-; none chosen). Others kept.
+; kitpages.kit_id), ZF clear; 0 and ZF set if it has none (the rule off, more than one class but
+; for a human, none chosen) or it sleeps (KIT_AWAKE). Others kept.
 kit_id:
+        call kit_any
+        jz .ret
+        push di
+        call kit_place
+        call kit_awake
+        pop di
+        jnc .on
+        xor al, al
+.on:    or al, al
+.ret:   ret
+
+; KIT_PLACE: DI the place (0-2) among sheet ES:BX's classes of the class its kit was chosen with:
+; 0 for one class; for a human who has changed class (DUAL: the classes move down, the new one
+; first), its first class, the last of its classes. CF set for more than one class but not a
+; human's (no kit). Others kept.
+kit_place:
+        xor di, di
+        cmp word [es:bx + 0x22], 0
+        je .ok
+        cmp byte [es:bx + 0x18], 1
+        jne .none
+        inc di
+        cmp byte [es:bx + 0x23], 0
+        je .ok
+        inc di
+.ok:    clc
+        ret
+.none:  stc
+        ret
+
+; KIT_AWAKE: CF set if the kit of sheet ES:BX, its class at place DI (KIT_PLACE), sleeps: a human's
+; first class, until the class it has now is of a higher level (as the game counts its earlier
+; classes). Others kept.
+kit_awake:
+        or di, di
+        jz .yes
+        push ax
+        mov al, [es:bx + di + 0x24]
+        cmp [es:bx + 0x24], al
+        pop ax
+        ja .yes
+        stc
+        ret
+.yes:   clc
+        ret
+
+; KIT_LEVEL: AL the level of the class sheet ES:BX's kit was chosen with (KIT_PLACE), the kit's
+; levels (a Ravager's AC, a Seeker's slots), 0 for none. KIT_CLASS_OF: AL that class. Others kept.
+kit_level:
+        push di
+        call kit_place
+        mov al, 0
+        jc .out
+        mov al, [es:bx + di + 0x24]
+.out:   pop di
+        ret
+kit_class_of_sheet:
+        push di
+        call kit_place
+        mov al, 0
+        jc .out
+        mov al, [es:bx + di + 0x21]
+.out:   pop di
+        ret
+
+; KIT_ANY: AL the kit of sheet ES:BX as KIT_ID's, but asleep too. Others kept.
+kit_any:
         push cx
         push di
         xor cl, cl
         test word [cs:rules_hi], RULE_HI_KITS
         jz .out
-        cmp word [es:bx + 0x22], 0
-        jne .out
+        call kit_place
+        jc .out
         mov ch, [es:bx + KIT_BYTE]
         dec ch
         cmp ch, 2
         ja .out
-        movzx di, byte [es:bx + 0x21]   ; (the sheet's class, 1-17: the creation screen's)
+        movzx di, byte [es:bx + di + 0x21]  ; (its class, 1-17: the creation screen's)
         dec di
         cmp di, 16
         ja .out
@@ -4619,7 +4693,7 @@ kit_ac:
         je .sheet
         cmp al, KIT_GROVE_WARDEN
         jne .sentinel
-.sheet: mov dl, al              ; (DL the kit; ES:BX the sheet, its +24h the level: one class)
+.sheet: mov dl, al              ; (DL the kit; ES:BX the sheet: KIT_LEVEL)
         push dx
         mov ax, bx
         les bx, [CREATURES]
@@ -4630,7 +4704,8 @@ kit_ac:
         imul ax, ax, 0x47
         add bx, ax
         pop dx
-        movzx ax, byte [es:bx + 0x24]
+        call kit_level
+        movzx ax, al
         cmp dl, KIT_GROVE_WARDEN
         jne .table
         mov dl, 3
@@ -4834,7 +4909,8 @@ probe_thac0:
         je .level
         cmp al, KIT_MIND_WARRIOR
         jne .out
-.level: movzx ax, byte [es:bx + 0x24]
+.level: call kit_level
+        movzx ax, al
         neg ax
         add ax, 21
         cmp ax, 1
@@ -4921,7 +4997,8 @@ probe_slots:
         les bx, [0x1661]
         imul ax, ax, 0x47
         add bx, ax
-        movzx ax, byte [es:bx + 0x24]   ; (the ranger level)
+        call kit_level                  ; (the ranger level)
+        movzx ax, al
         xor cx, cx
         movzx bx, byte [bp + 0x0A]
         dec bx
@@ -4958,15 +5035,23 @@ seeker_slots db 1, 0, 0,  2, 0, 0,  2, 1, 0,  2, 2, 0,  2, 2, 1
 ; PROBE_SLOT_LEVEL: INT VEC_SLOT_LEVEL replaces "mov al,es:[bx+24h]" (4 bytes: INT + 2 NOPs;
 ; DSUN.EXE 5E1F6h) in the game's spell slot routine, where it takes a class's level (ES:BX the
 ; sheet + DI, the class's place): AL that level, an Elementalist's 1 less (kits.slot_level: its
-; slots a level behind). Others kept.
+; slots a level behind), for its kit's own class (KIT_PLACE). Others kept.
 probe_slot_level:
         push bx
         push cx
+        push dx
         mov ch, ah
+        mov dx, di
         sub bx, di
         call kit_id
         mov cl, al
-        add bx, di
+        push di
+        call kit_place          ; (the kit's own class only: a human's other classes as they are)
+        cmp di, dx
+        pop di
+        je .own
+        xor cl, cl
+.own:   add bx, di
         mov al, [es:bx + 0x24]
         cmp cl, KIT_ELEMENTALIST
         jne .out
@@ -4974,6 +5059,7 @@ probe_slot_level:
         jz .out
         dec al
 .out:   mov ah, ch
+        pop dx
         pop cx
         pop bx
         iret
@@ -5325,7 +5411,8 @@ shinobi_level:
         les bx, [0x1661]
         imul ax, ax, 0x47
         add bx, ax
-        movzx ax, byte [es:bx + 0x24]
+        call kit_level
+        movzx ax, al
         call shinobi_cast
 .out:   pop es
         pop bx
@@ -5354,7 +5441,8 @@ probe_pick_any:
         xchg ax, cx             ; (CL the kit)
         cmp cl, KIT_SHINOBI
         jne .flags
-        movzx ax, byte [es:bx + 0x24]
+        call kit_level
+        movzx ax, al
         call shinobi_cast
         inc ax
         shr ax, 1
@@ -5422,7 +5510,8 @@ probe_pick_level:
         cmp al, KIT_SHINOBI
         pop ax
         jne .out
-        movzx ax, byte [es:bx + 0x24]
+        call kit_level
+        movzx ax, al
         call shinobi_cast
 .out:   inc al
         pop es
@@ -5661,6 +5750,7 @@ kit_names    db 'ELEMENTALIST', 0, 'HEALER', 0, 'CRUSADER', 0
              db 'STALKER', 0, 'JUSTIFIER', 0, 'SEEKER', 0
              db 'SWASHBUCKLER', 0, 'ASSASSIN', 0, 'SHINOBI', 0
 kit_class_of db 1, 1, 1, 1, 2, 2, 2, 2, 3, 4, 5, 6, 7, 7, 7, 7, 8   ; (a sheet's class, 1-17: the screen's)
+kit_asleep   db 'DORMANT', 0
 kit_line     db 'KIT: '
              times 15 db 0
 ef_y         dw 0
@@ -6755,43 +6845,6 @@ probe_el_know:
         pop eax
         retf 2
 
-; PROBE_DUAL: INT VEC_DUAL replaces "mov al,[bp+8]" (3 bytes: INT + NOP; DSUN.EXE 86D06h) in the
-; routine that changes a human's class (86C80h: DUAL on a portrait's menu, 86B3Fh's window), the
-; classes moved down and the new one ([BP+8]) about to go first, ES:BX the sheet. A kit belongs to
-; the class it was chosen with, which a character had alone (+23h none after the move): it ends,
-; the kit byte and an Elementalist's second sphere cleared, and for a class that isn't a warrior's
-; (a Battle Mage's preserver) the weapon spec it chose, which a new warrior class would otherwise
-; take for its own; a Myrmidon's second weapon spec (its second slot) too (kits.dual_class). A
-; warrior's own specs are kept, as the game has them. AL [BP+8].
-probe_dual:
-        push ax
-        mov al, [es:bx + KIT_BYTE]
-        or al, al
-        je .out
-        cmp byte [es:bx + 0x23], 0
-        jne .out
-        mov byte [es:bx + KIT_BYTE], 0
-        mov byte [es:bx + SPHERE2], 0
-        mov ah, al
-        mov al, [es:bx + 0x22]
-        cmp al, FIGHTER_CLASS
-        jne .glad
-        cmp ah, 1               ; (a Myrmidon: the fighter's first kit)
-        jne .out
-        mov byte [es:bx + SPEC_SLOTS + 1], 0
-        jmp .out
-.glad:
-        cmp al, GLADIATOR_CLASS
-        je .out
-        cmp al, 13              ; (a ranger, 13-16)
-        jb .specs
-        cmp al, 16
-        jbe .out
-.specs: mov dword [es:bx + SPEC_SLOTS], 0
-.out:   pop ax
-        mov al, [bp + 8]
-        iret
-
 ; EL_SPHERES: EAX a spell's mask, for caster [BP+6]: an Elementalist's second sphere's spells its
 ; own sphere's too. Others kept.
 el_spheres:
@@ -6835,7 +6888,10 @@ el_caster:
         les bx, [0x1661]
         imul ax, ax, 0x47
         add bx, ax
-        mov cl, [es:bx + 0x21]
+        push ax
+        call kit_class_of_sheet
+        mov cl, al
+        pop ax
         jmp el_second
 .no:    cmp al, al
         ret
@@ -6918,7 +6974,23 @@ spec_of_sheet:
         or al, [es:bx + SPEC_SLOTS + 2]
         or al, [es:bx + SPEC_SLOTS + 3]
         jz .ret
+        call kit_any            ; (a Battle Mage who has changed class: its weapon spec the kit's
+        cmp al, KIT_BATTLE_MAGE ; alone, nothing while it sleeps, expertise when awake)
+        jne .kinds
+        cmp word [es:bx + 0x22], 0
+        je .kinds
+        call kit_id
+        mov dl, SPEC_NONE
+        jz .out
         mov dl, SPEC_PLAIN
+        cmp si, KIND_TYPES
+        jae .out
+        mov al, [cs:si + kind_of_type]
+        cmp al, [es:bx + SPEC_SLOTS]
+        jne .out
+        mov dl, SPEC_EXPERT
+        jmp .out
+.kinds: mov dl, SPEC_PLAIN
         cmp si, KIND_TYPES
         jae .ret
         mov cl, [cs:si + kind_of_type]
@@ -7646,7 +7718,8 @@ probe_hd_con:
 ; PROBE_HIT_DIE: INT VEC_HIT_DIE replaces "mov al,es:[bx+0]" (5 bytes: INT + 3 NOPs; DSUN.EXE 87308h)
 ; where a new level's hit die is taken from its class's hit point group (ES:BX; the routine's
 ; [BP-4] the sheet, far), at a level up and at creation: AL that, a Battle Mage's a d6 (a
-; preserver's d4), a Mind Warrior's a d8 (a psionicist's d6), an Arcanist's a d3 (kits.hit_die).
+; preserver's d4), a Mind Warrior's a d8 (a psionicist's d6), an Arcanist's a d3 (kits.hit_die),
+; for the kit's class (one class: a human who has changed class rolls for its new one).
 probe_hit_die:
         mov al, [es:bx]
         push bx
@@ -7654,6 +7727,8 @@ probe_hit_die:
         push es
         mov cl, al
         les bx, [bp - 4]
+        cmp word [es:bx + 0x22], 0      ; (a human who has changed class rolls for the new one)
+        jne .out
         call kit_id
         cmp al, KIT_BATTLE_MAGE
         jne .warrior
@@ -7675,11 +7750,11 @@ probe_hit_die:
 ; PROBE_MAX_PSP: INT VEC_MAX_PSP replaces "les bx,[bp-8]" (3 bytes: INT + NOP; DSUN.EXE 8748Fh) where
 ; the level-up routine has a character's most PSP worked out (SI) and puts it in the sheet ([BP-8],
 ; far: its +0Ch) when more than it was, the gain on the creature's PSP too: ES:BX the sheet, and a
-; Mind Warrior's SI a tenth less (kits.max_psp).
+; Mind Warrior's SI a tenth less (kits.max_psp), its kit asleep or not (KIT_ANY).
 probe_max_psp:
         les bx, [bp - 8]
         push ax
-        call kit_id
+        call kit_any            ; (asleep too: its psionicist levels are the PSP's)
         cmp al, KIT_MIND_WARRIOR
         jne .out
         push cx
@@ -11209,9 +11284,6 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_EL_KNOW
         mov dx, probe_el_know
         int 21h
-        mov ax, 2500h + VEC_DUAL
-        mov dx, probe_dual
-        int 21h
         mov ax, 2500h + VEC_PICK_LEVEL
         mov dx, probe_pick_level
         int 21h
@@ -11266,10 +11338,10 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or 9Dh-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+busy    db 'DSCLOG: interrupts 60h-65h or 9Eh-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
 all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS, VEC_LV_PICK, VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK, VEC_EF_ROWS, VEC_HP_BEST, VEC_TOME, VEC_INIT, VEC_THAC0, VEC_SLOTS, VEC_SLOT_LEVEL
             db VEC_PSP_USE, VEC_PSP_TABLE, VEC_PSP_DEFENCE, VEC_CURE, VEC_PSP_KEEP, VEC_RANGER_CAST, VEC_PSP_KEEP_DX
-            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY, VEC_RANGER_LEVEL, VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP, VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW, VEC_DUAL
+            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY, VEC_RANGER_LEVEL, VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP, VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW
 all_vectors_end:
 
         align 16, db 0

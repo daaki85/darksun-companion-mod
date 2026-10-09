@@ -96,3 +96,54 @@ class KitPageTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DormantKitTests(unittest.TestCase):
+    """A human who changes class keeps its kit asleep until the new class's level passes the old."""
+
+    def sheet(self, classes, levels, kit, race=1):
+        s = bytearray(game.SHEET_SIZE)
+        s[0x18], s[kitpages.KIT_BYTE] = race, kit
+        s[0x21:0x21 + len(classes)] = bytes(classes)
+        s[0x24:0x24 + len(levels)] = bytes(levels)
+        return bytes(s)
+
+    def test_dormant_then_awake(self):
+        from dscompanion import kits
+        for new_level, awake in ((1, False), (3, False), (4, True)):
+            with self.subTest(new_level=new_level):
+                s = self.sheet((9, 11), (new_level, 3), 2)  # (a Battle Mage, preserver 3, now a fighter)
+                self.assertEqual(kitpages.kit_place(s), 1)
+                self.assertEqual(kitpages.kit_any(s), kits.BATTLE_MAGE)
+                self.assertEqual(kitpages.kit_awake(s), awake)
+                self.assertEqual(kitpages.kit_id(s), kits.BATTLE_MAGE if awake else 0)
+                self.assertEqual((kitpages.kit_level(s), kitpages.kit_class_of(s)), (3, 11))
+                self.assertEqual(kitpages.kit_name(s), "Battle Mage")
+
+    def test_twice_changed(self):
+        """The kit is the first class's, the last of three."""
+        from dscompanion import kits
+        s = self.sheet((17, 9, 11), (6, 4, 3), 2)
+        self.assertEqual((kitpages.kit_place(s), kitpages.kit_id(s)), (2, kits.BATTLE_MAGE))
+
+    def test_multiclass_no_kit(self):
+        s = self.sheet((9, 11), (3, 3), 2, race=2)
+        self.assertIsNone(kitpages.kit_place(s))
+        self.assertEqual((kitpages.kit_any(s), kitpages.kit_id(s), kitpages.kit_level(s)), (0, 0, 0))
+
+    def test_battle_mage_weapon_spec(self):
+        """Its chosen weapon spec the kit's alone: nothing for the fighter while asleep, expertise
+        (not specialization) when awake."""
+        from dscompanion import specialize
+        rules = game.RULES_IN_FORCE
+        game.RULES_IN_FORCE = game.RULE_KITS | game.RULE_SPECIALIZE
+        self.addCleanup(setattr, game, "RULES_IN_FORCE", rules)
+        axe, sword = 22, 81  # (item types: the metal axe, the bone long sword)
+        axe_kind = specialize.kind_of(axe)
+        for new_level, want, other in ((2, specialize.NONE, specialize.NONE), (4, specialize.EXPERT, specialize.PLAIN)):
+            s = bytearray(self.sheet((9, 11), (new_level, 3), 2))
+            s[game.SPEC_SLOTS] = axe_kind + 1
+            with self.subTest(new_level=new_level):
+                self.assertEqual(specialize.skill(bytes(s), axe), want)
+                self.assertEqual(specialize.skill(bytes(s), sword), other)
+

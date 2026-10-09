@@ -125,7 +125,7 @@ def kit_forbids(sheet: bytes, item_type: int, typ: bytes, spec: bool = False, of
         return False
     kind = specialize.kind_of(item_type) if is_weapon(typ) else None
     half_giant = sheet[game.SHEET_RACE] == game.RACE_HALF_GIANT and bool(game.RULES_IN_FORCE & game.RULE_HALF_GIANT)
-    sphere = (sheet[game.SHEET_CLASSES] - 1) % 4  # (a ranger's, for a Seeker)
+    sphere = (kitpages.kit_class_of(sheet) - 1) % 4  # (a ranger's, for a Seeker)
     return kits.forbids(kitpages.kit_id(sheet), typ, kind, half_giant, spec, off_hand, sphere)
 
 

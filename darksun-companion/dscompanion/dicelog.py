@@ -2072,8 +2072,9 @@ class DiceLog:
         return None
 
     def _kit(self, sheet: bytes) -> int:
-        """A sheet's kit (kitpages.kit_id), with kits on; else 0."""
-        if not self.game.rules & game.RULE_KITS or len(sheet) < game.SHEET_SIZE:
+        """A sheet's kit for its hit dice (kitpages.kit_id), with kits on; else 0. A human who has
+        changed class rolls for its new class, not the kit's (DSCLOG's PROBE_HIT_DIE)."""
+        if not self.game.rules & game.RULE_KITS or len(sheet) < game.SHEET_SIZE or sheet[0x22]:
             return 0
         from . import kitpages
         return kitpages.kit_id(sheet)

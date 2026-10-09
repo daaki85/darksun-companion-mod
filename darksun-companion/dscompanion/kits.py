@@ -6,7 +6,7 @@ that number, 0 for none (the rule off, more than one class, none chosen).
 
 from typing import Optional, Tuple
 
-from .kitpages import KIT_BYTE, KIT_IDS, KITS
+from .kitpages import KIT_IDS, KITS
 
 RAVAGER, SENTINEL, STALKER = KIT_IDS["Ravager"], KIT_IDS["Sentinel"], KIT_IDS["Stalker"]
 MYRMIDON, CHAMPION = KIT_IDS["Myrmidon"], KIT_IDS["Arena Champion"]
@@ -276,23 +276,6 @@ def second_sphere(kid: int, sheet: bytes) -> Optional[int]:
     if kid != ELEMENTALIST or len(sheet) <= SPHERE2 or not 1 <= sheet[SPHERE2] <= 4:
         return None
     return sheet[SPHERE2] - 1
-
-
-def dual_class(sheet: bytearray) -> None:
-    """A human changing class (the game's DUAL), its classes already moved down (+22h the class it
-    leaves): a kit chosen for that class, its only one, ends, as DSCLOG's PROBE_DUAL has it. The
-    kit byte and an Elementalist's second sphere are cleared, and for a class that isn't a
-    warrior's (a Battle Mage's preserver) the weapon spec it chose, which a new warrior class would
-    otherwise take for its own; a Myrmidon's second weapon spec (its second slot) too."""
-    kit = sheet[KIT_BYTE]
-    if not kit or sheet[0x23]:
-        return
-    sheet[KIT_BYTE] = sheet[SPHERE2] = 0
-    if sheet[0x22] == 9:
-        if kit == 1:
-            sheet[0x15] = 0
-    elif sheet[0x22] not in (10, *RANGER_CLASSES):
-        sheet[0x14:0x18] = bytes(4)
 
 
 def spell_spheres(kid: int, cls: int, second: Optional[int], spheres: int) -> int:

@@ -1739,13 +1739,19 @@ club is in the backpack, a Lifebinder's club and sling are blunt).
 
 A kit belongs to the class it was chosen with. A human who changes class
 (**DUAL** on the menu a right-click on a portrait opens, for a human of 2nd
-level or more) leaves that class, and the kit ends with it, its gifts and its
-costs: the Effects screen no longer names it, an Elementalist's second sphere
-goes, a Battle Mage's chosen weapon spec goes too (a new fighter, gladiator
-or ranger doesn't take it for its own), and so does a Myrmidon's second weapon
-spec. A warrior's own weapon specs
-stay, as the game keeps them, and count again once the new class's level
-passes the old.
+level or more) keeps it, but it sleeps as that class does: gifts and costs
+alike count again once the new class's level passes the old one's. The
+Effects screen shows `KIT: BATTLE MAGE` and, below it, `DORMANT` until then;
+the Ledger's Characters tab says so too (`Battle Mage, dormant until the
+fighter level passes 3`). Once awake, the kit goes by its own class's level
+(a Ravager's AC, a Seeker's slots, a Battle Mage's expertise from 7th
+preserver level), its hit die only ever counts for its own class (the new
+class rolls its own), and a Mind Warrior's PSP stays a tenth fewer, asleep or
+not (they are its psionicist levels'). A Battle Mage's chosen weapon spec is
+the kit's alone: a Battle Mage turned fighter isn't specialized in it, and has
+expertise with it once the kit wakes. A warrior's own weapon specs stay, as
+the game keeps them, and count again once the new class's level passes the
+old.
 
 ### Class restrictions
 
