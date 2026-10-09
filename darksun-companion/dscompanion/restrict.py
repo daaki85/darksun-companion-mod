@@ -8,7 +8,8 @@ PROBE_CAN_USE does this in the game; this is its model, for the tests and the Le
   and slings.
 - A multiclass thief: light armour only, and a shield only a leather one that another of its
   classes allows.
-- A preserver of that one class: no armour and no shield.
+- A preserver of that one class: no armour and no shield (a Battle Mage, kits.py, may wear light
+  armour all the same: kit_allows).
 - A druid: no armour, no shield.
 - A cleric: only the weapons of its sphere, or of any of its spheres (a ranger who became a
   cleric keeps the ranger's): air, missile and thrown weapons and daggers; earth, stone,
@@ -118,9 +119,23 @@ def kit_forbids(sheet: bytes, item_type: int, typ: bytes, spec: bool = False, of
     return kits.forbids(kitpages.kit_id(sheet), typ, kind, half_giant, spec, off_hand)
 
 
+def kit_allows(sheet: bytes, item_type: int, typ: bytes) -> bool:
+    """Whether the character's kit (kits.allows, the rule for kits in force) lets it use an item
+    type whatever its classes' lists and restrictions: a Battle Mage its chosen weapon spec's
+    weapons and light armour."""
+    from . import kitpages, kits
+    if not game.RULES_IN_FORCE & game.RULE_KITS:
+        return False
+    kind = specialize.kind_of(item_type) if is_weapon(typ) else None
+    chosen = sheet[game.SPEC_SLOTS] - 1 if sheet[game.SPEC_SLOTS] else None
+    return kits.allows(kitpages.kit_id(sheet), typ, kind, chosen, bool(game.RULES_IN_FORCE & game.RULE_SPECIALIZE))
+
+
 def allowed(sheet: bytes, item_type: int, typ: bytes) -> bool:
     """Whether the character may equip an item of this type, given that the game lets it (the
-    class restrictions; the kit's are kit_forbids)."""
+    class restrictions; the kit's are kit_forbids, and what its kit allows, kit_allows, passes)."""
+    if kit_allows(sheet, item_type, typ):
+        return True
     classes = [c for c in sheet[game.SHEET_CLASSES:game.SHEET_CLASSES + 3] if c]
     human = sheet[game.SHEET_RACE] == game.HUMAN
     holding = classes[:1] if human else classes
@@ -165,7 +180,8 @@ def usable(sheet: bytes, type_: int, typ: bytes) -> bool:
     """Whether the game's class lists, these restrictions and the kit's let the character use an
     item of this type (TYP its record)."""
     flags = int.from_bytes(sheet[game.SHEET_FLAGS:game.SHEET_FLAGS + 2], "little")
-    return bool(int.from_bytes(typ[TYPE_CLASSES:TYPE_CLASSES + 2], "little") & flags) and allowed(sheet, type_, typ) \
+    game_lets = bool(int.from_bytes(typ[TYPE_CLASSES:TYPE_CLASSES + 2], "little") & flags)
+    return (game_lets or kit_allows(sheet, type_, typ)) and allowed(sheet, type_, typ) \
         and not kit_forbids(sheet, type_, typ)
 
 
@@ -173,7 +189,11 @@ def allowed_kinds(sheet: bytes, type_record) -> List[int]:
     """The weapon kinds a character can choose: those with an item type of the game's (any
     material: a fire cleric's long sword the obsidian one) that it can use (a fighter/psionicist,
     say, only the psionicist's). TYPE_RECORD(type) gives an item type's record. DSCLOG's
-    KINDS_ALLOWED. Not the bow for a ranger: it has expertise with the bow already."""
+    KINDS_ALLOWED. Not the bow for a ranger: it has expertise with the bow already. A Battle Mage
+    (kits.py) its own, whatever its class."""
+    from . import kitpages, kits
+    if game.RULES_IN_FORCE & game.RULE_KITS and kitpages.kit_id(sheet) == kits.BATTLE_MAGE:
+        return sorted(kits.BATTLE_MAGE_KINDS)
     ranger = int.from_bytes(sheet[game.SHEET_FLAGS:game.SHEET_FLAGS + 2], "little") & 0x200
     return [kind for kind, name in enumerate(specialize.KINDS)
             if not (ranger and name == "bow")

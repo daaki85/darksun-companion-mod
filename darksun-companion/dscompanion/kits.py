@@ -40,6 +40,9 @@ BLUNT = frozenset((1, 4, 8, 14, 15))
 # a Shinobi's: dagger, short sword, quarterstaff, chatkcha, bow, sling, staff sling
 SHINOBI_KINDS = frozenset((2, 3, 8, 12, 13, 14, 15))
 SHINOBI = KIT_IDS["Shinobi"]
+# a Battle Mage's weapon specs to choose from (DSCLOG's KIT_BM_KINDS): the one-handed melee ones, not
+# thrown: long sword, club, dagger, short sword, mace, axe, pick
+BATTLE_MAGE_KINDS = frozenset((0, 1, 2, 3, 4, 5, 7))
 # the Shinobi's wizard spells (DSCLOG's SHINOBI_SPELLS): (spell, spell level). It learns one at each
 # level up from thief level SHINOBI_FIRST, none from scrolls; it casts at its thief level less 5
 SHINOBI_SPELLS = ((6, 1), (2, 1), (9, 1), (4, 1), (11, 1),  # Gaze Reflection, Charm Person, Shield, Color Spray, Wall of Fog
@@ -261,6 +264,19 @@ def stealth(kid: int) -> int:
     """Added to a ranger's hiding in shadows and moving silently (the stealth rule's, rolled by
     the Ledger): a Stalker's 15."""
     return 15 if kid == STALKER else 0
+
+
+def allows(kid: int, typ: bytes, kind: Optional[int], chosen: Optional[int], specialize: bool) -> bool:
+    """Whether the kit lets a character use an item type whatever its classes' lists and
+    restrictions (TYP its record, KIND its weapon kind or None), as DSCLOG's KIT_ALLOWS: a Battle
+    Mage the weapons of its chosen weapon spec (CHOSEN, with weapon specialization on: SPECIALIZE)
+    and light armour (leather, or of no material; not a shield)."""
+    if kid != BATTLE_MAGE:
+        return False
+    flags, kinds, mat = typ[0], typ[0x0F], typ[8] & 0x4F
+    if kinds & ARMOUR:
+        return not flags & SHIELD and mat in (LEATHER, NO_MATERIAL)
+    return specialize and kind is not None and kind == chosen
 
 
 def forbids(kid: int, typ: bytes, kind: Optional[int], half_giant: bool, spec: bool = False,

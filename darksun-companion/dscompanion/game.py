@@ -239,6 +239,7 @@ PSIONIC_FIRST, PSIONIC_COUNT = 138, 34
 # bits 5-7: the kind of save)
 SPELLS_SEG, SPELLS_OFF, SPELL_SIZE = 0x3CB4, 0x40, 0x20
 SHEET_MAGIC_RESISTANCE = 0x29
+SHEET_ATTACKS = 0x2A  # the game's attacks a round, in halves (2: 1, 3: 3/2)
 SHEET_XP, SHEET_XP_VALUE, SHEET_MAX_HP = 0x00, 0x04, 0x08  # a monster's sheet holds its XP value at +4
 SHEET_RACE, SHEET_ABILITIES = 0x18, 0x1B
 SHEET_CLASSES, SHEET_LEVELS, SHEET_BASE_AC = 0x21, 0x24, 0x27
@@ -457,7 +458,8 @@ class WeaponHit(NamedTuple):
     thac0: int  # with this weapon, now
     parts: List[Tuple[str, int]]  # what is taken off the base THAC0 for it
     skill: int = 0  # weapon specialization's skill with it (specialize.NONE...), with the rule on
-    halves: Optional[int] = None  # a missile weapon's attacks a round, in halves (its own, not the character's)
+    halves: Optional[int] = None  # a missile weapon's attacks a round, in halves (its own, not the
+    # character's), or a Battle Mage's with its chosen weapon spec
 
 
 class ItemSave(NamedTuple):
@@ -1432,6 +1434,9 @@ class GameData:
                 parts.append((specialize.SKILL_NAMES.get(skill, ""), specialize.to_hit(skill)))
                 if missile:
                     halves = specialize.missile_attacks(halves, skill, kind, self.sheet(creature))
+                elif skill == specialize.EXPERT and self.sheet(creature)[SHEET_ATTACKS] <= 2:
+                    # (a Battle Mage's expertise: DSCLOG's EXPERT_HALVES)
+                    halves = specialize.expert_attacks(self.sheet(creature)[SHEET_ATTACKS], skill, self.sheet(creature))
             parts = [(why, n) for why, n in parts if n]
             out.append(WeaponHit(index, slot, self.item_label(item, typ), base - sum(n for _, n in parts), parts,
                                  skill, halves))

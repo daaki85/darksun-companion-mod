@@ -63,6 +63,10 @@ class KitPageTests(unittest.TestCase):
         self.assertEqual(kitpages.panel_windows((3, 0, 0), game.RULE_KITS), (3022, 3023))
         self.assertEqual(kitpages.panel_windows((1, 0, 0), both), (3012, 3023))
         self.assertEqual(kitpages.panel_windows((7, 0, 0), both), (3012, 3019))
+        # a Battle Mage (a preserver's second kit): a warrior's windows, for its weapon spec
+        self.assertEqual(kitpages.panel_windows((5, 0, 0), both, kit=2), (3018, 3019))
+        self.assertEqual(kitpages.panel_windows((5, 0, 0), both, kit=1), (3022, 3023))
+        self.assertEqual(kitpages.panel_windows((5, 0, 0), game.RULE_KITS, kit=2), (3022, 3023))
         self.assertEqual(kitpages.panel_windows((8, 6, 0), both), (3012, 3013))
 
     def test_no_kit_first(self):

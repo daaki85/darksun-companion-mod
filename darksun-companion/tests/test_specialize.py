@@ -186,6 +186,24 @@ class NewCharacterTests(unittest.TestCase):
         finally:
             game.RULES_IN_FORCE = old
 
+    def test_battle_mage_keeps_its_own(self):
+        """A Battle Mage (kits on) keeps its one weapon spec, the long sword if none was marked, of
+        its own kinds (restrict.allowed_kinds); another preserver none."""
+        from dscompanion import kits, weaponchoice
+        old = game.RULES_IN_FORCE
+        try:
+            game.RULES_IN_FORCE = game.RULE_KITS | game.RULE_SPECIALIZE
+            for chosen, want in (((5,), [6, 0, 0, 0]), ((), [1, 0, 0, 0]), ((5, 2), [6, 0, 0, 0])):
+                s = bytearray(sheet(chosen, classes=(11, 0, 0)))
+                s[0x43] = 2
+                allowed = restrict.allowed_kinds(bytes(s), lambda t: bytes(game.ITEM_TYPE_SIZE))
+                self.assertEqual(allowed, sorted(kits.BATTLE_MAGE_KINDS))
+                self.assertEqual(weaponchoice.kinds_for(bytes(s), allowed), want)
+            s[0x43] = 1
+            self.assertEqual(weaponchoice.kinds_for(bytes(s)), [0, 0, 0, 0])
+        finally:
+            game.RULES_IN_FORCE = old
+
     def test_extra_kinds_cleared(self):
         self.assertEqual(self.kinds((2, 5), (9, 0, 0)), [3, 0, 0, 0])
         self.assertEqual(self.kinds((2,), (11, 0, 0)), [0, 0, 0, 0])

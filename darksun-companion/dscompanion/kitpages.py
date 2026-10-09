@@ -91,10 +91,11 @@ def kit_class(classes: Sequence[int], rules: int) -> int:
     return classes[0]
 
 
-def panel_windows(classes: Sequence[int], rules: int) -> Tuple[int, int]:
+def panel_windows(classes: Sequence[int], rules: int, kit: int = 0) -> Tuple[int, int]:
     """The windows the panel shows for the sheet being made: the disciplines' and the spheres'
-    (DSCLOG's WP_IDS)."""
-    warrior = any(c in WARRIORS for c in classes)
+    (DSCLOG's WP_IDS); KIT its kit byte (a Battle Mage, a preserver's second, counts as a warrior
+    with weapon specialization, for its weapon spec)."""
+    warrior = any(c in WARRIORS for c in classes) or bool(rules & KITS_ON) and kit_class(classes, rules) == 5 and kit == 2
     sphere = any(c in SPHERES for c in classes)
     if rules & SPECIALIZE and warrior:
         return (wp.DISCIPLINES if sphere else wp.WARRIOR_DISCIPLINES), wp.WARRIOR_SPHERES

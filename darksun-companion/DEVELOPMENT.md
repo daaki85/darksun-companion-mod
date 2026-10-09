@@ -1114,7 +1114,9 @@ emulated tests hold the helper to it:
 | hiding, moving silently | Stalker, Assassin | the stealth rule's rolls (`stealth.py`, `GameData.ranger_skill_parts`) |
 | the two-weapon penalty | Twin-blade | `PROBE_TWO` |
 | gear allowed | Ravager, Twin-blade, Brute, Stalker, Grove Warden, Lifebinder, Shinobi | `PROBE_CAN_USE` and `KINDS_ALLOWED` (`KIT_FORBIDS`: `restrict.kit_forbids`), whatever the class restrictions |
-| weapon specs | Myrmidon (two, the second to grand mastery), Brute (no missile spec) | `WP_TWO`, `SPEC_OF_SHEET`, `KIT_FORBIDS` |
+| weapon specs | Myrmidon (two, the second to grand mastery), Brute (no missile spec), Battle Mage (one, of `KIT_BM_KINDS`: expertise) | `WP_TWO`, `SPEC_OF_SHEET` (a Battle Mage's chosen kind `SPEC_EXPERT`), `KIT_FORBIDS`, `KINDS_ALLOWED` (a Battle Mage its own kinds, whatever its class), `LV_DUE` (a Battle Mage one); the creation panel counts a Battle Mage as a warrior (`WP_CLASSES`, so `WP_IDS` gives the disciplines' window with WEAPON SPEC; `kitpages.panel_windows`) |
+| attacks a round | Battle Mage (its chosen kind: expertise, 3/2, 2 from 7th preserver level) | `EXPERT_HALVES` where `PROBE_ATTACKS`, `PROBE_DAM_LINE` and `PROBE_VIEW_DAM` leave a non-warrior's (2 halves or fewer) alone; `specialize.expert_attacks` |
+| gear the kit allows | Battle Mage (its chosen kind's weapons, with weapon specialization; light armour) | `KIT_ALLOWS` in `PROBE_CAN_USE`: an item the game's class mask refuses is let through (AX 1), and the class restrictions pass it; `KIT_FORBIDS` still holds (nothing in a Battle Mage's off hand). `kits.allows`, `restrict.kit_allows`. The game has no armour rule for a single class's spells, so it casts in that armour |
 | hit die | Battle Mage (d6), Mind Warrior (d8), Arcanist (d3) | a level's die: `PROBE_HIT_DIE` (`INT A5h`, new: `mov al,es:[bx+0]`, 87308h, the die read from the class's hit point group in the routine rolling a level's hit points, 87250h, which both a level up and the creation screen call; `[BP-4]` the sheet). The creation screen's range (the least and most hit points it allows, `DS:[4998h]` and `[4996h]`, worked out with the rolls by 655D6h): `PROBE_CR_DIE` (`INT A3h`, new: `mov al,es:[bx+14Ah]`, 65677h, the die from its table by creation class). `kits.hit_die` |
 | max PSP | Mind Warrior (a tenth fewer, rounded down) | at a level up: `PROBE_MAX_PSP` (`INT A4h`, new: `les bx,[bp-8]`, 8748Fh, the sum in SI before it goes in the sheet, in the routine at 873B2h); on the creation screen: `PROBE_CR_PSP` (`INT A2h`, new: the end, `pop bp / retf`, of 65B39h, which sums the PSP into the sheet being made's `+0Ch`). `kits.max_psp` |
 
@@ -1188,7 +1190,11 @@ helper's code (emulated) to the Python.
    taken back, and a class clicked with a kit left from the class before
    rolled the class's own die; the numbers on screen, the creature and the
    party's sheet agree after DONE. The level up's PSP is checked by emulation
-   only. Still to come in this step: the Battle Mage's weapon expertise and
-   light armour, the Seeker's sphere weapons, the Justifier's
-   specialization.
+   only. Then the Battle Mage's weapon spec (expertise, with weapon
+   specialization) and light armour. Checked in the game: a preserver taking
+   Battle Mage gets WEAPON SPEC on the panel, the pages open with the long
+   sword marked, the great axe and the other kinds greyed, the axe chosen
+   into the sheet; the attack rate, equip check and Ledger are held to the
+   Python by emulated and unit tests. Still to come in this step: the
+   Seeker's sphere weapons, the Justifier's specialization.
 7. The Elementalist's second sphere.

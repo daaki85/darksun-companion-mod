@@ -953,6 +953,33 @@ class SpecializeTests(unittest.TestCase):
         self.assertEqual(self.attack(4, self.AXE, chosen=(0, 5), **glad), (4, 14, 5, 8))
         self.assertEqual(self.attack(4, self.LONG_SWORD, chosen=(0, 5), **glad), (4, 14, 5, 8))
 
+    def test_battle_mage(self):
+        """A Battle Mage (kits and weapon specialization on): the expertise rate with its chosen
+        weapon spec, 3/2 a round, 2 from 7th level, no bonuses; the game's 1 with another weapon,
+        or with either rule off (specialize.skill, expert_attacks)."""
+        from dscompanion import specialize
+        both = 4096 | game.RULE_KITS
+        mage = dict(classes=(11, 0, 0), levels=(3, 0, 0), chosen=(0,), kit=2)
+        self.assertEqual(self.attack(2, self.LONG_SWORD, rules=both, **mage), (3, 15, 3, 8))
+        self.assertEqual(self.attack(2, self.LONG_SWORD, rules=both, **dict(mage, levels=(7, 0, 0))), (4, 15, 3, 8))
+        self.assertEqual(self.attack(2, self.AXE, rules=both, **mage), (2, 15, 3, 8))
+        self.assertEqual(self.attack(2, self.LONG_SWORD, rules=4096, **mage), (2, 15, 3, 8))
+        self.assertEqual(self.attack(2, self.LONG_SWORD, rules=game.RULE_KITS, **mage), (2, 15, 3, 8))
+        self.assertEqual(self.attack(2, self.LONG_SWORD, rules=both, **dict(mage, kit=1)), (2, 15, 3, 8))
+        sheet = bytearray(game.SHEET_SIZE)
+        sheet[0x14], sheet[0x21], sheet[0x24], sheet[0x43] = 1, 11, 7, 2
+        old = game.RULES_IN_FORCE
+        try:
+            game.RULES_IN_FORCE = both
+            skill = specialize.skill(bytes(sheet), self.LONG_SWORD)
+            self.assertEqual((skill, specialize.skill(bytes(sheet), self.AXE)), (specialize.EXPERT, specialize.PLAIN))
+            self.assertEqual([specialize.expert_attacks(2, skill, bytes(sheet)),
+                              specialize.expert_attacks(2, specialize.PLAIN, bytes(sheet))], [4, 2])
+            game.RULES_IN_FORCE = 4096
+            self.assertEqual(specialize.skill(bytes(sheet), self.LONG_SWORD), specialize.PLAIN)
+        finally:
+            game.RULES_IN_FORCE = old
+
     def test_ranger_expertise(self):
         """A ranger: the rate with the chosen kind, no bonuses; another kind, the plain rate."""
         ranger = dict(classes=(13, 0, 0), levels=(4, 0, 0))
@@ -1157,6 +1184,52 @@ class CanUseTests(unittest.TestCase):
                     self.assertEqual(self.can_use(bytes(s), t), expected)
         self.assertNotEqual(self.can_use(test_restrict.sheet(3, 15), 1), 0)
 
+    @staticmethod
+    def expected(s, t, off_hand=False):
+        """PROBE_CAN_USE's AX by restrict.py: the game's mask (1 for an item only the kit lets the
+        character use, KIT_ALLOWS), or 0; the class restrictions with their rule in force."""
+        s, rec = bytes(s), test_restrict.record(t)
+        mask = test_restrict.TYPES[t][3] & int.from_bytes(s[0x12:0x14], "little")
+        restricted = not game.RULES_IN_FORCE & game.RULE_RESTRICT or restrict.allowed(s, t, rec)
+        ok = (mask or restrict.kit_allows(s, t, rec)) and restricted \
+            and not restrict.kit_forbids(s, t, rec, off_hand=off_hand)
+        return (mask or 1) if ok else 0
+
+    def test_battle_mage(self):
+        """KIT_ALLOWS: a Battle Mage its chosen weapon spec's weapons (with weapon specialization)
+        and light armour, whatever a preserver's lists and restrictions (kits.allows); nothing in
+        the off hand all the same."""
+        from dscompanion import kits
+        hdr = TSR * 16 + load_image().find(HDR_SIG)
+        old = game.RULES_IN_FORCE
+        try:
+            self.mu.mem_write(hdr + 270, struct.pack("<H", 1))
+            for spec in (game.RULE_SPECIALIZE, 0):
+                for restrict_rule in (game.RULE_RESTRICT, 0):
+                    rules = spec | restrict_rule
+                    game.RULES_IN_FORCE = rules | game.RULE_KITS
+                    for kit, chosen in ((2, 1), (2, 6), (2, 0), (1, 1)):
+                        s = bytearray(test_restrict.sheet(11))
+                        s[0x43], s[0x14] = kit, chosen
+                        for t in test_restrict.TYPES:
+                            for slot in (7, 14):
+                                with self.subTest(rules=rules, kit=kit, chosen=chosen, type=t, slot=slot):
+                                    self.assertEqual(self.can_use(bytes(s), t, rules=rules, slot=slot),
+                                                     self.expected(s, t, off_hand=slot == 14))
+            game.RULES_IN_FORCE = game.RULE_KITS | game.RULE_SPECIALIZE | game.RULE_RESTRICT
+            mage = bytearray(test_restrict.sheet(11))
+            mage[0x43], mage[0x14] = 2, 1  # (the long sword)
+            leather = next(t for t in test_restrict.TYPES if restrict.is_armour(test_restrict.record(t))
+                           and restrict.is_light(test_restrict.record(t)))
+            self.assertTrue(restrict.usable(bytes(mage), 81, test_restrict.record(81)))
+            self.assertTrue(restrict.usable(bytes(mage), leather, test_restrict.record(leather)))
+            self.assertFalse(restrict.usable(bytes(mage), 22, test_restrict.record(22)))  # (an axe: not its own)
+            self.assertNotEqual(self.can_use(bytes(mage), 81, rules=game.RULE_SPECIALIZE | game.RULE_RESTRICT), 0)
+            self.assertEqual(self.can_use(bytes(mage), 81, rules=game.RULE_SPECIALIZE | game.RULE_RESTRICT, slot=14), 0)
+            self.assertEqual(sorted(kits.BATTLE_MAGE_KINDS), [0, 1, 2, 3, 4, 5, 7])
+        finally:
+            game.RULES_IN_FORCE = old
+
     def test_kits(self):
         """KIT_FORBIDS in PROBE_CAN_USE as restrict.kit_forbids (kits.forbids): the Twin-blade,
         Brute, Stalker, Grove Warden and Lifebinder, a half-giant or not, the rule for half-giants'
@@ -1174,10 +1247,7 @@ class CanUseTests(unittest.TestCase):
                         s[0x43] = kit
                         for t in test_restrict.TYPES:
                             with self.subTest(half_rule=half_rule, cls=cls, kit=kit, race=race, type=t):
-                                mask = test_restrict.TYPES[t][3] & int.from_bytes(s[0x12:0x14], "little")
-                                ok = mask and restrict.allowed(bytes(s), t, test_restrict.record(t)) \
-                                    and not restrict.kit_forbids(bytes(s), t, test_restrict.record(t))
-                                self.assertEqual(self.can_use(bytes(s), t, rules=rules), mask if ok else 0)
+                                self.assertEqual(self.can_use(bytes(s), t, rules=rules), self.expected(s, t))
             # the off hand: a Healer no weapon, a Battle Mage nothing (the right hand as before)
             for cls, kit in ((1, 2), (11, 2), (1, 0), (11, 1)):
                 s = bytearray(test_restrict.sheet(cls))
@@ -1185,10 +1255,8 @@ class CanUseTests(unittest.TestCase):
                 for t in test_restrict.TYPES:
                     for slot in (7, 14):
                         with self.subTest(cls=cls, kit=kit, type=t, slot=slot):
-                            mask = test_restrict.TYPES[t][3] & int.from_bytes(s[0x12:0x14], "little")
-                            ok = mask and restrict.allowed(bytes(s), t, test_restrict.record(t)) \
-                                and not restrict.kit_forbids(bytes(s), t, test_restrict.record(t), off_hand=slot == 14)
-                            self.assertEqual(self.can_use(bytes(s), t, rules=rules, slot=slot), mask if ok else 0)
+                            self.assertEqual(self.can_use(bytes(s), t, rules=rules, slot=slot),
+                                             self.expected(s, t, off_hand=slot == 14))
             game.RULES_IN_FORCE = game.RULE_KITS
             healer, mage = bytearray(test_restrict.sheet(1)), bytearray(test_restrict.sheet(11))
             healer[0x43], mage[0x43] = 2, 2
@@ -1393,7 +1461,8 @@ class KindsAllowedTests(unittest.TestCase):
 
     def test_as_the_python(self):
         image = load_image()
-        start = image.find(bytes.fromhex("5152565731d231ff89d62e8a8c"))
+        import re
+        start = re.search(rb"\x51\x52\x56\x57\xe8..\x3c\x16", image, re.S).start()  # (KINDS_ALLOWED: its kit first)
         self.assertGreater(start, 0)
         mu = Uc(UC_ARCH_X86, UC_MODE_16)
         mu.mem_map(0, 0x100000)
@@ -1420,7 +1489,7 @@ class KindsAllowedTests(unittest.TestCase):
         try:  # the kits that limit weapons: a Brute's two-handed melee kinds (no missile spec), a Lifebinder's blunt
             game.RULES_IN_FORCE = game.RULE_KITS
             mu.mem_write(hdr + 270, struct.pack("<H", 1))
-            for classes, kit in (((10,), 3), ((10,), 2), ((5,), 2), ((17,), 3), ((5,), 1)):
+            for classes, kit in (((10,), 3), ((10,), 2), ((5,), 2), ((17,), 3), ((5,), 1), ((11,), 2), ((11,), 1)):
                 s = bytearray(sheet(*classes))
                 s[0x43] = kit
                 with self.subTest(classes=classes, kit=kit):

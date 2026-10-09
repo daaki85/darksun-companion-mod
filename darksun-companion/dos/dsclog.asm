@@ -2593,7 +2593,10 @@ probe_attacks:
         cmp word [bp + 0x16], 1
         jg .missile
         cmp ax, 2
-        jbe .hit                ; (not a warrior)
+        ja .warrior
+        call expert_of          ; (not a warrior: a Battle Mage's expertise)
+        jmp .hit
+.warrior:
         cmp dl, SPEC_PLAIN
         jne .grand
         dec ax
@@ -2706,6 +2709,36 @@ missile_rate:
         pop cx
 .ret:   ret
 
+; EXPERT_OF: EXPERT_HALVES for the attack routine's attacker ([BP+10h] its sheet's number).
+expert_of:
+        push bx
+        push es
+        push ax
+        mov ax, [bp + 0x10]
+        imul ax, ax, 0x47
+        les bx, [0x1661]
+        add bx, ax
+        pop ax
+        call expert_halves
+        pop es
+        pop bx
+        ret
+
+; EXPERT_HALVES: AX the attacks a round (halves) of a character who isn't a warrior (the game's 2:
+; 1 a round), DL its skill with the weapon (SPEC_OF_SHEET), ES:BX its sheet: with SPEC_EXPERT (a
+; Battle Mage's chosen weapon spec, kits.py; no warrior has fewer than 3 halves) the expertise
+; rate, 3/2 a round, 2 from 7th level (specialize.expert_attacks). Others kept.
+expert_halves:
+        cmp dl, SPEC_EXPERT
+        jne .ret
+        cmp ax, 2
+        ja .ret
+        mov ax, 3
+        cmp byte [es:bx + 0x24], 7
+        jb .ret
+        inc ax
+.ret:   ret
+
 probe_spec_damage:
         add [bp - 0x12], ax
         call kit_attack_damage
@@ -2746,7 +2779,15 @@ probe_dam_line:
         push dx
         call spec_of_sheet
         cmp al, 2
-        jbe .bonus
+        ja .warrior
+        push cx                 ; (not a warrior: a Battle Mage's expertise; AH kept)
+        mov ch, ah
+        xor ah, ah
+        call expert_halves
+        mov ah, ch
+        pop cx
+        jmp .bonus
+.warrior:
         cmp dl, SPEC_PLAIN
         jne .grand
         dec al
@@ -2816,7 +2857,14 @@ probe_view_dam:
         pop es
         jnz .bonus
         cmp word [bp - 6], 2
-        jbe .bonus
+        ja .warrior
+        push ax                 ; (not a warrior: a Battle Mage's expertise)
+        mov ax, [bp - 6]
+        call expert_halves
+        mov [bp - 6], ax
+        pop ax
+        jmp .bonus
+.warrior:
         cmp dl, SPEC_PLAIN
         jne .grand
         dec word [bp - 6]
@@ -2846,11 +2894,15 @@ probe_view_dam:
 ; item" when not; its only caller, the equip routine): AX the item type's mask of the classes that
 ; may use it, ES:BX the character's sheet, its +12h a bit for each of its classes, DX the item
 ; type. With RULE_RESTRICT, an item the game allows that the character's classes keep it from
-; (CLASS_FORBIDS) is not allowed either.
+; (CLASS_FORBIDS) is not allowed either. The kit's own (KIT_ALLOWS) are allowed whatever the
+; game's lists and the restrictions; the kit's limits (KIT_FORBIDS) hold over everything.
 probe_can_use:
         and ax, [es:bx + 0x12]
-        jz .done
-        mov byte [cs:kf_spec], 0
+        jnz .game
+        call kit_allows         ; (the game's lists say no: the kit's own, all the same)
+        jnc .done
+        inc ax
+.game:  mov byte [cs:kf_spec], 0
         push si
         mov si, [bp]            ; (the equip routine's frame: its [BP+8] the slot, 14 the off hand)
         cmp word [ss:si + 8], EQUIP_OFF_HAND
@@ -2861,6 +2913,8 @@ probe_can_use:
         jc .no
         test word [cs:rules], RULE_RESTRICT
         jz .done
+        call kit_allows         ; (the kit's own: whatever the classes' restrictions)
+        jc .done
         call class_forbids
         jnc .done
 .no:    xor ax, ax
@@ -3014,6 +3068,60 @@ kit_forbids:
         pop ax
         clc
         ret
+; KIT_ALLOWS: carry set if the kit of the character whose sheet is at ES:BX lets it use item type
+; DX whatever its classes' lists and restrictions (kits.allows): a Battle Mage the weapons of its
+; chosen weapon spec (SPEC_SLOTS' first, with RULE_SPECIALIZE) and light armour (leather, or of no
+; material; not a shield). DS the game's; all registers kept.
+kit_allows:
+        push ax
+        push bx
+        push cx
+        push si
+        push es
+        call kit_id
+        cmp al, KIT_BATTLE_MAGE
+        jne .no
+        mov cl, [es:bx + SPEC_SLOTS]
+        les bx, [ITEM_TYPES]
+        imul ax, dx, 0x14
+        add bx, ax
+        test byte [es:bx + 0x0F], KT_ARMOUR
+        jz .weapon
+        test byte [es:bx], KT_SHIELD
+        jnz .no
+        mov al, [es:bx + 8]
+        and al, 0x4F
+        cmp al, LEATHER
+        je .yes
+        cmp al, 0x40
+        je .yes
+        jmp .no
+.weapon:
+        test word [cs:rules], RULE_SPECIALIZE
+        jz .no
+        cmp dx, KIND_TYPES
+        jae .no
+        mov si, dx
+        mov al, [cs:si + kind_of_type]
+        or al, al
+        jz .no
+        cmp al, cl
+        jne .no
+.yes:   pop es
+        pop si
+        pop cx
+        pop bx
+        pop ax
+        stc
+        ret
+.no:    pop es
+        pop si
+        pop cx
+        pop bx
+        pop ax
+        clc
+        ret
+
 kit_blunt  dw KIT_BLUNT
 kit_shinobi dw 0xF10C           ; bits by kind: dagger, short sword, quarterstaff, chatkcha, bow, sling,
                                 ;   staff sling
@@ -3744,14 +3852,21 @@ wp_allowed:
 ; KINDS_ALLOWED: AX the kinds (bit 0 the long sword) the character whose sheet is at ES:BX can
 ; choose: those with an item type (KIND_OF_TYPE) the game's class lists and CLASS_FORBIDS let it
 ; use (a fire cleric's long sword the obsidian one, not the plain bone one); not the bow for a
-; ranger (its class flags, +12h: 200h), who has expertise with it already.
+; ranger (its class flags, +12h: 200h), who has expertise with it already; a Battle Mage the
+; one-handed melee kinds (KIT_BM_KINDS), not thrown, whatever its class lets it use.
 ; DS = the game's. Others kept.
+KIT_BM_KINDS equ 0x00BF         ; a Battle Mage's: long sword, club, dagger, short sword, mace, axe, pick
 kinds_allowed:
         push cx
         push dx
         push si
         push di
-        xor dx, dx              ; DX each item type of a kind, CL its kind
+        call kit_id             ; (a Battle Mage: its own, whatever its class)
+        cmp al, KIT_BATTLE_MAGE
+        jne .types
+        mov di, KIT_BM_KINDS
+        jmp .all
+.types: xor dx, dx              ; DX each item type of a kind, CL its kind
         xor di, di
 .type:  mov si, dx
         mov cl, [cs:si + kind_of_type]
@@ -3998,7 +4113,13 @@ lv_due:
 .next:  inc si
         cmp si, 3
         jb .class
-        pop si
+        or cl, cl               ; (a Battle Mage: one)
+        jnz .out
+        call kit_id
+        cmp al, KIT_BATTLE_MAGE
+        jne .out
+        mov cl, 1
+.out:   pop si
         pop ax
         ret
 
@@ -5614,7 +5735,17 @@ wp_classes:
 .next:  inc bx
         dec cl
         jnz .class
-        pop es
+        or al, al               ; (a Battle Mage, with weapon specialization: a warrior here)
+        jnz .out
+        test word [cs:rules], RULE_SPECIALIZE
+        jz .out
+        push ax
+        call kit_made
+        cmp al, KIT_BATTLE_MAGE
+        pop ax
+        jne .out
+        mov al, 1
+.out:   pop es
         pop cx
         pop bx
         ret
@@ -6521,6 +6652,10 @@ spec_of_sheet:
         or al, al
         jnz .warrior
         mov dl, SPEC_PLAIN      ; (a warrior class not back yet)
+        call kit_id             ; (a Battle Mage's expertise)
+        cmp al, KIT_BATTLE_MAGE
+        jne .ret
+        mov dl, SPEC_EXPERT
         jmp .ret
 .warrior:
         or ah, ah

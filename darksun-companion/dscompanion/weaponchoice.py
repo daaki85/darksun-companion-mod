@@ -4,7 +4,7 @@ A character is chosen its kinds on the creation panel (weaponpages.py); before i
 played (its status New) the Ledger makes them whole:
 
 - a fighter or ranger has one kind, the long sword if none was marked (a Myrmidon, kits.py, a
-  second if marked); a gladiator two, the long sword and the club if none were; any other class
+  second if marked; a Battle Mage, kits.py, one of its own); a gladiator two, the long sword and the club if none were; any other class
   none (marked as a warrior, then made something else);
 - the game's starting weapon, the bone long sword in the right hand, becomes a plain weapon of
   the first kind, of bone or obsidian where the game has one, in a material the character can use
@@ -87,7 +87,7 @@ def kinds_for(sheet: bytes, allowed: Optional[List[int]] = None) -> List[int]:
     if FIGHTER in classes and specialize.myrmidon(sheet):  # (a second kind, if one was marked)
         first = chosen[0] or defaults[0]
         return [first, chosen[1] if chosen[1] != first else 0, 0, 0]
-    if FIGHTER in classes or classes & set(RANGERS):
+    if FIGHTER in classes or classes & set(RANGERS) or specialize.battle_mage(sheet):
         return [chosen[0] or defaults[0], 0, 0, 0]
     return [0, 0, 0, 0]
 

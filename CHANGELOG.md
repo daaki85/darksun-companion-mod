@@ -67,6 +67,14 @@ Released pull requests are summarised in a line or two each; the release notes
   The Ledger's Spells tab shows its slots.
 - **The Scholar** learns a spell more at each level up: CHOOSE A SPELL comes
   up twice.
+- **The Battle Mage's weapon and armour:** it wears light armour (leather, or
+  none) and casts in it; with weapon specialization it chooses one weapon spec
+  (long sword, club, dagger, short sword, mace, axe or pick) on the weapon
+  pages, which the panel now offers it, may use those weapons as well as a
+  preserver's own, and attacks with them at expertise's rate, 3/2 a round (2
+  from 7th level). The game's equip check, the fight, View Character's and the
+  inventory's DAM lines, the Effects screen (EXPERT IN) and the Ledger all
+  count it.
 - **Kits' hit dice and PSP:** the Battle Mage rolls a d6 for its hit points,
   the Mind Warrior a d8 and has a tenth fewer PSP (rounded down), and the
   Arcanist a d3, at each level up and on the creation screen: choosing or

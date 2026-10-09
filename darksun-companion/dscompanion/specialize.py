@@ -95,7 +95,8 @@ def skill(sheet: bytes, item_type: Optional[int]) -> int:
     active = active_classes(sheet)
     classes = {c for c, _ in active}
     if not classes & ({FIGHTER, GLADIATOR} | set(RANGERS)):
-        return PLAIN  # (a dual-classed warrior, until the new class's level passes the old)
+        # (a Battle Mage's expertise; else a dual-classed warrior, until the new class's level passes the old)
+        return EXPERT if battle_mage(sheet) else PLAIN
     if not {FIGHTER, GLADIATOR} & classes:
         return EXPERT
     first = chosen.index(kind + 1)
@@ -109,6 +110,21 @@ def myrmidon(sheet: bytes) -> bool:
     """A Myrmidon (kits.py), the rule for kits in force (game.RULES_IN_FORCE)."""
     from . import kitpages
     return bool(game.RULES_IN_FORCE & game.RULE_KITS) and kitpages.kit_id(sheet) == kitpages.KIT_IDS["Myrmidon"]
+
+
+def battle_mage(sheet: bytes) -> bool:
+    """A Battle Mage (kits.py), the rule for kits in force (game.RULES_IN_FORCE)."""
+    from . import kitpages, kits
+    return bool(game.RULES_IN_FORCE & game.RULE_KITS) and kitpages.kit_id(sheet) == kits.BATTLE_MAGE
+
+
+def expert_attacks(halves: int, level: int, sheet: bytes) -> int:
+    """The melee attacks a round (in halves) of a character who isn't a warrior (HALVES the game's,
+    2 or fewer) with skill LEVEL, as DSCLOG's EXPERT_HALVES: a Battle Mage's chosen weapon spec
+    (EXPERT) the expertise rate, 3/2 a round, 2 from 7th level; else HALVES."""
+    if level != EXPERT or halves > 2:
+        return halves
+    return 4 if sheet[game.SHEET_LEVELS] >= 7 else 3
 
 
 def attacks(halves: int, level: int, missile: bool = False) -> int:
