@@ -2214,6 +2214,8 @@ class DiceLog:
                         self._creation_con = shown[ability]
                 elif line is not None:
                     out.append(line[1])
+            if shown is not None:  # (what game.RULE_ROLLED lets the six add up to)
+                out.append(f"Character creation: the six scores add up to {sum(shown)}")
         if shown is not None:
             self._creation_con = shown[2]
         return out + self.creation_hp_lines()

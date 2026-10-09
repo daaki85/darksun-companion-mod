@@ -9,10 +9,12 @@ for mapping it, and how each part of the [README](README.md) is done.
 Every roll in the game goes through one function, Borland C++'s `rand()`.
 
 1. When you start the game with the dice log, the launcher writes
-   `dos\DSUNLOG.EXE`: a copy of the game's `DSUN.EXE` with about 175 small
+   `dos\DSUNLOG.EXE`: a copy of the game's `DSUN.EXE` with about 180 small
    changes, listed in `PATCHES` in `dscompanion/gamepatch.py`. Most replace a
-   few bytes of the game's code with an `INT` (60h to 65h, and 8Ch to FEh)
-   that the helper answers: `rand()`, the saving throw, AC, the dialogue
+   few bytes of the game's code with an `INT` (60h to 65h, and 8Ch to FEh;
+   all of them are taken, so later sites share one, a site number after the
+   `INT`, as in [Scores and hit points as
+   rolled](#scores-and-hit-points-as-rolled)) that the helper answers: `rand()`, the saving throw, AC, the dialogue
    window and message boxes for the dice log; the inventory, View Character,
    USE and Effects screens and the Look box for what the Ledger adds to them;
    and the places each rule change, new item and screen addition needs. The
@@ -412,6 +414,58 @@ and sends the game back to the start of its roll (872FDh), so both rolls are
 the game's own and the dice log sees both; the second time it keeps the
 better. Creation goes through the same routine, a die for each starting
 level.
+
+### Scores and hit points as rolled
+
+([In the README](README.md#scores-and-hit-points-as-rolled).)
+
+The creation screen (overlay at 65480h; `DS:11A0h` the creature being made,
+its scores from `+22h`; `DS:119Ch` the sheet, the hit points its `+8`):
+
+* A click on a score (handler 637F8h) goes to 65480h, which takes the click's
+  +1 or −1, keeps the result between the least (67399h, `DS:4994h`) and the
+  race's most (`DS:4992h`), going round from one to the other, and writes it
+  (`mov al,[bp-2]` then `mov es:[bx+22h],al`, 655C6h), then redraws the
+  scores (65168h).
+* A click on the hit points (63A24h) adds +1 or −1 (`add ax,[bp-2]`, 63A49h),
+  kept between the least and most the classes could roll (`DS:4998h`,
+  `DS:4996h`).
+* The die, a race or sex chosen, or a class (657BBh, DI 1 to roll, 0 to keep
+  the scores) sets the six in one of three loops by kind of class (65944h,
+  65979h, 659AEh: `mov es:[bx+22h],al`), each through 6490Dh: the best of
+  four 4d4 + 4 + the race's, or with DI 0 the score kept and raised to the
+  class's least.
+* 65168h puts back what was under the scores, from a copy taken when the
+  screen opened (`0A0:30C3h`, the box at `DS:0F62h`: x1, y1, x2, y2, the first
+  of ten), then draws each value with the game's text routine.
+
+How (`RULE_HI_ROLLED`, the second rules word's 32: `game.RULE_ROLLED`): no
+interrupt vectors are left, so the six sites share `PROBE_CR_SPELLS`'s
+(`INT 98h`), the byte after the `INT` saying which (`RL_SCORE` 1, `RL_HP` 2,
+`RL_ROLL` 3, `RL_SUM` 4) where `PROBE_CR_SPELLS`'s own has its NOP; the
+helper moves the return address past it.
+
+* `RL_ROLL` (the three loops' write, `INT` + site + NOP) writes the score; at
+  CHR it keeps the six's total as the most (`RL_POOL`): with DI 1 the total,
+  with DI 0 the total if more.
+* `RL_SCORE` (655C6h) lets a lowering through; a raise is kept to the score
+  plus what's spare (the most less the six's total), the score as it was if
+  none.
+* `RL_HP` (63A49h) leaves out the `add`.
+* `RL_SUM` (in place of 65168h's `add sp,4` after the copy is put back) draws
+  `SUM:` 23 pixels left of the scores and the totals, `99/101`, on the line
+  under CHR, with the game's text routine as the Ledger's other lines are.
+  The scores' box is made a line taller and wider (`rl_sum_box`: x2 48 to 77,
+  y2 178 to 185, in the game's data) so the copy put back clears them.
+
+The dice log adds the six's total to the creation lines.
+
+Checked in the game: a preserver rolled 101 (`SUM:101/101`); DEX lowered and
+STR raised by one, a second raise refused; the hit points unchanged by left
+and right clicks (with the rule off, 16 to 17); the die's next roll
+`SUM:98/98`, as the dice log's line; a new class raising INT from 14 to 17
+took a fighter's 98 to 101. DONE on a preserver still opened CHOOSE A SPELL
+(`PROBE_CR_SPELLS`).
 
 ### Rangers' casting level
 
@@ -1266,7 +1320,7 @@ in `kitpages.kit_ids`), and emulated tests hold the helper to it:
 | attacks a round | Battle Mage (its chosen kind: expertise, 3/2, 2 from 7th preserver level); Crusader and Mind Warrior (a warrior's extra attacks in melee, 3/2 from 7th level of the kit's class (2 from 13th, past the level cap), weapon specialization on or off) | `EXPERT_HALVES` where `PROBE_ATTACKS`, `PROBE_DAM_LINE` and `PROBE_VIEW_DAM` leave a non-warrior's (2 halves or fewer) alone; `specialize.expert_attacks`. `WAR_KIT_HALVES` in the same three probes, after the rest (`WAR_KIT_OF` in `PROBE_ATTACKS`, not for a missile: `[BP+16h]` above 1, or in View Character a type's `+0` bit 2); `kits.warrior_attacks`, which `GameData.weapon_hits` gives the party view. Checked in the game: the DAM lines 1.5× for a 7th-level Crusader and Mind Warrior, 2× at 13th, 1× at 6th and for a Mind Bender; in a fight a 7th-level Crusader with a club in each hand attacked 1+1 and 2+2 in turn before the off hand's cap (see [Two weapons](#two-weapons-adds-penalties)) |
 | gear the kit allows | Battle Mage (its chosen kind's weapons, with weapon specialization; light armour) | `KIT_ALLOWS` in `PROBE_CAN_USE`: an item the game's class mask refuses is let through (AX 1), and the class restrictions pass it; `KIT_FORBIDS` still holds (nothing in a Battle Mage's off hand). `kits.allows`, `restrict.kit_allows`. The game has no armour rule for a single class's spells, so it casts in that armour |
 | hit die | Battle Mage (d6), Mind Warrior (d8), Arcanist (d3) | a level's die: `PROBE_HIT_DIE` (`INT A5h`, new: `mov al,es:[bx+0]`, 87308h, the die read from the class's hit point group in the routine rolling a level's hit points, 87250h, which both a level up and the creation screen call; `[BP-4]` the sheet). The creation screen's range (the least and most hit points it allows, `DS:[4998h]` and `[4996h]`, worked out with the rolls by 655D6h): `PROBE_CR_DIE` (`INT A3h`, new: `mov al,es:[bx+14Ah]`, 65677h, the die from its table by creation class). `kits.hit_die` |
-| max PSP | Mind Warrior (a tenth fewer, rounded down) | at a level up: `PROBE_MAX_PSP` (`INT A4h`, new: `les bx,[bp-8]`, 8748Fh, the sum in SI before it goes in the sheet, in the routine at 873B2h); on the creation screen: `PROBE_CR_PSP` (`INT A2h`, new: the end, `pop bp / retf`, of 65B39h, which sums the PSP into the sheet being made's `+0Ch`). `kits.max_psp` |
+| max PSP | Mind Warrior (a tenth fewer, rounded down) | at a level up: `PROBE_MAX_PSP` (`INT A4h`, new: `les bx,[bp-8]`, 8748Fh, the sum in SI before it goes in the sheet, in the routine at 873B2h); on the creation screen: `PROBE_CR_PSP` (`INT A2h`, new: the end, `pop bp / retf`, of 65B39h, which sums the PSP into the sheet being made's `+0Ch`; it drops the interrupt frame to end the routine itself, putting the flags back first, as a score's click reaches it with nothing after to set IF again). `kits.max_psp` |
 
 The creation screen rolls the hit points and works out the PSP when a class
 is clicked, before a kit can be chosen. Choosing or taking back a Battle

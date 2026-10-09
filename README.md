@@ -28,7 +28,8 @@ It brings the rules closer to AD&D: weapon specialization and mastery, kits
 (three for each class), class restrictions, AD&D's class tables (experience,
 priests' THAC0, spell slots), INT's limits on learning spells, thief skills
 from the Player's Handbook, saving throws as the books have them, the party
-leader's CHA at shops, and levels up to 10 ([Rule
+leader's CHA at shops, scores and hit points kept as rolled, and levels up to
+10 ([Rule
 changes](darksun-companion/README.md#rule-changes)). Thieves can hide in
 shadows to backstab, and pick pockets
 ([Picking pockets](darksun-companion/README.md#picking-pockets)).

@@ -1337,11 +1337,13 @@ class CreationTests(unittest.TestCase):
         ability_rolls(log, 0, [(1, 2, 2, 2), (4, 4, 2, 1), (3, 3, 2, 1), (4, 3, 2, 1)])  # the next: STR 17
         shown = CREATION + game.SHEET_SIZE + game.CREATURE_ABILITIES
         log.guest.mem[shown:shown + 6] = bytes((17, 12, 18, 10, 11, 9))  # its CON's rolls missed
-        self.assertEqual(log.creation_lines()[:3],
+        lines = log.creation_lines()
+        self.assertEqual(lines[:3],
                          ["Character creation, STR 17: best of four 4d4 (7, 11, 9, 10) = 11, +4, +1 dwarf = 16, "
                           "raised to 17 (the Fighter's prime requisite)",
                           "Character creation, DEX 12 (its rolls came too fast to record)",
                           "Character creation, CON 18 (its rolls came too fast to record)"])
+        self.assertIn("Character creation: the six scores add up to 77", lines)  # (as the game shows them)
 
     def test_hit_points(self):
         log = make_creation()

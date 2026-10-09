@@ -135,6 +135,12 @@ Each click of the die rolls a whole character:
   requisite**, otherwise **9** (clerics, fighters, preservers, thieves), **12**
   (druids, psionicists), **13** (gladiators) or **14** (rangers). A character
   of several classes takes the highest minimum of each score.
+- **What the die gives is what you get.** A score can be lowered with a right
+  click, and the points freed raise others with a left click, but the six
+  never add up to more than the die gave. Under CHR, `SUM:99/101` is what
+  they add up to now and the most they may: 2 points to spare. A new class
+  that raises a score to its minimum raises the most with it. *Without the
+  mod:* a click raises any score to its most.
 
 | Class | Prime requisite |
 |---|---|
@@ -252,6 +258,8 @@ classes a human could change to ([kits](#kits)).
 
 - **Every hit die is rolled twice and the better kept,** at creation (one die
   for every starting level) and at every level up. *Without the mod:* one roll.
+- **The hit points are as rolled:** clicking them on the creation screen does
+  nothing. *Without the mod:* a click sets them anywhere the dice could have.
 - Half-giants roll double. A roll counts at least 2 with CON 20, 3 with CON
   21-22 and 4 with CON 23 or more.
 - **CON's bonus** comes with every level: for a fighter, gladiator or ranger
@@ -1539,7 +1547,7 @@ AD&D's tables:
 |---|---|---|
 | In the game | show each turn's rolls in the game | off |
 | | describe monsters when you Look at them in a fight | on |
-| Rule changes | weapon specialization; kits; AD&D's class tables; the leader's CHA at shops; class restrictions; multiclass hit points; rangers' casting level; preservers' INT; hit dice rolled twice; the spell save; DEX instead of a doubled d20; two weapons; levels up to 10; items saving against acid; rings and cloaks of protection; half-giants' two-handed weapons; Cat's Grace; helms AC 1; boots for movement | all on |
+| Rule changes | weapon specialization; kits; AD&D's class tables; the leader's CHA at shops; class restrictions; multiclass hit points; rangers' casting level; preservers' INT; hit dice rolled twice; scores and hit points as rolled; the spell save; DEX instead of a doubled d20; two weapons; levels up to 10; items saving against acid; rings and cloaks of protection; half-giants' two-handed weapons; Cat's Grace; helms AC 1; boots for movement | all on |
 | Thieves | thief skills from AD&D's table; hiding in shadows to backstab; the cloak, boots and belt; picking pockets | on |
 | | ... or P in a conversation (the leader, a thief, picks the pocket of the one talked to) | off |
 | New content | new people, a small quest, new items | on |
