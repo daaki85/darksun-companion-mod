@@ -24,19 +24,21 @@ you what can hurt a monster ([In the
 game](darksun-companion/README.md#in-the-game)).
 
 It brings the rules closer to AD&D: weapon specialization and mastery, kits
-(three for each class), class restrictions, INT's limits on learning spells,
-thief skills from the Player's Handbook, saving throws as the books have them,
-and levels up to 10 ([Rule
+(three for each class), class restrictions, AD&D's class tables (experience,
+priests' THAC0, spell slots), INT's limits on learning spells, thief skills
+from the Player's Handbook, saving throws as the books have them, the party
+leader's CHA at shops, and levels up to 10 ([Rule
 changes](darksun-companion/README.md#rule-changes)). Thieves can hide in
 shadows to backstab, and pick pockets
 ([Picking pockets](darksun-companion/README.md#picking-pockets)).
 
 It adds to Athas: new weapons in every material, magic items with stories of
-their own, Kalzith (a defiler who sells scrolls), more of Semyon's story, and a
-use for the cooked vulture ([New
-content](darksun-companion/README.md#new-content)). Graphical additions show the
-weapons and armour the party wears, have characters cast shadows, and kick up
-dirt as they walk ([On the screen](darksun-companion/README.md#on-the-screen)).
+their own (robes and bracers among them, for those who wear no armour), Kalzith
+(a defiler who sells scrolls), more of Semyon's story, and a use for the cooked
+vulture ([New content](darksun-companion/README.md#new-content)). Graphical
+additions show the weapons and armour the party wears, have characters cast
+shadows, and kick up dirt as they walk ([On the
+screen](darksun-companion/README.md#on-the-screen)).
 
 Quality of life changes: choosing an enemy with Tab and attacking it with Enter,
 scrolling the map with the mouse wheel
@@ -78,16 +80,18 @@ double-click, with the options as last set.)
 
 ## What's new
 
-**Templar's Ledger 1.2.0**, the mod's last release under that name, is out ([release notes](release-notes/v1.2.0.md)):
-weapon specialization and class restrictions, new weapons and magic items
-across Athas, and more, from pull requests #19 to #29.
+**Templar's Ledger 1.2.0**, the mod's last release under that name, is out
+([release notes](release-notes/v1.2.0.md)): weapon specialization and class
+restrictions, new weapons and magic items across Athas, and more, from pull
+requests #19 to #29.
 
-**Since 1.2.0** (in the repository, not yet in a release): kits, three for
-each class, and up to three for a human who changes class; preservers' INT
-(the chance to learn a scroll's spell, and the most spells of each level);
-rangers' casting level; the off hand's one attack a round with two weapons;
-the charges left in a wand's item box; and [a spoiler-free player's
-guide](darksun-companion/GUIDE.md).
+**Since 1.2.0** (in the repository, not yet in a release): the new name,
+Obsidian Edition; kits, three for each class, and up to three for a human who
+changes class; AD&D's class tables; preservers' INT (the chance to learn a
+scroll's spell, and the most spells of each level); the leader's CHA at
+shops; two magic robes; rangers' casting level; the off hand's one attack a
+round with two weapons; the charges left in a wand's item box; and [a
+spoiler-free player's guide](darksun-companion/GUIDE.md).
 
 Earlier changes, pull request by pull request, are in
 [`CHANGELOG.md`](CHANGELOG.md). Releases have notes of their own:

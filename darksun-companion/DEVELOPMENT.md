@@ -1,15 +1,15 @@
 # Obsidian Edition: development
 
-How Obsidian Edition and its companion window, Templar's Ledger, work inside: the patched game and its helper, what's known
-of the game's data, the tools for mapping it, and how each part of the
-[README](README.md) is done.
+How Obsidian Edition and its companion window, Templar's Ledger, work inside:
+the patched game and its helper, what's known of the game's data, the tools
+for mapping it, and how each part of the [README](README.md) is done.
 
 ## How the dice log works
 
 Every roll in the game goes through one function, Borland C++'s `rand()`.
 
 1. When you start the game with the dice log, the launcher writes
-   `dos\DSUNLOG.EXE`: a copy of the game's `DSUN.EXE` with about 140 small
+   `dos\DSUNLOG.EXE`: a copy of the game's `DSUN.EXE` with about 175 small
    changes, listed in `PATCHES` in `dscompanion/gamepatch.py`. Most replace a
    few bytes of the game's code with an `INT` (60h to 65h, and 8Ch to FEh)
    that the helper answers: `rand()`, the saving throw, AC, the dialogue
@@ -274,23 +274,6 @@ README's section.
 The game keeps the clicked reply's row at DS:1F0A while it flashes it; the log
 reads the reply's text from the game's own list.
 
-### Two weapons: AD&D's penalties
-
-([In the README](README.md#two-weapons).)
-
-How: the game reads the attacker's DEX adjustment when it works out the
-two-weapon adjustment; the helper takes over from there (`INT FEh`) and gives
-AD&D's for the hand the attack's weapon is in.
-
-The off hand's one attack: the game gives every weapon the character's rate
-(the attack routine's `[BP-8]`, from the sheet's `+2Ah`, worked on by
-`PROBE_ATTACKS`), so each hand of a 3/2 fighter attacks 1, then 2. With the
-rule, `OFF_HAND_HALVES` makes a melee weapon in the off hand (the item's
-`+11h`, slot 10; in the attack routine `[BP+12h]`, the DAM line's DI, View
-Character's `[BP-0Ah]`) no more than 2 halves, after every other change to
-the rate (specialization, the kits), so the extra attacks stay with the main
-hand. `GameData.weapon_hits` gives the party view the same.
-
 ### Searching junk, hay and wardrobes
 
 ([In the README](README.md#searching-junk-hay-and-wardrobes).)
@@ -301,51 +284,6 @@ range, where the running script is (which tells the three searches and their
 damage rolls apart) and the three counts (`dscompanion/searches.py`). Tested
 in play: a haystack search in the slave pens logged `0-10 = 7, an old, soiled
 loincloth (the party's 2nd find of 6 in hay)`, as the game's own message said.
-
-### Thief skills from AD&D's table
-
-([In the README](README.md#thief-skills-from-adds-table).)
-
-How: where the game's thief skill routine adds 4 a level, the helper
-(`INT E4h`) puts AD&D's number for the level in place of the game's base and
-level, adds the DEX table's, and jumps past the game's DEX formula to its
-armour and effects. The Ledger's screens and the inventory screen's panel
-work the chances out the same way.
-
-### Hiding in shadows to backstab
-
-([In the README](README.md#hiding-in-shadows-to-backstab).)
-
-How: the patched game's item box (`INT DAh`, where it has drawn the name) asks
-the helper, which draws the line with the game's own text routine when the
-item's type is worn as a cloak, on the feet or as a belt; and at the end of the
-game's thief skill routine (`INT D9h`, where it returns the chance, armour and
-effects counted) the helper adds the belt's 5 to picking pockets and opening
-locks for a thief wearing one.
-
-How: the Ledger rolls both when the turn passes to the thief and tells the
-helper, which, where the game has just worked out whether an attack is from
-behind and a backstab (`INT EAh`), makes the hidden thief's next one so, by
-the game's own conditions for a backstab (a thief, in melee, a weapon of
-weight 40 or less).
-
-### Spells saved against with the spell save
-
-([In the README](README.md#spells-saved-against-with-the-spell-save).)
-
-How: the Ledger writes the game's own table that turns a spell's kind of save
-into one of the five (a table of words at DS:1E75h, read afresh for every
-save), and puts it back when the rule is unticked.
-
-### Fire, cold and electricity: DEX instead of a doubled d20
-
-([In the README](README.md#fire-cold-and-electricity-dex-instead-of-a-doubled-d20).)
-
-How: the helper does the save's doubling (`INT F0h`) only while this rule is
-off, and the Ledger marks the fire, cold and electricity spells with the game's
-own "can be dodged" flag (bit 40h of the spell's category word), which no spell
-has, so the game's save routine adds the DEX defensive adjustment from its own
-table.
 
 ### THAC0, saves and thief skills
 
@@ -388,6 +326,18 @@ How: the patched game calls the helper (`INT F5h`) where the box has drawn its
 first status rows; the helper asks the Ledger (as for each turn's rolls), and
 prints the lines with the game's text routine. `INT F6h`, at the end of the
 routine that closes the box, shows the whole description.
+
+### Charges in item boxes
+
+([In the README](README.md#charges-in-item-boxes).)
+
+An item that casts a spell has the spell + 1 in its `+0Fh` and its charges
+left in `+0Eh` (the routine finishing an item's use takes one off, 721E4h,
+unless its type's `+0Fh` has 2). `PROBE_ITEM_BOX` (`INT DAh`, at the end of the routine filling an item's box,
+8C1A1h, the item `[BP+6]`) draws `Charges: n` in the row after the box's own
+lines (`IB_CHARGES`) when the spell byte is below F9h (from there the game's
+own effects: a belt's STR, a ring's AC...) and the charges aren't 0, but not
+for fruit (type 60, eaten whole).
 
 ### No manual check
 
@@ -487,18 +437,6 @@ Seeker's 5 and a Justifier's 9 come off there whatever the rule
 Checked in the game: a 9th-level air ranger's Protection from Evil lasted 6
 rounds (caster level 2; 27 without the rule).
 
-### Charges in an item's box
-
-([In the README](README.md#every-magic-item).)
-
-An item that casts a spell has the spell + 1 in its `+0Fh` and its charges
-left in `+0Eh` (the routine finishing an item's use takes one off, 721E4h,
-unless its type's `+0Fh` has 2). `PROBE_ITEM_BOX` (`INT DAh`, at the end of the routine filling an item's box,
-8C1A1h, the item `[BP+6]`) draws `Charges: n` in the row after the box's own
-lines (`IB_CHARGES`) when the spell byte is below F9h (from there the game's
-own effects: a belt's STR, a ring's AC...) and the charges aren't 0, but not
-for fruit (type 60, eaten whole).
-
 ### Preservers' INT
 
 ([In the README](README.md#preservers-int).)
@@ -531,25 +469,6 @@ the member, spell, INT, chance, d100 or spells known, result;
 `PROBE_PICK_ANY` (`PICK_INT_ANY`) doesn't open CHOOSE A SPELL when no unknown
 wizard spell is left at a level on offer that isn't full.
 
-### The leader's CHA at shops
-
-([In the README](README.md#the-leaders-cha-at-shops); `prices.py`.)
-
-The shop (overlay at 83000h) reads an item's price, the word at its `+6`,
-straight from the item: `mov cx,es:[bx+6]` to charge it (8384Bh: times the
-count for a stack, against the party's money, the dword at 2C0:357h; NOT
-ENOUGH MONEY, DS:2EE7h, if short) and to show it under the item (83BB1h, as
-`%d$`), and `movsx eax,word es:[bx+6]` where the list colours an item the party
-can't afford (8310Ch). Selling (83CCAh) is left alone; 9999 there is "I
-COULDN'T SELL THAT".
-
-How (`RULE_HI_CHA_PRICES`, the second rules word's 16: `game.RULE_CHA_PRICES`):
-`PROBE_PRICE` (`INT 8Dh`) at the first two and `PROBE_PRICE_EAX` (`INT 8Ch`)
-at the third read the price and pass it through `CHA_PRICE`: the leader is
-the party member at `DS:4979h` (whose turn it is; outside a fight, the
-leader), its CHA its creature record's `+27h`; the price times (100 − 5 for
-each point of CHA past 15, at most 25) / 100, never below 1, and 9999 kept.
-
 ### AD&D's class tables
 
 ([In the README](README.md#adds-class-tables); `tables.py`.)
@@ -577,6 +496,103 @@ alone; the routine keeps only SI, DI and BP, so the probe keeps the rest)
 and adds `ADND_SLOTS`; anyone else, or with the rule off, the routine as it
 was.
 
+### The leader's CHA at shops
+
+([In the README](README.md#the-leaders-cha-at-shops); `prices.py`.)
+
+The shop (overlay at 83000h) reads an item's price, the word at its `+6`,
+straight from the item: `mov cx,es:[bx+6]` to charge it (8384Bh: times the
+count for a stack, against the party's money, the dword at 2C0:357h; NO
+DEAL!, DS:2EE7h, if short) and to show it under the item (83BB1h, as
+`%d$`), and `movsx eax,word es:[bx+6]` where the list colours an item the party
+can't afford (8310Ch). Selling (83CCAh) is left alone; 9999 there is "I
+COULDN'T SELL THAT".
+
+How (`RULE_HI_CHA_PRICES`, the second rules word's 16: `game.RULE_CHA_PRICES`):
+`PROBE_PRICE` (`INT 8Dh`) at the first two and `PROBE_PRICE_EAX` (`INT 8Ch`)
+at the third read the price and pass it through `CHA_PRICE`: the leader is
+the party member at `DS:4979h` (whose turn it is; outside a fight, the
+leader), its CHA its creature record's `+27h`; the price times (100 − 5 for
+each point of CHA past 15, at most 25) / 100, never below 1, and 9999 kept.
+
+Checked in the game: with a CHA 20 leader, Kalzith's scrolls showed 2,250,
+4,500 and 6,750 (25% off 3,000, 6,000 and 9,000) and each was charged that.
+A bought item stays on the pointer until it is put down (the game's held item,
+`DS:17A0h`), and the shop takes no other click meanwhile.
+
+### Spells saved against with the spell save
+
+([In the README](README.md#spells-saved-against-with-the-spell-save).)
+
+How: the Ledger writes the game's own table that turns a spell's kind of save
+into one of the five (a table of words at DS:1E75h, read afresh for every
+save), and puts it back when the rule is unticked.
+
+### Fire, cold and electricity: DEX instead of a doubled d20
+
+([In the README](README.md#fire-cold-and-electricity-dex-instead-of-a-doubled-d20).)
+
+How: the helper does the save's doubling (`INT F0h`) only while this rule is
+off, and the Ledger marks the fire, cold and electricity spells with the game's
+own "can be dodged" flag (bit 40h of the spell's category word), which no spell
+has, so the game's save routine adds the DEX defensive adjustment from its own
+table.
+
+### Two weapons: AD&D's penalties
+
+([In the README](README.md#two-weapons).)
+
+How: the game reads the attacker's DEX adjustment when it works out the
+two-weapon adjustment; the helper takes over from there (`INT FEh`) and gives
+AD&D's for the hand the attack's weapon is in.
+
+The off hand's one attack: the game gives every weapon the character's rate
+(the attack routine's `[BP-8]`, from the sheet's `+2Ah`, worked on by
+`PROBE_ATTACKS`), so each hand of a 3/2 fighter attacks 1, then 2. With the
+rule, `OFF_HAND_HALVES` makes a melee weapon in the off hand (the item's
+`+11h`, slot 10; in the attack routine `[BP+12h]`, the DAM line's DI, View
+Character's `[BP-0Ah]`) no more than 2 halves, after every other change to
+the rate (specialization, the kits), so the extra attacks stay with the main
+hand. `GameData.weapon_hits` gives the party view the same.
+
+### Thief skills from AD&D's table
+
+([In the README](README.md#thief-skills-from-adds-table).)
+
+How: where the game's thief skill routine adds 4 a level, the helper
+(`INT E4h`) puts AD&D's number for the level in place of the game's base and
+level, adds the DEX table's, and jumps past the game's DEX formula to its
+armour and effects. The Ledger's screens and the inventory screen's panel
+work the chances out the same way.
+
+### Hiding in shadows to backstab
+
+([In the README](README.md#hiding-in-shadows-to-backstab).)
+
+How (the cloak, boots and belt): the patched game's item box (`INT DAh`, where it has drawn the name) asks
+the helper, which draws the line with the game's own text routine when the
+item's type is worn as a cloak, on the feet or as a belt; and at the end of the
+game's thief skill routine (`INT D9h`, where it returns the chance, armour and
+effects counted) the helper adds the belt's 5 to picking pockets and opening
+locks for a thief wearing one.
+
+How (the rolls): the Ledger rolls both when the turn passes to the thief and tells the
+helper, which, where the game has just worked out whether an attack is from
+behind and a backstab (`INT EAh`), makes the hidden thief's next one so, by
+the game's own conditions for a backstab (a thief, in melee, a weapon of
+weight 40 or less).
+
+### Picking pockets
+
+([In the README](README.md#picking-pockets).)
+
+How: the patched game's conversation window sends a key it doesn't know to
+the helper (`INT FCh`), which has the Ledger roll and move the item, then adds
+the result to the window's text; and the routine that uses the item on the
+pointer on something on the map tells the helper what was used on what
+(`INT FDh`): for the thieving tools on someone, the Ledger does the same, and
+the helper shows the result instead of the game's "nothing happens".
+
 ### Levels up to 10
 
 ([In the README](README.md#levels-up-to-10).)
@@ -593,34 +609,6 @@ How: where the game works out the number a weapon's d20 must reach
 (`INT D6h`), where it skips the roll for armour with no magical power
 (`INT D5h`) and where it works out armour's number (`INT D4h`), the helper
 gives the easier of the two and records the check for the dice log.
-
-### Bracers of defense
-
-([In the README](README.md#bracers-of-defense).)
-
-How: where the game's AC routine asks the helper about each worn item
-(`INT F8h`) and where it starts a saving throw's modifiers (`INT F9h`), the
-helper looks at what else the character wears.
-
-### Robes
-
-([In the README](README.md#robes); `robes.py`.)
-
-The robes are one new item type (`ROBE`, the 26th of the helper's types,
-`game.ROBE_TYPE`): the cloak of protection's record worn on the chest (+9: 1),
-its plus counting for AC (+0Fh, 80h), of no material, for preservers,
-psionicists and druids (+10h: 190h). `BRACERS_AX` answers for it as for the
-bracers, so it is no armour to the class restrictions, the casting test or the
-protection rules, and its plus counts only without armour (`PROBE_RING_AC`'s
-bracers branch). The Ashen Robe is +1, the Veiled Robe +2, and the plus tells
-them apart: `ROBE_PLUS` finds the one worn on the chest (`WORN_SCAN`).
-`KIT_SAVE` adds 1 to every save for +2, and for +1 to a save against a wizard's
-or priest's spell (0-137); `PROBE_SLOTS` adds a wizard slot at spell levels 1-3
-for +2 where there are any. The Ledger: `restrict.is_robe`, `robes.save`,
-`robes.slots`, `GameData.protection` (not armour). The icons are drawn
-(`icons.robe_icon`, objects 2580 and 2582); Kel's object (107) carries the
-Veiled Robe in the data (`worldgear.MAGIC`), and Kalzith's Ashen Robe is put
-on him with his cloak and scrolls (`kalzith.stock`).
 
 ### Half-giants' two-handed weapons
 
@@ -775,6 +763,34 @@ and the game's palette: each picture twice its size, the rest transparent.
 `docicons.ICONS` names each image's object; a new item needs its line there,
 and `tests/test_docicons.py` checks that every icon the guide shows is there.
 
+### Bracers of defense
+
+([In the README](README.md#bracers-of-defense).)
+
+How: where the game's AC routine asks the helper about each worn item
+(`INT F8h`) and where it starts a saving throw's modifiers (`INT F9h`), the
+helper looks at what else the character wears.
+
+### Robes
+
+([In the README](README.md#robes); `robes.py`.)
+
+The robes are one new item type (`ROBE`, the 26th of the helper's types,
+`game.ROBE_TYPE`): the cloak of protection's record worn on the chest (+9: 1),
+its plus counting for AC (+0Fh, 80h), of no material, for preservers,
+psionicists and druids (+10h: 190h). `BRACERS_AX` answers for it as for the
+bracers, so it is no armour to the class restrictions, the casting test or the
+protection rules, and its plus counts only without armour (`PROBE_RING_AC`'s
+bracers branch). The Ashen Robe is +1, the Veiled Robe +2, and the plus tells
+them apart: `ROBE_PLUS` finds the one worn on the chest (`WORN_SCAN`).
+`KIT_SAVE` adds 1 to every save for +2, and for +1 to a save against a wizard's
+or priest's spell (0-137); `PROBE_SLOTS` adds a wizard slot at spell levels 1-3
+for +2 where there are any. The Ledger: `restrict.is_robe`, `robes.save`,
+`robes.slots`, `GameData.protection` (not armour). The icons are drawn
+(`icons.robe_icon`, objects 2580 and 2582); Kel's object (107) carries the
+Veiled Robe in the data (`worldgear.MAGIC`), and Kalzith's Ashen Robe is put
+on him with his cloak and scrolls (`kalzith.stock`).
+
 ### Kalzith
 
 ([In the README](README.md#kalzith).)
@@ -882,17 +898,6 @@ EXIT" (the game's own largest is 9,792). So the Ledger's copy of the game
 makes the buffer 11,776 bytes where it is allocated (`push dword 10000` at
 6A692h becomes 2E00h), about 1.7 KB more of the game's memory.
 
-### Picking pockets
-
-([In the README](README.md#picking-pockets).)
-
-How: the patched game's conversation window sends a key it doesn't know to
-the helper (`INT FCh`), which has the Ledger roll and move the item, then adds
-the result to the window's text; and the routine that uses the item on the
-pointer on something on the map tells the helper what was used on what
-(`INT FDh`): for the thieving tools on someone, the Ledger does the same, and
-the helper shows the result instead of the game's "nothing happens".
-
 ### The cooked vulture
 
 ([In the README](README.md#the-cooked-vulture).)
@@ -979,20 +984,6 @@ it the game draws again. While anyone walks, the rectangle the game draws again
 round what moved is made to take the puffs in; once everyone stands, DSCLOG has
 the view drawn again a few times a second until the last puff is gone.
 
-### Game speed
-
-([In the README](README.md#game-speed).)
-
-The Ledger's drawing is as cheap as it can be without looking any different:
-a shadow is darkened a plane of the video memory at a time (the graphics
-card's registers set four times for a figure, not four times for each of its
-rows), and a dust puff's pixels are worked out a row at a time, only within
-its outline and the part of the view being drawn again. The pictures the
-Ledger draws the party's gear on are each exactly as long as their outfit,
-with only the room gear needs round the figure while walking (6 pixels at the
-sides, 2 above; 10 in a fight), since the game draws a walking figure's whole
-picture at every step.
-
 ### Choosing an enemy: Tab, Enter and the rings
 
 ([In the README](README.md#choosing-an-enemy-tab-enter-and-the-rings).)
@@ -1055,11 +1046,26 @@ characters" check counts to 19. The patched game has 30 and 29 there
 A New character counts as Okay wherever the game tests for Okay: a jump each
 (`NEW_AS_OKAY` in `dscompanion/gamepatch.py`), and `game.py` does the same.
 
+### Game speed
+
+([In the README](README.md#game-speed).)
+
+The Ledger's drawing is as cheap as it can be without looking any different:
+a shadow is darkened a plane of the video memory at a time (the graphics
+card's registers set four times for a figure, not four times for each of its
+rows), and a dust puff's pixels are worked out a row at a time, only within
+its outline and the part of the view being drawn again. The pictures the
+Ledger draws the party's gear on are each exactly as long as their outfit,
+with only the room gear needs round the figure while walking (6 pixels at the
+sides, 2 above; 10 in a fight), since the game draws a walking figure's whole
+picture at every step.
+
 ## Kits
 
-Being built: the choice is made (the KIT page, the kit's byte, the Effects
-screen's line, the Characters tab, the Options switch); the kits' effects are
-not. A kit is a choice a single-class character makes at creation: three for
+([In the README](README.md#kits).)
+
+A kit is chosen for a class: by a character of one class when it is made, and
+by a human for each class it changes to (up to three). There are three for
 each class, or none (the class as it is). Each gives something and costs
 something, as AD&D's kits do. The **Kits** rule change on the Options tab
 (`game.RULE_KITS`, bit 0 of the helper's second rules word, `RULES_HI` at the
@@ -1118,7 +1124,7 @@ No kit is the kit page's first row, and what a new character has.
 
 ### Room in the helper
 
-Done. DSCLOG keeps its code and data in one 64 KB segment, all reached
+DSCLOG keeps its code and data in one 64 KB segment, all reached
 through CS; the dice log's ring buffer (`NENT` 128 entries of `ESIZE` 192
 bytes, 24 KB) was in it too, and the image had grown to 63 KB. The ring now
 follows the resident part in memory, in a segment of its own: the install code
@@ -1157,7 +1163,7 @@ the class's kits.
 
 ### Choosing one
 
-Built. The creation panel's lower window shows the psionic disciplines or the
+The creation panel's lower window shows the psionic disciplines or the
 clerical spheres, each with a button that swaps them (VIEW SPHERES is there,
 out of use, for a class with no sphere), and for a warrior with weapon
 specialization the WEAPON SPEC pages. The **KIT** page is at the end of that
@@ -1222,7 +1228,7 @@ background: the pages' text lands on top of each other.
 
 ### Where each effect goes
 
-Built (step 2). A kit has one number (the creation class × 4 + the kit:
+A kit has one number (the creation class × 4 + the kit:
 `kitpages.KIT_IDS`). A human may have a kit for each of its classes (up to
 three), so every rule asks whether the sheet has a given kit awake: `KIT_IS`
 (kit in AL; `KIT_HAS` asleep too), or inline, `call kit_is_b` / `db KIT_X` for a
@@ -1242,7 +1248,7 @@ in `kitpages.kit_ids`), and emulated tests hold the helper to it:
 | spell slots | Arcanist (+1 wizard), Battle Mage (−1 wizard), Crusader (−1 priest), Seeker and Justifier (their priest tables, `SEEKER_SLOTS`, by ranger level, in place of the game's), Elementalist (a level behind) | `PROBE_SLOTS` (`INT B6h`, new: the end of the game's slot routine, `mov ax,[bp-2]` at DSUN.EXE 5E255h) and `PROBE_SLOT_LEVEL` (`INT B5h`, new: where it takes a class's level, `mov al,es:[bx+24h]` at 5E1F6h); `GameData.max_spell_slots` with `kits.slots` and `kits.slot_level` |
 | a power's PSP | Mind Bender, Kineticist (by discipline: powers 0-5 psychokinesis, 6-19 psychometabolism, 20-33 telepathy, the defence modes among them; never below 1) | the powers' table (8 bytes a power, at the load segment + 3FB9h: `+1` the cost to use, `+2` to keep up, 63h for none; `+5` FEh for a defence mode). `PROBE_PSP_USE` (`INT B4h`, new: where the routine using a power has its cost in DI, its table's or worked out for Enhanced Strength and Domination, DSUN.EXE 5CBE7h), `PROBE_PSP_TABLE` (`INT B3h`, new: the table's cost read in the check whether a power can be used, 5CAA3h, and for the half a failed power costs, 5CCA2h), `PROBE_PSP_DEFENCE` (`INT B2h`, new: a defence mode's cost taken off, 5D820h); `kits.psp_cost`. Monsters' powers (5A773h) are left alone |
 | a cure's healing | Healer (+1 a die of Cure Light, Serious, Critical Wounds: spells 71, 112, 127), Lifebinder (a die more: a d8, Blood Flow's, 108, a d6, rolled from the game's rand() seed by `GAME_DIE`) | `PROBE_CURE` (`INT B1h`, new: "nop / push cs" at DSUN.EXE 79619h in the handler for spells with rules of their own, where the healing, pushed with the target, goes to the routine that heals; the caster its `[BP+8]`, the spell `[BP+0Eh]`; the probe pushes CS itself). The Cell Adjustment's jump into 79618h is clear of it |
-| casting level | Seeker (the ranger level less 5), Justifier (less 9), Shinobi (for its wizard spells, the thief level less 5) | the game works it out in two places, both with the combatant and the spell as arguments. The caster level routine, 81B16h, counts a ranger's level 7 less: `PROBE_RANGER_CAST` (`INT AFh`, new: that "sub dx,7", 81B6Ah) makes it the kits' 5 and 9, and `PROBE_CAST_LEVEL` (`INT ACh`, new: its end, `mov ax,[bp-2]`, 81C06h) gives a Shinobi its level for a wizard spell. That routine sets the spell levels a caster may cast, half the caster level rounded up (81664h, which asks for spell 0: the USE screen's lists and slots), and weighs a spell against Dispel Magic. The level a spell's duration and damage take is another routine's, 5E25Ch (the best level of the caster's classes that cast it, a ranger's whole; the cast passes it down to the duration, 76CB3h, and the damage dice, 76DA2h): `PROBE_SPELL_LEVEL` (`INT A8h`, new: its end, `mov ax,di`, 5E3D1h) takes gives the Shinobi its own; `PROBE_RANGER_LEVEL` (`INT A6h`, new: `mov al,es:[bx+24h]`, 5E3B8h, where it takes each class's level) takes the Seeker's 5 and the Justifier's 9 off its ranger level (and a plain ranger's 7, with the [rangers' casting level](#rangers-casting-level) rule). `kits.ranger_cast_drop`, `kits.cast_level`, `kits.spell_class_level`, and `GameData.effect_caster_level` |
+| casting level | Seeker (the ranger level less 5), Justifier (less 9), Shinobi (for its wizard spells, the thief level less 5) | the game works it out in two places, both with the combatant and the spell as arguments. The caster level routine, 81B16h, counts a ranger's level 7 less: `PROBE_RANGER_CAST` (`INT AFh`, new: that "sub dx,7", 81B6Ah) makes it the kits' 5 and 9, and `PROBE_CAST_LEVEL` (`INT ACh`, new: its end, `mov ax,[bp-2]`, 81C06h) gives a Shinobi its level for a wizard spell. That routine sets the spell levels a caster may cast, half the caster level rounded up (81664h, which asks for spell 0: the USE screen's lists and slots), and weighs a spell against Dispel Magic. The level a spell's duration and damage take is another routine's, 5E25Ch (the best level of the caster's classes that cast it, a ranger's whole; the cast passes it down to the duration, 76CB3h, and the damage dice, 76DA2h): `PROBE_SPELL_LEVEL` (`INT A8h`, new: its end, `mov ax,di`, 5E3D1h) gives the Shinobi its own; `PROBE_RANGER_LEVEL` (`INT A6h`, new: `mov al,es:[bx+24h]`, 5E3B8h, where it takes each class's level) takes the Seeker's 5 and the Justifier's 9 off its ranger level (and a plain ranger's 7, with the [rangers' casting level](#rangers-casting-level) rule). `kits.ranger_cast_drop`, `kits.cast_level`, `kits.spell_class_level`, and `GameData.effect_caster_level` |
 | wizard spells for a thief | Shinobi | slots: `PROBE_SLOTS` gives a Shinobi's wizard slots the Seeker's table by its thief level (`kits.slots`). Its spells known are the party's table of them (at the load segment + 3800h, from 168h: 8Ah bytes a member, a byte a spell, not 0 if known), and the USE screen lists and casts them as any preserver's. Learning: a level up as a thief from 6th goes on as a preserver's would (`PROBE_LV_PICK`'s `LV_SHINOBI`) to the routine that offers a preserver its spell (620:5Ch, 85560h), which takes the preserver level and goes on only for one, and then only if the game's list (500:2Ah) has a spell to learn: `PROBE_PICK_ANY` (`INT A7h`, new: `mov [bp-2],ax / or ax,ax`, 85580h) opens CHOOSE A SPELL (85771h) for a Shinobi with one of its spells unknown up to the level it casts. There `PROBE_PICK_LEVEL` (`INT ABh`, new: `inc al`, 85861h, the preserver level the highest spell level on offer is half of) gives it its casting level, and `PROBE_PICK_LIST` (`INT AAh`, new: `mov di,ax`, 8563Fh, after the game fills the list, at the segment of the `mov ax,348h` before it, `+7`, a word a spell; the character at its `+25Bh`; the highest spell level `DS:[4AECh]`) puts its own unknown spells in the list (`kits.pick_list`). A scroll: the game's check whether the character on show may learn its spell (8B6D3h, `or ax,ax` before the jump to CANNOT LEARN FROM THIS ITEM) says no for a Shinobi (`PROBE_SCROLL_LEARN`, `INT A9h`, new). Armour: the game has no armour rule for a single class's spells (the multiclass preserver's is the class restrictions'), so it casts in the light armour it may wear |
 | spells learnt at a level up | Scholar (one more) | `PROBE_LV_PICK`'s `LV_SCHOLAR`: at a preserver's level up, the routine offering its spell (620:5Ch, its far call read from the code after the probe) called once before the game's own |
 | a power's PSP to keep it up | Mind Bender, Kineticist (as the cost to use it; 63h, none, left alone) | `PROBE_PSP_KEEP` (`INT B0h`, new: the table's `+2` read where the round's cost is taken, 5CE49h, the combatant in SI) and `PROBE_PSP_KEEP_DX` (`INT AEh`, new: the check whether a power can be kept up, 5CB02h, the combatant in DX). The monsters' cost lookups (5D4DAh, 5D4EFh) are left alone |
@@ -1303,7 +1309,7 @@ Every kit also needs its Python side: the Characters tab and the in-game
 THAC0 and saves (`game.py`), the dice log's lines, and tests that hold the
 helper's code (emulated) to the Python.
 
-### Order
+### How they were built, and checked
 
 1. Done: the ring out of the segment, the memory measured; the kit's byte, the
    KIT page, the Effects screen's line, the Characters tab, the rule switch.

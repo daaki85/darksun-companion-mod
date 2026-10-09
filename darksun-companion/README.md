@@ -103,29 +103,33 @@ thief skills and spell slots, and the Look box tells you what can hurt a
 monster ([In the game](#in-the-game)).
 
 It brings the rules closer to AD&D: weapon specialization and mastery, kits
-(three for each class), class restrictions, INT's limits on learning spells,
-thief skills from the Player's Handbook, saving throws as the books have them,
-and levels up to 10 ([Rule changes](#rule-changes)). Thieves can hide in
+(three for each class), class restrictions, AD&D's class tables (experience,
+priests' THAC0, spell slots), INT's limits on learning spells, thief skills
+from the Player's Handbook, saving throws as the books have them, the party
+leader's CHA at shops, and levels up to 10 ([Rule changes](#rule-changes)). Thieves can hide in
 shadows to backstab, and pick pockets ([Picking pockets](#picking-pockets)).
 
 It adds to Athas: new weapons in every material, magic items with stories of
-their own, Kalzith (a defiler who sells scrolls), more of Semyon's story, and a
-use for the cooked vulture ([New content](#new-content)). Graphical additions
-show the weapons and armour the party wears, have characters cast shadows, and
-kick up dirt as they walk ([On the screen](#on-the-screen)).
+their own (robes and bracers among them, for those who wear no armour), Kalzith
+(a defiler who sells scrolls), more of Semyon's story, and a use for the cooked
+vulture ([New content](#new-content)). Graphical additions show the weapons and
+armour the party wears, have characters cast shadows, and kick up dirt as they
+walk ([On the screen](#on-the-screen)).
 
-Quality of life changes: choosing an enemy with Tab and attacking it with Enter,
-scrolling the map with the mouse wheel ([Controls](#controls)), 40 saves and 29 saved
-characters ([More saves and characters](#more-saves-and-characters)), a game
-speed setting ([Game speed](#game-speed)), crash reports, and no dragon asking for a word from the manual, the game's copy protection ([No manual check](#no-manual-check)).
+Quality of life changes: choosing an enemy with Tab and attacking it with
+Enter, scrolling the map with the mouse wheel ([Controls](#controls)), 40 saves
+and 29 saved characters ([More saves and characters](#more-saves-and-characters)),
+a game speed setting ([Game speed](#game-speed)), crash reports, and no dragon
+asking for a word from the manual, the game's copy protection ([No manual
+check](#no-manual-check)).
 
 Nothing in the game folder or your save files is changed, except what play
 writes there: save pages 2 to 4 as files of their own beside the game's,
 characters 20 to 29 in the game's `CHARSAVE.GFF`, and, in a game you save,
 the new items (untick **New items** to go without). Some of them the
 original game doesn't know (the item types it lacks, such as the Short Sword,
-the Cloak of Protection, the bracers, plate mail and the Cloak and Boots of
-Elvenkind, and the new item names), so load such a save with the dice log. For the
+the Cloak of Protection, the bracers, the robes, plate mail and the Cloak and
+Boots of Elvenkind, and the new item names), so load such a save with the dice log. For the
 rest, the Ledger only reads the game's memory; the patched game and its copies
 of the game's files are in its own folder (see
 [DEVELOPMENT.md](DEVELOPMENT.md#how-the-dice-log-works)). The window is dressed
@@ -163,8 +167,7 @@ slows instead of speeding up: choose the next setting down.
 ## Running it (Windows)
 
 Templar's Ledger, the mod's companion window, is a separate program that runs
-next to the game. You don't
-install anything into the game folder.
+next to the game. You don't install anything into the game folder.
 
 ### One-time setup
 
@@ -339,7 +342,9 @@ when it refills them (its tables are read from memory):
 - Clerics and druids: from their level plus a WIS bonus.
 - Rangers: from their level only, with their first slot at level 8.
 
-Some [kits](#kits) have more or fewer.
+With [AD&D's class tables](#adds-class-tables) on (the default), clerics',
+druids' and preservers' come from AD&D's tables instead. Some [kits](#kits)
+have more or fewer.
 
 The game's WIS bonus doesn't depend on level, so it gives a 2nd-level druid
 with WIS 19 slots at the 2nd to 4th levels too, though a druid that level
@@ -1067,10 +1072,10 @@ change.
   doubled d20 against fire...) is left out; the dice log shows it on each
   save. A 1 always fails and a 20 always saves, so they show between 2 and 20.
 - **Thief skills**: as they stand (with no equipment penalty in games started
-  with the dice log: see Thief skills), 0 for a skill an effect rules out or when the thief isn't Okay (New counts as Okay),
+  with the dice log: see [How the game works out thief skills](#how-the-game-works-out-thief-skills)), 0 for a skill an effect rules out or when the thief isn't Okay (New counts as Okay),
   and 100 for one an effect makes certain (Detect Traps). Only the situation's
   bonus or penalty (a hard lock) is left out: the dice log shows it on each
-  roll (see Thief skills).
+  roll.
 
 The Characters tab shows the same THAC0 with each weapon and saves. The
 game's own numbers (the character sheet's) come back on these screens when
@@ -1122,7 +1127,7 @@ along its bottom from the left, so the slots take only the three lines above
 them: a character with both wizard and priest spells gets the two lines without
 the `SPELLS LEFT BY LEVEL` heading.
 
-The numbers are the Characters tab's (see Spell slots), WIS bonus included,
+The numbers are the Characters tab's (see [spell slots](#the-ledgers-window)), WIS bonus included,
 printed with the game's own text routine; they show while Templar's Ledger (or
 its command-line dice log) is running.
 
@@ -1214,7 +1219,7 @@ How it works: [DEVELOPMENT.md](DEVELOPMENT.md#no-manual-check).
 
 ## Rule changes
 
-Nineteen changes to the game's rules, each with its own box on the Options tab:
+Twenty-one changes to the game's rules, each with its own box on the Options tab:
 under **Rule changes**, but for the two thief rules, which are under
 **Thieves** with [picking pockets](#picking-pockets). All are on by default,
 and they take effect in games started with the dice log: with the Ledger
@@ -1231,8 +1236,8 @@ works](#how-the-game-works) has what the game does without them.
 | [Hit dice: the better of two](#hit-dice-the-better-of-two) | each hit die rolled twice, the better kept, for every character |
 | [Rangers' casting level](#rangers-casting-level) | a ranger's spells last and do damage as cast at its level less 7, as the spell levels it may cast already count it |
 | [Preservers' INT](#preservers-int) | INT gives a preserver a chance to learn a spell from a scroll, and the most spells of each spell level it may know |
-| [The leader's CHA at shops](#the-leaders-cha-at-shops) | the party leader's CHA 16 or more lowers what shops ask, 5% to 25%, as in Baldur's Gate |
 | [AD&D's class tables](#adds-class-tables) | the XP for each level, priests' THAC0, and clerics', druids' and preservers' spell slots from AD&D's tables |
+| [The leader's CHA at shops](#the-leaders-cha-at-shops) | the party leader's CHA 16 or more lowers what shops ask, 5% to 25%, as in Baldur's Gate |
 | [Spells saved against with the spell save](#spells-saved-against-with-the-spell-save) | the spell save rather than petrification/polymorph |
 | [Fire, cold and electricity: DEX instead of a doubled d20](#fire-cold-and-electricity-dex-instead-of-a-doubled-d20) | DEX's defensive adjustment on those saves rather than a doubled d20 |
 | [Two weapons](#two-weapons) | -2 main hand, -4 off hand, DEX's reaction adjustment added; rangers none; the off hand attacks once a round |
@@ -2049,7 +2054,8 @@ and thief skills are worked out from the level. So at 10th level:
 - **Spell slots** grow at the levels casters already have, up to 5th; no
   class gets 6th-level slots (a cleric would at 11, a preserver at 12), so no
   spells past 5th level are needed. A 10th-level preserver or druid has
-  5 4 3 2 2 before WIS.
+  5 4 3 2 2 before WIS by the game's table; with [AD&D's class
+  tables](#adds-class-tables), 4 4 3 2 2 and 4 4 3 3 2.
 - **A preserver picks a new spell** on the game's own CHOOSE A SPELL screen,
   as at every level, offered from spell level (class level + 1) / 2 down:
   5th at 10th as at 9th. **A psionicist picks a new power** (the game gives
@@ -2060,8 +2066,8 @@ and thief skills are worked out from the level. So at 10th level:
 The level-up comes as the game's usual one ("Gerakis gains a level"), and
 View Character stops showing the XP for the next level at 10, as it does at
 9 without the rule. For a character of more than one class, a class already
-at 10 isn't named in the brackets, since it has no next level. Untick it and nobody goes past the level they have: a
-10th-level character stays 10th.
+at 10 isn't named in the brackets, since it has no next level. Untick it and
+nobody goes past the level they have: a 10th-level character stays 10th.
 
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#levels-up-to-10).
 
@@ -2296,6 +2302,7 @@ character can use.
 | ![](docs/items/shadowseeker.png) | **Shadowseeker** | in the pack of **Kurzak**, the pens' guard leader | a short sword +1 (1d6+1): whoever wields it, in either hand, sees the invisible |
 | ![](docs/items/kreenfang.png) | **Kreenfang** | the 2 handed Bone Gythka on the dead body by the arena's stone arch | a gythka +1 (2d4+1) |
 | ![](docs/items/kalzith-scroll.png) | **Six scrolls** | [Kalzith's](#kalzith) shop | spells the game has no scroll of |
+| ![](docs/items/ashen-robe.png) ![](docs/items/veiled-robe.png) | **Ashen Robe**, **Veiled Robe** | worn and sold by [Kalzith](#kalzith); sold by **Kel** | [robes](#robes) for preservers, psionicists and druids |
 | ![](docs/items/gutterknot.png) | **Gutterknot** | carried by **Churrr** in the warrens; a thief can lift it (200 XP) | a club +1 (the game has no magic club) |
 | ![](docs/items/deepbiter.png) | **Deepbiter** | carried by one of the **Undermountain folk** (the miners) | a stone pick +1 (the game has no magic pick) |
 | ![](docs/items/windlash.png) | **Windlash** | sold by the **Bowyer** | a staff sling +1 (the game has no magic staff sling) |
@@ -2326,7 +2333,8 @@ for a +2; a +1 with a spell 22,000), Windlash 2,800 (as its Sling +1), plain met
 300, bracers 5,000 a point of AC, Arrowbane 30,000, the Sunking Crown 40,000,
 the rings and cloak of protection 15,000, Inixhide 6,000, the
 Cloak of Elvenkind 25,000 and Boots 20,000, the Warden's Arms and Legs 27,000
-each, Chest 36,000 and Helm 30,000, and the Tome of Understanding AD&D's 43,500.
+each, Chest 36,000 and Helm 30,000, the Ashen Robe 6,000 and the Veiled Robe
+40,000, and the Tome of Understanding AD&D's 43,500.
 
 ![The Tome of Understanding's box in the game: a night-steel book with a fiery emblem, 43500, Tome/Understand, and the icon to click](docs/tome.png)
 
@@ -2429,7 +2437,7 @@ Talk button). His conversation is the game's kind, just him speaking:
 - **With respect** ("We mean no harm. We're slaves too."), he owns up to
   scribing spells on scraps of hide at night, to bribe a guard, and offers
   them: **Show us what you have** opens the game's shop screen, with his six
-  scrolls, one of each:
+  scrolls, one of each, and what he wears (below):
 
   | Level | Scroll | Price |
   |---|---|---|
@@ -2439,7 +2447,8 @@ Talk button). His conversation is the game's kind, just him speaking:
 
   None of them is a spell the game has a scroll of, so they're something you
   can't find elsewhere. The prices are the game's own for the spell's level
-  (3,000 a level, as most of its scrolls are).
+  (3,000 a level, as most of its scrolls are), less with [the leader's
+  CHA](#the-leaders-cha-at-shops).
 
   Cat's Grace is there only with its rule on (see
   [Rule changes](#rule-changes)). A preserver learns a scroll's spell as from
@@ -2465,8 +2474,8 @@ own), and sells them too: the game's shops sell everything a merchant carries,
 worn or not. Once the party has bought it all, he has nothing more to sell.
 Killed, he leaves whatever of these he still has and one of the scrolls he
 still had, chosen at random, in his body, and the log says which scroll.
-Attacked, he turns on the party as the
-pens' other slaves do, and only the guards near him join the fight. If he dies,
+Attacked, he turns on the party as the pens' other slaves do, and only the
+guards near him join the fight. If he dies,
 Dinos and the Trustee speak of him as dead; after the party's escape he is gone
 from the pens with everyone else.
 
