@@ -90,7 +90,7 @@ GOG release) in DOSBox.
 ## What it does
 
 New to the game, or to the mod? [The player's guide](GUIDE.md) has its rules
-and tables in one place, without spoilers.
+and tables in one place, without spoilers, with a section for each class.
 
 It shows what the game keeps hidden. Every roll is logged as it happens:
 attacks, damage, saving throws, thief skills, initiative, even the dice at

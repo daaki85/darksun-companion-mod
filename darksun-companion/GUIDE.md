@@ -4,8 +4,9 @@ How **Dark Sun: Shattered Lands** plays with Templar's Ledger: making a party,
 the classes and kits, fighting, magic, psionics, equipment and levels, with
 the tables you need.
 
-It is **spoiler-free**: no places past the opening arena, no people, no quests,
-no items by name or by where they are found.
+It is **spoiler-free**: no places past the opening arena, no people, no
+quests, and no word of where any item is found (the mod's new items are listed
+by what they are).
 
 Everything here is the mod with its **default options**, which is how the
 Ledger starts. Every rule change has a switch on the Ledger's **Options** tab
@@ -21,13 +22,15 @@ The [README](README.md) has every rule in full detail.
 - [Making a party](#making-a-party)
   - [Ability scores](#ability-scores)
   - [Races](#races)
-  - [Hit points](#hit-points)
   - [More than one class](#more-than-one-class)
-  - [Starting gear and spells](#starting-gear-and-spells)
+  - [Hit points](#hit-points)
+  - [THAC0 by level](#thac0-by-level)
 - [The classes](#the-classes)
   - [What each class may use](#what-each-class-may-use)
+  - [Fighter](#fighter), [Gladiator](#gladiator), [Ranger](#ranger),
+    [Thief](#thief), [Preserver](#preserver), [Cleric](#cleric),
+    [Druid](#druid), [Psionicist](#psionicist)
 - [Kits](#kits)
-  - [Kits' starting gear](#kits-starting-gear)
   - [Kits' spell slots](#kits-spell-slots)
 - [Weapon specialization and attacks](#weapon-specialization-and-attacks)
 - [Fighting](#fighting)
@@ -47,6 +50,7 @@ The [README](README.md) has every rule in full detail.
   - [Effects](#effects)
 - [Psionics](#psionics)
 - [Equipment](#equipment)
+  - [New items](#new-items)
 - [Experience and levels](#experience-and-levels)
 - [Worth knowing](#worth-knowing)
 - [What the Ledger shows you](#what-the-ledger-shows-you)
@@ -116,10 +120,10 @@ easier.
 
 On the main menu choose **CREATE CHARACTERS**, right-click an empty slot and
 choose **NEW**. Click the portrait for race and sex, mark one to three classes,
-choose a cleric's or ranger's sphere, click the die to roll, and press
-**DONE**. The panel under the classes has the mod's pages: **WEAPON SPEC** for
-warriors ([weapon specialization](#weapon-specialization-and-attacks)) and
-**KITS** ([kits](#kits)). A party has one to four characters, all good or
+choose a cleric's or ranger's sphere and an alignment, click the die to roll,
+and press **DONE**. The panel under the classes has the mod's pages: **WEAPON
+SPEC** for warriors ([weapon specialization](#weapon-specialization-and-attacks))
+and **KITS** ([kits](#kits)). A party has one to four characters, all good or
 neutral.
 
 ### Ability scores
@@ -166,10 +170,63 @@ What the scores do:
 | Half-giant | +4 | −5 | +2 | −5 | −3 | −3 | double hit dice; holds a two-handed weapon in one hand |
 | Halfling | −2 | +2 | −1 | | +2 | −1 | better CON saves |
 | Mul | +2 | | +1 | −1 | | −2 | |
-| Thri-kreen | | +2 | | −1 | +1 | −2 | base AC 5, moves 15 (others 12); no armour |
+| Thri-kreen | | +2 | | −1 | +1 | −2 | base AC 5, moves 15 (others 12); no armour, cloaks, belts, boots or rings |
 
-The creation screen shows which classes a race may take, and greys classes
-that can't go together.
+**Classes by race** (the creation screen greys the rest):
+
+| Race | Cleric | Druid | Fighter | Gladiator | Preserver | Psionicist | Ranger | Thief |
+|---|---|---|---|---|---|---|---|---|
+| Human | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Dwarf | ✓ | | ✓ | ✓ | | ✓ | | ✓ |
+| Elf | ✓ | | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Half-elf | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Half-giant | ✓ | | ✓ | ✓ | | ✓ | ✓ | |
+| Halfling | ✓ | ✓ | ✓ | ✓ | | ✓ | ✓ | ✓ |
+| Mul | ✓ | ✓ | ✓ | ✓ | | ✓ | | ✓ |
+| Thri-kreen | ✓ | ✓ | ✓ | ✓ | | ✓ | ✓ | |
+
+**Alignment:** a druid must be true neutral, a ranger good (lawful, neutral
+or chaotic good). The others may be any good or neutral alignment.
+
+### More than one class
+
+**Multiclass (any race but human).** A character takes two or three classes
+at once. Experience is split evenly between them, so each rises more slowly;
+hit points are shared out ([hit points](#hit-points)); and the strictest
+class decides what may be worn and wielded
+([what each class may use](#what-each-class-may-use)). **Gladiators never
+multiclass.** Each class's section below lists its combinations and the races
+that can take them; in all:
+
+| Race | Two classes | Three classes |
+|---|---|---|
+| Dwarf | cleric/fighter, cleric/psionicist, fighter/psionicist, fighter/thief, psionicist/thief | cleric/fighter/psionicist, fighter/psionicist/thief |
+| Elf | any two of cleric, fighter, preserver, psionicist, ranger and thief but fighter/ranger | any three of them without both fighter and ranger |
+| Half-elf | as the elf, and a druid with fighter, preserver, psionicist or thief | as the elf, and a druid with any two of fighter, preserver, psionicist and thief |
+| Half-giant | cleric/fighter, cleric/psionicist, cleric/ranger, fighter/psionicist, psionicist/ranger | none |
+| Halfling | cleric or druid with fighter, psionicist or thief (and cleric/ranger); fighter/psionicist, fighter/thief, psionicist/ranger, psionicist/thief, ranger/thief | fighter/psionicist/thief, psionicist/ranger/thief |
+| Mul | cleric or druid with fighter, psionicist or thief; fighter/psionicist, fighter/thief, psionicist/thief | cleric/fighter/thief, druid/fighter/thief, fighter/psionicist/thief |
+| Thri-kreen | cleric or druid with fighter or psionicist; cleric/ranger, fighter/psionicist, psionicist/ranger | cleric/fighter/psionicist, cleric/psionicist/ranger, druid/fighter/psionicist |
+
+No character is both cleric and druid, nor two of fighter, gladiator and
+ranger.
+
+**Dual class (humans only).** A human has one class, and can change to another
+with **DUAL** on a portrait's right-click menu when:
+
+- it is **2nd level or more** and has changed class at most once before;
+- its **current class's prime requisite is 15 or more**, and the **new
+  class's 17 or more**;
+- the new class is of **another group** than every class it has had: priests
+  (cleric, druid), warriors (fighter, gladiator, ranger), preserver,
+  psionicist, thief;
+- its alignment suits the new class (a druid true neutral, a ranger good).
+
+The new class starts at 1st level. The old class stops rising, and what it
+gives (its hit points, THAC0, saves, weapon specs and kit) **sleeps until the
+new class's level passes the old one's**; then both count. The new class can
+take a kit of its own, so a human may end up with three. Some kits rule out
+classes a human could change to ([kits](#kits)).
 
 ### Hit points
 
@@ -194,77 +251,7 @@ that can't go together.
 - Three [kits](#kits) have a die of their own.
 - At 0 hit points a character is Out Cold; at −10, dead.
 
-### More than one class
-
-- **Any race but human** can take two or three classes at once. Experience is
-  split between them, so each rises more slowly.
-- **A human** has one class, and from 2nd level can change to another
-  (**DUAL** on a portrait's right-click menu), starting it at 1st level. The
-  old class stops rising, and what it gives (its hit points, THAC0, saves,
-  weapon specs and kit) sleeps until the new class's level passes the old
-  one's. A human can change class twice, but never from one warrior class
-  (fighter, gladiator, ranger) to another. The new class can take a kit of its
-  own, so a human may end up with three.
-
-### Starting gear and spells
-
-Each class starts with:
-
-| Class | Starting gear |
-|---|---|
-| Fighter | a weapon of its first weapon spec, shield, leather chest, arm and leg armour |
-| Gladiator | a weapon of its first weapon spec, a club in the off hand, leather arm armour |
-| Ranger | a weapon of its first weapon spec, bow and arrows, leather chest and arm armour |
-| Cleric | shield, leather chest and arm armour, a club in the backpack |
-| Druid | club, sling |
-| Preserver | quarterstaff, sling |
-| Psionicist | club, bow and arrows, leather chest armour |
-| Thief | bone long sword, sling, leather chest armour, Thieves' Tools |
-
-A warrior's starting weapon is a plain one of its first chosen weapon spec, in
-a material its classes allow. A kit changes gear it can't use (a shield for a
-kit that forbids one goes to the backpack, for instance); the dice log says
-what changed.
-
-A new preserver **chooses its first spells** on the CHOOSE A SPELL window: two
-1st-level spells at 1st level.
-
-## The classes
-
-**Warriors: fighters, gladiators and rangers.** The best hit dice and THAC0
-(see [the table below](#thac0-by-level)). They train in weapons
-([weapon specialization](#weapon-specialization-and-attacks)):
-
-- **Fighters** specialize in one kind of weapon, then master it (5th level) and
-  become grand masters (9th).
-- **Gladiators** specialize in two kinds, a third at 6th level and a fourth at
-  9th. Their AC is 1 better from 5th level and 2 better at 10th.
-- **Rangers** have expertise with the bow and one more kind, fight with two
-  weapons at no penalty, hide and move silently best under the open sky, and
-  cast priest spells of their sphere from 8th level, as a priest of their
-  level less 7.
-
-**Thieves** have the skills (see
-[Thieves' skills](#thieves-skills-and-picking-pockets)), backstab
-([from behind](#from-behind-and-backstabs)), can
-[hide in shadows](#hiding-in-shadows) in a fight to get behind someone, and
-pick pockets. A d6 hit die.
-
-**Preservers** cast wizard spells: a d4 hit die, the weakest fighters, the
-strongest magic. They choose a new spell at each level up and learn more from
-scrolls ([learning spells](#learning-preserver-spells)).
-
-**Clerics** are priests of one element (air, earth, fire or water): a d8 hit
-die, any armour, and only their sphere's weapons. **Druids** are priests too: a
-d8 hit die, any weapon, no armour. Both know every spell of their spheres from
-the start, and get bonus slots for WIS.
-
-**Psionicists** master the mind's three disciplines (psychokinesis,
-psychometabolism and telepathy) and gain a new power at each level (two at odd
-levels and at 4th). A d6 hit die. Every other character has one discipline and
-uses its powers as a 1st-level psionicist.
-
-#### THAC0 by level
+### THAC0 by level
 
 AD&D's tables; a character of several classes uses its best.
 
@@ -279,6 +266,22 @@ AD&D's tables; a character of several classes uses its best.
 *Without the mod:* clerics and druids improve by 2 every 3 levels from 1st
 (19 at 3rd, 17 at 6th, 15 at 9th); the rest are as above.
 
+## The classes
+
+| Class | Hit die | Prime requisite | Races | Armour | Weapons | Kits |
+|---|---|---|---|---|---|---|
+| [Fighter](#fighter) | d10 | STR | all | any | any | Myrmidon, Sentinel, Ravager |
+| [Gladiator](#gladiator) | d10 | STR | all | any | any | Arena Champion, Twin-blade, Brute |
+| [Ranger](#ranger) | d10 | WIS | not dwarf, mul | any | any | Stalker, Seeker, Justifier |
+| [Thief](#thief) | d6 | DEX | not half-giant, thri-kreen | any (light with another class) | any | Assassin, Swashbuckler, Shinobi |
+| [Preserver](#preserver) | d4 | INT | elf, half-elf, human | none | daggers, staves, slings | Arcanist, Scholar, Battle Mage |
+| [Cleric](#cleric) | d8 | WIS | all | any | its sphere's | Healer, Crusader, Elementalist |
+| [Druid](#druid) | d8 | WIS | half-elf, halfling, human, mul, thri-kreen | none | any but great axes | Grove Warden, Wanderer, Lifebinder |
+| [Psionicist](#psionicist) | d6 | WIS | all | light | small weapons | Mind Warrior, Mind Bender, Kineticist |
+
+The [THAC0](#thac0-by-level) and [experience](#experience-and-levels) tables
+cover every class; [new items](#new-items) lists what the mod adds to find.
+
 ### What each class may use
 
 A character may use an item only if **every** one of its classes allows it,
@@ -286,7 +289,7 @@ the strictest winning:
 
 | Class | Armour and helms | Shields | Weapons |
 |---|---|---|---|
-| Psionicist, whatever its other classes | light only (leather, hide, silk) | leather only | daggers, short swords, maces, clubs, chatkchas, bows and slings |
+| Psionicist, whatever its other classes | light only (leather, hide, silk) | leather only | daggers, short swords, maces, clubs, chatkchas, bows and slings (as the game's lists allow) |
 | Thief with another class | light only | a leather one, if another class allows shields | as its classes allow |
 | Preserver, one class | none | none | a preserver's |
 | Druid | none | none | any |
@@ -302,38 +305,477 @@ the strictest winning:
 *Without the mod:* an item was allowed if **any** of the character's classes
 allowed it, and a preserver with another class cast in armour.
 
+Each class's section lists the magic weapons it can wield, the mod's new ones
+marked \*. A plain weapon of each kind and material is listed as "bone short
+sword" and the like.
+
+### Fighter
+
+*d10 · STR · any race · XP for 2nd level 2,000, for 10th 500,000*
+
+**How it plays.** The steadiest front-liner: any armour, any shield, any
+weapon, the best THAC0, and it masters one kind of weapon. Choose that kind
+with care: it is the fighter's weapon for the whole game.
+
+**What the mod changes.**
+
+- [Weapon specialization](#weapon-specialization-and-attacks): one kind of
+  weapon, +1 to hit and +2 damage with 3/2 attacks a round; **mastery** at 5th
+  level (+3 and +3), **grand mastery** at 9th (the damage die a size larger and
+  one more attack). Other weapons attack once a round until 7th level.
+  *Without the mod:* 3/2 attacks with any weapon, no other bonus.
+- Up to 10th level; hit dice rolled twice.
+- [Two weapons](#two-weapons) cost to-hit, and the off hand attacks once a round.
+
+**Weapons and armour.** Everything. A fighter with other classes is held to
+theirs ([what each class may use](#what-each-class-may-use)).
+
+**Kits.**
+
+| Kit | Gives | Costs | Starts with |
+|---|---|---|---|
+| **Myrmidon** | a second weapon spec at 1st level, on to mastery as the first | −4 on saves against charms | the fighter's gear |
+| **Sentinel** | AC 2 better with a shield; +2 initiative | −1 on saves against wizards' and priests' spells | the fighter's gear |
+| **Ravager** | +1 to hit and damage in melee; a base AC by level (7 at 1st-2nd, 6 at 3rd-4th, 5 at 5th-6th, 4 at 7th-8th, 3 at 9th-10th), armour bettering it as usual | no missile or thrown weapons; no shield; leather armour or none | the fighter's gear without the shield |
+
+A Sentinel can't later become a druid or preserver, nor take the Shinobi kit
+as a thief.
+
+**Starting gear.** A plain weapon of its weapon spec (in a material its
+classes allow), a shield, leather chest, arm and leg armour.
+
+**More than one class.**
+
+- *Multiclass:* cleric/fighter (all but humans); druid/fighter (half-elf,
+  halfling, mul, thri-kreen); fighter/preserver (elf, half-elf);
+  fighter/psionicist (all but humans); fighter/thief (dwarf, elf, half-elf,
+  halfling, mul); cleric/fighter/preserver (elf, half-elf);
+  cleric/fighter/psionicist (dwarf, elf, half-elf, thri-kreen);
+  cleric/fighter/thief (elf, half-elf, mul); druid/fighter/preserver
+  (half-elf); druid/fighter/psionicist (half-elf, thri-kreen);
+  druid/fighter/thief (half-elf, mul); fighter/preserver/psionicist and
+  fighter/preserver/thief (elf, half-elf); fighter/psionicist/thief (dwarf,
+  elf, half-elf, halfling, mul).
+- *Dual class:* with STR 15, a human fighter can become a cleric, druid,
+  preserver, psionicist or thief, never a gladiator or ranger. Its weapon specs
+  sleep with the class; once awake, its specialized kinds stay usable whatever
+  the new class allows.
+
+**Magic weapons.** Every one: Dragonsbane +4, Swiftbite +2, El's Drinker +2,
+Dark Flame +2, Draketooth +1, Hornblade +1, Bloodwrath +1, Flame Blade\* +1;
+Greenbright\* +2, Shadowseeker\* +1, Mindshard\* +1, Stillwater\* +1; Dag's
+Dagger +3, Terror Blade +2, Galefang\* +2; Glasshewer\* +2, Drakejaw\* +1,
+Soulcrusher +1, Axe +1; Great Axe +3, Headsman\* +2; Gythka +3, Gythka +2\*,
+Kreenfang\* +1; Linebreaker\* +2, Polearm +1, Thornwall\* +1; Mace +2,
+Blackmace +1; Quarterstaff +2, Balk's Staff +1, Parting Staff +1;
+Gutterknot\* +1; Deepbiter\* +1; Cahulaks +1; Bow +2, Phrain's Bow +1; Sling +2,
+Sling +1; Windlash\* +1; Chatkcha +1. A **Ravager** none of the bows, slings,
+Windlash, Chatkcha +1 or Dag's Dagger (thrown).
+
+### Gladiator
+
+*d10 · STR · any race · XP for 2nd level 2,250, for 10th 600,000*
+
+**How it plays.** The arena's finest: trained in many weapons rather than one,
+better AC as it rises, and the most varied kits. A gladiator is **always a
+single class** (a human may still change class).
+
+**What the mod changes.**
+
+- [Weapon specialization](#weapon-specialization-and-attacks) in **two** kinds
+  at 1st level, a third at 6th and a fourth at 9th: +1 to hit, +2 damage and
+  3/2 attacks with each. *Without the mod:* 3/2 attacks with any weapon.
+- AC 1 better from 5th level and 2 better at 10th, in armour.
+- AD&D's experience table. *Without the mod:* the fighter's.
+- Up to 10th level; hit dice rolled twice.
+
+**Weapons and armour.** Everything.
+
+**Kits.**
+
+| Kit | Gives | Costs | Starts with |
+|---|---|---|---|
+| **Arena Champion** | with a shield: +1 to hit and damage in melee, and AC 1 better | −1 to hit in melee without a shield | a shield in place of the off-hand club |
+| **Twin-blade** | no penalty for two weapons | no shield; no two-handed weapon | its weapon and the club as its two weapons |
+| **Brute** | +2 to hit and damage with a two-handed melee weapon | two-handed melee weapons only | a two-handed weapon (a bone great axe without weapon specialization), the club in the backpack |
+
+An Arena Champion can't later become a druid or preserver, a Brute a
+psionicist or air cleric. Neither goes with the Shinobi kit, a Brute not with
+the Lifebinder, a Twin-blade not with the Healer.
+
+**Starting gear.** A plain weapon of its first weapon spec, a club in the off
+hand, leather arm armour.
+
+**More than one class.**
+
+- *Multiclass:* none.
+- *Dual class:* with STR 15, a human gladiator can become a cleric, druid,
+  preserver, psionicist or thief.
+
+**Magic weapons.** Every one ([the fighter's list](#fighter)). A
+**Twin-blade** none of the two-handed ones (great axes, gythkas, polearms,
+quarterstaffs, cahulaks, bows, staff sling); a **Brute** only Great Axe +3,
+Headsman\*, the gythkas, the polearms, the quarterstaffs and Cahulaks +1 in
+melee, and any missile weapon.
+
+### Ranger
+
+*d10 · WIS · elf, half-elf, half-giant, halfling, human, thri-kreen · good
+alignment · XP for 2nd level 2,250, for 10th 600,000*
+
+**How it plays.** A warrior of the wastes: the bow and one more kind of
+weapon, two weapons at no penalty, hiding and moving silently under the open
+sky to strike from behind, and a little priest magic late on.
+
+**What the mod changes.**
+
+- [Expertise](#weapon-specialization-and-attacks) with the bow and one more
+  kind: a specialist's attacks a round. *Without the mod:* 3/2 in melee with
+  any weapon.
+- [Hiding in shadows](#hiding-in-shadows) in a fight with a thief's numbers for
+  its level, halved indoors; a successful hide and move silently makes its next
+  attack from behind.
+- Priest spells of its sphere from 8th level, cast as a priest of its level
+  less 7 for damage and duration too (1 slot at 8th, 2 at 9th, 2 and 1 at
+  10th). *Without the mod:* cast at its full level.
+- AD&D's experience table (2,250 for 2nd level; *without the mod:* 2,200).
+- Up to 10th level; hit dice rolled twice.
+
+**Weapons and armour.** Everything; any multiclass ranger keeps the bow
+whatever its other classes allow.
+
+**Kits.**
+
+| Kit | Gives | Costs | Starts with |
+|---|---|---|---|
+| **Stalker** | +2 movement in a fight; +15 to hide in shadows and move silently, and hiding not halved indoors | leather armour or none | the ranger's gear |
+| **Seeker** | priest spells from 6th level, cast at its level less 5 | its sphere's weapons only, as a cleric's (but it keeps the bow) | the ranger's gear, its weapon in a material its sphere allows |
+| **Justifier** | its expertise becomes specialization (+1 to hit, +2 damage) | its only spell slot is one 1st-level slot, from 10th level | the ranger's gear |
+
+A Seeker or Justifier can't later become a cleric or druid.
+
+**Starting gear.** A plain weapon of its chosen kind, bow and arrows, leather
+chest and arm armour.
+
+**More than one class.**
+
+- *Multiclass:* cleric/ranger and psionicist/ranger (elf, half-elf,
+  half-giant, halfling, thri-kreen); preserver/ranger (elf, half-elf);
+  ranger/thief (elf, half-elf, halfling); cleric/preserver/ranger,
+  cleric/ranger/thief, preserver/psionicist/ranger, preserver/ranger/thief
+  (elf, half-elf); cleric/psionicist/ranger (elf, half-elf, thri-kreen);
+  psionicist/ranger/thief (elf, half-elf, halfling).
+- *Dual class:* with WIS 15, a human ranger can become a cleric, preserver,
+  psionicist or thief (a druid must be neutral, a ranger good). A human of
+  another class with WIS 17 and a good alignment can become a ranger.
+
+**Magic weapons.** Every one ([the fighter's list](#fighter)). A **Seeker**
+only its sphere's, and every bow: air, the daggers, bows, slings, Windlash\*,
+Chatkcha +1; earth, the metal, obsidian, stone and wooden ones (no bone, no
+slings);
+fire, the obsidian ones and the bows; water, the bone and wooden ones.
+
+### Thief
+
+*d6 · DEX · not half-giant or thri-kreen · XP for 2nd level 1,250, for 10th
+160,000*
+
+**How it plays.** Locks, traps and pockets out of a fight; in one, it waits
+for a clear turn, slips into the shadows and backstabs. Light on hit points,
+so keep it off the front line.
+
+**What the mod changes.**
+
+- [Thief skills](#thieves-skills-and-picking-pockets) from AD&D's table with
+  Dark Sun's race and DEX adjustments. *Without the mod:* the game's own,
+  much higher, with penalties for what is held.
+- [Hiding in shadows](#hiding-in-shadows) in a fight to backstab, halved in
+  daylight. *Without the mod:* backstabs only when the target faces someone
+  else. A backstab does ×2 damage at levels 1-4, ×3 at 5-8, ×4 at 9-10.
+- **Picking pockets** with Thieves' Tools, from anyone in sight.
+- A worn cloak, boots and belt help hiding, moving silently, picking pockets
+  and opening locks.
+- AD&D's experience table (1,250 for 2nd level; *without the mod:* 1,200).
+- Up to 10th level, a d6 at 10th; hit dice rolled twice.
+
+**Weapons and armour.** Any as a single class (but only a weapon no heavier
+than a long sword backstabs, see [Equipment](#equipment)); with another class,
+light armour and at most a leather shield.
+
+**Kits.**
+
+| Kit | Gives | Costs | Starts with |
+|---|---|---|---|
+| **Assassin** | hiding in shadows not halved in daylight | −15 to pick pockets and open locks | the thief's gear |
+| **Swashbuckler** | a warrior's THAC0 | −10 to every thief skill | the thief's gear |
+| **Shinobi** | preserver spells from 6th level, from its own list of 14, cast at its thief level less 5, in light armour too | no spells from scrolls; dagger, short sword, quarterstaff, chatkcha, sling, staff sling and bow only; light armour; no shield | a bone short sword in place of the long sword |
+
+A Swashbuckler can't later become a fighter, gladiator or ranger; a Shinobi
+not a preserver, nor go with the Arena Champion, Sentinel or Brute kits. The
+Shinobi's spells and slots are in [kits](#kits).
+
+**Starting gear.** Bone long sword, sling, leather chest armour, Thieves'
+Tools.
+
+**More than one class.**
+
+- *Multiclass:* cleric/thief (elf, half-elf, halfling, mul); druid/thief
+  (half-elf, halfling, mul); fighter/thief and psionicist/thief (dwarf, elf,
+  half-elf, halfling, mul); preserver/thief (elf, half-elf); ranger/thief
+  (elf, half-elf, halfling); cleric/fighter/thief (elf, half-elf, mul);
+  druid/fighter/thief (half-elf, mul); fighter/psionicist/thief (dwarf, elf,
+  half-elf, halfling, mul); psionicist/ranger/thief (elf, half-elf,
+  halfling); cleric/preserver/thief, cleric/psionicist/thief,
+  cleric/ranger/thief, fighter/preserver/thief, preserver/psionicist/thief,
+  preserver/ranger/thief (elf, half-elf); druid/preserver/thief,
+  druid/psionicist/thief (half-elf).
+- *Dual class:* with DEX 15, a human thief can become a cleric, druid,
+  fighter, gladiator, preserver, psionicist or ranger.
+
+**Magic weapons.** Every one ([the fighter's list](#fighter)). A **Shinobi**
+only Greenbright\*, Shadowseeker\*, Mindshard\*, Stillwater\*, Dag's Dagger,
+Terror Blade, Galefang\*, the quarterstaffs, bows, slings, Windlash\* and
+Chatkcha +1.
+
+### Preserver
+
+*d4 · INT · elf, half-elf, human · XP for 2nd level 2,500, for 10th 250,000*
+
+**How it plays.** The strongest magic and the weakest body: no armour, few
+weapons, a d4 hit die. Keep it back, act before the enemy reaches it (a
+character hit in a round can't cast), and choose its spells well.
+
+**What the mod changes.**
+
+- **INT limits learning:** a chance to learn each scroll's spell, and a most
+  spells of each level ([learning spells](#learning-preserver-spells)).
+  *Without the mod:* every scroll learnt, no limit.
+- It **chooses** its starting spells and one at each level up.
+- AD&D's wizard [spell slots](#spell-slots) (4 2 1 at 5th level; *without the
+  mod:* 3 2 1).
+- **Cat's Grace** in Flaming Sphere's place.
+- With another class it may wear that class's armour but **can't cast in
+  it**. **Bracers of defense** give AC without being armour.
+- Up to 10th level; hit dice rolled twice.
+
+**Weapons and armour.** No armour or shield as a single class. Daggers,
+quarterstaffs, slings and staff slings (and the odd magic weapon the game
+allows them).
+
+**Kits.**
+
+| Kit | Gives | Costs | Starts with |
+|---|---|---|---|
+| **Arcanist** | a spell slot more at each spell level it has; in a fight, two preserver spells in a turn | a d3 hit die | the preserver's gear |
+| **Scholar** | a spell more learnt at each level up | THAC0 1 worse | the preserver's gear |
+| **Battle Mage** | a warrior's THAC0; casts though hit earlier in the round; a d6 hit die; leather armour, cast in; expertise in one kind of weapon | one fewer spell slot at each spell level; nothing in the off hand | with weapon specialization, a plain weapon of its chosen kind in place of the quarterstaff |
+
+A Battle Mage can't later become a fighter, gladiator or ranger. The
+Battle Mage chooses its weapon on the weapon pages after taking the kit.
+
+**Starting gear.** Quarterstaff, sling; two 1st-level spells of its choice.
+
+**More than one class.**
+
+- *Multiclass:* with cleric, fighter, psionicist, ranger or thief (elf,
+  half-elf), with druid (half-elf); in threes cleric/fighter/preserver,
+  cleric/preserver/psionicist, cleric/preserver/ranger,
+  cleric/preserver/thief, fighter/preserver/psionicist,
+  fighter/preserver/thief, preserver/psionicist/ranger,
+  preserver/psionicist/thief, preserver/ranger/thief (elf, half-elf), and
+  druid/fighter/preserver, druid/preserver/psionicist, druid/preserver/thief
+  (half-elf).
+- *Dual class:* with INT 15, a human preserver can become a cleric, druid,
+  fighter, gladiator, psionicist, ranger or thief. A human who becomes a
+  preserver chooses its first two spells.
+
+**Magic weapons.** Hornblade +1 (a bone long sword the game lets preservers
+use), Dag's Dagger +3, Terror Blade +2, Galefang\* +2, Quarterstaff +2, Balk's
+Staff +1, Parting Staff +1, Sling +2, Sling +1, Windlash\* +1. A **Battle
+Mage** also those of its chosen kind.
+
+### Cleric
+
+*d8 · WIS · any race · XP for 2nd level 1,500, for 10th 450,000*
+
+**How it plays.** A priest of one element (air, earth, fire or water) in any
+armour, knowing every spell of its spheres from the start, with bonus slots
+for WIS. Its element decides its weapons, so choose with them in mind: earth
+has the most, air and fire the fewest.
+
+**What the mod changes.**
+
+- AD&D's priest [spell slots](#spell-slots) (3 3 1 at 5th level; *without the
+  mod:* 3 2 1) and THAC0 (20 to 3rd level, 18 at 4th; *without the mod:* 19 at
+  3rd).
+- With another class, its sphere still limits weapons. *Without the mod:* the
+  other class's list was enough.
+- Up to 10th level; hit dice rolled twice.
+
+**Weapons and armour.** Any armour and shield. Weapons by sphere:
+
+| Sphere | May wield | Plain weapons |
+|---|---|---|
+| Air | missile and thrown weapons, daggers | chatkcha, bow, sling, staff sling |
+| Earth | stone, obsidian, metal, wood | obsidian and metal long swords, daggers and short swords; metal and obsidian maces, axes and great axes; club; stone and metal picks; quarterstaff; metal polearm; chatkcha; bow |
+| Fire | obsidian | obsidian long sword, dagger, short sword, mace, axe and great axe; chatkcha |
+| Water | bone, wood | bone long sword, dagger, short sword, mace, axe, great axe and polearm; club; quarterstaff; gythka; cahulaks; bow |
+
+**Kits.**
+
+| Kit | Gives | Costs | Starts with |
+|---|---|---|---|
+| **Healer** | Cure Light, Serious and Critical Wounds heal 1 more a die | no weapon in the off hand | the cleric's gear |
+| **Crusader** | a warrior's THAC0; a warrior's extra attacks in melee (3/2 a round from 7th level) | one fewer spell slot at each spell level | the cleric's gear |
+| **Elementalist** | a second sphere: its spells and its weapons | spell slots a level behind | the cleric's gear |
+
+A Crusader can't later become a fighter, gladiator or ranger; a Healer doesn't
+go with the Twin-blade kit. The Elementalist chooses its second sphere on the
+CLERICAL SPHERE list.
+
+**Starting gear.** Shield, leather chest and arm armour, a club in the
+backpack.
+
+**More than one class.**
+
+- *Multiclass:* cleric/fighter and cleric/psionicist (all but humans);
+  cleric/ranger (elf, half-elf, half-giant, halfling, thri-kreen);
+  cleric/thief (elf, half-elf, halfling, mul); cleric/preserver (elf,
+  half-elf); cleric/fighter/psionicist (dwarf, elf, half-elf, thri-kreen);
+  cleric/fighter/thief (elf, half-elf, mul); cleric/psionicist/ranger (elf,
+  half-elf, thri-kreen); cleric/fighter/preserver,
+  cleric/preserver/psionicist, cleric/preserver/ranger,
+  cleric/preserver/thief, cleric/psionicist/thief, cleric/ranger/thief (elf,
+  half-elf).
+- *Dual class:* with WIS 15, a human cleric can become a fighter, gladiator,
+  preserver, psionicist, ranger (if good) or thief; never a druid.
+
+**Magic weapons**, by sphere:
+
+- **Air:** Galefang\* +2, Bow +2, Phrain's Bow +1, Sling +2, Sling +1,
+  Windlash\* +1, Chatkcha +1.
+- **Earth:** Dragonsbane +4, El's Drinker +2, Dark Flame +2, Bloodwrath +1,
+  Flame Blade\* +1, Greenbright\* +2, Shadowseeker\* +1, Mindshard\* +1, Dag's
+  Dagger +3, Terror Blade +2, Galefang\* +2, Glasshewer\* +2, Soulcrusher +1,
+  Axe +1, Headsman\* +2, Linebreaker\* +2, Blackmace +1, the three
+  quarterstaffs, Gutterknot\* +1, Deepbiter\* +1, Bow +2, Phrain's Bow +1,
+  Chatkcha +1.
+- **Fire:** Dark Flame +2, Bloodwrath +1, Flame Blade\* +1, Mindshard\* +1,
+  Glasshewer\* +2, Blackmace +1, Chatkcha +1.
+- **Water:** Stillwater\* +1,
+  Drakejaw\* +1, Gythka +3, Gythka +2\*,
+  Kreenfang\* +1, Polearm +1, Thornwall\* +1, Mace +2, the three quarterstaffs,
+  Gutterknot\* +1, Cahulaks +1, Bow +2, Phrain's Bow +1.
+
+An Elementalist adds its second sphere's.
+
+### Druid
+
+*d8 · WIS · half-elf, halfling, human, mul, thri-kreen · true neutral · XP
+for 2nd level 2,000, for 10th 125,000*
+
+**How it plays.** A priest of the land and its element: no armour, but any
+weapon, the cheapest levels in the game, and the only priest with the common
+4th and 5th-level spells (the great cures among them). +2 on saves against fire
+and electricity.
+
+**What the mod changes.**
+
+- AD&D's priest [spell slots](#spell-slots) and THAC0, as the cleric's.
+- Up to 10th level; hit dice rolled twice.
+
+**Weapons and armour.** No armour or shield. Every weapon but the great axes
+(the game's lists).
+
+**Kits.**
+
+| Kit | Gives | Costs | Starts with |
+|---|---|---|---|
+| **Grove Warden** | AC 1 better for every 3 druid levels | no metal weapons | the druid's gear |
+| **Wanderer** | +3 on saves against fire and cold | AC 1 worse | the druid's gear |
+| **Lifebinder** | Cure Wounds spells heal a d8 more, Blood Flow a d6 | blunt weapons only (club, mace, quarterstaff, sling, staff sling) | the druid's gear |
+
+A Lifebinder doesn't go with the Brute kit.
+
+**Starting gear.** Club, sling.
+
+**More than one class.**
+
+- *Multiclass:* druid/fighter and druid/psionicist (half-elf, halfling, mul,
+  thri-kreen); druid/thief (half-elf, halfling, mul); druid/preserver
+  (half-elf); druid/fighter/psionicist (half-elf, thri-kreen);
+  druid/fighter/thief (half-elf, mul); druid/fighter/preserver,
+  druid/preserver/psionicist, druid/preserver/thief, druid/psionicist/thief
+  (half-elf).
+- *Dual class:* with WIS 15, a human druid can become a fighter, gladiator,
+  preserver, psionicist or thief; never a cleric, nor a ranger (who must be
+  good). A human of another class becomes a druid only if true neutral.
+
+**Magic weapons.** Every one but Great Axe +3 and Headsman\*. A **Grove
+Warden** none of the metal ones (Dragonsbane, El's Drinker, Greenbright\*,
+Shadowseeker\*, Dag's Dagger, Galefang\*, Soulcrusher, Axe +1, Linebreaker\*); a **Lifebinder** only Mace +2, Blackmace +1, the three
+quarterstaffs, Gutterknot\* +1, the slings and Windlash\*.
+
+### Psionicist
+
+*d6 · WIS · any race · XP for 2nd level 2,200, for 10th 400,000*
+
+**How it plays.** The master of the mind's three disciplines, with a new power
+at each level (two at odd levels and at 4th) paid for in PSP. Light armour and
+small weapons; +2 on saves against mind-affecting spells and charms. Every
+other character has one discipline and uses it as a 1st-level psionicist.
+
+**What the mod changes.**
+
+- Its limits on armour and weapons hold whatever its other classes.
+  *Without the mod:* another class's lists were enough.
+- Up to 10th level; hit dice rolled twice.
+
+**Weapons and armour.** Light armour, a leather shield. Daggers, bone and
+obsidian short swords, clubs, chatkchas and bows (the game's lists leave out
+its maces, slings and the metal short sword).
+
+**Kits.**
+
+| Kit | Gives | Costs | Starts with |
+|---|---|---|---|
+| **Mind Warrior** | a warrior's THAC0; a warrior's extra attacks in melee (3/2 a round from 7th level); a d8 hit die | a tenth fewer PSP | the psionicist's gear |
+| **Mind Bender** | telepathy powers cost 2 PSP less | psychokinesis powers cost 2 PSP more | the psionicist's gear |
+| **Kineticist** | psychokinesis powers cost 2 PSP less | telepathy powers cost 2 PSP more | the psionicist's gear |
+
+A Mind Warrior can't later become a fighter, gladiator or ranger. The powers
+and their costs are in [Psionics](#psionics).
+
+**Starting gear.** Club, bow and arrows, leather chest armour.
+
+**More than one class.**
+
+- *Multiclass:* cleric/psionicist and fighter/psionicist (all but humans);
+  druid/psionicist (half-elf, halfling, mul, thri-kreen); psionicist/ranger
+  (elf, half-elf, half-giant, halfling, thri-kreen); psionicist/thief (dwarf,
+  elf, half-elf, halfling, mul); preserver/psionicist (elf, half-elf);
+  cleric/fighter/psionicist (dwarf, elf, half-elf, thri-kreen);
+  fighter/psionicist/thief (dwarf, elf, half-elf, halfling, mul);
+  cleric/psionicist/ranger (elf, half-elf, thri-kreen);
+  psionicist/ranger/thief (elf, half-elf, halfling); druid/fighter/psionicist
+  (half-elf, thri-kreen); cleric/preserver/psionicist,
+  cleric/psionicist/thief, fighter/preserver/psionicist,
+  preserver/psionicist/ranger, preserver/psionicist/thief (elf, half-elf);
+  druid/preserver/psionicist, druid/psionicist/thief (half-elf).
+- *Dual class:* with WIS 15, a human psionicist can become a cleric, druid,
+  fighter, gladiator, preserver, ranger or thief.
+
+**Magic weapons.** Mindshard\* +1, Stillwater\* +1, Dag's Dagger +3, Terror
+Blade +2, Galefang\* +2, Gutterknot\* +1, Bow +2, Phrain's Bow +1, Chatkcha +1.
+With a cleric class, only those its sphere allows too (Mindshard with fire or
+earth, Stillwater with water).
+
 ## Kits
 
 A character of one class takes one of three kits for its class when it is
-made, or none, on the creation panel's **KIT** page. Each gives something and
-costs something.
-
-| Kit | Gives | Costs |
-|---|---|---|
-| **Myrmidon** (fighter) | a second weapon spec at 1st level, on to mastery as the first | −4 on saves against charms |
-| **Sentinel** (fighter) | AC 2 better with a shield; +2 initiative | −1 on saves against wizards' and priests' spells |
-| **Ravager** (fighter) | +1 to hit and damage in melee; a base AC by level (7 at 1st-2nd, 6 at 3rd-4th, 5 at 5th-6th, 4 at 7th-8th, 3 at 9th-10th), armour bettering it as usual | no missile or thrown weapons; no shield; leather armour or none |
-| **Arena Champion** (gladiator) | with a shield: +1 to hit and damage in melee, and AC 1 better | −1 to hit in melee without a shield |
-| **Twin-blade** (gladiator) | no penalty for two weapons | no shield; no two-handed weapon |
-| **Brute** (gladiator) | +2 to hit and damage with a two-handed melee weapon | two-handed melee weapons only |
-| **Stalker** (ranger) | +2 movement in a fight; +15 to hide in shadows and move silently, and hiding not halved indoors | leather armour or none |
-| **Seeker** (ranger) | priest spells from 6th level, cast at its level less 5 | its sphere's weapons only, as a cleric's (but it keeps the bow) |
-| **Justifier** (ranger) | its expertise becomes specialization (+1 to hit, +2 damage) | its only spell slot is one 1st-level slot, from 10th level |
-| **Assassin** (thief) | hiding in shadows not halved in daylight | −15 to pick pockets and open locks |
-| **Swashbuckler** (thief) | a warrior's THAC0 | −10 to every thief skill |
-| **Shinobi** (thief) | preserver spells from 6th level, from its own list of 14, cast at its thief level less 5, in light armour too | no spells from scrolls; dagger, short sword, quarterstaff, chatkcha, sling, staff sling and bow only; light armour; no shield |
-| **Arcanist** (preserver) | a spell slot more at each spell level it has; in a fight, two preserver spells in a turn | a d3 hit die |
-| **Scholar** (preserver) | a spell more learnt at each level up | THAC0 1 worse |
-| **Battle Mage** (preserver) | a warrior's THAC0; casts though hit earlier in the round; a d6 hit die; leather armour, cast in; expertise in one kind of weapon | one fewer spell slot at each spell level; nothing in the off hand |
-| **Healer** (cleric) | Cure Light, Serious and Critical Wounds heal 1 more a die | no weapon in the off hand |
-| **Crusader** (cleric) | a warrior's THAC0; a warrior's extra attacks in melee (3/2 a round from 7th level) | one fewer spell slot at each spell level |
-| **Elementalist** (cleric) | a second sphere: its spells and its weapons | spell slots a level behind |
-| **Grove Warden** (druid) | AC 1 better for every 3 druid levels | no metal weapons |
-| **Wanderer** (druid) | +3 on saves against fire and cold | AC 1 worse |
-| **Lifebinder** (druid) | Cure Wounds spells heal a d8 more, Blood Flow a d6 | blunt weapons only (club, mace, quarterstaff, sling, staff sling) |
-| **Mind Warrior** (psionicist) | a warrior's THAC0; a warrior's extra attacks in melee (3/2 a round from 7th level); a d8 hit die | a tenth fewer PSP |
-| **Mind Bender** (psionicist) | telepathy powers cost 2 PSP less | psychokinesis powers cost 2 PSP more |
-| **Kineticist** (psionicist) | psychokinesis powers cost 2 PSP less | telepathy powers cost 2 PSP more |
+made, or none, on the creation panel's **KIT** page; a human who changes class
+can take one for its new class. Each gives something and costs something; the
+class sections above have each kit's details and starting gear.
 
 - The **Myrmidon** and **Battle Mage** choose their extra weapon spec on the
   weapon pages after taking the kit, and the **Elementalist** its second sphere
@@ -358,29 +800,7 @@ costs something.
   | Twin-blade | Healer |
   | Brute | Shinobi, Lifebinder |
 
-### Kits' starting gear
-
-A new character's gear is its class's ([starting gear](#starting-gear-and-spells)),
-changed where its kit can't use it:
-
-| Kit | Starts with |
-|---|---|
-| Myrmidon, Sentinel | the fighter's gear |
-| Ravager | the fighter's gear without the shield |
-| Arena Champion | the gladiator's gear, with a shield in place of the off-hand club |
-| Twin-blade | the gladiator's gear: its weapon and the club are its two weapons |
-| Brute | a two-handed weapon in place of the gladiator's (a bone great axe without weapon specialization), the club in the backpack |
-| Stalker, Justifier | the ranger's gear |
-| Seeker | the ranger's gear, its weapon in a material its sphere allows |
-| Assassin, Swashbuckler | the thief's gear |
-| Shinobi | the thief's gear with a bone short sword in place of the long sword |
-| Arcanist, Scholar | the preserver's gear |
-| Battle Mage | the preserver's gear; with weapon specialization, a plain weapon of its chosen kind in place of the quarterstaff |
-| Healer, Crusader, Elementalist | the cleric's gear (the club is in the backpack) |
-| Grove Warden, Wanderer, Lifebinder | the druid's gear |
-| Mind Warrior, Mind Bender, Kineticist | the psionicist's gear |
-
-The dice log names each change.
+- The dice log names each change a kit makes to a new character's gear.
 
 ### Kits' spell slots
 
@@ -884,6 +1304,66 @@ armour is destroyed outright.
 **Item boxes** (right-click an item in the inventory) show a wand's or other
 charged item's charges left, and a cloak's, boots' or belt's bonus to thief
 skills.
+
+### New items
+
+The mod adds items the game never had, or never placed: here is what each
+is, not where it is (the README lists that, for those who want it). The mod's
+magic weapons are also marked \* in each class's list.
+
+**Mundane:**
+
+| Item | What it is |
+|---|---|
+| Bone, obsidian and metal short swords | 1d6; the game has no short sword |
+| Bone and obsidian axes | 1d8 |
+| Bone, obsidian and metal great axes | 1d10, two-handed |
+| Bone and metal daggers | 1d4; the bone one is the only dagger a water cleric can use |
+| Obsidian and metal maces | 1d6+1 |
+| Metal pick, metal polearm | the game's, in metal |
+| Bone Scale Arm Armor, Leg Armor and Bone Helm | the rest of the bone scale set whose chest piece the game has |
+| Helm | a leather helm |
+| Thieves' Tools | [picking pockets](#thieves-skills-and-picking-pockets); every thief starts with a set |
+
+New characters with weapon specialization start with a plain weapon of their
+chosen kind, often one of these.
+
+**Magic weapons:**
+
+| Item | What it is | Who can wield it |
+|---|---|---|
+| Flame Blade | obsidian long sword +1 whose blade burns what it hits: 2d6 fire damage, a save for half | warriors, thieves, druids, earth and fire clerics |
+| Greenbright | metal short sword +2 | warriors, thieves, druids, earth clerics |
+| Shadowseeker | metal short sword +1: its wielder sees the invisible | warriors, thieves, druids, earth clerics |
+| Mindshard | obsidian short sword +1 | warriors, thieves, druids, psionicists, earth and fire clerics |
+| Stillwater | bone short sword +1 | warriors, thieves, druids, psionicists, water clerics |
+| Galefang | metal dagger +2 | warriors, thieves, druids, preservers, psionicists, air and earth clerics |
+| Glasshewer | obsidian axe +2 | warriors, thieves, druids, earth and fire clerics |
+| Drakejaw | bone axe +1 | warriors, thieves, druids, water clerics |
+| Headsman | metal great axe +2 | warriors, thieves, earth clerics |
+| Gythka +2, Kreenfang (+1) | gythkas, two-handed | warriors, thieves, druids, water clerics |
+| Linebreaker | metal polearm +2 | warriors, thieves, druids, earth clerics |
+| Thornwall | bone polearm +1 | warriors, thieves, druids, water clerics |
+| Gutterknot | club +1 (the game has no magic club) | warriors, thieves, druids, psionicists, earth and water clerics |
+| Deepbiter | stone pick +1 | warriors, thieves, druids, earth clerics |
+| Windlash | staff sling +1 | warriors, thieves, druids, preservers, air clerics |
+
+**Other magic items:**
+
+| Item | What it does |
+|---|---|
+| Ring of Protection +1 (two), Cloak of Protection +1 | +1 AC and +1 on every save ([protection](#equipment)) |
+| Bracers of Defense (four pairs: AC 6, 5, 4 and 2) | their AC with no armour worn; a preserver casts in them |
+| Inixhide | leather chest armour +1 |
+| Warden's Chest, Arms, Legs and Helm | plate armour +1 in four pieces (AC 11 as a set, 12 with the helm's AC); the chest gives Resist Fire, the helm Cloak of Bravery, while worn |
+| Arrowbane | a circlet: Protection from Normal Missiles while worn; not armour |
+| Sunking Crown | a crown: Protection from Evil while worn; not armour |
+| Cloak of Elvenkind, Boots of Elvenkind | help a thief or ranger [hide and move silently](#hiding-in-shadows); thieves and rangers only |
+| Tome of Understanding | read from the inventory as a scroll: +1 WIS for good (at most 25) |
+| Six scrolls | spells the game has no scroll of |
+
+The game's own Grey's Scale arm and leg armour is AC 3 each with the mod (2
+without).
 
 ## Experience and levels
 

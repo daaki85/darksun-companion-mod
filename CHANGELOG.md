@@ -227,6 +227,17 @@ themselves have the detail.
   sphere and class (read from the game's spell records: the common 4th and
   5th-level priest spells are druids' alone); and a list of things worth
   knowing in play.
+- **The player's guide by class:** a section for each class, with how it
+  plays, what the mod changes, its weapons and armour, its kits (what each
+  gives, costs and starts with), its starting gear, its races, every
+  multiclass combination it can be part of (read from the game's creation
+  tables: gladiators never multiclass) and how a human dual-classes into or
+  out of it (read from the game's DUAL check: 2nd level, 15 in the old prime
+  requisite and 17 in the new, a class of another group, a druid true neutral
+  and a ranger good), and the magic weapons it can wield (from the game's
+  class lists and the mod's restrictions, kits included). Classes by race,
+  and tables of the mod's new items, mundane and magic, by what they are and
+  who can use them, never where they are.
 - **Kits that can't go together** lists only pairs that can meet: a human
   has one kit for each class, and the game never lets a human change from one
   warrior class to another, so the Arena Champion and Sentinel clash only with
