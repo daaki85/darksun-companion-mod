@@ -3218,6 +3218,33 @@ class KitTests(unittest.TestCase):
         self.assertEqual(kits.spell_spheres(kits.ELEMENTALIST, 1, 2, 0x10808A), 0x10808A)
 
 
+    def test_dual(self):
+        """PROBE_DUAL: a human changing class (its classes moved down, +22h the one it leaves) loses
+        a kit chosen for that class alone; a Battle Mage its weapon spec too (kits.dual_class)."""
+        from dscompanion import kits, kitpages
+        from dscompanion.gamepatch import VEC_DUAL
+        cases = ((11, 0, 2, 0x06), (11, 0, 0, 0x06), (3, 0, 1, 0), (9, 0, 2, 0x0102), (14, 0, 2, 0x06),
+                 (17, 0, 3, 0), (11, 9, 2, 0x06), (12, 0, 0xFF, 0), (9, 0, 1, 0x0503), (9, 0, 3, 0x0503))
+        for old, older, kit, specs in cases:
+            with self.subTest(old=old, older=older, kit=kit):
+                sheet = bytearray(game.SHEET_SIZE)
+                sheet[0x21:0x24] = bytes((old, old, older))  # (the new class not yet put first)
+                sheet[kitpages.KIT_BYTE], sheet[kits.SPHERE2] = kit, 3
+                sheet[0x14:0x18] = struct.pack("<I", specs)
+                want = bytearray(sheet)
+                kits.dual_class(want)
+                self.mu.mem_write(self.SHEET * 16, bytes(sheet))
+                self.mu.mem_write(SS * 16 + BP + 8, struct.pack("<H", 9))
+                self.run_vector(VEC_DUAL, 3, eax=0x1234, ebx=0, ecx=0x5555, es=self.SHEET)
+                self.assertEqual(bytes(self.mu.mem_read(self.SHEET * 16, game.SHEET_SIZE)), bytes(want))
+                self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), 0x1209)
+                self.assertEqual(self.mu.reg_read(r.UC_X86_REG_CX), 0x5555)
+                ended = kit and not older
+                self.assertEqual(want[kitpages.KIT_BYTE], 0 if ended else kit)
+                self.assertEqual(want[0x14:0x18] == bytes(4), bool(ended and old not in (9, 14)) or not specs)
+                if old == 9:
+                    self.assertEqual(want[0x14:0x16], bytes((specs & 0xFF, 0 if kit == 1 else specs >> 8)))
+
     def picker_sheet(self, cls, kit, level):
         from dscompanion import kitpages
         sheet = bytearray(game.SHEET_SIZE)

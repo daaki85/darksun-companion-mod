@@ -1671,7 +1671,9 @@ own sphere marked, the other spheres stay in use, and a click on one marks it
 as the second; a click on it again takes it back, and taking back its own
 sphere takes back both. The Ledger's Characters tab names it (**Kit:
 Elementalist (and water)**). Its second sphere's spells are known from the
-start and at each level up as its own sphere's are.
+start, as its own sphere's are (a priest knows every spell of its spheres from
+the start: the game marks them when the character is made, and again when a
+human changes class, not at a level up).
 
 The Battle Mage chooses its weapon spec on the weapon pages: once the kit is
 taken, **VIEW PSIONICS** on the KIT page goes back to the panel, which then
@@ -1707,6 +1709,16 @@ then click the kit you want. A few names are shortened to fit the panel
 (CHAMPION, SWASHBUCK, ELEMENTAL, WARDEN, BATTLMAGE, M-BENDER, M-WARRIOR). Choosing
 another class puts the kit back to none. The Effects screen names the kit
 (`KIT: RAVAGER`), as does the Ledger's Characters tab.
+
+A kit belongs to the class it was chosen with. A human who changes class
+(**DUAL** on the menu a right-click on a portrait opens, for a human of 2nd
+level or more) leaves that class, and the kit ends with it, its gifts and its
+costs: the Effects screen no longer names it, an Elementalist's second sphere
+goes, a Battle Mage's chosen weapon spec goes too (a new fighter, gladiator
+or ranger doesn't take it for its own), and so does a Myrmidon's second weapon
+spec. A warrior's own weapon specs
+stay, as the game keeps them, and count again once the new class's level
+passes the old.
 
 ### Class restrictions
 

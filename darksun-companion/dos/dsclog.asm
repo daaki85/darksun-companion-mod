@@ -125,6 +125,7 @@ VEC_EL_GRANT equ 0xA1      ; PROBE_EL_GRANT
 VEC_EL_CAST equ 0xA0       ; PROBE_EL_CAST
 VEC_EL_LEVEL equ 0x9F      ; PROBE_EL_LEVEL
 VEC_EL_KNOW equ 0x9E       ; PROBE_EL_KNOW
+VEC_DUAL equ 0x9D          ; PROBE_DUAL
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 96          ; entries in the ring (96: the helper and it fit in upper memory)
@@ -6723,7 +6724,7 @@ probe_el_level:
         iret
 
 ; PROBE_EL_KNOW: INT VEC_EL_KNOW replaces "test dword es:[bx+19Dh],eax" (6 bytes; DSUN.EXE 66FC9h,
-; on making a character, and 86E56h, at a level up) in the loops that mark each priest spell
+; on making a character, and 86E56h, when a human changes class) in the loops that mark each priest spell
 ; (45h-89h) known or not for party member SI by its mask (ES:BX the spell's place in the table)
 ; meeting the class's bit (EAX): for an Elementalist, its second sphere's cleric bit too
 ; (as kits.spell_spheres). The flags of the test go back to the JZ after (RETF 2: the interrupt's own
@@ -6753,6 +6754,43 @@ probe_el_know:
         pop ecx
         pop eax
         retf 2
+
+; PROBE_DUAL: INT VEC_DUAL replaces "mov al,[bp+8]" (3 bytes: INT + NOP; DSUN.EXE 86D06h) in the
+; routine that changes a human's class (86C80h: DUAL on a portrait's menu, 86B3Fh's window), the
+; classes moved down and the new one ([BP+8]) about to go first, ES:BX the sheet. A kit belongs to
+; the class it was chosen with, which a character had alone (+23h none after the move): it ends,
+; the kit byte and an Elementalist's second sphere cleared, and for a class that isn't a warrior's
+; (a Battle Mage's preserver) the weapon spec it chose, which a new warrior class would otherwise
+; take for its own; a Myrmidon's second weapon spec (its second slot) too (kits.dual_class). A
+; warrior's own specs are kept, as the game has them. AL [BP+8].
+probe_dual:
+        push ax
+        mov al, [es:bx + KIT_BYTE]
+        or al, al
+        je .out
+        cmp byte [es:bx + 0x23], 0
+        jne .out
+        mov byte [es:bx + KIT_BYTE], 0
+        mov byte [es:bx + SPHERE2], 0
+        mov ah, al
+        mov al, [es:bx + 0x22]
+        cmp al, FIGHTER_CLASS
+        jne .glad
+        cmp ah, 1               ; (a Myrmidon: the fighter's first kit)
+        jne .out
+        mov byte [es:bx + SPEC_SLOTS + 1], 0
+        jmp .out
+.glad:
+        cmp al, GLADIATOR_CLASS
+        je .out
+        cmp al, 13              ; (a ranger, 13-16)
+        jb .specs
+        cmp al, 16
+        jbe .out
+.specs: mov dword [es:bx + SPEC_SLOTS], 0
+.out:   pop ax
+        mov al, [bp + 8]
+        iret
 
 ; EL_SPHERES: EAX a spell's mask, for caster [BP+6]: an Elementalist's second sphere's spells its
 ; own sphere's too. Others kept.
@@ -11171,6 +11209,9 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_EL_KNOW
         mov dx, probe_el_know
         int 21h
+        mov ax, 2500h + VEC_DUAL
+        mov dx, probe_dual
+        int 21h
         mov ax, 2500h + VEC_PICK_LEVEL
         mov dx, probe_pick_level
         int 21h
@@ -11225,10 +11266,10 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or 9Eh-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+busy    db 'DSCLOG: interrupts 60h-65h or 9Dh-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
 all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS, VEC_LV_PICK, VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK, VEC_EF_ROWS, VEC_HP_BEST, VEC_TOME, VEC_INIT, VEC_THAC0, VEC_SLOTS, VEC_SLOT_LEVEL
             db VEC_PSP_USE, VEC_PSP_TABLE, VEC_PSP_DEFENCE, VEC_CURE, VEC_PSP_KEEP, VEC_RANGER_CAST, VEC_PSP_KEEP_DX
-            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY, VEC_RANGER_LEVEL, VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP, VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW
+            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY, VEC_RANGER_LEVEL, VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP, VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW, VEC_DUAL
 all_vectors_end:
 
         align 16, db 0

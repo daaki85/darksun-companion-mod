@@ -77,7 +77,7 @@ Released pull requests are summarised in a line or two each; the release notes
   count it.
 - **The Elementalist's second sphere:** chosen on the creation panel's
   CLERICAL SPHERE list once the kit is taken (a second row marked beside its
-  own), its spells known from the start and at each level up, cast at its
+  own), its spells known from the start, as its own sphere's are, cast at its
   cleric level, and its weapons allowed as well as its own sphere's (INT A1h,
   A0h, 9Fh, 9Eh). The Characters tab names it. Every kit now works.
 - **The Seeker's weapons** are its sphere's, as a cleric's of that sphere,
@@ -91,13 +91,18 @@ Released pull requests are summarised in a line or two each; the release notes
   works out its PSP again (the game did both only when a class was clicked),
   and the screen shows the new numbers (INT A5h, A4h, A3h, A2h). The dice
   log's hit point lines name the kit's die.
+- **A kit ends when a human dual-classes** (DUAL on a portrait's menu): it
+  belongs to the class it was chosen with. Its byte, an Elementalist's second
+  sphere, a Battle Mage's weapon spec and a Myrmidon's second are cleared, so
+  a Battle Mage who turns fighter doesn't take its kit's weapon for a
+  fighter's specialization (INT 9Dh).
 
 **Changed** (for the kits)
 - **The Arcanist's drawback** is a d3 hit die (a preserver's is a d4), in
   place of −2 CON.
 - **The dice log's ring holds 96 entries** (was 128), making room in upper
   memory for the kits' code.
-- **The helper's interrupts** are now 9Eh to FEh (and 60h to 65h); the
+- **The helper's interrupts** are now 9Dh to FEh (and 60h to 65h); the
   message when they are in use says so.
 
 **Documentation**
