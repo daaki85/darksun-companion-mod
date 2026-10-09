@@ -855,6 +855,7 @@ class OtherTests(unittest.TestCase):
         log.last_seq = 0
         struct.pack_into("<5H", log.guest.mem, HDR + 8, 6, 2, nent, esize, ring)
         struct.pack_into("<H", log.guest.mem, HDR + 20, 0)
+        struct.pack_into("<H", log.guest.mem, HDR + dicelog.TSR_RING_SEG, HDR // 16)  # (the ring's segment)
         for seq in (3, 4, 5, 6):  # 1 and 2 were overwritten
             struct.pack_into("<H", log.guest.mem, HDR + ring + ((seq - 1) % nent) * esize, seq)
         self.assertEqual([e.seq for e in log.poll()], [3, 4, 5, 6])

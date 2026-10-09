@@ -834,6 +834,7 @@ ARMOUR: Dict[int, Tuple[str, Tuple[int, ...], str]] = {
     game.PLATE_CHEST_TYPE: (ARMOUR_CHEST, METAL_SHADES, PLATE), game.PLATE_ARMS_TYPE: (ARMOUR_ARMS, METAL_SHADES, PLATE),
     game.PLATE_LEGS_TYPE: (ARMOUR_LEGS, METAL_SHADES, PLATE),  # the Warden's Plate (worldgear.py)
     game.BRACERS_TYPE: (ARMOUR_ARMS, SHIMMER_SHADES, PLAIN),  # bracers of defense: steel at the wrists
+    game.ROBE_TYPE: (ARMOUR_CHEST, CHAIN_SHADES, PLAIN),  # the robes (robes.py): grey cloth
 }
 # Each model's clothing colours, dark to light (by hand: not its skin, hair, eyes or wristbands;
 # black only inside the outline). The human and half-elf woman's green cloak stays as it is.

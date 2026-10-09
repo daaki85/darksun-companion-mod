@@ -5,7 +5,7 @@ kept in a pen of his own the rest of the time; he has the look of the arena's De
 party has never fought him. He secretly scribes spells on scraps of hide, to buy a guard's blind eye; a preserver can learn from them (the game's own scrolls: right-click one, click
 its spell). Insult him or threaten to report him and he won't trade until the party makes amends:
 50 ceramic pieces, or a Charisma check. Killed, he leaves one of his scrolls at random, a Cloak and
-a Quarterstaff (loot).
+a Quarterstaff and his Ashen Robe (loot).
 
 He is the game's own kind of person, added to the Ledger's copies of three of its files (the game
 folder is never changed; DSCLOG has the game open the copies):
@@ -52,7 +52,7 @@ DEFILER_CLASS, LEVEL = 18, 5
 # his state, in four of the game's global flags (bits; it uses 1-755, a save keeps 808): met
 # him, friendly, cold; his scrolls given
 MET, FRIENDLY, COLD = 760, 761, 762
-STOCKED = 763  # (set by the Ledger: his scrolls given)
+STOCKED = 763  # (set by the Ledger: his scrolls and gear given)
 DIED = 772  # (set by the Ledger: seen dead; Dinos and the Trustee speak of him so, pensasks.py)
 
 # The scrolls: (spell, its name, price in ceramic pieces). Cat's Grace is the game's Flaming Sphere
@@ -457,7 +457,8 @@ def conversation() -> bytes:
         s.say("Learn them well, and burn the hide when you're done.")
 
     def nothing_left():
-        s.say("Nothing. You've bought every scrap of hide I had, and more takes time I don't have.")
+        s.say("Nothing. You've bought every scrap of hide I had, and the robe off my back. More "
+              "takes time I don't have.")
 
     def why():
         s.say("Because a preserver's coin buys the same bribe. And because I'm tired of being the "
@@ -675,16 +676,15 @@ def watch(gd) -> bool:
     return True
 
 
-# What he leaves when killed: one of the scrolls he still has, at random, a plain Cloak and a
-# Quarterstaff (the game's own records, from SEGOBJEX). He can't carry the two while alive: his
-# shop offers all he has, worn or not, in any of his lists. The game puts all a dead person's
-# things in a pile where he fell (none if he has nothing); the Ledger takes the other scrolls out
-# of it and puts the two in, after the scroll it leaves (once: LOOTED). If the party bought all
-# six, he carries the two by then (below).
+# What he wears: a plain Cloak and Quarterstaff (the game's own records, from SEGOBJEX) and his
+# Ashen Robe (robes.py), given with his scrolls (stock). His shop offers all he has, worn or not,
+# in any of his lists (the game has no mark for an item a merchant won't sell), so these are for
+# sale too. What he leaves when killed: whatever he still carries, which the game puts in a pile
+# where he fell (none if he has nothing); of the scrolls, the Ledger leaves one, at random, and
+# takes the others out of it (once: LOOTED).
 LOOTED = 777
-# Once the party has bought all six (the Ledger's flag SOLD_OUT), his shop is no longer offered
-# ("Anything left to sell?" "Nothing."), and he carries the two from then on (DRESSED): the game
-# puts them in his body then, as it does anything a dead person carried.
+# Once he carries nothing (the Ledger's flag SOLD_OUT), his shop is no longer offered ("Anything
+# left to sell?" "Nothing."). DRESSED: his gear given (with his scrolls, when stocked).
 DRESSED, SOLD_OUT = 776, 778
 RIGHT_HAND = game.EQUIP_SLOTS.index("right hand")
 CLOAK_TEMPLATE = "e3fb000000001400000041003500000003ff0e0000"  # the game's Cloak (as npcitems')
@@ -705,38 +705,37 @@ def _index(gd) -> Optional[int]:
 
 
 def sold_out(gd, quiet: bool) -> List[str]:
-    """In the pens, with him alive and stocked: SOLD_OUT once none of his scrolls is left on him;
-    then the Cloak and Quarterstaff on him, worn, once (DRESSED). SOLD_OUT while talking with him
+    """In the pens, with him alive and stocked: SOLD_OUT once he carries nothing (his scrolls and
+    his gear all bought). SOLD_OUT while talking with him
     (the last one just bought) or when QUIET (the map's main loop running: no talk, menu or shop
     open), never while a game loads, when one game's flags can be read with another's people; his
     things only when QUIET (never into an open shop). His scrolls are counted by
     either number (an earlier build's, until mended), and a game marked sold out while he still
     has some has its shop back. What was given, by name."""
-    from . import npcitems, ring
+    from . import ring
     if gd.region() != REGION or not gd.flag(STOCKED) or gd.flag(DIED):
         return []
     index = _index(gd)
     if index is None:
         return []
     it = ring.Items(gd)
-    mine = {-(first + k) for k in range(len(SCROLLS)) for first in (SCROLL_OBJECT, OLD_SCROLL_OBJECT)}
     rec = gd.creature(index)
-    carried = [r for o in game.CREATURE_ITEM_LISTS for _, r in it.chain(struct.unpack_from("<h", rec, o)[0])]
-    if any(struct.unpack_from("<h", r, ITEM_OBJECT)[0] in mine for r in carried):
+    if any(True for o in game.CREATURE_ITEM_LISTS for _ in it.chain(struct.unpack_from("<h", rec, o)[0])):
         if gd.flag(SOLD_OUT) and quiet:
             gd.set_flag(SOLD_OUT, False)  # (marked by mistake: his shop back)
         return []
     talking = getattr(gd, "talk_target", lambda: None)() == NAME  # (the last one just bought)
     if (quiet or talking) and not gd.flag(SOLD_OUT):
         gd.set_flag(SOLD_OUT)
-    if not quiet or gd.flag(DRESSED) or not gd.flag(SOLD_OUT):
-        return []
-    given = []
-    for template, slot, name in ((QUARTERSTAFF_TEMPLATE, RIGHT_HAND, "Quarterstaff"), (CLOAK_TEMPLATE, game.CLOAK_SLOT, "Cloak")):
-        if npcitems.add_to(gd, index, npcitems._item(template), slot):
-            given.append(name)
-    gd.set_flag(DRESSED)
-    return given
+    return []
+
+
+def gear() -> List[Tuple[bytes, Optional[int], str]]:
+    """What he wears: (item record, slot, name)."""
+    from . import npcitems, robes
+    return [(npcitems._item(QUARTERSTAFF_TEMPLATE), RIGHT_HAND, "Quarterstaff"),
+            (npcitems._item(CLOAK_TEMPLATE), game.CLOAK_SLOT, "Cloak"),
+            (robes.item(robes.ASHEN), robes.CHEST_SLOT, "Ashen Robe")]
 
 
 def _held_by_party(gd, it) -> set:
@@ -749,27 +748,12 @@ def _held_by_party(gd, it) -> set:
     return held
 
 
-def _after(gd, it, item: int, rec: bytes) -> bool:
-    """A new item REC (from the game's free list) put next after ITEM, in its list."""
-    from . import ring
-    new = it.word(ring.FREE_ITEMS)
-    if new >= game.NO_ITEM:
-        return False
-    gd.guest.write(gd.ds * 16 + ring.FREE_ITEMS, it.item(new)[game.ITEM_NEXT:game.ITEM_NEXT + 2])
-    ring.took(new, "an item of Kalzith's")
-    rec = bytearray(rec)
-    rec[game.ITEM_NEXT:game.ITEM_NEXT + 2] = it.item(item)[game.ITEM_NEXT:game.ITEM_NEXT + 2]
-    gd.guest.write(it.items + new * game.ITEM_SIZE, bytes(rec))
-    gd.guest.write(it.items + item * game.ITEM_SIZE + game.ITEM_NEXT, struct.pack("<H", new))
-    return True
-
-
 def loot(gd, choose: Callable = None) -> List[str]:
     """Once he is dead (DIED): of his scrolls the party doesn't hold, one kept (CHOOSE, random by
-    default) and the others taken away, and his Cloak and Quarterstaff put with it; once
-    (LOOTED). What he leaves, by name."""
+    default) and the others taken away (his gear the game leaves with him); once (LOOTED). The
+    scroll left, by name."""
     import random
-    from . import npcitems, ring
+    from . import ring
     if not gd.flag(DIED) or gd.flag(LOOTED):
         return []
     it = ring.Items(gd)
@@ -780,24 +764,18 @@ def loot(gd, choose: Callable = None) -> List[str]:
             if struct.unpack_from("<h", rec, ITEM_OBJECT)[0] in mine and index not in held}
     gd.set_flag(LOOTED)
     if not left:
-        return []  # (all bought: he carried the two, and the game put them in his body)
+        return []  # (all bought)
     keep = (choose or random.choice)(sorted(left))
     for index in sorted(left):
         if index != keep:
             ring.unlink(gd, ring.Items(gd), index, "given back (Kalzith's)")
-    out = [f"Scroll of {left[keep]}"]
-    if gd.flag(DRESSED):
-        return out  # (he carried them: in his body already)
-    for rec, name in ((npcitems._item(QUARTERSTAFF_TEMPLATE), "Quarterstaff"), (npcitems._item(CLOAK_TEMPLATE), "Cloak")):
-        if _after(gd, ring.Items(gd), keep, rec):
-            out.append(name)
-    return out
+    return [f"Scroll of {left[keep]}"]
 
 
 def stock(gd, cats_grace: bool) -> List[str]:
-    """In the pens, once a game, Kalzith gets his scrolls (Cat's Grace only with its rule on);
-    the game's flag STOCKED marks it done (a save keeps it, a new game starts without it). The
-    scrolls given, by name."""
+    """In the pens, once a game, Kalzith gets his scrolls (Cat's Grace only with its rule on) and
+    his gear, worn (DRESSED); the game's flag STOCKED marks it done (a save keeps it, a new game
+    starts without it). What was given, by name."""
     from . import npcitems
     if gd.region() != REGION or gd.flag(STOCKED):
         return []
@@ -809,9 +787,11 @@ def stock(gd, cats_grace: bool) -> List[str]:
         at = index * game.CREATURE_SIZE
         if table[at + game.CREATURE_NAME:at + game.CREATURE_NAME + len(name)] != name:
             continue
-        out = [name_ for k, (spell, name_, price) in enumerate(SCROLLS)
-               if (cats_grace or spell != game.FLAMING_SPHERE)
-               and npcitems.add_to(gd, index, scroll(spell, price, k))]
+        out = [name_ for rec, slot, name_ in gear() if npcitems.add_to(gd, index, rec, slot)]
+        out += [name_ for k, (spell, name_, price) in enumerate(SCROLLS)
+                if (cats_grace or spell != game.FLAMING_SPHERE)
+                and npcitems.add_to(gd, index, scroll(spell, price, k))]
+        gd.set_flag(DRESSED)
         gd.set_flag(STOCKED)
         return out
     return []

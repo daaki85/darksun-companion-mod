@@ -36,11 +36,11 @@ jobs:
       - name: Zip
         shell: bash
         run: |
-          git archive --format=zip --prefix="Templars-Ledger-$VERSION/" -o "Templars-Ledger-$VERSION.zip" "$GITHUB_SHA":darksun-companion
+          git archive --format=zip --prefix="Obsidian-Edition-$VERSION/" -o "Obsidian-Edition-$VERSION.zip" "$GITHUB_SHA":darksun-companion
       - name: Release
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v$VERSION" "Templars-Ledger-$VERSION.zip" --target "$GITHUB_SHA" \
-            --title "Templar's Ledger $VERSION" --notes-file "release-notes/v$VERSION.md"
+          gh release create "v$VERSION" "Obsidian-Edition-$VERSION.zip" --target "$GITHUB_SHA" \
+            --title "Obsidian Edition $VERSION" --notes-file "release-notes/v$VERSION.md"

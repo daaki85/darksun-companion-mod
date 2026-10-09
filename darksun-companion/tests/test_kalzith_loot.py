@@ -1,4 +1,5 @@
-"""What Kalzith leaves when killed: one of his scrolls, a Cloak and a Quarterstaff (kalzith.loot)."""
+"""What Kalzith leaves when killed: one of his scrolls (kalzith.loot), with whatever else he still
+carries; his shop sold out (kalzith.sold_out)."""
 
 import os
 import struct
@@ -42,21 +43,21 @@ class LootTests(unittest.TestCase):
         return [-struct.unpack_from("<h", rec, 0)[0] for _, rec in ring.Items(self.gd).chain(thing)]
 
     def test_loot(self):
-        """One scroll kept (here Blur), the other two taken back to the free list, the Cloak and
-        Quarterstaff after it; the party's own scroll untouched; once only."""
+        """One scroll kept (here Blur), the other two taken back to the free list; the party's
+        own scroll untouched; once only."""
         left = kalzith.loot(self.gd, choose=lambda items: 81)
-        self.assertEqual(left, ["Scroll of Blur", "Quarterstaff", "Cloak"])
-        self.assertEqual(self.objects(PILE), [kalzith.SCROLL_OBJECT + 2, 1053, 1019])
+        self.assertEqual(left, ["Scroll of Blur"])
+        self.assertEqual(self.objects(PILE), [kalzith.SCROLL_OBJECT + 2])
         self.assertEqual(self.objects(BAG), [kalzith.SCROLL_OBJECT + 1])
-        free = struct.unpack_from("<H", self.m, DS * 16 + ring.FREE_ITEMS)[0]
-        self.assertEqual(free, 90)  # (80 and 82 given back, then taken again for the two)
+        free, = struct.unpack_from("<H", self.m, DS * 16 + ring.FREE_ITEMS)
+        self.assertIn(free, (80, 82))  # (both given back)
         self.assertIn(kalzith.LOOTED, self.flags)
         self.assertEqual(kalzith.loot(self.gd), [])
 
     def test_kept_first(self):
         """The kept scroll first in the pile: the others after it go."""
         kalzith.loot(self.gd, choose=lambda items: 80)
-        self.assertEqual(self.objects(PILE), [kalzith.SCROLL_OBJECT, 1053, 1019])
+        self.assertEqual(self.objects(PILE), [kalzith.SCROLL_OBJECT])
 
     def test_alive(self):
         self.flags.discard(kalzith.DIED)
@@ -71,8 +72,7 @@ class LootTests(unittest.TestCase):
 
 
 class SoldOutTests(unittest.TestCase):
-    """All six bought: no more shop (SOLD_OUT), and the Cloak and Quarterstaff on him, worn, once
-    the map's main loop runs (kalzith.sold_out)."""
+    """All he carries bought: no more shop (SOLD_OUT) (kalzith.sold_out)."""
 
     def setUp(self):
         LootTests.setUp(self)  # (his three scrolls in PILE, here the list he carries)
@@ -101,11 +101,18 @@ class SoldOutTests(unittest.TestCase):
         self.gd.talk_target = lambda: kalzith.NAME
         self.assertEqual(kalzith.sold_out(self.gd, False), [])  # (his talk or shop open: later)
         self.assertIn(kalzith.SOLD_OUT, self.flags)
-        self.assertNotIn(kalzith.DRESSED, self.flags)
-        self.assertEqual(kalzith.sold_out(self.gd, True), ["Quarterstaff", "Cloak"])
-        self.assertEqual(self.worn(), {1019: kalzith.RIGHT_HAND, 1053: game.CLOAK_SLOT})
-        self.assertIn(kalzith.DRESSED, self.flags)
         self.assertEqual(kalzith.sold_out(self.gd, True), [])
+        self.assertIn(kalzith.SOLD_OUT, self.flags)
+
+    def test_gear_left(self):
+        """His scrolls all bought but his robe still on him: still a shop."""
+        from dscompanion import robes
+        rec = bytearray(robes.item(robes.ASHEN))
+        struct.pack_into("<h", rec, game.ITEM_NEXT, game.NO_ITEM)
+        self.m[ITEMS + 90 * game.ITEM_SIZE:ITEMS + 91 * game.ITEM_SIZE] = rec
+        struct.pack_into("<Bh", self.m, THINGS + PILE * 3, game.THING_ITEM, 90)
+        self.assertEqual(kalzith.sold_out(self.gd, True), [])
+        self.assertNotIn(kalzith.SOLD_OUT, self.flags)
 
     def test_marked_by_mistake(self):
         """Marked sold out while he still has scrolls (a game loading with another's people, or
@@ -122,7 +129,6 @@ class SoldOutTests(unittest.TestCase):
         self.assertIn(kalzith.SOLD_OUT, self.flags)  # (not during a load)
         self.assertEqual(kalzith.sold_out(self.gd, True), [])
         self.assertNotIn(kalzith.SOLD_OUT, self.flags)
-        self.assertNotIn(kalzith.DRESSED, self.flags)
 
     def test_dead(self):
         struct.pack_into("<Bh", self.m, THINGS + PILE * 3, game.THING_ITEM, game.NO_ITEM)

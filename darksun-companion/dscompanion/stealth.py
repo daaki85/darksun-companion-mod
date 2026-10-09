@@ -17,7 +17,8 @@ ELVEN_QUIET (AD&D's 95% in the worst conditions).
 
 Rangers do it too, with AD&D's chances for a ranger (the game gives them no thief skills;
 game.ranger_skill_parts), but the other way round for the light: outdoorsmen, they hide with
-the full chance under the open sky and half of it indoors. Their attack from behind is no
+the full chance under the open sky and half of it indoors (a Stalker, kits.py, the full chance
+indoors too). Their attack from behind is no
 backstab (DSCLOG's own check keeps that to thieves). Someone with thief levels hides as a thief.
 
 Daylight goes by the region (the map) the party is in: open desert, rock and the arena are
@@ -30,7 +31,7 @@ square) says which, and the tile numbers of those maps' indoor floors are below.
 import struct
 from typing import Callable, List, Optional, Tuple
 
-from . import game
+from . import game, kits
 from .game import GameData
 
 HIDE, MOVE = 4, 3  # thief skill numbers (game.THIEF_SKILLS)
@@ -173,9 +174,13 @@ def turn(gd: GameData, combatant: int, roll: Callable[[], int], gear: bool = Tru
     if enemy:
         return [f"{who} can't hide in shadows: {enemy} is right beside them"], False
     sun = daylight(gd, combatant)
-    if ranger:  # at home under the open sky
+    if ranger and not sun and kits.STALKER in gd.kit_ids(creature):  # (kits.py: not halved indoors)
+        need, why = hide, f"{shown}, a Stalker: not halved indoors"
+    elif ranger:  # at home under the open sky
         need = hide if sun else hide // 2
         why = f"{shown}, a ranger under the open sky" if sun else f"{shown}, halved indoors for a ranger"
+    elif sun and kits.ASSASSIN in gd.kit_ids(creature):  # (kits.py: not halved in daylight)
+        need, why = hide, f"{shown}, an Assassin: not halved in daylight"
     else:
         need = hide // 2 if sun else hide
         why = f"{shown}, halved in daylight" if sun else f"{shown}, out of the sun"

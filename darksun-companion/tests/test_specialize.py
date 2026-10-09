@@ -4,6 +4,7 @@ import os
 import struct
 import sys
 import unittest
+from unittest import mock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -172,6 +173,38 @@ class NewCharacterTests(unittest.TestCase):
         s = sheet((2,), classes=(9, 12, 0))  # (the dagger: allowed)
         self.assertEqual(weaponchoice.kinds_for(s, psi_kinds), [3, 0, 0, 0])
 
+    def test_myrmidon_keeps_its_second(self):
+        """A Myrmidon (kits on) keeps a second kind marked; another fighter doesn't."""
+        from dscompanion import weaponchoice
+        s = bytearray(sheet((0, 5), classes=(9, 0, 0)))
+        s[0x43] = 1
+        old = game.RULES_IN_FORCE
+        try:
+            game.RULES_IN_FORCE = game.RULE_KITS
+            self.assertEqual(weaponchoice.kinds_for(bytes(s)), [1, 6, 0, 0])
+            s[0x43] = 2
+            self.assertEqual(weaponchoice.kinds_for(bytes(s)), [1, 0, 0, 0])
+        finally:
+            game.RULES_IN_FORCE = old
+
+    def test_battle_mage_keeps_its_own(self):
+        """A Battle Mage (kits on) keeps its one weapon spec, the long sword if none was marked, of
+        its own kinds (restrict.allowed_kinds); another preserver none."""
+        from dscompanion import kits, weaponchoice
+        old = game.RULES_IN_FORCE
+        try:
+            game.RULES_IN_FORCE = game.RULE_KITS | game.RULE_SPECIALIZE
+            for chosen, want in (((5,), [6, 0, 0, 0]), ((), [1, 0, 0, 0]), ((5, 2), [6, 0, 0, 0])):
+                s = bytearray(sheet(chosen, classes=(11, 0, 0)))
+                s[0x43] = 2
+                allowed = restrict.allowed_kinds(bytes(s), lambda t: bytes(game.ITEM_TYPE_SIZE))
+                self.assertEqual(allowed, sorted(kits.BATTLE_MAGE_KINDS))
+                self.assertEqual(weaponchoice.kinds_for(bytes(s), allowed), want)
+            s[0x43] = 1
+            self.assertEqual(weaponchoice.kinds_for(bytes(s)), [0, 0, 0, 0])
+        finally:
+            game.RULES_IN_FORCE = old
+
     def test_extra_kinds_cleared(self):
         self.assertEqual(self.kinds((2, 5), (9, 0, 0)), [3, 0, 0, 0])
         self.assertEqual(self.kinds((2,), (11, 0, 0)), [0, 0, 0, 0])
@@ -324,6 +357,143 @@ class FinishNewTests(unittest.TestCase):
         self.assertEqual(weaponchoice.finish_new(self.gd), [])
         self.assertEqual(self.item(2)[0], weaponchoice.START_TYPE)
 
+
+class KitGearTests(FinishNewTests):
+    """weaponchoice.kit_gear: a New character's starting gear fitted to its kit."""
+
+    def setUp(self):
+        super().setUp()
+        rules = game.RULES_IN_FORCE
+        game.RULES_IN_FORCE = game.RULE_KITS
+        self.addCleanup(setattr, game, "RULES_IN_FORCE", rules)
+        from dscompanion import weaponchoice
+        for t in range(game.GAME_TYPES + 25):
+            self.mem[self.TYPES + t * game.ITEM_TYPE_SIZE + 0x10:self.TYPES + t * game.ITEM_TYPE_SIZE + 0x12] = b"\xff\xff"
+        for kind, plain in enumerate(weaponchoice.PLAIN):  # (melee weapons, but the missile ones)
+            self.mem[self.TYPES + plain[0] * game.ITEM_TYPE_SIZE] = 0x02 if kind in weaponchoice.MISSILE_KINDS else 0x01
+        for shield in (4, 36):
+            self.mem[self.TYPES + shield * game.ITEM_TYPE_SIZE] = 0x04
+        great_axe = weaponchoice.PLAIN[specialize.KINDS.index("great axe")][0]
+        self.mem[self.TYPES + great_axe * game.ITEM_TYPE_SIZE + 0x0F] = weaponchoice.TWO_HANDED
+
+    def character(self, cls, kit, chosen=()):
+        s = bytearray(sheet(tuple(specialize.KINDS.index(k) for k in chosen), classes=(cls, 0, 0)))
+        s[game.SHEET_FLAGS:game.SHEET_FLAGS + 2] = b"\xff\xff"
+        s[0x43] = kit
+        self.mem[self.SHEETS:self.SHEETS + game.SHEET_SIZE] = s
+        return game.WEAPON_HANDS
+
+    def test_shinobi_long_sword(self):
+        from dscompanion import weaponchoice
+        right, left = self.character(17, 3)
+        self.give(weaponchoice.START_TYPE, weaponchoice.START_NAME, right)
+        out = weaponchoice.kit_gear(self.gd)
+        self.assertEqual(self.item(0), (weaponchoice.PLAIN[specialize.KINDS.index("short sword")][0], right))
+        self.assertIn("a Shinobi can't use it", out[0])
+        self.assertEqual(weaponchoice.kit_gear(self.gd), [])  # (once)
+
+    def test_ravager_shield(self):
+        from dscompanion import weaponchoice
+        right, left = self.character(9, 3)
+        self.give(weaponchoice.START_TYPE, weaponchoice.START_NAME, right)
+        self.give(4, 0x05, left)
+        taken = []
+
+        def unlink(gd, it, item, what, empty=False):  # (the harness has no lists: the record emptied)
+            taken.append(item)
+            at = self.ITEMS + item * game.ITEM_SIZE
+            self.mem[at:at + game.ITEM_SIZE] = bytes(game.ITEM_SIZE)
+            return True
+        given = []
+
+        def add_to(gd, creature, rec, slot=None):  # (the harness has no lists: the next record)
+            given.append((rec, slot))
+            at = self.ITEMS + self.items * game.ITEM_SIZE
+            rec = bytearray(rec)
+            rec[game.ITEM_SLOT] = slot
+            self.mem[at:at + game.ITEM_SIZE] = rec
+            self.items += 1
+            return True
+        with mock.patch("dscompanion.ring.unlink", unlink), mock.patch("dscompanion.npcitems.add_to", add_to):
+            out = weaponchoice.kit_gear(self.gd)
+            self.assertEqual(weaponchoice.kit_gear(self.gd), [])
+        self.assertEqual(self.item(0), (weaponchoice.START_TYPE, right))
+        self.assertEqual(taken, [1])  # (the shield taken away, not put in the backpack)
+        self.assertIn("left behind", out[0])
+        self.assertEqual(self.item(2), (weaponchoice.START_TYPE, left))  # (a second of its weapon, for the left hand)
+        self.assertEqual(len(given), 1)
+        self.assertIn("second", out[1])
+
+    def test_myrmidon_two_weapons(self):
+        """A Myrmidon with weapon specialization: a plain weapon of its second kind in the backpack."""
+        from dscompanion import weaponchoice
+        right, left = self.character(9, 1, ("long sword", "axe"))
+        self.gd.rules = game.RULE_SPECIALIZE | game.RULE_KITS
+        self.give(weaponchoice.START_TYPE, weaponchoice.START_NAME, right)
+        self.give(4, 0x05, left)
+        given = []
+
+        def add_to(gd, creature, rec, slot=None):
+            given.append((rec, slot))
+            at = self.ITEMS + self.items * game.ITEM_SIZE
+            rec = bytearray(rec)
+            rec[game.ITEM_SLOT] = 20 if slot is None else slot
+            self.mem[at:at + game.ITEM_SIZE] = rec
+            self.items += 1
+            return True
+        with mock.patch("dscompanion.npcitems.add_to", add_to):
+            out = weaponchoice.kit_gear(self.gd)
+            self.assertEqual(weaponchoice.kit_gear(self.gd), [])
+        self.assertEqual(self.item(2), (weaponchoice.PLAIN[specialize.KINDS.index("axe")][0], 20))
+        self.assertEqual(self.item(1), (4, left))  # (the shield kept)
+        self.assertIn("Myrmidon", out[0])
+
+    def test_brute_two_handed(self):
+        """Without weapon specialization (its chosen kind would be one already): a great axe, and
+        the off-hand club left behind (no use to a Brute)."""
+        from dscompanion import weaponchoice
+        right, left = self.character(10, 3)
+        self.give(weaponchoice.START_TYPE, weaponchoice.START_NAME, right)
+        self.give(18, 0x11, left)
+        taken = []
+
+        def unlink(gd, it, item, what, empty=False):
+            taken.append(item)
+            at = self.ITEMS + item * game.ITEM_SIZE
+            self.mem[at:at + game.ITEM_SIZE] = bytes(game.ITEM_SIZE)
+            return True
+        with mock.patch("dscompanion.ring.unlink", unlink):
+            out = weaponchoice.kit_gear(self.gd)
+            self.assertEqual(weaponchoice.kit_gear(self.gd), [])
+        self.assertEqual(self.item(0), (weaponchoice.PLAIN[specialize.KINDS.index("great axe")][0], right))
+        self.assertEqual(taken, [1])
+        self.assertIn("left behind", out[-1])
+
+    def test_arena_champion_shield(self):
+        from dscompanion import weaponchoice
+        right, left = self.character(10, 1)
+        self.give(weaponchoice.START_TYPE, weaponchoice.START_NAME, right)
+        self.give(18, 0x11, left)
+        out = weaponchoice.kit_gear(self.gd)
+        self.assertEqual(self.item(1), (4, left))
+        self.assertIn("shield", out[0])
+        self.assertEqual(weaponchoice.kit_gear(self.gd), [])
+
+    def test_battle_mage_weapon(self):
+        from dscompanion import weaponchoice
+        right, left = self.character(11, 2, ("axe",))
+        self.give(3, 0x04, right)  # (the quarterstaff)
+        self.assertEqual(weaponchoice.kit_gear(self.gd), [])  # (weapon specialization off: no spec)
+        self.gd.rules = game.RULE_SPECIALIZE
+        weaponchoice.kit_gear(self.gd)
+        self.assertEqual(self.item(0), (weaponchoice.PLAIN[specialize.KINDS.index("axe")][0], right))
+
+    def test_no_kit(self):
+        from dscompanion import weaponchoice
+        right, left = self.character(17, 0)
+        self.give(weaponchoice.START_TYPE, weaponchoice.START_NAME, right)
+        self.assertEqual(weaponchoice.kit_gear(self.gd), [])
+        self.assertEqual(self.item(0), (weaponchoice.START_TYPE, right))
 
 if __name__ == "__main__":
     unittest.main()

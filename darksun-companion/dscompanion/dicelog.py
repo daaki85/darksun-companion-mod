@@ -22,9 +22,9 @@ import struct
 import time
 from collections import Counter, deque
 from dataclasses import dataclass
-from typing import Callable, Deque, Dict, List, NamedTuple, Optional, Tuple
+from typing import Callable, Deque, Dict, List, NamedTuple, Optional, Sequence, Tuple
 
-from . import defaultparty, dust, game, rings, targeting, icons, kalzith, monsters, names, pickpocket, ring, scrolling, searches, semyon, shadows, specialize, sprites, stealth, tools, vulture, weaponchoice
+from . import defaultparty, dust, game, kits, rings, targeting, icons, kalzith, monsters, names, pickpocket, ring, scrolling, searches, semyon, shadows, specialize, sprites, stealth, tools, vulture, weaponchoice
 from .game import (CONVENTIONAL_AND_UPPER, CREATURE_ABILITIES, CREATURE_SIDE, CREATURE_THAC0, EFFECT_NAMES,
                    EFFECT_RULES, MATERIAL_TO_HIT, MATERIALS, SAVE_NAMES, STR_DAMAGE, GameData)
 from .guestmem import GuestMemory
@@ -55,6 +55,9 @@ TSR_XP_WHO, TSR_XP_AMOUNT = 262, 264  # a party member to be given XP with the p
 TSR_SKILLS_ON = 266  # bits: item boxes name a cloak's and boots' bonus to hiding and moving silently;
 SKILLS_STEALTH, SKILLS_BELT = 1, 2  # a worn belt adds to picking pockets and opening locks (and its box says)
 SKILLS_ELVEN = 4  # the Cloak and Boots of Elvenkind's boxes name their chances (the hiding rule on)
+TSR_RING_SEG = 268  # the ring's segment (past the image, so it takes none of DSCLOG's 64 KB)
+TSR_RULES_HI = 270  # the rules' bits past 16 (game.RULE_KITS), shifted down
+TSR_LEARN = 272  # a preserver's try at a scroll's spell: count, who, spell, INT, chance, d100, result (intlearn.py)
 TSR_PICK_SEQ, TSR_PICK_REPLY, TSR_PICK_OFF, TSR_PICK_ON, PICK_SIZE = 172, 174, 176, 178, 240
 PICK_TOOLS, PICK_KEY = 1, 2  # (TSR_PICK_ON: the thieving tools on someone; P in a conversation too)
 TSR_USE_SEQ, TSR_USE_REPLY, TSR_USE_WHO, TSR_USE_TAKEN, TSR_USE_ITEM = 180, 182, 184, 186, 188
@@ -151,6 +154,7 @@ SPELL_HANDLER_RETURNS = (
     (bytes.fromhex("83c40440e988"), 1),  # Cure Serious Wounds: 2d8 + 1
     (bytes.fromhex("83c404050300eb"), 3),  # Cure Critical Wounds: 3d8 + 3
     (bytes.fromhex("83c4045057900e"), 0),  # Cure Light Wounds 1d8, Blood Flow 2d6 (healing)
+    (bytes.fromhex("83c4045057cdb1"), 0),  # (the same with DSCLOG's PROBE_CURE, as the patched game has it)
     (bytes.fromhex("83c40450ff7608"), 0),  # Aid 1d8, Vampiric Touch (level / 2)d6, drains
 )
 # ... and a name picked at random from the game's lists (the code after the dice call)
@@ -373,6 +377,7 @@ class DiceLog:
         self.stealth_roll: Callable[[], int] = lambda: random.randint(1, 100)  # hiding, moving silently
         self._ring_check = 0.0
         self._main_ticks: Optional[int] = None  # DSCLOG's count of the map's main loop, last read
+        self._learn_seq: Optional[int] = None  # DSCLOG's count of tries at a scroll's spell, last read
         self._look_seq = 0
         self._turn_seq = 0
         self._turn_attacks: Dict[int, List[dict]] = {}  # creature -> this turn's attacks
@@ -648,7 +653,8 @@ class DiceLog:
             self.game.rules = rules
             self.game.belt = self.stealth_gear
         if self.tsr_hdr is not None:
-            self.guest.write(self.tsr_hdr + TSR_RULES, struct.pack("<H", rules))
+            self.guest.write(self.tsr_hdr + TSR_RULES, struct.pack("<H", rules & 0xFFFF))
+            self.guest.write(self.tsr_hdr + TSR_RULES_HI, struct.pack("<H", rules >> 16 & 0xFFFF))
             skills = (SKILLS_STEALTH if rules & game.RULE_STEALTH and self.stealth_gear else 0) \
                 | (SKILLS_BELT if self.stealth_gear else 0) \
                 | (SKILLS_ELVEN if rules & game.RULE_STEALTH else 0)  # (the hiding rule's cloak and boots; the belt's own)
@@ -950,7 +956,8 @@ class DiceLog:
         new = (seq - self.last_seq) & 0xFFFF
         if not new:
             return []
-        ring_base = self.tsr_hdr - struct.unpack_from("<H", head, 20)[0] + ring_off
+        ring_seg = struct.unpack("<H", self.guest.read(self.tsr_hdr + TSR_RING_SEG, 2))[0]
+        ring_base = ring_seg * 16 + ring_off  # (the ring: a segment of its own, past the image)
         ring = self.guest.read(ring_base, nent * esize)
         entries = {}
         for i in range(nent):
@@ -960,6 +967,20 @@ class DiceLog:
         self.missed += new - len(entries)
         self.last_seq = seq
         return [entries[s] for s in sorted(entries, key=lambda s: (s - seq - 1) & 0xFFFF)]
+
+    def _kit_attack(self, attacker: Optional[int], item_type: Optional[int], mode: Optional[int]) -> Tuple[str, int, int]:
+        """(the kits' names, to hit, damage) the attacker's kits add to a weapon attack, as DSCLOG's
+        KIT_TO_HIT and KIT_ATTACK_DAMAGE: a Ravager's, a Brute's (in melee), an Arena Champion's."""
+        g = self.game
+        names, to_hit, damage = [], 0, 0
+        melee = mode is not None and mode <= 1
+        for kid in (g.kit_ids(attacker) if attacker is not None else []):
+            weapon = kits.melee(kid, g.two_handed_type(item_type)) if melee and not g.missile_type(item_type) else 0
+            hit, dam = kits.champion(kid, g.holds_shield(attacker), melee)
+            if weapon or hit or dam:
+                names.append(kits.name(kid))
+                to_hit, damage = to_hit + weapon + hit, damage + weapon + dam
+        return " and ".join(names), to_hit, damage
 
     def lines(self, show_all: bool = False, now: Optional[float] = None) -> List[str]:
         """Everything new since the last call, as log lines. Call it every few tens of ms."""
@@ -999,6 +1020,7 @@ class DiceLog:
                 out += self._arena_ring(now)
                 out += self._drawn(now)
                 self._kalzith_sold_out()
+                out += self._learn_lines()
                 self._dress_now(now)
         self._scroll()
         if self._initiative and now - self._initiative_at >= INITIATIVE_WAIT:
@@ -1031,6 +1053,8 @@ class DiceLog:
                 return out  # no names for them yet: none given
             if self.rules & game.RULE_SPECIALIZE:  # (new characters' weapon kinds and starting weapon)
                 out += weaponchoice.finish_new(self.game)
+            if self.rules & game.RULE_KITS:  # (new characters' starting gear fitted to their kits)
+                out += weaponchoice.kit_gear(self.game)
             out += defaultparty.ready(self.game, self.rules, self._party_done)  # (the game's own party, once)
             # (the slave pens' and the world's new items are in the game's data: worldgear.py)
             if self.stealth_gear:
@@ -1075,6 +1099,24 @@ class DiceLog:
         except (struct.error, IndexError, ValueError):
             return []
         return out
+
+    def _learn_lines(self) -> List[str]:
+        """A preserver's tries at a scroll's spell since the last look (the rule for INT's chance:
+        DSCLOG's INT_LEARN tells the last one in its header)."""
+        if self.tsr_hdr is None or self.game is None:
+            return []
+        try:
+            seq, who, spell, intelligence, rate, roll, result = struct.unpack(
+                "<H6B", self.guest.read(self.tsr_hdr + TSR_LEARN, 8))
+            if self._learn_seq is None or seq == self._learn_seq:
+                self._learn_seq = seq
+                return []
+            self._learn_seq = seq
+            from . import intlearn
+            return [intlearn.line(self.game.creature_name(who), self.game.spell_name(spell), intelligence, rate,
+                                  roll, result, self.game.spell_level(spell))]
+        except (struct.error, IndexError, ValueError):
+            return []
 
     def _kalzith_sold_out(self) -> None:
         """All six of Kalzith's scrolls bought: no more shop, and he carries his two, put on him
@@ -1554,6 +1596,9 @@ class DiceLog:
                 parts.append((dex, "DEX"))
             ids = {x.id for x in effects if x.owner == combatant and x.id in game.INITIATIVE_EFFECTS}
             parts += [(game.INITIATIVE_EFFECTS[eid], EFFECT_NAMES[eid]) for eid in sorted(ids)]
+            for kid in g.kit_ids(index):
+                if kits.initiative(kid):
+                    parts.append((kits.initiative(kid), kits.name(kid)))
             score = INITIATIVE_BASE + roll + sum(v for v, _ in parts)
             stored = table[index][0]
             if stored >= 0 and stored != score:  # not acted yet, and something else counted
@@ -1624,8 +1669,14 @@ class DiceLog:
         parts = self.game.thief_skill_parts(creature, skill) if creature is not None else None
         if parts is None:
             return [head]
-        rest = chance - bonus - sum(n for _, n in parts)
+        kid = next((k for k in self.game.kit_ids(creature) if kits.thief_skill(k, skill)), 0)
+        kit = kits.thief_skill(kid, skill)
+        if kit and chance == 0:  # (no less than 0: what the kit took off can't be told apart)
+            kit = 0
+        rest = chance - bonus - kit - sum(n for _, n in parts)
         steps = [f"{n}" if what == "base" else f"{signed(n)} {what}" for what, n in parts]
+        if kit:
+            steps.append(f"{signed(kit)} {kits.name(kid)}")
         if bonus:
             steps.append(f"{signed(bonus)} this attempt")
         if rest:  # the only other part of the chance: the equipment penalty
@@ -1659,8 +1710,10 @@ class DiceLog:
         head = (f"{g.creature_name(attacker)} attacks {target}{how}{with_what}: d20 = {d20}{note}, "
                 f"{needs} ({chance}%), hits AC {thac0 - d20}, target AC {ac} -> {'HIT' if hit else 'miss'}")
         skill = self.weapon_skill(attacker, item_type)
+        kit_name, kit_hit, _ = self._kit_attack(attacker, item_type, mode)
         breakdown = self._thac0_breakdown(e, thac0, attacker, attacker_combatant, target_combatant, weapon, mode,
-                                          (specialize.SKILL_NAMES.get(skill, ""), specialize.to_hit(skill)))
+                                          (specialize.SKILL_NAMES.get(skill, ""), specialize.to_hit(skill)),
+                                          [(kit_name, kit_hit)] if kit_hit else [])
         self._turn_attacks.setdefault(attacker, []).append(
             {"target": target, "d20": d20, "need": need, "hit": hit, "damage": None})
         return [head, "    " + breakdown]
@@ -1673,7 +1726,8 @@ class DiceLog:
         return specialize.skill(sheet, item_type) if len(sheet) >= game.SHEET_SIZE else specialize.NONE
 
     def _thac0_breakdown(self, e: Entry, thac0: int, attacker: int, attacker_combatant: int,
-                         target_combatant: int, weapon, mode: int, skill: Tuple[str, int] = ("", 0)) -> str:
+                         target_combatant: int, weapon, mode: int, skill: Tuple[str, int] = ("", 0),
+                         kit: Sequence[Tuple[str, int]] = ()) -> str:
         """'THAC0 16, +6 STR, +1 Blessed, ... = 9', from the attack setup's locals and the game's rules
         (and SKILL, weapon specialization's (name, to-hit), which DSCLOG takes off after them)."""
         g = self.game
@@ -1681,7 +1735,7 @@ class DiceLog:
         after_f1, hit_bonus = e.parent_local(-0x20), e.parent_local(-8)
         rear, backstab = e.parent_local(-0x1A), e.parent_local(-0x24)
         parts: List[Tuple[str, int]] = []
-        if None in (after_f1, hit_bonus) or after_f1 - hit_bonus != thac0 + skill[1]:
+        if None in (after_f1, hit_bonus) or after_f1 - hit_bonus != thac0 + skill[1] + sum(v for _, v in kit):
             return f"THAC0 {base} base, {signed(base - thac0)} in bonuses = {thac0}"
         if rear:
             parts.append(("from behind", 2))
@@ -1739,6 +1793,7 @@ class DiceLog:
             parts.append(("off-hand and other", rest))
         if skill[1]:
             parts.append(skill)
+        parts += kit
         text = ", ".join(f"{signed(v)} {name}" for name, v in parts if v)
         return f"THAC0 {base}" + (f", {text}" if text else "") + f" = {thac0}"
 
@@ -1806,9 +1861,18 @@ class DiceLog:
                 spell = e.parent_arg(0x0E)
                 self._spell_cast(spell, now)
                 total = sum(faces) + handler
+                kit = ""
+                caster = self.game.combatant_creature(e.parent_arg(8)) if e.parent_arg(8) is not None else None
+                kid = next((k for k in self.game.kit_ids(caster) if kits.cure_bonus(k, spell) or kits.cure_die(k, spell)),
+                           0) if caster is not None else 0
+                if kits.cure_bonus(kid, spell):  # (DSCLOG's PROBE_CURE)
+                    total += kits.cure_bonus(kid, spell)
+                    kit = f" {signed(kits.cure_bonus(kid, spell))} {kits.name(kid)}"
+                elif kits.cure_die(kid, spell):
+                    kit = f" + 1d{kits.cure_die(kid, spell)} {kits.name(kid)} (the helper's roll)"
                 return self.flush(now, force=True) + [
                     f"{self.game.spell_name(spell)}: {count}d{sides} = [" + " + ".join(map(str, faces)) + "]"
-                    + (f" {signed(handler)}" if handler else "") + f" = {total}"]
+                    + (f" {signed(handler)}" if handler else "") + kit + (f" = {total}" if "1d" not in kit else "")]
             if e.parent_code.startswith(SPELL_DURATION_RETURN) or self._overlay_duration(e, count, sides):
                 return self._spell_duration(e, count, sides, faces)
             if e.parent_code.startswith(SPELL_DAMAGE_RETURN):
@@ -1832,8 +1896,10 @@ class DiceLog:
         total = max(sum(faces) + bonus, 1)
         skill = self.weapon_skill(attacker, e.parent_arg(0x14))
         extra = specialize.damage(skill)
-        steps = f"{count}d{sides} = {faces_text}" + (f" {signed(bonus - extra)} weapon" if bonus - extra else "") \
-            + (f" {signed(extra)} {specialize.SKILL_NAMES[skill]}" if extra else "")
+        kit_name, _, kit = self._kit_attack(attacker, e.parent_arg(0x14), mode)
+        steps = f"{count}d{sides} = {faces_text}" + (f" {signed(bonus - extra - kit)} weapon" if bonus - extra - kit else "") \
+            + (f" {signed(extra)} {specialize.SKILL_NAMES[skill]}" if extra else "") \
+            + (f" {signed(kit)} {kit_name}" if kit else "")
         if skill == specialize.GRAND:
             steps += f" (d{sides} for d{sides - 2}: grand mastery)"
         if sum(faces) + bonus < 1:
@@ -2029,6 +2095,14 @@ class DiceLog:
         self._hp_first = (key, roll)
         return None
 
+    def _kit(self, sheet: bytes) -> int:
+        """A sheet's kit for its hit dice (kitpages.kit_at), with kits on; else 0. A human who has
+        changed class rolls for its new class, not the kit's (DSCLOG's PROBE_HIT_DIE)."""
+        if not self.game.rules & game.RULE_KITS or len(sheet) < game.SHEET_SIZE or sheet[0x22]:
+            return 0
+        from . import kitpages
+        return kitpages.kit_at(sheet, 0)
+
     def _level_hp(self, e: Entry, sides: int, roll: int) -> Optional[List[str]]:
         """The hit point roll of a new level: the caller's arguments are (party member, class, level).
         None if it isn't one."""
@@ -2042,7 +2116,7 @@ class DiceLog:
         if not slots or sheet[game.SHEET_LEVELS + slots[0]] != level:
             return None
         rule = self.game.level_hp_rule(cls)
-        if rule is None or rule.sides != sides:
+        if rule is None or kits.hit_die(self._kit(sheet), rule.sides) != sides:
             return None
         rolls = self._hp_rolls(("level", member, cls, level), roll)
         if rolls is None:
@@ -2169,7 +2243,7 @@ class DiceLog:
         parts = []
         for cls, texts in by_class.items():
             rule = g.level_hp_rule(cls)
-            die = f" d{rule.sides}" if rule else ""
+            die = f" d{kits.hit_die(self._kit(sheet), rule.sides)}" if rule else ""
             parts.append(f"{game.CLASS_NAMES.get(cls, f'class {cls}')}{die} per level: {' + '.join(texts)}")
         rolled = sum(r[2] for r in rolls)
         steps = "; ".join(parts)

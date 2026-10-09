@@ -83,10 +83,30 @@ def active_classes(sheet: bytes) -> List[Tuple[int, int]]:
 
 
 def skill(sheet: bytes, item_type: Optional[int]) -> int:
+    """The character's skill with a weapon type, as DSCLOG's SPEC_OF_SHEET: a Justifier's (kits.py)
+    expertise is specialization."""
+    level = _skill(sheet, item_type)
+    return SPECIAL if level == EXPERT and justifier(sheet) else level
+
+
+def justifier(sheet: bytes) -> bool:
+    """A Justifier (kits.py), the rule for kits in force (game.RULES_IN_FORCE)."""
+    from . import kitpages, kits
+    return bool(game.RULES_IN_FORCE & game.RULE_KITS) and kits.JUSTIFIER in kitpages.kit_ids(sheet)
+
+
+def _skill(sheet: bytes, item_type: Optional[int]) -> int:
+    from . import kitpages, kits
     chosen = sheet[game.SPEC_SLOTS:game.SPEC_SLOTS + game.SPEC_COUNT]
     if not any(chosen):
         return NONE
     kind = kind_of(item_type) if item_type is not None else None
+    bm = kitpages.kit_place_of(sheet, kits.BATTLE_MAGE)
+    if game.RULES_IN_FORCE & game.RULE_KITS and bm is not None and sheet[0x22]:
+        # (a Battle Mage who has changed class: its weapon spec the kit's alone, nothing while asleep)
+        if not kitpages.kit_awake(sheet, bm):
+            return NONE
+        return EXPERT if kind is not None and kind + 1 == chosen[0] else PLAIN
     if kind is None or kind + 1 not in chosen:
         # (every ranger's expertise with the bow, chosen or not)
         if kind == KINDS.index("bow") and any(c in RANGERS for c, _ in active_classes(sheet)):
@@ -95,13 +115,37 @@ def skill(sheet: bytes, item_type: Optional[int]) -> int:
     active = active_classes(sheet)
     classes = {c for c, _ in active}
     if not classes & ({FIGHTER, GLADIATOR} | set(RANGERS)):
-        return PLAIN  # (a dual-classed warrior, until the new class's level passes the old)
+        # (a Battle Mage's expertise; else a dual-classed warrior, until the new class's level passes the old)
+        return EXPERT if battle_mage(sheet) else PLAIN
     if not {FIGHTER, GLADIATOR} & classes:
         return EXPERT
-    if chosen.index(kind + 1):
-        return SPECIAL
+    first = chosen.index(kind + 1)
+    if first > 1 or first == 1 and not myrmidon(sheet):
+        return SPECIAL  # (a fighter's first kind goes on to mastery, a Myrmidon's second too)
     fighter = next((level for c, level in active if c == FIGHTER), 0)
     return GRAND if fighter >= GRAND_MASTERY else MASTER if fighter >= MASTERY else SPECIAL
+
+
+def myrmidon(sheet: bytes) -> bool:
+    """A Myrmidon (kits.py), the rule for kits in force (game.RULES_IN_FORCE)."""
+    from . import kitpages
+    return bool(game.RULES_IN_FORCE & game.RULE_KITS) and kitpages.KIT_IDS["Myrmidon"] in kitpages.kit_ids(sheet)
+
+
+def battle_mage(sheet: bytes) -> bool:
+    """A Battle Mage (kits.py), the rule for kits in force (game.RULES_IN_FORCE)."""
+    from . import kitpages, kits
+    return bool(game.RULES_IN_FORCE & game.RULE_KITS) and kits.BATTLE_MAGE in kitpages.kit_ids(sheet)
+
+
+def expert_attacks(halves: int, level: int, sheet: bytes) -> int:
+    """The melee attacks a round (in halves) of a character who isn't a warrior (HALVES the game's,
+    2 or fewer) with skill LEVEL, as DSCLOG's EXPERT_HALVES: a Battle Mage's chosen weapon spec
+    (EXPERT) the expertise rate, 3/2 a round, 2 from 7th level; else HALVES."""
+    from . import kitpages, kits
+    if level != EXPERT or halves > 2:
+        return halves
+    return 4 if kitpages.kit_level(sheet, kits.BATTLE_MAGE) >= 7 else 3  # (the Battle Mage's preserver level)
 
 
 def attacks(halves: int, level: int, missile: bool = False) -> int:

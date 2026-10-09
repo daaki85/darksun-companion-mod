@@ -195,7 +195,8 @@ class KalzithTests(unittest.TestCase):
         self.assertEqual(rec[game.ITEM_SLOT], 0xFF)
 
     def test_stock(self):
-        """Once a game (the game's flag STOCKED), found by name; Cat's Grace only with its rule."""
+        """Once a game (the game's flag STOCKED), found by name: his gear, worn (DRESSED), and his
+        scrolls; Cat's Grace only with its rule."""
         from unittest import mock
         from dscompanion import npcitems
         class Game:
@@ -209,16 +210,17 @@ class KalzithTests(unittest.TestCase):
                 t[at:at + 8] = b"Kalzith\0"
                 return bytes(t)
         gd, given = Game(), []
-        with mock.patch.object(npcitems, "add_to", lambda g, i, rec: given.append((i, rec)) or True):
-            self.assertEqual(kalzith.stock(gd, cats_grace=False),
-                             [n for s, n, _ in kalzith.SCROLLS if s != game.FLAMING_SPHERE])
-            self.assertEqual({i for i, _ in given}, {9})
-            self.assertIn(kalzith.STOCKED, gd.flags)
+        with mock.patch.object(npcitems, "add_to", lambda g, i, rec, slot=None: given.append((i, rec, slot)) or True):
+            self.assertEqual(kalzith.stock(gd, cats_grace=False), ["Quarterstaff", "Cloak", "Ashen Robe"]
+                             + [n for s, n, _ in kalzith.SCROLLS if s != game.FLAMING_SPHERE])
+            self.assertEqual({i for i, _, _ in given}, {9})
+            self.assertEqual([slot for _, _, slot in given[:3]], [kalzith.RIGHT_HAND, game.CLOAK_SLOT, 9])
+            self.assertTrue({kalzith.STOCKED, kalzith.DRESSED} <= gd.flags)
             self.assertEqual(kalzith.stock(gd, cats_grace=True), [])  # (done this game)
             gd.flags.clear(); given.clear()
-            self.assertEqual(len(kalzith.stock(gd, cats_grace=True)), 6)
+            self.assertEqual(len(kalzith.stock(gd, cats_grace=True)), 3 + 6)
             # each scroll its own object
-            self.assertEqual(len({struct.unpack_from("<h", r, 0)[0] for _, r in given}), 6)
+            self.assertEqual(len({struct.unpack_from("<h", r, 0)[0] for _, r, _ in given[3:]}), 6)
 
     def test_mend(self):
         """His scrolls stocked with the spell before their own are made to teach their own,

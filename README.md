@@ -1,7 +1,8 @@
-# Templar's Ledger
+# Obsidian Edition
 
-Templar's Ledger is a companion and mod for **Dark Sun: Shattered Lands** (the
-GOG release) in DOSBox.
+Obsidian Edition is a mod for **Dark Sun: Shattered Lands** (the GOG release)
+in DOSBox, with its own companion window, **Templar's Ledger**, beside the
+game. (Up to its 1.2.0 release, the whole mod was called Templar's Ledger.)
 
 ## Contents
 
@@ -9,7 +10,8 @@ GOG release) in DOSBox.
 - [Getting started](#getting-started)
 - [What's new](#whats-new)
 - [Changelog](CHANGELOG.md)
-- [The full guide](darksun-companion/README.md)
+- [The player's guide](darksun-companion/GUIDE.md): the rules and tables, without spoilers
+- [The full documentation](darksun-companion/README.md): everything in detail
 
 ## What it does
 
@@ -21,12 +23,13 @@ screens gain THAC0, saves, thief skills and spell slots, and the Look box tells
 you what can hurt a monster ([In the
 game](darksun-companion/README.md#in-the-game)).
 
-It brings the rules closer to AD&D: weapon specialization and mastery, class
-restrictions, thief skills from the Player's Handbook, saving throws as the
-books have them, and levels up to 10 ([Rule
-changes](darksun-companion/README.md#rule-changes)). Thieves can pick pockets,
-and hide in shadows to backstab
-([Thieves](darksun-companion/README.md#thieves)).
+It brings the rules closer to AD&D: weapon specialization and mastery, kits
+(three for each class), class restrictions, INT's limits on learning spells,
+thief skills from the Player's Handbook, saving throws as the books have them,
+and levels up to 10 ([Rule
+changes](darksun-companion/README.md#rule-changes)). Thieves can hide in
+shadows to backstab, and pick pockets
+([Picking pockets](darksun-companion/README.md#picking-pockets)).
 
 It adds to Athas: new weapons in every material, magic items with stories of
 their own, Kalzith (a defiler who sells scrolls), more of Semyon's story, and a
@@ -53,11 +56,13 @@ folder only what you'd expect: your saves (pages 2 to 4 as files of their own,
 ## Getting started
 
 1. Download the latest release from the
-   [Releases page](https://github.com/daaki85/darksun-companion-mod/releases)
-   (`Templars-Ledger-<version>.zip`) and unzip it anywhere. (Or this repository
-   as it stands: **Code → Download ZIP**.)
-2. In the unzipped folder (`Templars-Ledger-<version>`, or `darksun-companion`
-   in a download of the repository), double-click **`Start Templar's Ledger.bat`**.
+   [Releases page](https://github.com/daaki85/darksun-obsidian-edition/releases)
+   (`Obsidian-Edition-<version>.zip`; `Templars-Ledger-<version>.zip` up to
+   1.2.0) and unzip it anywhere. (Or this repository as it stands: **Code →
+   Download ZIP**.)
+2. In the unzipped folder (`Obsidian-Edition-<version>`, or `darksun-companion`
+   in a download of the repository), double-click **`Start Obsidian Edition.bat`**
+   (`Start Templar's Ledger.bat` up to 1.2.0).
    The first time, it offers to install 64-bit Python if you don't have it.
    If Windows shows "Open File - Security Warning" (it does for any `.bat`
    from a download), press **Run**: the Ledger then unblocks its own files, so
@@ -73,9 +78,16 @@ double-click, with the options as last set.)
 
 ## What's new
 
-**Templar's Ledger 1.2.0** is out ([release notes](release-notes/v1.2.0.md)):
+**Templar's Ledger 1.2.0**, the mod's last release under that name, is out ([release notes](release-notes/v1.2.0.md)):
 weapon specialization and class restrictions, new weapons and magic items
 across Athas, and more, from pull requests #19 to #29.
+
+**Since 1.2.0** (in the repository, not yet in a release): kits, three for
+each class, and up to three for a human who changes class; preservers' INT
+(the chance to learn a scroll's spell, and the most spells of each level);
+rangers' casting level; the off hand's one attack a round with two weapons;
+the charges left in a wand's item box; and [a spoiler-free player's
+guide](darksun-companion/GUIDE.md).
 
 Earlier changes, pull request by pull request, are in
 [`CHANGELOG.md`](CHANGELOG.md). Releases have notes of their own:

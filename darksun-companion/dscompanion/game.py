@@ -100,6 +100,7 @@ ELVEN_CLOAK_TYPE, ELVEN_BOOTS_TYPE = GAME_TYPES + 19, GAME_TYPES + 20
 AIR_DAGGER_TYPE = GAME_TYPES + 21  # a metal dagger air clerics may use (worldgear.py's Galefang)
 BONE_GREAT_AXE_TYPE, OBSIDIAN_GREAT_AXE_TYPE = GAME_TYPES + 22, GAME_TYPES + 23  # (a new warrior's, weaponchoice.py)
 BONE_DAGGER_TYPE = GAME_TYPES + 24  # (a water cleric's dagger: weaponchoice.py)
+ROBE_TYPE = GAME_TYPES + 25  # the robes (robes.py): worn on the chest, not armour
 GYTHKA_TYPE = 0x2C  # the game's gythka ("2 handed Bone Gythka")
 # The companion's rule changes (DSCLOG's RULES): helms count AC 1, boots add a move in a fight;
 # AD&D's two-weapon penalties; spells saved against with the spell save; no doubled d20
@@ -123,6 +124,17 @@ RULE_SPECIALIZE = 4096
 RULE_RESTRICT = 8192  # class restrictions on armour, shields and weapons (restrict.py)
 RULE_MULTI_HP = 16384  # multiclass hit points as in AD&D: each level's die and CON's bonus shared
 RULE_HP_BEST = 32768  # a hit die rolled twice, the better kept (DSCLOG's PROBE_HP_BEST)
+RULE_KITS = 65536  # kits for characters of one class (kitpages.py; DSCLOG's second rules word)
+# a ranger's spells' durations and damage at its level less 7, as the spell levels it may cast are
+# (the game takes the whole level: DSCLOG's PROBE_RANGER_LEVEL, kits.spell_class_level)
+RULE_RANGER_CAST = 131072
+# INT's chance to learn a scroll's spell and the most spells a level a preserver may know
+# (intlearn.py; DSCLOG's INT_LEARN)
+RULE_INT_LEARN = 262144
+# AD&D's class tables (tables.py; DSCLOG's RULE_HI_TABLES): the XP each class needs, priests'
+# THAC0, and clerics', druids' and preservers' spell slots by level
+RULE_ADND_TABLES = 524288
+RULE_CHA_PRICES = 1048576
 SPEC_SLOTS, SPEC_COUNT = 0x14, 4
 # AD&D's item saving throws against acid (the DMG's table), by the game's materials: wood
 # (thick), bone, stone and obsidian (glass's), metal, leather; and cloth for no material
@@ -138,7 +150,9 @@ RULE_SETTINGS = (("helm_ac", RULE_HELMS), ("boots_move", RULE_BOOTS), ("two_weap
                  ("thief_table", RULE_THIEF_TABLE), ("half_giant_hands", RULE_HALF_GIANT),
                  ("protection_rules", RULE_PROTECTION), ("item_saves", RULE_ITEM_SAVES),
                  ("weapon_specialization", RULE_SPECIALIZE), ("class_restrictions", RULE_RESTRICT),
-                 ("multiclass_hp", RULE_MULTI_HP), ("best_hit_die", RULE_HP_BEST))
+                 ("multiclass_hp", RULE_MULTI_HP), ("best_hit_die", RULE_HP_BEST), ("kits", RULE_KITS),
+                 ("ranger_casting_level", RULE_RANGER_CAST), ("int_learning", RULE_INT_LEARN),
+                 ("adnd_tables", RULE_ADND_TABLES), ("cha_prices", RULE_CHA_PRICES))
 # Cat's Grace (RULE_CATS_GRACE): Flaming Sphere (wizard level 2) gets Strength's record and the
 # name, and DSCLOG sends it to Strength's code, which rolls 1d6 into an effect of its own (54,
 # a number the game leaves unused) that adds to DEX, at most 24, as Strength's adds to STR.
@@ -233,7 +247,10 @@ PSIONIC_FIRST, PSIONIC_COUNT = 138, 34
 # (0x86: the d20 is doubled) and a byte at +0Fh (bits 1-4: a save modifier,
 # bits 5-7: the kind of save)
 SPELLS_SEG, SPELLS_OFF, SPELL_SIZE = 0x3CB4, 0x40, 0x20
+SPELL_LEVELS_SEG, SPELL_LEVELS_OFF = 0x3FB9, 0x19C  # each spell's level, 7 bytes a spell (DSCLOG's SPELL_LEVELS)
 SHEET_MAGIC_RESISTANCE = 0x29
+SPHERE_NAMES = ("air", "earth", "fire", "water")  # the clerics' and druids' spheres, by class order
+SHEET_ATTACKS = 0x2A  # the game's attacks a round, in halves (2: 1, 3: 3/2)
 SHEET_XP, SHEET_XP_VALUE, SHEET_MAX_HP = 0x00, 0x04, 0x08  # a monster's sheet holds its XP value at +4
 SHEET_RACE, SHEET_ABILITIES = 0x18, 0x1B
 SHEET_CLASSES, SHEET_LEVELS, SHEET_BASE_AC = 0x21, 0x24, 0x27
@@ -452,7 +469,9 @@ class WeaponHit(NamedTuple):
     thac0: int  # with this weapon, now
     parts: List[Tuple[str, int]]  # what is taken off the base THAC0 for it
     skill: int = 0  # weapon specialization's skill with it (specialize.NONE...), with the rule on
-    halves: Optional[int] = None  # a missile weapon's attacks a round, in halves (its own, not the character's)
+    halves: Optional[int] = None  # a missile weapon's attacks a round, in halves (its own, not the
+    # character's), or a Battle Mage's with its chosen weapon spec, a Crusader's or Mind Warrior's
+    # from 7th level, or the off hand's one a round (the rule for two weapons)
 
 
 class ItemSave(NamedTuple):
@@ -908,6 +927,12 @@ class GameData:
         self.guest.write(entry, struct.pack("<HHH", name_off, self.ds, GRACE_ICON if on else 0))
         return True
 
+    def spell_level(self, spell: int) -> int:
+        """The spell's level (the game's table of spells, 7 bytes each: SPELL_LEVELS)."""
+        if not 0 <= spell < 256:
+            return 0
+        return self.guest.read((self.load_seg + SPELL_LEVELS_SEG) * 16 + SPELL_LEVELS_OFF + spell * 7, 1)[0]
+
     def spell_record(self, spell: int) -> bytes:
         """The spell's whole 32-byte record (it starts 10h before the fields SPELLS_OFF names)."""
         if not 0 <= spell < 256:
@@ -991,6 +1016,14 @@ class GameData:
         caster_sheet = self.sheet(ci) if ci is not None else b""
         out: List[Tuple[int, str]] = []
         out += self.protection(ti)
+        from . import kits
+        for kid in self.kit_ids(ti):
+            if kits.save(kid, spell, kinds):
+                out.append((kits.save(kid, spell, kinds), kits.name(kid)))
+        from . import robes
+        robe = robes.worn_plus(self._worn(ti))
+        if robes.save(robe, spell):
+            out.append((robes.save(robe, spell), "Veiled Robe" if robe >= robes.VEILED_PLUS else "Ashen Robe"))
         if EFFECT_SAVE_PENALTY in mine:
             out.append((-1, EFFECT_NAMES[EFFECT_SAVE_PENALTY]))
         if EFFECT_SPIRIT_ARMOR in mine and save != PPD_SAVE:
@@ -1086,7 +1119,8 @@ class GameData:
         casting this kind of magic, rules from its tables applied to the class level and then WIS.
         A rule word: bits 8-11 the most it gives, bits 4-7 one more than the spell level it
         starts below, bit 0 how odd values round. A human's later (dual) classes count only while
-        their level is below the first class's. Without `wis`, the class levels' alone."""
+        their level is below the first class's. Without `wis`, the class levels' alone. Then the
+        kit's (kits.slot_level, kits.slots), as DSCLOG's PROBE_SLOT_LEVEL and PROBE_SLOTS."""
         if member < 4 and self._word(SLOTS_ALL_19) == 1:  # the game's own test switch
             return 19
         sheet = self.sheet(member)
@@ -1094,15 +1128,22 @@ class GameData:
             return 0
         ability = self.creature(member)[CREATURE_ABILITIES + 4]
         magic = self.guest.read((self.load_seg + CLASS_MAGIC_SEG) * 16 + CLASS_MAGIC_OFF, 4 * 32)
+        from . import kitpages, kits, tables
+        kids = self.kit_ids(member)
         total = 0
-        for n in range(3):
-            cls, level = sheet[SHEET_CLASSES + n], sheet[SHEET_LEVELS + n]
+        for n in range(3):  # (an Elementalist's slots behind for its own class alone)
+            own = kitpages.kit_at(sheet, n) if self.rules & RULE_KITS and kitpages.kit_awake(sheet, n) else 0
+            cls, level = sheet[SHEET_CLASSES + n], kits.slot_level(own, sheet[SHEET_LEVELS + n])
             if not cls or cls >= 32 or not magic[cls * 4] & bit:
                 continue
             if n and sheet[SHEET_RACE] == HUMAN and level >= sheet[SHEET_LEVELS]:
                 continue
             rules = self.guest.read(self.ds * 16 + SLOT_CLASS_RULES + cls, 1)[0]
-            for value in (level, ability) if wis else (level,):
+            ours = tables.slots(cls, level, spell_level) if self.rules & RULE_ADND_TABLES else None
+            if ours is not None:  # (AD&D's for the level, the game's for WIS: DSCLOG's PROBE_ADND_SLOTS)
+                total += ours
+                rules >>= 4
+            for value in ((ability,) if wis else ()) if ours is not None else ((level, ability) if wis else (level,)):
                 if not rules:
                     break
                 word, = struct.unpack("<H", self.guest.read(self.ds * 16 + SLOT_RULES + (rules & 0x0F) * 2, 2))
@@ -1112,7 +1153,10 @@ class GameData:
                     count += 1
                 total += min(max(count, 0), most)
                 rules >>= 4
-        return total
+        for kid in kids:
+            total = kits.slots(kid, bit, kitpages.kit_level(sheet, kid), spell_level, total)
+        from . import robes
+        return robes.slots(robes.worn_plus(self._worn(member)), bit, spell_level, total)
 
     def class_level(self, creature: int, cls: int) -> int:
         """The creature's level in one class (0 if it hasn't that class)."""
@@ -1124,17 +1168,29 @@ class GameData:
     def effect_caster_level(self, creature: int, spell: int) -> Optional[int]:
         """The level a spell effect counts as having been cast at, as Dispel Magic weighs it (the
         game's routine at 81B16h): the caster's best level in a class sharing a sphere with the
-        spell, rangers 7 levels less. None for psionic powers and monsters' own powers."""
+        spell, rangers 7 levels less (a Seeker 5, a Justifier 9: kits.ranger_cast_drop), a Shinobi's
+        wizard spells its thief level less 5 (kits.cast_level). None for
+        psionic powers and monsters' own powers."""
         if not 0 < spell < PSIONIC_FIRST:
             return None
         spheres, = struct.unpack("<I", self.guest.read(
             (self.load_seg + SPELL_SPHERES_SEG) * 16 + SPELL_SPHERES_OFF + spell * SPELL_SPHERES_SIZE, 4))
         classes = self.guest.read((self.load_seg + CLASS_MAGIC_SEG) * 16 + CLASS_MAGIC_OFF, 4 * 20)
+        from . import kitpages, kits
+        kids = self.kit_ids(creature)
+        sheet = self.sheet(creature)
+        if len(sheet) >= SHEET_SIZE:  # (an Elementalist's second sphere: DSCLOG's PROBE_EL_CAST)
+            for kid in kids:
+                spheres = kits.spell_spheres(kid, kitpages.kit_class_of(sheet, kid), kits.second_sphere(kid, sheet),
+                                             spheres)
+        drop = kits.ranger_cast_drop(next((k for k in kids if k in (kits.SEEKER, kits.JUSTIFIER)), 0))  # (the game's 7)
         best = 0
         for cls in range(1, 20):
             if struct.unpack_from("<I", classes, cls * 4)[0] & spheres:
-                level = self.class_level(creature, cls) - (7 if cls in RANGER_CLASSES else 0)
+                level = self.class_level(creature, cls) - (drop if cls in RANGER_CLASSES else 0)
                 best = max(best, level)
+        for kid in kids:
+            best = kits.cast_level(kid, spell, best, self.class_level(creature, THIEF))
         return best
 
     def thief_skill_parts(self, creature: int, skill: int) -> Optional[List[Tuple[str, int]]]:
@@ -1208,6 +1264,10 @@ class GameData:
         if 1 <= race <= 8:
             parts.append((RACE_NAMES[race], signed_byte(THIEF_RACE + race * 8 + skill)))
         parts.append((f"DEX {dex}", self._dex_part(table, dex, skill)))
+        from . import kits
+        for kid in self.kit_ids(creature):
+            if kits.stealth(kid):  # (a Stalker's)
+                parts.append((kits.name(kid), kits.stealth(kid)))
         return [(what, n) for what, n in parts if n or what.startswith("ranger")]
 
     def ranger_skill_now(self, creature: int, skill: int) -> Optional[int]:
@@ -1243,6 +1303,8 @@ class GameData:
         ids = {e.id for e in self._mine(creature, self.effects())}
         okay = rec[CREATURE_STATUS] in STATUS_ABLE
         belt = self.belt and any(item[ITEM_SLOT] == WAIST for _, item, _ in self._worn(creature))
+        from . import kits
+        kids = self.kit_ids(creature)
         out = []
         for skill in skills:
             parts = self.thief_skill_parts(creature, skill)
@@ -1251,6 +1313,9 @@ class GameData:
             chance = sum(n for _, n in parts) - (table[skill] if penalty and len(table) == 8 else 0)
             if belt and skill in BELT_SKILLS:
                 chance += BELT_BONUS
+            for kid in kids:  # (an Assassin's, a Swashbuckler's: no less than 0, as DSCLOG's PROBE_BELT)
+                if kits.thief_skill(kid, skill):
+                    chance = max(0, chance + kits.thief_skill(kid, skill))
             if any(skill in THIEF_CERTAIN.get(e, ()) for e in ids):
                 chance = 100
             elif not okay or any(skill in THIEF_BLOCKED.get(e, ()) for e in ids):
@@ -1328,6 +1393,9 @@ class GameData:
         ids = {e.id for e in mine}
         prayer = self._prayer(creature, mine)
         protection = self.protection(creature)
+        from . import robes
+        if robes.worn_plus(self._worn(creature)) >= robes.VEILED_PLUS:  # (the Ashen Robe's: against spells)
+            protection = protection + [(1, "Veiled Robe")]
         con = rec[CREATURE_ABILITIES + 2]
         out = []
         for save in range(1, 6):
@@ -1368,6 +1436,8 @@ class GameData:
         prayer = self._prayer(creature, mine)
         if prayer is not None:
             common.append(("Prayer", prayer))
+        from . import kits
+        kids, shield = self.kit_ids(creature), self.holds_shield(creature)
         strength, dex = rec[CREATURE_ABILITIES], rec[CREATURE_ABILITIES + 1]
         table = lambda off, score: struct.unpack("b", self.guest.read(self.ds * 16 + off + score, 1))[0] \
             if score < 26 else 0
@@ -1393,6 +1463,12 @@ class GameData:
                 parts.append(self.two_weapons(creature, slot))
             skill = 0
             halves = typ[0x0B] if missile else None  # (the game's rate of fire: the weapon's own)
+            # the kit's (DSCLOG's KIT_TO_HIT): a Ravager's, a Brute's, an Arena Champion's
+            for kid in kids:
+                kit = kits.champion(kid, shield, not missile)[0] \
+                    + (kits.melee(kid, bool(typ[0x0F] & 0x40)) if not missile and not typ[0] & 2 else 0)
+                if kit:
+                    parts.append((kits.name(kid), kit))
             if self.rules & RULE_SPECIALIZE:  # (weapon specialization: DSCLOG's PROBE_ATTACKS)
                 from . import specialize
                 kind = struct.unpack_from("<H", item, ITEM_TYPE)[0]
@@ -1400,6 +1476,19 @@ class GameData:
                 parts.append((specialize.SKILL_NAMES.get(skill, ""), specialize.to_hit(skill)))
                 if missile:
                     halves = specialize.missile_attacks(halves, skill, kind, self.sheet(creature))
+                elif skill == specialize.EXPERT and self.sheet(creature)[SHEET_ATTACKS] <= 2:
+                    # (a Battle Mage's expertise: DSCLOG's EXPERT_HALVES)
+                    halves = specialize.expert_attacks(self.sheet(creature)[SHEET_ATTACKS], skill, self.sheet(creature))
+            if not missile and self.rules & RULE_KITS:  # (a Crusader's or Mind Warrior's extra attacks)
+                have = self.sheet(creature)[SHEET_ATTACKS] if halves is None else halves
+                if kits.warrior_attacks(have, self.sheet(creature)) != have:
+                    halves = kits.warrior_attacks(have, self.sheet(creature))
+            if not missile and self.rules & RULE_TWO_WEAPONS and slot == WEAPON_HANDS[1]:
+                # (AD&D's two weapons: the off hand one a round, the extra attacks the main hand's;
+                # DSCLOG's OFF_HAND_HALVES)
+                have = self.sheet(creature)[SHEET_ATTACKS] if halves is None else halves
+                if have > 2:
+                    halves = 2
             parts = [(why, n) for why, n in parts if n]
             out.append(WeaponHit(index, slot, self.item_label(item, typ), base - sum(n for _, n in parts), parts,
                                  skill, halves))
@@ -1412,7 +1501,8 @@ class GameData:
         """The to-hit adjustment for an attack with the weapon in SLOT while two are ready (in
         melee), and what it's called. The game's: its DEX table for initiative, sign flipped and
         never below 0 (a bonus at DEX 5 or less). With RULE_TWO_WEAPONS, AD&D's: -2 main hand,
-        -4 off hand, plus the DEX reaction adjustment, never above 0. Rangers: none either way."""
+        -4 off hand, plus the DEX reaction adjustment, never above 0. Rangers: none either way;
+        a Twin-blade (kits.py) none with the rule."""
         dex = self.creature(creature)[CREATURE_ABILITIES + 1]
         sheet = self.sheet(creature)
         ranger = len(sheet) >= SHEET_FLAGS + 2 and struct.unpack_from("<H", sheet, SHEET_FLAGS)[0] & SHEET_FLAG_RANGER
@@ -1421,6 +1511,9 @@ class GameData:
         hand = "off hand" if slot == WEAPON_HANDS[1] else "main hand"
         if ranger:
             return f"two weapons, {hand} (ranger)", 0
+        from . import kits
+        if kits.TWIN_BLADE in self.kit_ids(creature):
+            return f"two weapons, {hand} (Twin-blade)", 0
         if slot not in WEAPON_HANDS or not self.melee_weapon_in(creature, sum(WEAPON_HANDS) - slot):
             return "two weapons", 0  # not a hand's weapon, or nothing to fight with in the other hand
         return (f"two weapons, {hand} at DEX {dex}",
@@ -1430,6 +1523,25 @@ class GameData:
         """A melee weapon (its type's class 1, as the game counts weapons ready) in SLOT: not
         a shield, a bow or a sling."""
         return any(item[ITEM_SLOT] == slot and len(typ) > 0x0A and typ[0x0A] == 1
+                   for _, item, typ in self._worn(creature))
+
+    def missile_type(self, item_type: Optional[int]) -> bool:
+        """A missile weapon's item type (its +00h, bit 2), as DSCLOG's KIT_MELEE tells one."""
+        if item_type is None or not 0 <= item_type < 0x200:
+            return False
+        typ = self.guest.read(far_pointer(self.guest, self.ds, ITEM_TYPES_PTR) + item_type * ITEM_TYPE_SIZE, 1)
+        return bool(typ[0] & 2)
+
+    def two_handed_type(self, item_type: Optional[int]) -> bool:
+        """An item type that takes both hands (its +0Fh, 40h), as DSCLOG's KIT_MELEE tells one."""
+        if item_type is None or not 0 <= item_type < 0x200:
+            return False
+        typ = self.guest.read(far_pointer(self.guest, self.ds, ITEM_TYPES_PTR) + item_type * ITEM_TYPE_SIZE, ITEM_TYPE_SIZE)
+        return len(typ) > 0x0F and bool(typ[0x0F] & 0x40)
+
+    def holds_shield(self, creature: int) -> bool:
+        """A shield in a hand (as DSCLOG's PROT_SCAN finds one)."""
+        return any(len(typ) == ITEM_TYPE_SIZE and typ[0] & TYPE_SHIELD and item[ITEM_SLOT] in WEAPON_HANDS
                    for _, item, typ in self._worn(creature))
 
     def wears_boots(self, creature: int) -> bool:
@@ -1485,7 +1597,7 @@ class GameData:
             elif kind == CLOAK_TYPE:
                 if slot == CLOAK_SLOT and plus > 0:
                     cloak = plus
-            elif kind == BRACERS_TYPE:
+            elif kind in (BRACERS_TYPE, ROBE_TYPE):
                 pass  # (not armour)
             elif len(typ) == ITEM_TYPE_SIZE:
                 if typ[0] & TYPE_SHIELD:
@@ -1496,6 +1608,36 @@ class GameData:
         if cloak and not blocked:
             out.append((cloak, "Cloak of Protection"))
         return out
+
+    def kit_ids(self, creature: int) -> List[int]:
+        """With kits, the creature's kits that count (kitpages.kit_ids: awake), else []."""
+        if not self.rules & RULE_KITS:
+            return []
+        from . import kitpages
+        return kitpages.kit_ids(self.sheet(creature))
+
+    def has_kit(self, creature: int, kid: int) -> bool:
+        return kid in self.kit_ids(creature)
+
+    def kit(self, creature: int) -> Optional[str]:
+        """With kits, the kits the creature took (kitpages.KITS), the oldest class's first, or None;
+        an Elementalist's with its second sphere ("Elementalist (and water)"), a kit asleep with the
+        level its class sleeps till."""
+        if not self.rules & RULE_KITS:
+            return None
+        from . import kitpages, kits
+        sheet = self.sheet(creature)
+        names = []
+        for kid, place, awake in kitpages.kits_of(sheet):
+            name = kitpages.name_of(kid)
+            second = kits.second_sphere(kid, sheet)
+            if second is not None:
+                name = f"{name} (and {SPHERE_NAMES[second]})"
+            if not awake:  # (a human's who has changed class)
+                name += (f", dormant until the {CLASS_NAMES[sheet[SHEET_CLASSES]].split(' (')[0].lower()} level "
+                         f"passes {sheet[SHEET_LEVELS + place]}")
+            names.append(name)
+        return "; ".join(names) or None
 
     def specializations(self, creature: int) -> List[Tuple[str, str]]:
         """With weapon specialization, (kind, skill) for each weapon kind the creature has chosen:

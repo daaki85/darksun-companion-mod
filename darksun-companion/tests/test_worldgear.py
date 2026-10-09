@@ -104,7 +104,7 @@ class WorldGearTests(unittest.TestCase):
             self.assertEqual(typ[9], 6)  # (the head)
             self.assertFalse(restrict.is_armour(typ))
             self.assertEqual(names.NAMES[struct.unpack_from("<H", item, game.ITEM_NAME)[0]], name.encode())
-        self.assertEqual([g.items for g in worldgear.MAGIC if g.name == "Kel"], [(worldgear.ARROWBANE_ITEM,)])
+        self.assertEqual([g.items for g in worldgear.MAGIC if g.name == "Kel"], [(worldgear.ARROWBANE_ITEM, worldgear.VEILED_ROBE)])
         self.assertEqual(gift("Keldar").objects, (28,))
 
     def test_wardens_plate(self):

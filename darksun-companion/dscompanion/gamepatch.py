@@ -63,6 +63,22 @@ VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK =
 VEC_EF_ROWS = 0xBB
 VEC_HP_BEST = 0xBA
 VEC_TOME = 0xB9
+VEC_INIT = 0xB8
+VEC_THAC0 = 0xB7
+VEC_SLOTS, VEC_SLOT_LEVEL = 0xB6, 0xB5
+VEC_PSP_USE, VEC_PSP_TABLE, VEC_PSP_DEFENCE = 0xB4, 0xB3, 0xB2
+VEC_CURE, VEC_PSP_KEEP = 0xB1, 0xB0
+VEC_RANGER_CAST, VEC_PSP_KEEP_DX, VEC_HIT_ROUND = 0xAF, 0xAE, 0xAD
+VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL = 0xAC, 0xAB, 0xAA, 0xA9, 0xA8
+VEC_PICK_ANY, VEC_RANGER_LEVEL = 0xA7, 0xA6
+VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP = 0xA5, 0xA4, 0xA3, 0xA2
+VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW = 0xA1, 0xA0, 0x9F, 0x9E
+VEC_DUAL_BAN, VEC_DUAL_SPELLS, VEC_SOUND_42, VEC_SOUND_44, VEC_DUAL_KIT = 0x9D, 0x9C, 0x9B, 0x9A, 0x99
+VEC_CR_SPELLS, VEC_EF_CLICK = 0x98, 0x97
+VEC_CAST_MARK, VEC_ROUND_MARK, VEC_CAST_DONE, VEC_END_TURN = 0x96, 0x95, 0x94, 0x93
+VEC_LEARN_SAID, VEC_LEARN_REFUSED = 0x92, 0x91
+VEC_XP, VEC_PRIEST_THAC0, VEC_ADND_SLOTS = 0x90, 0x8F, 0x8E
+VEC_PRICE, VEC_PRICE_EAX = 0x8D, 0x8C
 
 
 SCRIPT_BUFFER = 0x2E00  # the scripts' buffer, made bigger (the game's: 10000 bytes)
@@ -332,6 +348,101 @@ PATCHES = (
     Patch("hp_best", 0x87319, bytes.fromhex("8bc8"), _interrupt(VEC_HP_BEST, 2)),
     # the Tome of Understanding (tome.py), clicked as a scroll: a point of WIS
     Patch("tome", 0x8B80C, bytes.fromhex("1e684034"), _interrupt(VEC_TOME, 4)),
+    # a combatant's initiative for the round: its 20 added, and a Sentinel's 2 more (kits.py)
+    Patch("init", 0x5750E, bytes.fromhex("83c214"), _interrupt(VEC_INIT, 3)),
+    # the end of the THAC0 routine: a kit's THAC0 (kits.thac0)
+    Patch("thac0", 0x876BB, bytes.fromhex("b814002bc6"), _interrupt(VEC_THAC0, 5)),
+    # the spell slot routine: a kit's slots (kits.slots), and the level an Elementalist's count from
+    Patch("slots", 0x5E255, bytes.fromhex("8b46fe"), _interrupt(VEC_SLOTS, 3)),
+    Patch("slot_level", 0x5E1F6, bytes.fromhex("268a4724"), _interrupt(VEC_SLOT_LEVEL, 4)),
+    # a psionic power's PSP: a kit's cost (kits.psp_cost) where it's used, checked, half taken for
+    # a failure, and for a defence raised
+    Patch("psp_use", 0x5CBE7, bytes.fromhex("0bff7d0233ff"), _interrupt(VEC_PSP_USE, 6)),
+    Patch("psp_can_use", 0x5CAA3, bytes.fromhex("268a870100"), _interrupt(VEC_PSP_TABLE, 5)),
+    Patch("psp_failed", 0x5CCA2, bytes.fromhex("268a870100"), _interrupt(VEC_PSP_TABLE, 5)),
+    Patch("psp_defence", 0x5D820, bytes.fromhex("26294702"), _interrupt(VEC_PSP_DEFENCE, 4)),
+    # a cure's healing (the spells' own handler, as it goes to be healed): a Healer's and a
+    # Lifebinder's (kits.cure_bonus, kits.cure_die)
+    Patch("cure", 0x79619, bytes.fromhex("900e"), _interrupt(VEC_CURE, 2)),
+    # a power's cost to keep it up: where it's taken, and the check whether it can be (kits.psp_cost)
+    Patch("psp_keep", 0x5CE49, bytes.fromhex("268a870200"), _interrupt(VEC_PSP_KEEP, 5)),
+    Patch("psp_can_keep", 0x5CB02, bytes.fromhex("268a870200"), _interrupt(VEC_PSP_KEEP_DX, 5)),
+    # a creature marked hit this round (no spell till the next): not a Battle Mage
+    Patch("hit_round", 0x58733, bytes.fromhex("26c684af0001"), _interrupt(VEC_HIT_ROUND, 6)),
+    # the caster level routine's 7 off a ranger's level: a Seeker's 5, a Justifier's 9 (kits.py)
+    Patch("ranger_cast", 0x81B6A, bytes.fromhex("83ea07"), _interrupt(VEC_RANGER_CAST, 3)),
+    # The Shinobi's wizard spells (kits.py): its level, its thief level less 5, at the end of the
+    # caster level routine (the spell levels it may cast; Dispel Magic) and of the routine giving
+    # the level a spell is cast at (durations, damage); at a level up, CHOOSE A SPELL opened for it
+    # (no preserver level), the highest spell level it may pick there and the list it picks from
+    # (its own spells); and no learning from scrolls
+    Patch("cast_level", 0x81C06, bytes.fromhex("8b46fe"), _interrupt(VEC_CAST_LEVEL, 3)),
+    Patch("spell_level", 0x5E3D1, bytes.fromhex("8bc7"), _interrupt(VEC_SPELL_LEVEL, 2)),
+    # The level a spell's duration and damage take, where the game takes each class's (5E25Ch): a
+    # ranger's whole (its spell levels count it 7 less), 7 less with the rule, a Seeker's 5 and a
+    # Justifier's 9 (kits.spell_class_level)
+    Patch("ranger_level", 0x5E3B8, bytes.fromhex("268a4724"), _interrupt(VEC_RANGER_LEVEL, 4)),
+    # A kit's hit die (the Battle Mage's d6, the Mind Warrior's d8) where a level's die is taken from
+    # the class's group, and the Mind Warrior's a tenth fewer PSP where a level up sets them; at
+    # creation, the die for the most hit points a new character can have, and the end of the
+    # routine working out its PSP
+    Patch("hit_die", 0x87308, bytes.fromhex("268a870000"), _interrupt(VEC_HIT_DIE, 5)),
+    Patch("max_psp", 0x8748F, bytes.fromhex("c45ef8"), _interrupt(VEC_MAX_PSP, 3)),
+    Patch("cr_die", 0x65677, bytes.fromhex("268a874a01"), _interrupt(VEC_CR_DIE, 5)),
+    Patch("cr_psp", 0x65C3D, bytes.fromhex("5dcb"), _interrupt(VEC_CR_PSP, 2)),
+    # The Elementalist's second sphere (kits.py): its cleric bit added where the game gives a
+    # priest its spheres' spells (and where it marks them known, on making a character and when a
+    # human changes class), and a spell of that sphere counted as its own sphere's where the
+    # caster level and the level a spell's duration and damage take are worked out
+    Patch("el_grant", 0x5E489, bytes.fromhex("33f6"), _interrupt(VEC_EL_GRANT, 2)),
+    Patch("el_cast", 0x81B42, bytes.fromhex("66268b949d01"), _interrupt(VEC_EL_CAST, 6)),
+    Patch("el_level", 0x5E375, bytes.fromhex("66268b9f9d01"), _interrupt(VEC_EL_LEVEL, 6)),
+    Patch("el_know_new", 0x66FC9, bytes.fromhex("662685879d01"), _interrupt(VEC_EL_KNOW, 6)),
+    Patch("el_know_level", 0x86E56, bytes.fromhex("662685879d01"), _interrupt(VEC_EL_KNOW, 6)),
+    # The classes a kit bars a human from changing to (kits.dual_banned), greyed on the DUAL window
+    Patch("dual_ban", 0x866FF, bytes.fromhex("0bc0"), _interrupt(VEC_DUAL_BAN, 2)),
+    # A preserver picks its two spells on CHOOSE A SPELL on changing class, as at a level up (the
+    # game gives Grease and Magic Missile)
+    Patch("dual_spells", 0x86DE4, bytes.fromhex("6a08569a4300000583c4046a07569a4300000583c404"),
+          _interrupt(VEC_DUAL_SPELLS, 22)),
+    # A click on the Effects screen's lower panel shows the next page of the kits and weapon kinds
+    Patch("ef_click", 0x7EC9E, bytes.fromhex("8b7608"), _interrupt(VEC_EF_CLICK, 3)),
+    # An Arcanist's first preserver spell of its turn in a fight leaves it free to cast again: where
+    # casting marks the caster, where a turn's start clears the mark, where finishing a cast asks
+    # whether in a fight, and in the fight's routine that ends a turn
+    Patch("cast_mark", 0x845F0, bytes.fromhex("26c687af0001"), _interrupt(VEC_CAST_MARK, 6)),
+    Patch("round_mark", 0x57621, bytes.fromhex("26c684af0000"), _interrupt(VEC_ROUND_MARK, 6)),
+    Patch("cast_done", 0x722AF, bytes.fromhex("26833e190000"), _interrupt(VEC_CAST_DONE, 6)),
+    Patch("end_turn", 0x5925D, bytes.fromhex("8b7608"), _interrupt(VEC_END_TURN, 3)),
+    # A scroll's spell: the message once taught (a failed INT roll takes it back) and once refused
+    # (a spell level full for the reader's INT)
+    Patch("learn_said", 0x8B712, bytes.fromhex("1e68f133"), _interrupt(VEC_LEARN_SAID, 4)),
+    Patch("learn_refused", 0x8B719, bytes.fromhex("1e680534"), _interrupt(VEC_LEARN_REFUSED, 4)),
+    # AD&D's class tables (game.RULE_ADND_TABLES): the XP for the next level, at a level up and
+    # on View Character; priests' THAC0; clerics', druids' and preservers' spell slots
+    Patch("xp_level_up", 0x87BBB, bytes.fromhex("666bc064"), _interrupt(VEC_XP, 4)),
+    Patch("xp_view", 0x67D41, bytes.fromhex("666bc064"), _interrupt(VEC_XP, 4)),
+    Patch("priest_thac0", 0x876AB, bytes.fromhex("8946fe"), _interrupt(VEC_PRIEST_THAC0, 3)),
+    Patch("adnd_slots", 0x5E240, bytes.fromhex("900ee87d02"), _interrupt(VEC_ADND_SLOTS, 5)),
+    # the leader's CHA lowers what a shop asks (game.RULE_CHA_PRICES, prices.py): the price charged,
+    # the one shown under an item, and the one the list greys an item it can't afford by
+    Patch("price_buy", 0x8384B, bytes.fromhex("268b4f06"), _interrupt(VEC_PRICE, 4)),
+    Patch("price_shown", 0x83BB1, bytes.fromhex("268b4f06"), _interrupt(VEC_PRICE, 4)),
+    Patch("price_afford", 0x8310C, bytes.fromhex("66260fbf4706"), _interrupt(VEC_PRICE_EAX, 6)),
+    # A new preserver picks its spells on CHOOSE A SPELL at creation (the game gives Grease, Magic
+    # Missile and more by its level)
+    Patch("cr_spells", 0x66F2D, bytes.fromhex("8b46fe"), _interrupt(VEC_CR_SPELLS, 3)),
+    # After DUAL: the new class's kit on the game's three-choice menu (an Elementalist's second sphere
+    # too), and a new warrior's weapon kinds
+    Patch("dual_kit", 0x86D90, bytes.fromhex("837e080c"), _interrupt(VEC_DUAL_KIT, 4)),
+    # Two sound numbers on the sheet the game reads as words, the kit (43h) and the second sphere
+    # (45h) their high bytes: the low byte alone
+    Patch("sound_42", 0x78FDA, bytes.fromhex("268b5742"), _interrupt(VEC_SOUND_42, 4)),
+    Patch("sound_44", 0x81DE3, bytes.fromhex("268b4744"), _interrupt(VEC_SOUND_44, 4)),
+    Patch("pick_any", 0x85580, bytes.fromhex("8946fe0bc0"), _interrupt(VEC_PICK_ANY, 5)),
+    Patch("pick_level", 0x85861, bytes.fromhex("fec0"), _interrupt(VEC_PICK_LEVEL, 2)),
+    Patch("pick_list", 0x8563F, bytes.fromhex("8bf8"), _interrupt(VEC_PICK_LIST, 2)),
+    Patch("scroll_learn", 0x8B6D3, bytes.fromhex("0bc0"), _interrupt(VEC_SCROLL_LEARN, 2)),
     # A bug of the game's own: the roster's DELETE (DSUN.EXE 54AC1h) picked the character by the
     # row clicked alone, where ADD takes the row plus how far the list is scrolled; with the list
     # scrolled, another character was deleted (the row's from the top). The same code, the scroll

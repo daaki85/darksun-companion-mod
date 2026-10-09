@@ -17,7 +17,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from typing import Callable, Dict, List, Optional, Set, Tuple
 
-from . import __version__, art, dicelog, game, launch, partyview, rings, spellbook, theme, values
+from . import __version__, art, dicelog, game, kits, launch, partyview, rings, spellbook, theme, values
 from .dicelog import DiceLog, DiceLogError
 from .guestmem import GuestMemory
 from .layout import Layout
@@ -339,11 +339,25 @@ class Viewer:
                                           "rangers have expertise, every ranger with the bow; specialists and "
                                           "rangers shoot missiles faster; other weapons at a warrior's plain rate "
                                           "(chosen on the creation panel's WEAPON SPEC pages)"),
+                ("kits", "Kits: a character of one class may take one of its class's three kits, each "
+                         "giving something and costing something (chosen on the creation panel's KIT "
+                         "page)"),
                 ("class_restrictions", "Class restrictions on armour, shields and weapons, the strictest class "
                                        "winning (psionicists, multiclass thieves, preservers, druids, clerics' "
                                        "spheres); a multiclass preserver casts no spells in armour"),
                 ("multiclass_hp", "Multiclass hit points as in AD&D: each level's die and CON's bonus shared "
                                   "between the classes"),
+                ("ranger_casting_level", "Rangers' spells last and do damage as cast at the ranger level less 7, "
+                                         "as the spell levels they may cast count it (the game takes the whole "
+                                         "level)"),
+                ("int_learning", "Preservers' INT: a chance to learn a spell from a scroll (35% at INT 9 "
+                                 "to 100% at 24; a failed try uses the scroll up) and the most spells of "
+                                 "each spell level they may know (6 at INT 9, all from 19)"),
+                ("adnd_tables", "AD&D's class tables: the XP each class needs (a gladiator's its own, not the "
+                                "fighter's), priests' THAC0 (2 better every 3 levels), and clerics', druids' and "
+                                "preservers' spell slots by level (WIS's bonus slots stay the game's)"),
+                ("cha_prices", "The leader's CHA lowers what shops ask, as in Baldur's Gate: 5% off at CHA 16, "
+                               "10% at 17, 15% at 18, 20% at 19, 25% from 20 (selling as the game has it)"),
                 ("best_hit_die", "Hit dice rolled twice, the better kept, at creation and at every level "
                                  "(every character)"),
                 ("spell_save", "Spells are saved against with the spell save (the game uses "
@@ -351,7 +365,7 @@ class Viewer:
                 ("no_doubled_save", "Saves against fire, cold and electricity: DEX defensive adjustment "
                                     "instead of a doubled d20"),
                 ("two_weapons", "Two weapons: -2 main hand, -4 off hand, DEX reaction adjustment added "
-                                "(no better than 0; rangers none)"),
+                                "(no better than 0; rangers none); the off hand attacks once a round"),
                 ("thief_table", "Thief skills from AD&D's table by level, with Dark Sun's race and DEX adjustments "
                                 "(the game adds 4 a level to a base of its own, and DEX by a formula)"),
                 ("stealth", "Thieves hide in shadows and move silently to backstab, rangers to attack from behind "
@@ -1207,10 +1221,12 @@ class Viewer:
             try:
                 weapons = gd.specializations(index) if known and index < game.PARTY_SIZE else []
                 no_spells = bool(known and index < game.PARTY_SIZE and gd.no_spells(index))
+                kit = gd.kit(index) if known and index < game.PARTY_SIZE else None
+                kit_move = sum(kits.move(k) for k in gd.kit_ids(index)) if kit else 0
             except (struct.error, IndexError, ValueError):
-                weapons, no_spells = [], False
+                weapons, no_spells, kit, kit_move = [], False, None, 0
             card.show(name, dict(fields), status, ac, self.art, member_slots, thief, equipment, hits, saves, boots,
-                      skills_label=label, weapons=weapons, no_spells=no_spells)
+                      skills_label=label, weapons=weapons, no_spells=no_spells, kit=kit, kit_move=kit_move)
 
     def _hex_base(self) -> Optional[int]:
         record = self.layout.records.get(self.hex_record.get())

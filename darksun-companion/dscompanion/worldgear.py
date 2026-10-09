@@ -186,6 +186,8 @@ NAMES.update({CLOAK_OF_ELVENKIND: b"Cloak/Elvenkind", BOOTS_OF_ELVENKIND: b"Boot
 ELVEN_CLOAK = armour(game.ELVEN_CLOAK_TYPE, CLOAK_OF_ELVENKIND, 0x10000 - 2546, 25000, plus=0)
 ELVEN_BOOTS = armour(game.ELVEN_BOOTS_TYPE, BOOTS_OF_ELVENKIND, 0x10000 - 2548, 20000, plus=0)
 FLAME_BLADE_NAME, OBSIDIAN_LONG_SWORD, FOCUS_HEAT = 0x156, 45, 116
+from . import robes  # noqa: E402 (the robes: the Veiled Robe sold by Kel)
+VEILED_ROBE = armour(game.ROBE_TYPE, robes.VEILED, robes.PICTURE_VEILED, robes.VEILED_VALUE, plus=robes.VEILED_PLUS)
 NAMES[FLAME_BLADE_NAME] = b"Flame Blade"
 
 
@@ -258,7 +260,8 @@ MAGIC: Tuple[Gift, ...] = (
     Gift("Balkazar", (bracers(4),), (BALKAZAR,), 0x0D),
     Gift("Dagolar", (bracers(2),), (DAGOLAR,)),
     # the circlet sold by Kel (the game's magic items' merchant), the crown worn by Keldar
-    Gift("Kel", (ARROWBANE_ITEM,), (107,), 0x1A),
+    # (with the Veiled Robe, robes.py: the Ashen Robe is Kalzith's, kalzith.py)
+    Gift("Kel", (ARROWBANE_ITEM, VEILED_ROBE), (107,), 0x1A),
     Gift("Keldar", (CROWN_ITEM,), (28,), 0x27),
     # the Warden's Plate, scattered: the helm on Dagolar (a boss's body, early on), the arms in the
     # Lower Castle's treasure chest (object 1360, with Dark Flame: behind the barrier the Serpent
@@ -328,7 +331,7 @@ BASE_TYPES = {game.SHORT_SWORD_TYPE: 63, game.CLOAK_TYPE: 65, game.BONE_HELM_TYP
               game.METAL_POLEARM_TYPE: 19, game.CIRCLET_TYPE: 36, game.CROWN_TYPE: 36, game.PLATE_CHEST_TYPE: 57,
               game.PLATE_ARMS_TYPE: 58, game.PLATE_LEGS_TYPE: 59, game.ELVEN_CLOAK_TYPE: 65, game.ELVEN_BOOTS_TYPE: 68,
               game.AIR_DAGGER_TYPE: 33, game.BONE_GREAT_AXE_TYPE: 2, game.OBSIDIAN_GREAT_AXE_TYPE: 2,
-              game.BONE_DAGGER_TYPE: 17}
+              game.BONE_DAGGER_TYPE: 17, game.ROBE_TYPE: 65}
 
 
 def header_numbers(chunks) -> Dict[int, int]:

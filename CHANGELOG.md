@@ -1,9 +1,287 @@
 # Changelog
 
-What changed in Templar's Ledger, pull request by pull request, newest first.
+What changed in Obsidian Edition (called Templar's Ledger up to 1.2.0), pull
+request by pull request, newest first.
 Released pull requests are summarised in a line or two each; the release notes
-([1.1.0](release-notes/v1.1.0.md): #14 to #18; [1.0.0](release-notes/v1.0.0.md):
-#1 to #13) and the pull requests themselves have the detail.
+([1.2.0](release-notes/v1.2.0.md): #19 to #29; [1.1.0](release-notes/v1.1.0.md):
+#14 to #18; [1.0.0](release-notes/v1.0.0.md): #1 to #13) and the pull requests
+themselves have the detail.
+
+## Pull request #31 (in progress)
+
+**Added**
+- **Kits:** a character of one class may take one of three kits
+  for its class, or none, on the creation panel's new KIT page (KITS, at the
+  end of the panel's pages: the disciplines' for a class with no sphere, the
+  spheres' for a cleric, druid or ranger, the last weapon page for a warrior
+  with weapon specialization), NO KIT first and what a new character has, the
+  rows not chosen greyed as the spheres' are. The kit is kept with the
+  character (sheet `+43h`), and the Effects screen (`KIT: RAVAGER`) and the
+  Ledger's Characters tab name it. A new switch on the Options tab, under Rule
+  changes.
+- **What the kits do:** the Myrmidon, Sentinel and Ravager (fighter); the
+  Arena Champion, Twin-blade and Brute (gladiator); the Stalker (ranger); the
+  Assassin (thief); the Grove Warden and Wanderer (druid); the Lifebinder's
+  weapons, and the Shinobi's weapons and armour. The guide's
+  Kits has what each does. The dice log and the Ledger show each kit's part; a
+  new probe in the game (INT B8h) makes the Sentinel's initiative.
+- **Kits' THAC0:** the Swashbuckler, Crusader, Battle Mage and Mind Warrior
+  get a warrior's THAC0, the Scholar's is 1 worse, through a new probe at the
+  end of the game's THAC0 routine (INT B7h); the Swashbuckler's −10 to every
+  thief skill, named in the dice log's thief skill lines as the Assassin's
+  now is.
+- **Kits' spell slots:** the Arcanist's wizard slots 1 more at each spell
+  level, the Battle Mage's and Crusader's 1 fewer, the Elementalist's a level
+  behind, the Seeker's and Justifier's priest slots their own tables, through
+  two new probes in the game's slot routine (INT B6h, INT B5h); the Ledger's
+  Spells tab counts them the same way.
+- **Kits' PSP:** the Mind Bender's telepathy powers (the defence modes too)
+  cost 2 PSP less to use and to keep up and its psychokinesis 2 more, the
+  Kineticist's the other way about, through new probes where the game prices
+  a power (INT B4h, B3h, B2h, B0h, AEh).
+- **Kits' healing:** the Healer's Cure Light, Serious and Critical Wounds heal
+  1 more a die, and the Lifebinder's cures heal a die more (INT B1h); the dice
+  log shows each. The Healer may hold no weapon in the off hand.
+- **The Battle Mage** casts though hit earlier in the round (the game stops
+  anyone else: INT ADh), and holds nothing in the off hand.
+- **Kits' casting level:** the Seeker casts at its ranger level less 5 and the
+  Justifier less 9 (a ranger's: less 7), which also lets a Seeker of 6th level
+  choose 1st-level priest spells for its slots (INT AFh). The level a
+  spell's duration and damage take, which the game works out apart from
+  that (with a ranger's whole level), now has the kits' too (INT A6h).
+- **Rangers' casting level (a rule, on by default):** a ranger's spells last
+  and do damage as cast at its level less 7, as the spell levels it may cast
+  already count it; the game took the whole ranger level (a 9th-level
+  ranger's spells lasted as a 9th-level priest's). A multiclass ranger casts
+  at the better of its classes, the ranger's counted 7 less (INT A6h).
+- **The Shinobi's spells:** preserver spells from 6th thief level on the
+  Seeker's slots, cast at the thief level less 5, from its own list of 14:
+  one learnt at each level up from 6th, on the game's CHOOSE A SPELL screen,
+  which shows its spells only, up to the spell level it casts; none learnt
+  from scrolls (INT ACh, A8h, A7h, ABh, AAh, A9h, and the level-up's probe).
+  The Ledger's Spells tab shows its slots.
+- **The Scholar** learns a spell more at each level up: CHOOSE A SPELL comes
+  up twice.
+- **The Battle Mage's weapon and armour:** it wears light armour (leather, or
+  none) and casts in it; with weapon specialization it chooses one weapon spec
+  (long sword, club, dagger, short sword, mace, axe or pick) on the weapon
+  pages, which the panel now offers it, may use those weapons as well as a
+  preserver's own, and attacks with them at expertise's rate, 3/2 a round (2
+  from 7th level). The game's equip check, the fight, View Character's and the
+  inventory's DAM lines, the Effects screen (EXPERT IN) and the Ledger all
+  count it.
+- **The Elementalist's second sphere:** chosen on the creation panel's
+  CLERICAL SPHERE list once the kit is taken (a second row marked beside its
+  own), its spells known from the start, as its own sphere's are, cast at its
+  cleric level, and its weapons allowed as well as its own sphere's (INT A1h,
+  A0h, 9Fh, 9Eh). The Characters tab names it. Every kit now works.
+- **The Seeker's weapons** are its sphere's, as a cleric's of that sphere,
+  but for the bow, on the weapon pages and when equipping. **The Justifier's**
+  expertise with the bow and its chosen weapon spec is specialization (+1 to
+  hit, +2 damage), with weapon specialization.
+- **Kits' hit dice and PSP:** the Battle Mage rolls a d6 for its hit points,
+  the Mind Warrior a d8 and has a tenth fewer PSP (rounded down), and the
+  Arcanist a d3, at each level up and on the creation screen: choosing or
+  taking back one of these kits rolls the new character's hit points and
+  works out its PSP again (the game did both only when a class was clicked),
+  and the screen shows the new numbers (INT A5h, A4h, A3h, A2h). The dice
+  log's hit point lines name the kit's die.
+- **A kit sleeps when a human dual-classes** (DUAL on a portrait's menu), as
+  the class it was chosen with does, and wakes, gifts and costs, once the new
+  class's level passes the old one's. The Effects screen adds (ASLEEP) after
+  the kit and the Characters tab names the level to pass. Awake, it goes by
+  its own class's level; its hit die counts only for its own class. A Battle
+  Mage's chosen weapon spec stays the kit's (expertise when awake, nothing
+  while asleep), not a new fighter's specialization.
+- **Classes a kit bars on dual-classing,** greyed on the DUAL window (INT
+  9Dh): a Seeker or Justifier can't become a cleric or druid, a Shinobi a
+  preserver (their own slot tables would replace the new class's); the
+  Swashbuckler, Crusader, Battle Mage and Mind Warrior no warrior class (they
+  have a warrior's THAC0 already); an Arena Champion or Sentinel no druid or
+  preserver (no shield); a Brute no psionicist or air cleric (no two-handed
+  melee weapon).
+- **Weapon specs are weapons learnt for good,** while the class or kit that
+  gave them is awake: no kit forbids a kind the character specialized in (but
+  for the off hand's rules). A dual-classed human's chosen kinds sleep with
+  their class, as before, and come back when it wakes.
+- **A human who becomes a preserver picks its two spells** on the game's
+  CHOOSE A SPELL window (1st level only), not Grease and Magic Missile (INT
+  9Ch).
+- **Kits for a human's new class:** after DUAL, the game's three-choice menu
+  asks for the new class's kit (**KIT: NONE**, then its kits; one barred by
+  the character's other classes or kits left off), and a new Elementalist's
+  second sphere; with weapon specialization a new fighter, gladiator, ranger
+  or Battle Mage then picks the weapon kinds it is due, as at a level up. Up
+  to three kits, one for each class, each asleep with its class. A human
+  who becomes a preserver and takes the Scholar kit picks three spells, not
+  two. Kits that can't go together (Arena
+  Champion or Sentinel with Twin-blade, Shinobi or Ravager; Twin-blade with
+  Healer; Brute with Shinobi or Lifebinder), and kits a class bars, both ways
+  (INT 99h).
+- **The Effects screen a page at a time:** its lower panel has room for five
+  lines, too few for three kits and a gladiator's weapon specs. A kit takes
+  one line (the long names shortened as on the KIT page, "(ASLEEP)" after one
+  that sleeps), and when there are more than five lines the panel shows four
+  and MORE: CLICK HERE; a click on it shows the next page, a weapon spec's
+  heading carried over with its weapons (INT 97h).
+- **A new preserver picks its starting spells** on CHOOSE A SPELL when DONE
+  is clicked on the creation screen (two 1st-level spells at 1st level, four
+  at 2nd, four and two of 2nd level at 3rd; a Scholar one more a level), in
+  place of the ones the game handed out (INT 98h).
+- **The Stalker hides in shadows indoors** with its full chance (the stealth
+  rule halves a ranger's indoors).
+- **Starting gear fitted to the kit:** the game's class gear, given at DONE,
+  is changed while the character is new where the kit can't use it: a
+  Shinobi's long sword becomes a bone short sword, a Brute's a bone great axe
+  (its club to the backpack), a Seeker's of its sphere's material, a
+  Ravager's shield is taken away (a kit that can't use a shield has no use for it in
+  the backpack); an Arena Champion's off-hand club
+  becomes a shield, and a Battle Mage's quarterstaff its weapon spec's weapon.
+  The dice log names each change. The guide lists each class's starting gear.
+- **Two magic robes** for preservers, psionicists and druids, worn on the
+  chest and not armour (cast in them; their AC with no armour worn, as
+  bracers'): the **Ashen Robe** (+1 AC, +1 on saves against spells), which
+  Kalzith wears once his scrolls are sold and leaves when killed, and the
+  **Veiled Robe** (+2 AC, +1 on every save, a wizard slot more at spell levels
+  1-3), sold by Kel. Drawn icons, Alagorn's stories, the Ledger's saves and
+  slots count them.
+- **The Warden's Plate's AC explained:** 12 points better as a set (the
+  helm 2: a helm's AC 1 and its +1), not "AC 11".
+- **Kits' starting gear, more:** a Myrmidon gets a plain weapon of its
+  second weapon spec as well (in the backpack; a bow in the missile slot,
+  with arrows), a Ravager a second of its weapon for the hand its shield
+  left (none for a two-handed one), and a Brute's club is left behind
+  rather than carried.
+- **Charges in an item's box:** a wand, the Storm Ring or a necklace shows the
+  charges it has left (`Charges: 50`) in its item box.
+- **Preservers' INT**, a new rule change (on by default): AD&D's table for
+  INT gives a preserver a chance to learn a spell from a scroll (35% at INT
+  9 to 100% at 24; a failed try uses the scroll up) and the most spells of
+  each spell level it may know (6 at INT 9, all from 19), which also limits
+  CHOOSE A SPELL at a level up. The dice log shows each try.
+- **The leader's CHA at shops**, a new rule change (on by default): the
+  party leader's CHA lowers what shops ask, as Baldur's Gate's table has it
+  (5% at CHA 16 to 25% from 20), in the price shown, the price charged and
+  the list's greying of what the party can't afford; selling unchanged.
+  Through two new probes (INT 8Dh, 8Ch).
+- **The guide's races:** each race's range of scores, and why a half-giant's
+  large penalties give the Dark Sun book's caps.
+- **AD&D's class tables**, a new rule change (on by default): AD&D's XP
+  tables (a gladiator's and ranger's 2nd level 2,250, a thief's 1,250; the
+  game had a gladiator on the fighter's), priests' THAC0 (2 better every 3
+  levels from 4th; the game's from 3rd) and spell slots (AD&D's priest table
+  for clerics and druids, its wizard table for preservers), through three new
+  probes (INT 90h, 8Fh, 8Eh). Hit points were AD&D's already. The guide has
+  the tables.
+
+**Changed**
+- **The mod is now Obsidian Edition.** Templar's Ledger stays the name of its
+  companion window. The launcher is `Start Obsidian Edition.bat`, releases are
+  `Obsidian-Edition-<version>.zip`, and crash reports are headed "Obsidian
+  Edition crash report".
+- **Kalzith** wears his Ashen Robe, Cloak and Quarterstaff from the start and
+  sells them with his scrolls (the game's shops sell all a merchant carries, worn
+  or not; nothing marks an item not for sale). He is sold out once he carries
+  nothing; killed, he leaves what he still has and one of his scrolls.
+- **The helper loads into upper memory again,** leaving the game 62 KB more
+  conventional memory (632 KB free, was 570): the dice log's ring buffer now
+  follows the helper in a segment of its own, so the helper's image is 40 KB
+  (was 63) and what it asks for fits DOSBox's upper memory. It also leaves
+  room in its segment for the kits' code.
+- **Two weapons:** the off hand attacks once a round, whoever holds it; the
+  extra attacks (the game's 3/2 for warriors, specialization's, the kits')
+  are the main hand's. The game gave each hand the whole rate.
+- **A kit for each class:** the kit byte keeps two bits for each of a
+  human's classes, so a human who changes class can have up to three kits;
+  every kit rule, in the helper and the Ledger, now asks for each kit the
+  character has awake, and the Effects screen lists them all. Characters
+  made before read as they did.
+- **The Arcanist casts two preserver spells in a turn** in a fight: its first
+  doesn't end the turn (a hit still keeps it from a second).
+- **The Crusader and Mind Warrior** have a warrior's extra attacks in melee:
+  3/2 a round from 7th level of the kit's class, whether weapon
+  specialization is on or not (the DAM lines and the Ledger's party view show
+  them too).
+- **The Ravager's base AC** is described only up to 10th level, the highest
+  the game goes.
+- **The Arcanist's drawback** is a d3 hit die (a preserver's is a d4), in
+  place of −2 CON.
+- **The dice log's ring holds 96 entries** (was 128), and the helper's text
+  buffer is 4 KB (was 8), making room in upper memory for the kits' code.
+- **The helper's interrupts** are now 91h to FEh (and 60h to 65h); the
+  message when they are in use says so.
+
+**Fixed**
+- **A kit or a second sphere could change a sound.** The game reads two sound
+  numbers on the character sheet (`+42h`, `+44h`) as words, and the kit
+  (`+43h`) and second sphere (`+45h`) sit in their high bytes; they are read a
+  byte each now (INT 9Bh, 9Ah).
+- **Arena crash after a kill (hardened):** DOSBox could close as a creature
+  died in a fight. The shadows drew from a list the Ledger refreshes only
+  twice a second, so a creature dying since could still be given a shadow,
+  and the helper loaded its new death pictures from inside the game's floor
+  drawing. The helper now checks the creature's status as it draws and gives
+  a dying or dead one no shadow; the Ledger's list leaves out the dying too.
+  The crash didn't happen again in testing, but it was never reproduced
+  either.
+
+**Documentation**
+- **The guide's kits** each have a short description of who takes them on
+  Athas, above each class's kit table.
+- **The guide's Battle Mage** now says its chosen kind of weapon gives 3/2
+  attacks a round, 2 from 7th level.
+- **Kits:** DEVELOPMENT.md has how they are built: room in the helper, the
+  sheet byte for the kit, the creation page, and each effect's hook.
+- **The player's guide** (`GUIDE.md`), new: the game's rules as its code works
+  them and the mod's changes, laid out like the game's rule book (making a
+  party, the classes, kits, fighting, magic, psionics, equipment, levels), with
+  the tables, and no spoilers: no places past the arena, people, quests or
+  items by name. Its spell slot, WIS bonus and XP tables are read from the
+  game, which differs from the manual's.
+- **The README reorganised:** what the game does on its own (initiative,
+  spells, psionics, character creation, monsters' defences, two weapons,
+  thief skills, saving throws) is under one heading, How the game works, and
+  every rule change under Rule changes (the two-weapon, thief and saving
+  throw rules had sections of their own); Kits has sub-headings; the charges
+  in item boxes are under In the game; addresses in the game's code are left
+  to DEVELOPMENT.md; the contents list every section. Corrected: the Crusader
+  and Mind Warrior attack 3/2 from 7th level (no character reaches 13th), a
+  backstab is ×4 at 9th and 10th, and an example of the off hand's one attack
+  a round is clearer (3/2 + 1).
+- **The player's guide rewritten** to tell how the mod plays, with its
+  default options, each rule as it is in play and a "Without the mod" note
+  where a switch changes the game's own; the manual's comparisons, the race
+  and class list and the game's hot keys (not checked against the game) are
+  gone. Corrected: a warrior's attacks with weapon specialization, and picking
+  pockets (a failed try rolls move silently, never hide in shadows).
+- **The player's guide, more:** the quality of life changes in a table;
+  each kit's starting gear; the spell slots of the kits that change them
+  (Arcanist, Battle Mage, Crusader, Elementalist, Seeker, Justifier, Shinobi)
+  and the Shinobi's spell list; the preservers' and priests' spells by level,
+  sphere and class (read from the game's spell records: the common 4th and
+  5th-level priest spells are druids' alone); and a list of things worth
+  knowing in play.
+- **The player's guide by class:** a section for each class, with how it
+  plays, what the mod changes, its weapons and armour, its kits (what each
+  gives, costs and starts with), its starting gear, its races, every
+  multiclass combination it can be part of (read from the game's creation
+  tables: gladiators never multiclass) and how a human dual-classes into or
+  out of it (read from the game's DUAL check: 2nd level, 15 in the old prime
+  requisite and 17 in the new, a class of another group, a druid true neutral
+  and a ranger good), and the magic weapons it can wield (from the game's
+  class lists and the mod's restrictions, kits included). Classes by race,
+  and tables of the mod's new items, mundane and magic, by what they are and
+  who can use them, never where they are.
+- **Kits that can't go together** lists only pairs that can meet: a human
+  has one kit for each class, and the game never lets a human change from one
+  warrior class to another, so the Arena Champion and Sentinel clash only with
+  the Shinobi (the README, the guide).
+- **The Kits switch** on the Options tab no longer says half the kits work so
+  far.
+- **The front page** names the kits and INT among the rules, and what has
+  changed since 1.2.0.
+- **DEVELOPMENT.md:** the patched game's interrupts are summarised, with
+  `gamepatch.py` as the list, in place of a list that had fallen behind.
 
 ## Pull request #30 ([merged 2026-10-08](https://github.com/daaki85/darksun-companion-mod/pull/30))
 

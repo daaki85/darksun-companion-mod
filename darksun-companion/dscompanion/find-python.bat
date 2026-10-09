@@ -8,7 +8,7 @@ set "PYW="
 call :find
 if defined PY exit /b 0
 echo.
-echo Templar's Ledger needs Python (free, from python.org), and it isn't installed.
+echo Obsidian Edition needs Python (free, from python.org), and it isn't installed.
 where winget >nul 2>nul
 if errorlevel 1 goto :manual
 choice /c YN /m "Install it now with Windows' package manager (winget)"

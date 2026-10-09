@@ -212,7 +212,17 @@ MAGIC = {
                "The Sunking Crown! It was taken from the tomb of a king who ruled before Draj was "
                "a city, and who claimed the sun's own favour. Its gold still keeps evil from its "
                "wearer. Keldar wore it in the dark of Dagolar's "
-               "tunnels; much good it did him.")),
+               "tunnels; much good it did him."),
+              ("Ashen Robe",
+               "An Ashen Robe! A preserver of the Veiled Alliance wore this once, woven to turn "
+               "a blade and a spell alike. The defiler Kalzith took it from her, and the ash of "
+               "all he drained has greyed it since. It is a preserver's robe still: wear it with "
+               "a clearer conscience than he did."),
+              ("Veiled Robe",
+               "A robe of the Veiled Alliance! The preservers who hide from the templars wear "
+               "these under their plain clothes. It wards its wearer, steadies the mind against "
+               "magic, and holds more of a wizard's spells ready than the wizard alone could. "
+               "Kel sells it? Then someone in the Alliance has fallen on hard times.")),
     OTHER: (("Tome of Understanding",
              "The Tome of Understanding! Father Garyn gave you this? Then he trusts you more than "
              "most. The water clerics of the villages kept such books from before the sorcerer-kings, "

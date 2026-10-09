@@ -94,3 +94,33 @@ class SlotTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+    def test_kits(self):
+        """The kits' slots (kits.slots, kits.slot_level), as DSCLOG's PROBE_SLOTS and
+        PROBE_SLOT_LEVEL: an Arcanist's 1 more, a Crusader's 1 fewer, an Elementalist's a level
+        behind, a Seeker's own table; and only with the rule."""
+        log = with_tables()
+        g = game.GameData(log.guest, DS, rules=game.RULE_KITS)
+        sheet = SHEETS
+        kit = lambda k: log.guest.mem.__setitem__(sheet + 0x43, k)
+        set_character(log, 0, (PRESERVER, 0, 0), (5, 0, 0), 10)
+        plain = [g.max_spell_slots(0, 1, n) for n in range(1, 5)]
+        kit(3)  # an Arcanist
+        self.assertEqual([g.max_spell_slots(0, 1, n) for n in range(1, 5)], [n + 1 if n else 0 for n in plain])
+        set_character(log, 0, (1, 0, 0), (7, 0, 0), 18)
+        kit(0)
+        cleric = [g.max_spell_slots(0, 2, n) for n in range(1, 6)]
+        kit(3)  # a Crusader
+        self.assertEqual([g.max_spell_slots(0, 2, n) for n in range(1, 6)], [max(0, n - 1) for n in cleric])
+        set_character(log, 0, (1, 0, 0), (6, 0, 0), 18)
+        kit(0)
+        sixth = [g.max_spell_slots(0, 2, n) for n in range(1, 6)]
+        set_character(log, 0, (1, 0, 0), (7, 0, 0), 18)
+        kit(1)  # an Elementalist at 7th level: a 6th level cleric's
+        self.assertEqual([g.max_spell_slots(0, 2, n) for n in range(1, 6)], sixth)
+        set_character(log, 0, (13, 0, 0), (8, 0, 0), 18)
+        kit(3)  # a Seeker
+        self.assertEqual([g.max_spell_slots(0, 2, n) for n in range(1, 5)], [2, 1, 0, 0])
+        self.assertEqual(g.spell_slots(0), [("Priest", [(1, 0, 2), (2, 0, 1)])])
+        g.rules = 0
+        self.assertEqual([g.max_spell_slots(0, 2, n) for n in range(1, 5)], [0, 0, 0, 0])

@@ -20,7 +20,7 @@ TSR_ON, TSR_TABLE, TSR_BUILD = 220, 222, 224  # DSCLOG's header: shadows on, the
 TSR_VIEW_REDRAW = 242  # ... and: the view to be drawn again
 TSR_HDR_OFF = 20
 THINGS = 520
-STATUS_DEAD = 5
+STATUS_DYING, STATUS_DEAD = 4, 5  # (no shadow: DSCLOG's SHADOW_GONE checks them too, as it draws)
 CREATURE = 2  # (a thing's kind)
 REFRESH = 0.5  # seconds between looks at who casts a shadow
 REDRAW_AFTER = 0.6  # seconds after the darker colours are asked for (or who casts one changes)
@@ -31,7 +31,7 @@ BUILD_EVERY = 30.0  # ... and anyway this often
 
 
 def casting(gd) -> bytes:
-    """A byte for each of the game's things: 1 for a living creature."""
+    """A byte for each of the game's things: 1 for a living creature (not dying or dead)."""
     things = gd.guest.read((gd.load_seg + game.COMBATANTS_SEG) * 16 + game.COMBATANTS_OFF, THINGS * 3)
     out = bytearray(THINGS)
     for thing in range(THINGS):
@@ -39,7 +39,7 @@ def casting(gd) -> bytes:
         if kind != CREATURE or not 0 <= index < 512:
             continue
         rec = gd.creature(index)
-        if len(rec) >= game.CREATURE_SIZE and rec[game.CREATURE_NAME] and rec[game.CREATURE_STATUS] != STATUS_DEAD:
+        if len(rec) >= game.CREATURE_SIZE and rec[game.CREATURE_NAME] and rec[game.CREATURE_STATUS] not in (STATUS_DYING, STATUS_DEAD):
             out[thing] = 1
     return bytes(out)
 

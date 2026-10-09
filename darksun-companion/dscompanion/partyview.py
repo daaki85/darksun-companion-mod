@@ -69,7 +69,7 @@ class Card(ttk.Frame):
             var = self.vars[score] = tk.StringVar()
             ttk.Label(sheet, textvariable=var, style="CardStat.TLabel").grid(row=i, column=1, sticky="w",
                                                                            padx=(4, 16))
-        right = ("who", "alignment", "classes", "xp", "ac", "thac0", "saves", "move", "attacks", "weapons",
+        right = ("who", "alignment", "classes", "kit", "xp", "ac", "thac0", "saves", "move", "attacks", "weapons",
                  "equipment", "slots", "thief")
         labels = []
         self.rows: Dict[str, ttk.Label] = {}  # (an empty one is hidden, leaving no blank line)
@@ -94,12 +94,13 @@ class Card(ttk.Frame):
 
     def show(self, name: str, fields: Dict[str, str], status: str, current_ac: Optional[int],
              game_art: Optional["art.GameArt"], slots=(), thief=(), equipment=(), hits=(), saves=(), boots=False, skills_label: str = "Thief skills now",
-             weapons=(), no_spells: bool = False) -> None:
+             weapons=(), no_spells: bool = False, kit: Optional[str] = None, kit_move: int = 0) -> None:
         """`slots`: [(kind, [(spell level, left, most), ...]), ...], as GameData.spell_slots gives;
         `thief`: [(skill, percent), ...], as GameData.thief_skills gives; `hits` and `saves`,
         THAC0 with each weapon and the saves as they stand now (GameData.weapon_hits, saves_now);
         `weapons`, the kinds chosen with weapon specialization (GameData.specializations);
-        `no_spells`, a multiclass preserver in armour (GameData.no_spells)."""
+        `no_spells`, a multiclass preserver in armour (GameData.no_spells); `kit`, the kit taken
+        (GameData.kit), and what it adds to Move in a fight (kits.move)."""
         get = fields.get
         self.vars["name"].set(name.upper() if name else f"SLOT {self.index + 1}")
         pair = lambda cur, top: f"{get(cur, '')}/{get(top, '')}" if get(cur) else ""
@@ -112,6 +113,7 @@ class Card(ttk.Frame):
         self.vars["who"].set(f"{sex} {race}".strip())
         self.vars["alignment"].set(plain(get("Alignment", "")))
         self.vars["classes"].set(classes_text(fields))
+        self.vars["kit"].set(f"Kit: {kit}" if kit else "")
         self.vars["xp"].set(f"EXP: {get('XP', '')}")
         base = get("Base AC", "")
         self.vars["ac"].set(f"AC: {current_ac}" + (f" (base {base})" if base else "")
@@ -125,8 +127,10 @@ class Card(ttk.Frame):
         self.vars["saves"].set(("Saves (d20 needed now): " + ", ".join(
             f"{short} {s.needs}" for short, s in zip(game.SAVE_SHORT, saves))) if len(saves) == 5 else "")
         move = get("Move", "")
-        fight = number(move) + 1 if boots and number(move) is not None else None
-        self.vars["move"].set(f"Move: {move}" + (f" ({fight} in a fight: boots)" if fight else ""))
+        extra = int(boots) + kit_move
+        why = ", ".join(x for x in ("boots" if boots else "", kit if kit_move and kit else "") if x)
+        fight = number(move) + extra if extra and number(move) is not None else None
+        self.vars["move"].set(f"Move: {move}" + (f" ({fight} in a fight: {why})" if fight else ""))
         self.vars["attacks"].set(attacks_text(get("Attacks/round", ""), hits))
         self.vars["weapons"].set(("Weapons: " + ", ".join(f"{kind} ({skill})" for kind, skill in weapons))
                                  if weapons else "")
