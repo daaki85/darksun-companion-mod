@@ -17,6 +17,7 @@ The [README](README.md) has every rule in full detail.
 
 - [Getting started](#getting-started)
 - [Playing](#playing)
+- [Quality of life](#quality-of-life)
 - [Making a party](#making-a-party)
   - [Ability scores](#ability-scores)
   - [Races](#races)
@@ -26,6 +27,8 @@ The [README](README.md) has every rule in full detail.
 - [The classes](#the-classes)
   - [What each class may use](#what-each-class-may-use)
 - [Kits](#kits)
+  - [Kits' starting gear](#kits-starting-gear)
+  - [Kits' spell slots](#kits-spell-slots)
 - [Weapon specialization and attacks](#weapon-specialization-and-attacks)
 - [Fighting](#fighting)
   - [Initiative](#initiative)
@@ -40,10 +43,12 @@ The [README](README.md) has every rule in full detail.
   - [Spell slots](#spell-slots)
   - [Learning preserver spells](#learning-preserver-spells)
   - [How spells work](#how-spells-work)
+  - [Spell lists](#spell-lists)
   - [Effects](#effects)
 - [Psionics](#psionics)
 - [Equipment](#equipment)
 - [Experience and levels](#experience-and-levels)
+- [Worth knowing](#worth-knowing)
 - [What the Ledger shows you](#what-the-ledger-shows-you)
 - [The Options tab at a glance](#the-options-tab-at-a-glance)
 
@@ -64,24 +69,48 @@ and **Look**; a left-click acts. Look at someone to **Talk**, at a thing to
 **Use** or **Pick Up** it, and at a monster in a fight to see what the Ledger
 tells of it. Resting at a fire ring fills hit points, PSP and spell slots.
 
-What the mod adds or changes:
+The [quality of life changes](#quality-of-life) list what the mod makes
+easier.
 
-- **Choosing an enemy without aiming:** on a party member's turn in a fight,
-  **Tab** chooses the nearest enemy (Tab again for the next, **Shift+Tab**
-  back), a red ring marks it, and **Enter** attacks it, walking up to it if it
-  is out of reach.
-- **Scrolling:** press the mouse wheel and drag the map, or turn the wheel
-  (with Shift for sideways). The screen's edges still scroll too.
-- **Saves:** 40, on four pages of ten (**PgUp** and **PgDn** in the save and
-  load window).
-- **Characters kept on disk:** 29, and **DELETE** in the roster deletes the
-  one you chose. *Without the mod:* 19, and with the list scrolled DELETE
-  deleted another character.
-- **The Effects screen:** a click on a spell's icon no longer ends the spell.
-  A psionic power's icon still ends the power: that is how you stop one.
-- **No copy protection question.**
-- **On the map:** the party's figures show what they wear, everyone casts a
-  shadow, and walkers raise dust (all can be switched off).
+## Quality of life
+
+**In the game:**
+
+| Change | What it does |
+|---|---|
+| **Tab and Enter** | On a party member's turn in a fight, **Tab** chooses the nearest enemy (Tab again for the next, **Shift+Tab** back) and **Enter** attacks it, walking up to it first if need be, even behind someone else: no aiming with the mouse. A red ring marks the enemy chosen (or, on the Options tab, every enemy). |
+| **Scrolling with the mouse** | Press the wheel and drag the map, or turn the wheel (Shift for sideways). Optionally, hold the right button and drag. |
+| **40 saves** | Four pages of ten in the save and load window (**PAGE 1** to **PAGE 4**, or **PgUp** and **PgDn**). *Without the mod:* 10. |
+| **29 characters on disk** | The roster keeps 29 characters made with CREATE CHARACTERS. *Without the mod:* 19. |
+| **DELETE in the roster** | Deletes the character you chose. *Without the mod:* with the list scrolled, it deleted another one. |
+| **New characters' thief skills** | A character not yet played shows its thief skills. *Without the mod:* they showed as 0. |
+| **Spells on the Effects screen** | A stray click on a spell's icon no longer ends the spell. A psionic power's icon still ends the power, which is how you stop one. |
+| **No copy protection** | The question from the manual never comes. |
+| **THAC0, saves and thief skills on screen** | The inventory screen shows THAC0, all five saves, THAC0 with each weapon, DEX's adjustments and a thief's skills; View Character shows THAC0 and the saves, and for a character of several classes which class goes up next. |
+| **Spell slots on the USE screen** | Spells left of each level, and the most after resting. |
+| **The Look box** | In a fight, a monster's hit points, AC, THAC0, alignment, magic resistance and chief defence; closing the box tells the rest. |
+| **Item boxes** | A wand's or other charged item's charges left; a cloak's, boots' or belt's bonus to thief skills. |
+| **The Effects screen** | Names each kit and weapon spec, a page at a time when there are many. |
+| **Each turn's rolls** (off unless ticked) | At the end of each turn in a fight, its rolls in the game's own window: at the least, in short or in detail. |
+| **Game speed** | DOSBox runs the game faster than GOG's settings (choose GOG's own, faster or fastest), so the party walks smoothly with shadows and dust. |
+| **Game window** | Double, triple or quadruple size, or full screen, chosen at the top of the Ledger. |
+| **On the map** | The party's figures show what they wear, everyone casts a shadow, and walkers raise dust (each can be switched off). |
+| **Crash reports** | If the game or DOSBox stops with an error, the message stays on screen and the Ledger writes a report to send. |
+
+**In the Ledger's window:**
+
+- **The dice log:** every roll as it happens, with what it needed and where
+  each bonus came from; **Save...** keeps it as a text file.
+- **Characters:** each character's sheet as the game's View Character lays it
+  out, with THAC0 by weapon, saves, attacks a round, what they wear, spell
+  slots and thief skills.
+- **Dialogue:** everything said, with the speaker and the replies offered.
+- **Spells:** every spell's and psionic power's dice, saves, effects and
+  duration, and each party member's caster level for it.
+- **Text size** (**A+** and **A-**, or Ctrl + and Ctrl −) and keyboard access to
+  everything.
+- **`Play Dark Sun (in-game rolls).bat`** plays with all of the above in the
+  game but no Ledger window; **`Show Save.bat`** shows the party in a save file.
 
 ## Making a party
 
@@ -313,6 +342,63 @@ costs something.
   | Arena Champion, Sentinel | Shinobi |
   | Twin-blade | Healer |
   | Brute | Shinobi, Lifebinder |
+
+### Kits' starting gear
+
+A new character's gear is its class's ([starting gear](#starting-gear-and-spells)),
+changed where its kit can't use it:
+
+| Kit | Starts with |
+|---|---|
+| Myrmidon, Sentinel | the fighter's gear |
+| Ravager | the fighter's gear, its shield in the backpack |
+| Arena Champion | the gladiator's gear, with a shield in place of the off-hand club |
+| Twin-blade | the gladiator's gear: its weapon and the club are its two weapons |
+| Brute | a two-handed weapon in place of the gladiator's (a bone great axe without weapon specialization), the club in the backpack |
+| Stalker, Justifier | the ranger's gear |
+| Seeker | the ranger's gear, its weapon in a material its sphere allows |
+| Assassin, Swashbuckler | the thief's gear |
+| Shinobi | the thief's gear with a bone short sword in place of the long sword |
+| Arcanist, Scholar | the preserver's gear |
+| Battle Mage | the preserver's gear; with weapon specialization, a plain weapon of its chosen kind in place of the quarterstaff |
+| Healer, Crusader, Elementalist | the cleric's gear (the club is in the backpack) |
+| Grove Warden, Wanderer, Lifebinder | the druid's gear |
+| Mind Warrior, Mind Bender, Kineticist | the psionicist's gear |
+
+The dice log names each change.
+
+### Kits' spell slots
+
+The kits that change spell slots, by the level of the kit's class (spells of
+1st to 5th level):
+
+| Level | Preserver | Arcanist | Battle Mage | Cleric | Crusader | Elementalist | Seeker (ranger) | Justifier (ranger) | Shinobi (thief) |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | 1 | 2 | — | 1 | — | — | | | |
+| 2 | 2 | 3 | 1 | 2 | 1 | 1 | | | |
+| 3 | 2 1 | 3 2 | 1 | 2 1 | 1 | 2 | | | |
+| 4 | 2 2 | 3 3 | 1 1 | 2 2 | 1 1 | 2 1 | | | |
+| 5 | 3 2 1 | 4 3 2 | 2 1 | 3 2 1 | 2 1 | 2 2 | | | |
+| 6 | 3 2 2 | 4 3 3 | 2 1 1 | 3 2 2 | 2 1 1 | 3 2 1 | 1 | | 1 |
+| 7 | 4 3 2 1 | 5 4 3 2 | 3 2 1 | 4 3 2 1 | 3 2 1 | 3 2 2 | 2 | | 2 |
+| 8 | 4 3 2 2 | 5 4 3 3 | 3 2 1 1 | 4 3 2 2 | 3 2 1 1 | 4 3 2 1 | 2 1 | | 2 1 |
+| 9 | 5 4 3 2 1 | 6 5 4 3 2 | 4 3 2 1 | 5 4 3 2 1 | 4 3 2 1 | 4 3 2 2 | 2 2 | | 2 2 |
+| 10 | 5 4 3 2 2 | 6 5 4 3 3 | 4 3 2 1 1 | 5 4 3 2 2 | 4 3 2 1 1 | 5 4 3 2 1 | 2 2 1 | 1 | 2 2 1 |
+
+- A **Crusader** and an **Elementalist** add WIS's bonus slots as a cleric
+  does; the Crusader still has one fewer at each spell level with them.
+- A **Seeker** casts priest spells of its sphere at its ranger level less 5
+  (1st-level spells from 6th, 2nd from 8th, 3rd at 10th); a **Justifier** at
+  its level less 9. Neither gets bonus slots for WIS, and both have these in
+  place of a ranger's own slots.
+- A **Shinobi** casts preserver spells at its thief level less 5, from its own
+  list, learning one at each level up from 6th: **1st level** Gaze Reflection,
+  Charm Person, Shield, Color Spray, Wall of Fog; **2nd** Invisibility, Mirror
+  Image, Blur, Detect Invisibility, Fog Cloud; **3rd** Blink, Haste, Protection
+  from Normal Missiles, Hold Person.
+- An **Arcanist** casts two preserver spells in a turn in a fight (a hit before
+  the second still stops it); a **Scholar** chooses two spells at each level
+  up.
 
 ## Weapon specialization and attacks
 
@@ -633,6 +719,40 @@ can cast. INT sets two limits:
   1d6 (at most 24) for an hour of game time a caster level, which betters AC,
   initiative, thief skills and dodging.
 
+### Spell lists
+
+**Preservers' spells** (the game's Flaming Sphere is Cat's Grace):
+
+| Level | Spells |
+|---|---|
+| 1 | Armor, Burning Hands, Charm Person, Chill Touch, Color Spray, Enlarge, Gaze Reflection, Grease, Magic Missile, Shield, Shocking Grasp, Wall of Fog |
+| 2 | Acid Arrow, Blur, Cat's Grace, Detect Invisibility, Fog Cloud, Glitterdust, Invisibility, Mirror Image, Protection from Paralysis, Scare, Stinking Cloud, Strength, Web |
+| 3 | Blink, Dispel Magic, Fireball, Flame Arrow, Haste, Hold Person, Hold Undead, Lightning Bolt, Minor Malison, Minute Meteors, Monster Summoning I, Protection from Normal Missiles, Slow, Spirit Armor, Vampiric Touch |
+| 4 | Black Tentacles, Charm Monster, Confusion, Fear, Fire Shield, Ice Storm, Improved Invisibility, Minor Globe of Invulnerability, Minor Spell Turning, Monster Summoning II, Rainbow Pattern, Solid Fog, Stoneskin, Turn Pebble into Boulder, Wall of Fire, Wall of Ice |
+| 5 | Chaos, Cloudkill, Cone of Cold, Conjure Elemental, Dismissal, Domination, Feeblemind, Hold Monster, Lower Resistance to Magic, Monster Summoning III, Summon Shadow, Wall of Force, Wall of Stone |
+
+**Priests' spells.** Every cleric, druid and ranger has the common ones of the
+levels it can cast; druids alone have the common 4th and 5th-level ones; and
+each has its own element's.
+
+| Level | Every priest | Druids only |
+|---|---|---|
+| 1 | Bless, Cause Fear, Cause Light Wounds, Cure Light Wounds, Curse, Entangle, Invisibility to Undead, Protection from Evil, Remove Fear, Shillelagh | |
+| 2 | Aid, Barkskin, Charm Person or Mammal, Find Traps, Hold Person, Spiritual Hammer | |
+| 3 | Bestow Curse, Cause Blindness or Deafness, Cause Disease, Cure Blindness or Deafness, Cure Disease, Dispel Magic, Magical Vestments, Negative Plane Protection, Prayer, Remove Curse, Remove Paralysis | |
+| 4 | | Abjure, Cause Serious Wounds, Cloak of Bravery, Cloak of Fear, Cure Serious Wounds, Free Action, Neutralize Poison, Poison, Protection from Evil 10' Radius |
+| 5 | | Cause Critical Wounds, Cure Critical Wounds, Dispel Evil, Raise Dead, Slay Living |
+
+| Level | Air | Earth | Fire | Water |
+|---|---|---|---|---|
+| 1 | | Magical Stone | | |
+| 2 | Dust Devil | Dust Devil | Flame Blade, Resist Cold, Resist Fire | |
+| 3 | Conjure Lesser Air Elemental, Summon Insects | Conjure Lesser Earth Elemental | Conjure Lesser Fire Elemental, Protection from Fire | Conjure Lesser Water Elemental |
+| 4 | Dust Cloud, Protection from Lightning | Condense, Dust Cloud | Focus Heat, Produce Fire | Blood Flow, Dehydrate |
+| 5 | Conjure Air Elemental, Deflection, Insect Plague | Conjure Earth Elemental, Ironskin, Quicksand | Conjure Fire Elemental, Flame Strike, Wall of Fire | Conjure Water Elemental, Quicksand |
+
+An Elementalist has its second sphere's column too.
+
 ### Effects
 
 | Effect | Does |
@@ -765,6 +885,29 @@ Every class goes up to **10th level**. *Without the mod:* 9th.
 | 8 | 125,000 | 150,000 | 110,000 | 60,000 | 90,000 | 100,000 | 70,000 |
 | 9 | 250,000 | 300,000 | 225,000 | 90,000 | 135,000 | 200,000 | 110,000 |
 | 10 | 500,000 | 600,000 | 450,000 | 125,000 | 250,000 | 400,000 | 160,000 |
+
+## Worth knowing
+
+- **Cure poison before resting.** A character still Poisoned when time passes
+  out of a fight dies.
+- **Area spells catch the caster and the party.** Aim fireballs and clouds
+  away from your own.
+- **Act before you are hit if you mean to cast.** A character hit earlier in
+  the round can't cast (a Battle Mage can).
+- **Someone Out Cold takes the most a spell's dice can do,** with no save.
+- **Two weapons cost to-hit** unless your DEX is high or you are a ranger or
+  Twin-blade, and the off hand attacks only once a round.
+- **A warrior's weapon specs matter:** outside them it attacks once a round
+  until 7th level.
+- **Multi-class preservers take off their armour to cast** (a helm counts).
+- **Thieves hide with no enemy beside them** when their turn comes; step away
+  first. Daylight halves their chance, and rangers' indoors.
+- **Plain wood, bone, stone and obsidian weapons can break** (clubs and
+  quarterstaffs can't); magic ones never do.
+- **Spell damage stops growing at caster level 10.**
+- **Wait** puts a character later in the round.
+- **Ready a missile weapon and a melee weapon:** the game uses whichever fits
+  the target's distance.
 
 ## What the Ledger shows you
 

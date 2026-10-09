@@ -212,6 +212,13 @@ themselves have the detail.
   and class list and the game's hot keys (not checked against the game) are
   gone. Corrected: a warrior's attacks with weapon specialization, and picking
   pockets (a failed try rolls move silently, never hide in shadows).
+- **The player's guide, more:** the quality of life changes in a table;
+  each kit's starting gear; the spell slots of the kits that change them
+  (Arcanist, Battle Mage, Crusader, Elementalist, Seeker, Justifier, Shinobi)
+  and the Shinobi's spell list; the preservers' and priests' spells by level,
+  sphere and class (read from the game's spell records: the common 4th and
+  5th-level priest spells are druids' alone); and a list of things worth
+  knowing in play.
 - **Kits that can't go together** lists only pairs that can meet: a human
   has one kit for each class, and the game never lets a human change from one
   warrior class to another, so the Arena Champion and Sentinel clash only with
