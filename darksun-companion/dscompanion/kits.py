@@ -59,8 +59,8 @@ RANGER_CLASSES = range(13, 17)
 CHARMS = (2, 40, 61, 82, 158, 159)
 SPELL_LAST = 137  # (the wizards' and priests' spells: 0 to this; psionic powers and monsters' after)
 FIRE, COLD = 0x02, 0x04  # (a spell record's +1Ah: what it is, as the game's Resist Fire and Resist Cold read it)
-# a Ravager's base AC by level, 1-18 and on (DSCLOG's RAVAGER_AC)
-RAVAGER_AC = (7, 7, 6, 6, 5, 5, 4, 4, 3, 3, 3, 2, 2, 2, 1, 1, 1, 0)
+# a Ravager's base AC by level, 1-10, the highest the game goes (DSCLOG's RAVAGER_AC)
+RAVAGER_AC = (7, 7, 6, 6, 5, 5, 4, 4, 3, 3)
 
 
 def name(kid: int) -> str:

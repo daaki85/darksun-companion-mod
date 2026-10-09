@@ -5059,7 +5059,7 @@ kit_ac:
         pop cx
         pop bx
 .ret:   ret
-ravager_ac db 7, 7, 6, 6, 5, 5, 4, 4, 3, 3, 3, 2, 2, 2, 1, 1, 1, 0  ; (by level, 1-18 and on)
+ravager_ac db 7, 7, 6, 6, 5, 5, 4, 4, 3, 3   ; (by level, 1-10: the highest the game goes)
 RAVAGER_LEVELS equ $ - ravager_ac
 
 ; KIT_MELEE: AX what the kit of sheet ES:BX adds to hit and to damage with item type SI unless it
