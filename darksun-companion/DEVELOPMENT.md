@@ -602,6 +602,26 @@ How: where the game's AC routine asks the helper about each worn item
 (`INT F8h`) and where it starts a saving throw's modifiers (`INT F9h`), the
 helper looks at what else the character wears.
 
+### Robes
+
+([In the README](README.md#robes); `robes.py`.)
+
+The robes are one new item type (`ROBE`, the 26th of the helper's types,
+`game.ROBE_TYPE`): the cloak of protection's record worn on the chest (+9: 1),
+its plus counting for AC (+0Fh, 80h), of no material, for preservers,
+psionicists and druids (+10h: 190h). `BRACERS_AX` answers for it as for the
+bracers, so it is no armour to the class restrictions, the casting test or the
+protection rules, and its plus counts only without armour (`PROBE_RING_AC`'s
+bracers branch). The Ashen Robe is +1, the Veiled Robe +2, and the plus tells
+them apart: `ROBE_PLUS` finds the one worn on the chest (`WORN_SCAN`).
+`KIT_SAVE` adds 1 to every save for +2, and for +1 to a save against a wizard's
+or priest's spell (0-137); `PROBE_SLOTS` adds a wizard slot at spell levels 1-3
+for +2 where there are any. The Ledger: `restrict.is_robe`, `robes.save`,
+`robes.slots`, `GameData.protection` (not armour). The icons are drawn
+(`icons.robe_icon`, objects 2580 and 2582); Kel's object (107) carries the
+Veiled Robe in the data (`worldgear.MAGIC`), and Kalzith's Ashen Robe is put
+on him with his cloak (`kalzith.sold_out`, `kalzith.loot`).
+
 ### Half-giants' two-handed weapons
 
 ([In the README](README.md#half-giants-two-handed-weapons).)

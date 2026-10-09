@@ -568,7 +568,8 @@ character hit in a round can't cast), and choose its spells well.
   mod:* 3 2 1).
 - **Cat's Grace** in Flaming Sphere's place.
 - With another class it may wear that class's armour but **can't cast in
-  it**. **Bracers of defense** give AC without being armour.
+  it**. **Bracers of defense** and the mod's two **robes** give AC without
+  being armour.
 - Up to 10th level; hit dice rolled twice.
 
 **Weapons and armour.** No armour or shield as a single class. Daggers,
@@ -697,8 +698,8 @@ and electricity.
 - AD&D's priest [spell slots](#spell-slots) and THAC0, as the cleric's.
 - Up to 10th level; hit dice rolled twice.
 
-**Weapons and armour.** No armour or shield. Every weapon but the great axes
-(the game's lists).
+**Weapons and armour.** No armour or shield, but the mod's two robes. Every
+weapon but the great axes (the game's lists).
 
 **Kits.**
 
@@ -744,7 +745,8 @@ other character has one discipline and uses it as a 1st-level psionicist.
   *Without the mod:* another class's lists were enough.
 - Up to 10th level; hit dice rolled twice.
 
-**Weapons and armour.** Light armour, a leather shield. Daggers, bone and
+**Weapons and armour.** Light armour, a leather shield, or one of the mod's
+robes. Daggers, bone and
 obsidian short swords, clubs, chatkchas and bows (the game's lists leave out
 its maces, slings and the metal short sword).
 
@@ -1372,8 +1374,10 @@ chosen kind, often one of these.
 |---|---|
 | Ring of Protection +1 (two), Cloak of Protection +1 | +1 AC and +1 on every save ([protection](#equipment)) |
 | Bracers of Defense (four pairs: AC 6, 5, 4 and 2) | their AC with no armour worn; a preserver casts in them |
+| Ashen Robe | worn on the chest by preservers, psionicists and druids, not armour: AC 1 better with no armour, +1 on saves against spells |
+| Veiled Robe, a robe of the Veiled Alliance | the same, AC 2 better, +1 on every save, and a wizard spell slot more at spell levels 1, 2 and 3 |
 | Inixhide | leather chest armour +1 |
-| Warden's Chest, Arms, Legs and Helm | plate armour +1 in four pieces (AC 11 as a set, 12 with the helm's AC); the chest gives Resist Fire, the helm Cloak of Bravery, while worn |
+| Warden's Chest, Arms, Legs and Helm | plate armour +1 in four pieces: 11 points of AC better as a set (12 with the helm's AC 1), so AC 10 becomes −1 (−2) before DEX; the chest gives Resist Fire, the helm Cloak of Bravery, while worn |
 | Arrowbane | a circlet: Protection from Normal Missiles while worn; not armour |
 | Sunking Crown | a crown: Protection from Evil while worn; not armour |
 | Cloak of Elvenkind, Boots of Elvenkind | help a thief or ranger [hide and move silently](#hiding-in-shadows); thieves and rangers only |

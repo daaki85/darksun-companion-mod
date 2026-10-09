@@ -5,7 +5,7 @@ kept in a pen of his own the rest of the time; he has the look of the arena's De
 party has never fought him. He secretly scribes spells on scraps of hide, to buy a guard's blind eye; a preserver can learn from them (the game's own scrolls: right-click one, click
 its spell). Insult him or threaten to report him and he won't trade until the party makes amends:
 50 ceramic pieces, or a Charisma check. Killed, he leaves one of his scrolls at random, a Cloak and
-a Quarterstaff (loot).
+a Quarterstaff and his Ashen Robe (loot).
 
 He is the game's own kind of person, added to the Ledger's copies of three of its files (the game
 folder is never changed; DSCLOG has the game open the copies):
@@ -676,7 +676,7 @@ def watch(gd) -> bool:
 
 
 # What he leaves when killed: one of the scrolls he still has, at random, a plain Cloak and a
-# Quarterstaff (the game's own records, from SEGOBJEX). He can't carry the two while alive: his
+# Quarterstaff (the game's own records, from SEGOBJEX), and his Ashen Robe (robes.py). He can't carry the two while alive: his
 # shop offers all he has, worn or not, in any of his lists. The game puts all a dead person's
 # things in a pile where he fell (none if he has nothing); the Ledger takes the other scrolls out
 # of it and puts the two in, after the scroll it leaves (once: LOOTED). If the party bought all
@@ -732,8 +732,11 @@ def sold_out(gd, quiet: bool) -> List[str]:
     if not quiet or gd.flag(DRESSED) or not gd.flag(SOLD_OUT):
         return []
     given = []
-    for template, slot, name in ((QUARTERSTAFF_TEMPLATE, RIGHT_HAND, "Quarterstaff"), (CLOAK_TEMPLATE, game.CLOAK_SLOT, "Cloak")):
-        if npcitems.add_to(gd, index, npcitems._item(template), slot):
+    from . import robes
+    for rec, slot, name in ((npcitems._item(QUARTERSTAFF_TEMPLATE), RIGHT_HAND, "Quarterstaff"),
+                            (npcitems._item(CLOAK_TEMPLATE), game.CLOAK_SLOT, "Cloak"),
+                            (robes.item(robes.ASHEN), robes.CHEST_SLOT, "Ashen Robe")):
+        if npcitems.add_to(gd, index, rec, slot):
             given.append(name)
     gd.set_flag(DRESSED)
     return given
@@ -788,7 +791,9 @@ def loot(gd, choose: Callable = None) -> List[str]:
     out = [f"Scroll of {left[keep]}"]
     if gd.flag(DRESSED):
         return out  # (he carried them: in his body already)
-    for rec, name in ((npcitems._item(QUARTERSTAFF_TEMPLATE), "Quarterstaff"), (npcitems._item(CLOAK_TEMPLATE), "Cloak")):
+    from . import robes
+    for rec, name in ((npcitems._item(QUARTERSTAFF_TEMPLATE), "Quarterstaff"), (npcitems._item(CLOAK_TEMPLATE), "Cloak"),
+                      (robes.item(robes.ASHEN), "Ashen Robe")):
         if _after(gd, ring.Items(gd), keep, rec):
             out.append(name)
     return out

@@ -63,6 +63,7 @@ GOG release) in DOSBox.
 - [New content](#new-content)
   - [New items](#new-items)
   - [Bracers of defense](#bracers-of-defense)
+  - [Robes](#robes)
   - [New people](#new-people)
     - [Kalzith](#kalzith)
     - [Semyon](#semyon)
@@ -2326,8 +2327,13 @@ each, Chest 36,000 and Helm 30,000, and the Tome of Understanding AD&D's 43,500.
 
 ![The Tome of Understanding's box in the game: a night-steel book with a fiery emblem, 43500, Tome/Understand, and the icon to click](docs/tome.png)
 
-**The Warden's Plate** is plate mail +1 in four pieces (AC 11 as a set, 12
-with [helms giving AC 1](#helms-and-boots)): metal armour, worn by the classes
+**The Warden's Plate** is plate mail +1 in four pieces: the chest 4 better
+than no armour (its AC 3, +1), the arms and legs 3 each (AC 2, +1), the helm 1
+(its +1; 2 with [helms giving AC 1](#helms-and-boots)): 11 better as a set,
+12 with the helm's AC, so a wearer with no other help goes from AC 10 to
+AC −1 (−2). The game adds up its pieces' AC this way for all armour, so a
+full set does better than AD&D's plate mail +1 (one suit, AC 2: 8 better). It
+is metal armour, worn by the classes
 that can wear the game's chain (no single-class thieves), and kept from more
 with [class restrictions](#class-restrictions). **Grey's Scale**'s arm and
 leg armour is AC 3 each (the game's is 2).
@@ -2377,6 +2383,25 @@ them, and a ring or cloak of protection still counts. In the game they are
 a point of AC.
 
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#bracers-of-defense).
+
+### Robes
+
+Two magic robes for those who go without armour: preservers, psionicists and
+druids alone may wear them. A robe is worn on the chest, in the chest armour's
+place; like the bracers its plus betters AC only while no armour is worn on
+the arms, legs or head, and it isn't armour to anything else: a preserver
+casts in it, and a ring or cloak of protection still counts. Bracers go with
+it.
+
+| Icon | Robe | What it does | Where |
+|---|---|---|---|
+| ![](docs/items/ashen-robe.png) | **Ashen Robe** (+1) | AC 1 better; +1 on saves against wizards' and priests' spells | worn by [Kalzith](#kalzith) once his scrolls are sold, and left with his body if he's killed (6,000) |
+| ![](docs/items/veiled-robe.png) | **Veiled Robe** (+2), a robe of the Veiled Alliance | AC 2 better; +1 on every save; a wizard spell slot more at spell levels 1, 2 and 3 where the wearer has any | sold by **Kel** (40,000) |
+
+The dice log and the Ledger name a robe among a save's modifiers, and the
+Spells tab counts the Veiled Robe's slots. Alagorn tells both their stories.
+
+How it works: [DEVELOPMENT.md](DEVELOPMENT.md#robes).
 
 ### New people
 
@@ -2662,6 +2687,8 @@ Tanelyv's Armor also has a chest piece, with no plus.
 | Icon | Slot | Item | Power | Where |
 |---|---|---|---|---|
 | ![](docs/items/bracers-of-defense.png) | Arms | **Bracers of Defense** | AC 6, 5, 4 or 2 with no armour | Mikquetzl, Wyrmias, Balkazar, Dagolar |
+| ![](docs/items/ashen-robe.png) | Chest | **Ashen Robe** | +1 AC; +1 on saves against spells | Kalzith |
+| ![](docs/items/veiled-robe.png) | Chest | **Veiled Robe** | +2 AC; +1 on every save; a wizard slot more at spell levels 1-3 | sold by Kel |
 | ![](docs/items/belt-of-might.png) | Waist | Belt of Might | strength | — |
 | ![](docs/items/serpent-boots.png) | Feet | Serpent Boots | Displacement | a chest |
 | ![](docs/items/boots-of-elvenkind.png) | Feet | **Boots of Elvenkind** | move silently | the caravan's buried chest |

@@ -137,6 +137,15 @@ themselves have the detail.
   the backpack); an Arena Champion's off-hand club
   becomes a shield, and a Battle Mage's quarterstaff its weapon spec's weapon.
   The dice log names each change. The guide lists each class's starting gear.
+- **Two magic robes** for preservers, psionicists and druids, worn on the
+  chest and not armour (cast in them; their AC with no armour worn, as
+  bracers'): the **Ashen Robe** (+1 AC, +1 on saves against spells), which
+  Kalzith wears once his scrolls are sold and leaves when killed, and the
+  **Veiled Robe** (+2 AC, +1 on every save, a wizard slot more at spell levels
+  1-3), sold by Kel. Drawn icons, Alagorn's stories, the Ledger's saves and
+  slots count them.
+- **The Warden's Plate's AC explained:** 11 points better as a set (12 with
+  the helm's AC), not "AC 11".
 - **Kits' starting gear, more:** a Myrmidon gets a plain weapon of its
   second weapon spec as well (in the backpack; a bow in the missile slot,
   with arrows), a Ravager a second of its weapon for the hand its shield

@@ -634,6 +634,26 @@ class RingTests(unittest.TestCase):
         mu.mem_write(rec + 0x11, bytes([0xFF]))  # only carried
         self.assertEqual(self.save(3), 1)
 
+    def test_saves_count_a_robe(self):
+        """Item 7 made a robe (robes.py: TYPES_FIRST + 25) worn on the chest: the Veiled Robe (+2)
+        +1 on every save, the Ashen Robe (+1) against a wizard's or priest's spell (0-137) alone;
+        with ring 4's +1. (KIT_SAVE's things table: the game's DS less 9E4h paragraphs.)"""
+        mu = self.mu
+        things = (GAME_DS - 0x9E4) * 16 + 0xC36
+        for thing, kind, index in ((3, 2, 1), (10, 1, 4), (11, 1, 7), (12, 1, 5)):
+            mu.mem_write(things + thing * 3, struct.pack("<BH", kind, index))
+        rec = self.ITEMS * 16 + 7 * 21
+        mu.mem_write(rec + 0x0A, struct.pack("<H", 115 + 25))
+        mu.mem_write(rec + 0x11, bytes([9]))
+        mu.mem_write(TSR * 16 + load_image().find(HDR_SIG) + 212, struct.pack("<H", 115))
+        for plus, spell, want in ((2, 10, 2), (2, 200, 2), (1, 10, 2), (1, 200, 1), (1, 137, 2)):
+            with self.subTest(plus=plus, spell=spell):
+                mu.mem_write(rec + 0x14, bytes([plus]))
+                mu.mem_write(SS * 16 + BP + 0x14, struct.pack("<H", spell))
+                self.assertEqual(self.save(3), want)
+        mu.mem_write(rec + 0x11, bytes([0xFF]))  # only carried
+        self.assertEqual(self.save(3), 1)
+
     def test_ac_counts_rings(self):
         """AX gets the type's flags (sign-extended); bit 80h is set for the ring type."""
         mu = self.mu
@@ -758,6 +778,20 @@ class BracersTests(ProtectionRuleTests):
         self.mu.mem_write(TSR * 16 + load_image().find(HDR_SIG) + self.TYPES_FIRST, struct.pack("<H", 0))
         self.wear(5, 6, 9)
         self.assertTrue(self.counts(7, self.BRACERS))
+
+
+@unittest.skipIf(Uc is None, "unicorn is not installed")
+class RobeTests(BracersTests):
+    """The robes (robes.py: the 26th of DSCLOG's types, worn on the chest): as the bracers, their
+    plus counts for AC without armour on the arms, legs or head, and they aren't armour."""
+    BRACERS = 140
+
+    def setUp(self):
+        ProtectionRuleTests.setUp(self)
+        rec = bytearray(0x14)
+        rec[0x08], rec[0x09], rec[0x0F] = 0x40, 1, 0x80
+        self.mu.mem_write(self.TYPES * 16 + self.BRACERS * 0x14, bytes(rec))
+        self.wear(7, self.BRACERS, 9, 4)  # creature 1: ring 4 (+1) on a finger, the robe on the chest
 
 
 @unittest.skipIf(Uc is None, "unicorn is not installed")
@@ -2194,7 +2228,7 @@ class NamesTests(unittest.TestCase):
         self.mu = mu = Uc(UC_ARCH_X86, UC_MODE_16)
         mu.mem_map(0, 0x100000)
         mu.mem_write(TSR * 16, image)
-        size = image.find(bytes.fromhex("8146fc2003" "8356fe00"))
+        size = image.find(bytes.fromhex("8146fc5203" "8356fe00"))
         fill = fill_probes(image)[0]
         self.assertGreater(min(size, fill), 0)
         mu.mem_write(VEC_NAMES_SIZE * 4, struct.pack("<HH", size, TSR))
@@ -2213,7 +2247,7 @@ class NamesTests(unittest.TestCase):
 
     def test_room(self):
         """In place of "push dword 1": the chunk's size (the dword at [BP-4]) gets the room."""
-        for size, want in ((8050, 8850), (0xFF00, 0xFF00 + 800)):
+        for size, want in ((8050, 8900), (0xFF00, 0xFF00 + 850)):
             self.mu.mem_write(SS * 16 + BP - 4, struct.pack("<I", size))
             self.assertEqual(self.interrupt(VEC_NAMES_SIZE), 0x7FC)
             self.assertEqual(struct.unpack("<II", self.mu.mem_read(SS * 16 + 0x7FC, 4) +
@@ -2320,7 +2354,7 @@ class TypesTests(unittest.TestCase):
         self.mu = mu = Uc(UC_ARCH_X86, UC_MODE_16)
         mu.mem_map(0, 0x100000)
         mu.mem_write(TSR * 16, image)
-        size = image.find(bytes.fromhex("8146fcf401" "8356fe00"))  # 25 types of 20 bytes: 1F4h
+        size = image.find(bytes.fromhex("8146fc0802" "8356fe00"))  # 26 types of 20 bytes: 208h
         names_fill, fill = fill_probes(image)
         self.assertGreater(min(size, fill - names_fill), 0)
         mu.mem_write(VEC_TYPES_SIZE * 4, struct.pack("<HH", size, TSR))
@@ -2343,7 +2377,7 @@ class TypesTests(unittest.TestCase):
         from dscompanion import npcitems
         self.mu.mem_write(SS * 16 + BP - 4, struct.pack("<I", 2300))
         self.assertEqual(self.interrupt(VEC_TYPES_SIZE), 0x7FC)
-        self.assertEqual(struct.unpack("<I", self.mu.mem_read(SS * 16 + BP - 4, 4))[0], 2800)
+        self.assertEqual(struct.unpack("<I", self.mu.mem_read(SS * 16 + BP - 4, 4))[0], 2820)
         self.mu.mem_write(SS * 16 + 0x7FC, bytes(4))
         self.assertEqual(self.interrupt(VEC_TYPES_FILL, eax=0), 0x80C)
         at = self.TYPES_SEG * 16 + 115 * 20

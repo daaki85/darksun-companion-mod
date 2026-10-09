@@ -70,11 +70,17 @@ def is_shield(typ: bytes) -> bool:
 def is_armour(typ: bytes) -> bool:
     """Body, arm and leg armour and helms: not shields, nor bracers of defense (worn on the arms,
     of no material: DSCLOG's BRACERS)."""
-    return bool(typ[TYPE_KIND_FLAGS] & ARMOUR) and not is_shield(typ) and not is_bracers(typ)
+    return bool(typ[TYPE_KIND_FLAGS] & ARMOUR) and not is_shield(typ) and not is_bracers(typ) and not is_robe(typ)
 
 
 def is_bracers(typ: bytes) -> bool:
     return len(typ) > 9 and typ[9] == BRACERS_SLOT and typ[8] & 0x40 and not typ[8] & 0x0F
+
+
+def is_robe(typ: bytes) -> bool:
+    """A robe (robes.py): worn on the chest, of no material, for preservers, psionicists and
+    druids alone (DSCLOG's ROBE: not armour)."""
+    return len(typ) > 0x11 and typ[9] == 1 and typ[8] == 0x40 and typ[TYPE_CLASSES:TYPE_CLASSES + 2] == b"\x90\x01"
 
 
 def is_light(typ: bytes) -> bool:

@@ -184,11 +184,11 @@ class AlagornTests(unittest.TestCase):
                                   "  Warden's Chest", "  Nothing"],
                                  ["  Belt of Might", "  Cloak of Protection", "  Cloak of Elvenkind",
                                   "  Boots of Elvenkind", "  Bracers of Defense", "  Arrowbane", "  Sunking Crown",
-                                  "  Nothing"],
+                                  "  Ashen Robe", "  Veiled Robe", "  Nothing"],
                                  ["  Orb of Knowledge", "  Tome of Understanding", "  Nothing"]])
         locals_ = [op.args[1][2] for op in added if op.code == SET and op.args[1][:2] == ("var", 14)
                    and op.args[0][0] in ("op", "expr")]
-        self.assertEqual(locals_, [2, 2, 3, 4, 5, 7, 2, 3, 4, 5, 7, 8, 2])
+        self.assertEqual(locals_, [2, 2, 3, 4, 5, 7, 2, 3, 4, 5, 7, 8, 9, 10, 2])
         sets = [alagorn._sets(op) for op in added if op.code == SET and op.args[0][0] == "op"]
         self.assertIn((2, -tome.TOME_OBJECT), sets)  # (the tome by its own object's picture)
         flags = [op.args for op in added if op.code == SET and op.args[0] == ("n", 1)]
@@ -231,7 +231,7 @@ class AlagornTests(unittest.TestCase):
         kinds = tuple(k for k in kinds if k.first_reply in (alagorn.ARMOUR[0], alagorn.CLOTHES[0]))
         added = self.new_ops(alagorns(last="Nothing", kinds=kinds, done=4), kinds)
         sets = [alagorn._sets(op)[0] for op in added if op.code == SET and op.args[0][0] == "op"]
-        self.assertEqual(sets, [2, 3, 5, 6, 7, 2, 3, 5, 6, 7, 8])
+        self.assertEqual(sets, [2, 3, 5, 6, 7, 2, 3, 5, 6, 7, 8, 9, 10])
 
     def test_past_the_locals_flags(self):
         """Items past the script's locals (the loop's own one of them) kept in the Ledger's flags
@@ -261,7 +261,7 @@ class AlagornTests(unittest.TestCase):
                                 "Boots of Elvenkind", "Tome of Understanding", "Ring of Protection +1",
                                 "Pehtucl's Ring of Protection +1", "Cloak of Protection +1", "Inixhide",
                                 "Drakejaw", "Glasshewer", "Headsman", "Galefang", "Mindshard", "Stillwater",
-                                "Linebreaker", "Thornwall"})
+                                "Linebreaker", "Thornwall", "Ashen Robe", "Veiled Robe"})
         for name in told - {"Tome of Understanding"}:
             self.assertIn(name, icons.PICTURES)
 

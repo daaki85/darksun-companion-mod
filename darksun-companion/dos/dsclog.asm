@@ -3688,7 +3688,8 @@ cu_mat     db 0
 cu_armour  db 0
 
 ; BRACERS_AX: ZF set if AX is the bracers of defense's type (TYPES_FIRST + BRACERS, once the
-; types are in). All registers kept.
+; types are in) or the robes' (+ ROBE): worn where armour is, their plus counting for AC, but
+; not armour. All registers kept.
 bracers_ax:
         push bx
         mov bx, [cs:types_first]
@@ -3696,9 +3697,43 @@ bracers_ax:
         jz .no
         add bx, BRACERS
         cmp ax, bx
-        pop bx
+        je .yes
+        add bx, ROBE - BRACERS
+        cmp ax, bx
+.yes:   pop bx
         ret
 .no:    inc bx                  ; (ZF clear)
+        pop bx
+        ret
+
+; ROBE_PLUS: AX the plus of the robe creature AX wears (on the chest: TYPES_FIRST + ROBE), 0 for
+; none: 1 the Ashen Robe, 2 the Veiled Robe (dscompanion/robes.py). DS the game's; others kept.
+robe_plus:
+        push bx
+        push cx
+        push dx
+        push si
+        push di
+        push es
+        mov bx, ds
+        add bx, THINGS_SEG
+        mov [cs:r_things], bx
+        mov bx, [cs:types_first]
+        or bx, bx
+        jz .none
+        add bx, ROBE
+        mov [cs:ws_type], bx
+        mov word [cs:ws_slot], CHEST_SLOT
+        call worn_scan
+        mov ax, [cs:ws_plus]
+        cmp word [cs:ws_count], 0
+        jne .out
+.none:  xor ax, ax
+.out:   pop es
+        pop di
+        pop si
+        pop dx
+        pop cx
         pop bx
         ret
 cu_kind    db 0
@@ -5387,6 +5422,20 @@ probe_slots:
         mov cl, [cs:bx + seeker_slots]
 .table_out:
         pop dx
+        cmp byte [bp + 8], SLOT_WIZARD  ; the Veiled Robe (dscompanion/robes.py): a wizard slot more
+        jne .out                        ; at spell levels 1 to 3 where it has any
+        jcxz .out
+        cmp byte [bp + 0x0A], 3
+        ja .out
+        imul bx, [bp + 6], 3
+        mov ax, ds
+        add ax, THINGS_SEG
+        mov es, ax
+        mov ax, [es:bx + COMBATANT_CREATURE]
+        call robe_plus
+        cmp ax, 2
+        jb .out
+        inc cx
 .out:   mov ax, cx
         pop es
         pop cx
@@ -6920,6 +6969,17 @@ kit_save:
         cmp byte [es:bx + THINGS], 2
         jne .out                ; (not a creature)
         mov ax, [es:bx + THINGS + 1]
+        push ax                 ; a robe's (dscompanion/robes.py): the Veiled Robe +1 on every
+        call robe_plus          ; save, the Ashen Robe +1 against a wizard's or priest's spell
+        cmp ax, 2
+        jae .robe
+        dec ax
+        jnz .no_robe
+        cmp cx, KIT_SPELL_LAST
+        ja .no_robe
+.robe:  inc si
+.no_robe:
+        pop ax
         call cr_is              ; (each kit it has awake)
         db KIT_SENTINEL
         jne .myrmidon
@@ -10149,7 +10209,7 @@ probe_grace_ability:
 ; numbers to its own 322.
 NAMES_OWN    equ 0x142
 NAME_SIZE    equ 25
-NAMES_EXTRA  equ 32
+NAMES_EXTRA  equ 34
 NAMES_PTR    equ 0x166D         ; DS: far pointer to the name table
 
 ; PROBE_NAMES_SIZE: INT VEC_NAMES_SIZE replaces "push dword 1" (3 bytes: INT + NOP) just before
@@ -10210,9 +10270,10 @@ n_fl    dw 0
 ; companion's own items that no type of the game's fits (a metal short sword, a cloak of
 ; protection). Nothing in the game limits the numbers to its own.
 TYPE_SIZE   equ 20
-TYPES_EXTRA equ 25
+TYPES_EXTRA equ 26
 TYPES_PTR   equ 0x1669          ; DS: far pointer to the item types
 BRACERS     equ 8               ; (the bracers of defense: the ninth of them)
+ROBE        equ 25              ; (the robes: dscompanion/robes.py)
 ELVEN_CLOAK equ 19              ; (the Cloak and Boots of Elvenkind)
 ELVEN_BOOTS equ 20
 GREYS_ARMS  equ 54              ; Grey's Scale's arm and leg armour: the game's AC 2 each, made 3
@@ -10368,6 +10429,12 @@ extra_types:
         ; bone (+8: 1), for water clerics and not fire ones (+10h: 1FFAh; the game's daggers 1FF6h)
         db 0x01, 0x00, 0x20, 0x00, 0x0A, 0x00, 0xFA, 0x00, 0x01, 0x05, 0x01, 0x01
         db 0x04, 0x01, 0x00, 0x00, 0xFA, 0x1F, 0x00, 0x00
+        ; a robe (ROBE: the Ashen Robe +1 and the Veiled Robe +2, dscompanion/robes.py): the cloak
+        ; of protection's, worn on the chest (+9: 1, the chest armour's slot), its plus counting
+        ; for AC, not armour (as the bracers: BRACERS_AX), for preservers, psionicists and
+        ; druids (+10h: 190h)
+        db 0x00, 0x00, 0x00, 0x00, 0x0A, 0x00, 0x0A, 0x00, 0x40, 0x01, 0x00, 0x00
+        db 0x00, 0x00, 0x00, 0x80, 0x90, 0x01, 0x00, 0x01
 ; the names, numbered from NAMES_OWN (322): the companion's items' (the same as the companion's
 ; NAMES in dscompanion/names.py), the rest blank until it writes more
 extra_names:
@@ -10433,7 +10500,11 @@ extra_names:
         times NAME_SIZE - 11 db 0
         db "Thornwall"                  ; a bone polearm +1)
         times NAME_SIZE - 9 db 0
-        times (NAMES_EXTRA - 31) * NAME_SIZE db 0
+        db "Ashen Robe"                 ; (the robes: dscompanion/robes.py)
+        times NAME_SIZE - 10 db 0
+        db "Veiled Robe"
+        times NAME_SIZE - 11 db 0
+        times (NAMES_EXTRA - 33) * NAME_SIZE db 0
 
 ; STEALTH (RULE_STEALTH): a thief who starts a turn with no enemy next to them may hide in
 ; shadows and move silently up to someone; the companion rolls both and, when both succeed,

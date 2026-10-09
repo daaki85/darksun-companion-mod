@@ -169,6 +169,53 @@ BOOTS_TO_ELVEN = {128: 209, 129: 210, 134: 211, 135: 212, 179: 53, 180: 54, 181:
 LEAF = (54, 55, 56, 55)
 
 
+# the robes (robes.py), drawn: a hooded robe to the feet, wide sleeves with trimmed cuffs, a
+# trimmed panel down the front (as Baldur's Gate's robes): O outline, b B the cloth, k the hood's
+# shadow, G the trim, p the panel
+ROBE = (".....OOOO.....",
+        "....ObbbbO....",
+        "...ObBkkBbO...",
+        "...ObkkkkbO...",
+        "..OOOGkkGOOO..",
+        ".ObbbGppGbbbO.",
+        "ObBbbGppGbbBbO",
+        "ObBbOGppGObBbO",
+        "ObBbOGppGObBbO",
+        "OGGGOGppGOGGGO",
+        "...ObGppGbO...",
+        "...ObGppGbO...",
+        "...ObGppGbO...",
+        "..ObbGppGbbO..",
+        "..ObBGppGBbO..",
+        ".OOOOGGGGOOOO.")
+
+
+def robe_icon(cloth: Tuple[int, int, int], trim: Tuple[int, int, int], sparks: Tuple[int, ...]) -> Rows:
+    """A robe (ROBE) in CLOTH (outline, cloth, its light) and TRIM (dark, mid, light), every few
+    pixels of its panel in SPARKS (the magic)."""
+    out: Rows = []
+    for y, line in enumerate(ROBE):
+        row: List[Optional[int]] = []
+        for x, c in enumerate(line):
+            colour = {".": None, "O": cloth[0], "k": cloth[0], "b": cloth[1], "B": cloth[2], "G": trim[0],
+                      "p": trim[2] if (x + y) % 2 else trim[1]}[c]
+            if c == "p" and (x * 3 + y) % 5 == 0:
+                colour = sparks[(x + y) % len(sparks)]
+            row.append(colour)
+        out.append(row)
+    return out
+
+
+def ashen_robe_icon(_rows: Rows = None) -> Rows:
+    """The Ashen Robe (robes.py): ash greys, its panel pale ash, embers in the fire colours."""
+    return robe_icon((208, 210, 212), (213, 215, 216), FIRE)
+
+
+def veiled_robe_icon(_rows: Rows = None) -> Rows:
+    """The Veiled Robe (robes.py): night blue, its panel and trim gold, violet glints."""
+    return robe_icon((17, 20, 23), (64, 65, 45), VIOLET)
+
+
 def elven_cloak_icon(rows: Rows) -> Rows:
     return recolour(glow(rows, lambda p, x, y: p in (138, 139, 140) and (x + y) % 3 == 0, LEAF), LEATHER_TO_GREY)
 
@@ -287,6 +334,9 @@ ICONS: Tuple[Tuple[str, int, int, int, Callable[[Rows], Rows]], ...] = (
     ("Bone Dagger", 0xFB60, 2578, 2579, lambda r: recolour(r, DAGGER_BONE)),
     # the game's own Sling +1 (in a chest, object 1068) names a picture, object 2644, that its data
     # hasn't: blank in a shop or a pack. The Sling's, every other pixel of its strap in the fire colours
+    # the robes (robes.py), drawn (on the map: the Cloak's)
+    ("Ashen Robe", 0xFBE3, 2580, 2581, ashen_robe_icon),
+    ("Veiled Robe", 0xFBE3, 2582, 2583, veiled_robe_icon),
     ("Sling +1", 0xFC09, 2644, 2645, lambda r: glow(r, lambda p, x, y: 137 <= p <= 140 and (x + y) % 2 == 0, FIRE)),
 )
 PICTURES: Dict[str, int] = {name: 0x10000 - number for name, _, number, _, _ in ICONS}  # an item's +0
@@ -573,6 +623,8 @@ def which(rec: bytes) -> Optional[str]:
         return "Greenbright" if plus == 2 else "Short Sword" if plus == 0 else None
     if kind == game.BRACERS_TYPE:
         return "Bracers of Defense"
+    if kind == game.ROBE_TYPE:
+        return "Veiled Robe" if plus >= 2 else "Ashen Robe"
     if kind == game.CIRCLET_TYPE:
         return "Arrowbane"
     if kind == game.CROWN_TYPE:

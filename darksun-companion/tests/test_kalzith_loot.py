@@ -45,18 +45,18 @@ class LootTests(unittest.TestCase):
         """One scroll kept (here Blur), the other two taken back to the free list, the Cloak and
         Quarterstaff after it; the party's own scroll untouched; once only."""
         left = kalzith.loot(self.gd, choose=lambda items: 81)
-        self.assertEqual(left, ["Scroll of Blur", "Quarterstaff", "Cloak"])
-        self.assertEqual(self.objects(PILE), [kalzith.SCROLL_OBJECT + 2, 1053, 1019])
+        self.assertEqual(left, ["Scroll of Blur", "Quarterstaff", "Cloak", "Ashen Robe"])
+        self.assertEqual(self.objects(PILE), [kalzith.SCROLL_OBJECT + 2, 2580, 1053, 1019])
         self.assertEqual(self.objects(BAG), [kalzith.SCROLL_OBJECT + 1])
         free = struct.unpack_from("<H", self.m, DS * 16 + ring.FREE_ITEMS)[0]
-        self.assertEqual(free, 90)  # (80 and 82 given back, then taken again for the two)
+        self.assertEqual(free, 91)  # (80 and 82 given back, then taken again, and 90, for the three)
         self.assertIn(kalzith.LOOTED, self.flags)
         self.assertEqual(kalzith.loot(self.gd), [])
 
     def test_kept_first(self):
         """The kept scroll first in the pile: the others after it go."""
         kalzith.loot(self.gd, choose=lambda items: 80)
-        self.assertEqual(self.objects(PILE), [kalzith.SCROLL_OBJECT, 1053, 1019])
+        self.assertEqual(self.objects(PILE), [kalzith.SCROLL_OBJECT, 2580, 1053, 1019])
 
     def test_alive(self):
         self.flags.discard(kalzith.DIED)
@@ -102,8 +102,8 @@ class SoldOutTests(unittest.TestCase):
         self.assertEqual(kalzith.sold_out(self.gd, False), [])  # (his talk or shop open: later)
         self.assertIn(kalzith.SOLD_OUT, self.flags)
         self.assertNotIn(kalzith.DRESSED, self.flags)
-        self.assertEqual(kalzith.sold_out(self.gd, True), ["Quarterstaff", "Cloak"])
-        self.assertEqual(self.worn(), {1019: kalzith.RIGHT_HAND, 1053: game.CLOAK_SLOT})
+        self.assertEqual(kalzith.sold_out(self.gd, True), ["Quarterstaff", "Cloak", "Ashen Robe"])
+        self.assertEqual(self.worn(), {1019: kalzith.RIGHT_HAND, 1053: game.CLOAK_SLOT, 2580: 9})
         self.assertIn(kalzith.DRESSED, self.flags)
         self.assertEqual(kalzith.sold_out(self.gd, True), [])
 

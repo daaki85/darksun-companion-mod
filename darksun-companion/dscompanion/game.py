@@ -100,6 +100,7 @@ ELVEN_CLOAK_TYPE, ELVEN_BOOTS_TYPE = GAME_TYPES + 19, GAME_TYPES + 20
 AIR_DAGGER_TYPE = GAME_TYPES + 21  # a metal dagger air clerics may use (worldgear.py's Galefang)
 BONE_GREAT_AXE_TYPE, OBSIDIAN_GREAT_AXE_TYPE = GAME_TYPES + 22, GAME_TYPES + 23  # (a new warrior's, weaponchoice.py)
 BONE_DAGGER_TYPE = GAME_TYPES + 24  # (a water cleric's dagger: weaponchoice.py)
+ROBE_TYPE = GAME_TYPES + 25  # the robes (robes.py): worn on the chest, not armour
 GYTHKA_TYPE = 0x2C  # the game's gythka ("2 handed Bone Gythka")
 # The companion's rule changes (DSCLOG's RULES): helms count AC 1, boots add a move in a fight;
 # AD&D's two-weapon penalties; spells saved against with the spell save; no doubled d20
@@ -1019,6 +1020,10 @@ class GameData:
         for kid in self.kit_ids(ti):
             if kits.save(kid, spell, kinds):
                 out.append((kits.save(kid, spell, kinds), kits.name(kid)))
+        from . import robes
+        robe = robes.worn_plus(self._worn(ti))
+        if robes.save(robe, spell):
+            out.append((robes.save(robe, spell), "Veiled Robe" if robe >= robes.VEILED_PLUS else "Ashen Robe"))
         if EFFECT_SAVE_PENALTY in mine:
             out.append((-1, EFFECT_NAMES[EFFECT_SAVE_PENALTY]))
         if EFFECT_SPIRIT_ARMOR in mine and save != PPD_SAVE:
@@ -1150,7 +1155,8 @@ class GameData:
                 rules >>= 4
         for kid in kids:
             total = kits.slots(kid, bit, kitpages.kit_level(sheet, kid), spell_level, total)
-        return total
+        from . import robes
+        return robes.slots(robes.worn_plus(self._worn(member)), bit, spell_level, total)
 
     def class_level(self, creature: int, cls: int) -> int:
         """The creature's level in one class (0 if it hasn't that class)."""
@@ -1387,6 +1393,9 @@ class GameData:
         ids = {e.id for e in mine}
         prayer = self._prayer(creature, mine)
         protection = self.protection(creature)
+        from . import robes
+        if robes.worn_plus(self._worn(creature)) >= robes.VEILED_PLUS:  # (the Ashen Robe's: against spells)
+            protection = protection + [(1, "Veiled Robe")]
         con = rec[CREATURE_ABILITIES + 2]
         out = []
         for save in range(1, 6):
@@ -1588,7 +1597,7 @@ class GameData:
             elif kind == CLOAK_TYPE:
                 if slot == CLOAK_SLOT and plus > 0:
                     cloak = plus
-            elif kind == BRACERS_TYPE:
+            elif kind in (BRACERS_TYPE, ROBE_TYPE):
                 pass  # (not armour)
             elif len(typ) == ITEM_TYPE_SIZE:
                 if typ[0] & TYPE_SHIELD:
