@@ -299,6 +299,15 @@ def kit_gear(gd) -> List[str]:
                     out.append(f"{who} starts with a shield in place of the {name(item)}: an Arena Champion "
                                f"fights with one")
                     break
+        if kid == kits.BRUTE:  # (the gladiator's club: no use to it, in the backpack or a hand)
+            for item_index, item, _ in list(gd._worn(member)):
+                type_ = struct.unpack_from("<H", item, game.ITEM_TYPE)[0]
+                typ = read(type_)
+                if typ[0] & 0x01 and restrict.kit_forbids(sheet, type_, typ) \
+                        and ring.unlink(gd, ring.Items(gd), item_index, "kit gear"):
+                    out.append(f"{who}'s {name(item)} is left behind: a Brute fights with two-handed weapons only")
+        owned = list(gd._worn(member))
+        out += _kit_second_weapon(gd, member, sheet, kid, chosen, owned, read)
         if kid == kits.BATTLE_MAGE and chosen and gd.rules & game.RULE_SPECIALIZE \
                 and not any(specialize.kind_of(struct.unpack_from("<H", i, game.ITEM_TYPE)[0]) == chosen[0]
                             for _, i, _ in owned):
@@ -313,3 +322,41 @@ def kit_gear(gd) -> List[str]:
                                f"Mage's weapon spec, in place of the {name(item)}")
                     break
     return out
+
+
+def _kit_second_weapon(gd, member: int, sheet: bytes, kid: int, chosen: List[int], owned, read) -> List[str]:
+    """A Myrmidon's plain weapon of its second weapon spec (to the backpack, or the missile slot,
+    a bow with arrows), and a Ravager's second weapon for the hand its shield left (a plain one
+    of its right hand's kind, unless that takes both hands): lines for the log. Given once: not
+    while the character has a weapon of that kind (two, the Ravager)."""
+    from . import kits, npcitems
+    right, left = game.WEAPON_HANDS
+    kind_of = lambda item: specialize.kind_of(struct.unpack_from("<H", item, game.ITEM_TYPE)[0])
+    hand = next((item for _, item, _ in owned if item[game.ITEM_SLOT] == right), None)
+    who = gd.creature_name(member)
+    if kid == kits.MYRMIDON and len(chosen) > 1 and gd.rules & game.RULE_SPECIALIZE and hand is not None:
+        if any(kind_of(item) == chosen[1] for _, item, _ in owned):
+            return []
+        new = start_weapon(sheet, [chosen[1] + 1], read)
+        if new is None or new[0] != chosen[1]:
+            return []
+        rec, slot = plain_weapon(hand, *new)
+        if not npcitems.add_to(gd, member, rec, slot):
+            return []
+        if new[0] == BOW:
+            npcitems.add_to(gd, member, arrows(rec), AMMO_SLOT)
+        material = MATERIALS.get(read(new[1][0])[8] & 0x4F, "")
+        where = "" if slot is not None else " in the backpack"
+        return [f"{who} starts with a plain {material}{specialize.KINDS[new[0]]}{where} too: a Myrmidon's "
+                f"second weapon spec"]
+    if kid == kits.RAVAGER and hand is not None:
+        kind, type_ = kind_of(hand), struct.unpack_from("<H", hand, game.ITEM_TYPE)[0]
+        if kind is None or kind in MISSILE_KINDS or two_handed(gd, sheet, type_) \
+                or any(item[game.ITEM_SLOT] == left for _, item, _ in owned) \
+                or sum(1 for _, item, _ in owned if struct.unpack_from("<H", item, game.ITEM_TYPE)[0] == type_) > 1:
+            return []
+        if not npcitems.add_to(gd, member, hand, left):
+            return []
+        name = gd.item_name(struct.unpack_from("<H", hand, game.ITEM_NAME)[0])
+        return [f"{who} starts with a second {name} in the left hand: a Ravager fights without a shield"]
+    return []

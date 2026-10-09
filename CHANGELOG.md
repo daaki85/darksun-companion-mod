@@ -137,6 +137,11 @@ themselves have the detail.
   the backpack); an Arena Champion's off-hand club
   becomes a shield, and a Battle Mage's quarterstaff its weapon spec's weapon.
   The dice log names each change. The guide lists each class's starting gear.
+- **Kits' starting gear, more:** a Myrmidon gets a plain weapon of its
+  second weapon spec as well (in the backpack; a bow in the missile slot,
+  with arrows), a Ravager a second of its weapon for the hand its shield
+  left (none for a two-handed one), and a Brute's club is left behind
+  rather than carried.
 - **Charges in an item's box:** a wand, the Storm Ring or a necklace shows the
   charges it has left (`Charges: 50`) in its item box.
 - **Preservers' INT**, a new rule change (on by default): AD&D's table for

@@ -347,9 +347,9 @@ theirs ([what each class may use](#what-each-class-may-use)).
 
 | Kit | Gives | Costs | Starts with |
 |---|---|---|---|
-| **Myrmidon** | a second weapon spec at 1st level, on to mastery as the first | −4 on saves against charms | the fighter's gear |
+| **Myrmidon** | a second weapon spec at 1st level, on to mastery as the first | −4 on saves against charms | the fighter's gear, and a plain weapon of its second weapon spec in the backpack |
 | **Sentinel** | AC 2 better with a shield; +2 initiative | −1 on saves against wizards' and priests' spells | the fighter's gear |
-| **Ravager** | +1 to hit and damage in melee; a base AC by level (7 at 1st-2nd, 6 at 3rd-4th, 5 at 5th-6th, 4 at 7th-8th, 3 at 9th-10th), armour bettering it as usual | no missile or thrown weapons; no shield; leather armour or none | the fighter's gear without the shield |
+| **Ravager** | +1 to hit and damage in melee; a base AC by level (7 at 1st-2nd, 6 at 3rd-4th, 5 at 5th-6th, 4 at 7th-8th, 3 at 9th-10th), armour bettering it as usual | no missile or thrown weapons; no shield; leather armour or none | the fighter's gear with a second of its weapon in place of the shield (none if the weapon takes both hands) |
 
 A Sentinel can't later become a druid or preserver, nor take the Shinobi kit
 as a thief.
@@ -410,7 +410,7 @@ single class** (a human may still change class).
 |---|---|---|---|
 | **Arena Champion** | with a shield: +1 to hit and damage in melee, and AC 1 better | −1 to hit in melee without a shield | a shield in place of the off-hand club |
 | **Twin-blade** | no penalty for two weapons | no shield; no two-handed weapon | its weapon and the club as its two weapons |
-| **Brute** | +2 to hit and damage with a two-handed melee weapon | two-handed melee weapons only | a two-handed weapon (a bone great axe without weapon specialization), the club in the backpack |
+| **Brute** | +2 to hit and damage with a two-handed melee weapon | two-handed melee weapons only | a two-handed weapon (a bone great axe without weapon specialization); the club is left behind |
 
 An Arena Champion can't later become a druid or preserver, a Brute a
 psionicist or air cleric. Neither goes with the Shinobi kit, a Brute not with
@@ -579,7 +579,7 @@ allows them).
 
 | Kit | Gives | Costs | Starts with |
 |---|---|---|---|
-| **Arcanist** | a spell slot more at each spell level it has; in a fight, two preserver spells in a turn | a d3 hit die | the preserver's gear |
+| **Arcanist** | a spell slot more at each spell level it has; in a fight, casts two preserver spells each turn instead of one | a d3 hit die | the preserver's gear |
 | **Scholar** | a spell more learnt at each level up | THAC0 1 worse | the preserver's gear |
 | **Battle Mage** | a warrior's THAC0; casts though hit earlier in the round; a d6 hit die; leather armour, cast in; expertise in one kind of weapon | one fewer spell slot at each spell level; nothing in the off hand | with weapon specialization, a plain weapon of its chosen kind in place of the quarterstaff |
 
@@ -844,8 +844,9 @@ The kits that change spell slots, by the level of the kit's class (spells of
   Charm Person, Shield, Color Spray, Wall of Fog; **2nd** Invisibility, Mirror
   Image, Blur, Detect Invisibility, Fog Cloud; **3rd** Blink, Haste, Protection
   from Normal Missiles, Hold Person.
-- An **Arcanist** casts two preserver spells in a turn in a fight (a hit before
-  the second still stops it); a **Scholar** chooses two spells at each level
+- An **Arcanist** casts two preserver spells each turn in a fight instead of
+  one: its first spell doesn't end its turn, so it can cast again (being hit
+  before the second still stops it); a **Scholar** chooses two spells at each level
   up.
 
 ## Weapon specialization and attacks

@@ -1388,7 +1388,7 @@ and costs something.
 | **Swashbuckler** (thief) | a warrior's THAC0 (21 less its level) | −10 to every thief skill |
 | **Grove Warden** (druid) | AC 1 better for every 3 druid levels | no metal weapons |
 | **Wanderer** (druid) | resists fire and cold as the Resist Fire and Resist Cold spells do: +3 on saves against fire and cold spells | AC 1 worse |
-| **Arcanist** (preserver) | a spell slot more at each spell level it has slots at; in a fight, two preserver spells in a turn (its first doesn't end the turn; being hit still stops the second) | a d3 hit die (a preserver's is a d4) |
+| **Arcanist** (preserver) | a spell slot more at each spell level it has slots at; in a fight, casts two preserver spells each turn instead of one (its first doesn't end the turn; being hit still stops the second) | a d3 hit die (a preserver's is a d4) |
 | **Shinobi** (thief) | preserver spells from 6th level, on the Seeker's slots (one 1st-level slot at 6th, two at 7th, and a 2nd-level slot at 8th, two at 9th, and a 3rd-level slot at 10th), cast at the thief level less 5, in light armour too: its own 14 (Gaze Reflection, Charm Person, Shield, Color Spray, Wall of Fog; Invisibility, Mirror Image, Blur, Detect Invisibility, Fog Cloud; Blink, Haste, Protection from Normal Missiles, Hold Person), one learnt at each level up from 6th | none learnt from scrolls; dagger, short sword, quarterstaff, chatkcha, sling, staff sling and bow only; light armour only; no shield |
 | **Lifebinder** (druid) | Cure Light, Serious and Critical Wounds heal a d8 more, Blood Flow a d6 | blunt weapons only (club, mace, quarterstaff, sling, staff sling) |
 | **Healer** (cleric) | Cure Light, Serious and Critical Wounds heal 1 more a die (+1, +2, +3) | no weapon in the off hand (a shield is fine) |
@@ -1467,10 +1467,13 @@ The game hands a new character its gear when DONE is clicked, by its class:
 With **Kits** ticked, the Ledger fits that gear to the kit while the character
 is new, and the dice log says what it changed: a weapon in the hand the kit
 forbids becomes a plain one it allows (a **Shinobi**'s long sword a bone
-short sword; a **Brute**'s a bone great axe, its club going to the backpack;
+short sword; a **Brute**'s a bone great axe, its club left behind (no use to it);
 a **Seeker**'s long sword one of a material its sphere allows); a shield the
-kit forbids is taken away (a **Ravager**'s), and an off-hand weapon it forbids
-goes to the backpack;
+kit forbids is taken away (a **Ravager**'s), the Ravager getting a second of
+its weapon for that hand (unless the weapon takes both hands), and an
+off-hand weapon it forbids goes to the backpack; with weapon specialization a
+**Myrmidon** gets a plain weapon of its second weapon spec too, in the
+backpack (a bow in the missile slot, with arrows);
 an **Arena Champion**'s off-hand club becomes a shield, the gladiator's kit
 being the one that fights with it; and with weapon specialization a
 **Battle Mage**'s quarterstaff becomes a plain weapon of its chosen weapon spec
