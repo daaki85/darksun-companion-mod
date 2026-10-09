@@ -1580,11 +1580,11 @@ bars), and left off the KIT menu for a human who has had the class:
 | Arena Champion, Sentinel | druid, preserver | their gift needs a shield, which those classes can't hold |
 | Brute | psionicist, air cleric | it needs a two-handed melee weapon, which those classes can't use |
 
-And some kits can't go together, whichever came first:
+And some kits can't go together, whichever came first (a human has one kit for each of its classes, and the game never lets a human change from one warrior class to another, so only these can meet):
 
 | Kit | Can't go with | Why |
 |---|---|---|
-| Arena Champion, Sentinel | Twin-blade, Shinobi, Ravager | one needs a shield, the other forbids it |
+| Arena Champion, Sentinel | Shinobi | one needs a shield, the other forbids it |
 | Twin-blade | Healer | two weapons, and an off hand free of them |
 | Brute | Shinobi, Lifebinder | a two-handed weapon, and weapons that can't be one |
 

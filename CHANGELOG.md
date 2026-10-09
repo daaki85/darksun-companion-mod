@@ -206,6 +206,18 @@ themselves have the detail.
   and Mind Warrior attack 3/2 from 7th level (no character reaches 13th), a
   backstab is ×4 at 9th and 10th, and an example of the off hand's one attack
   a round is clearer (3/2 + 1).
+- **The player's guide rewritten** to tell how the mod plays, with its
+  default options, each rule as it is in play and a "Without the mod" note
+  where a switch changes the game's own; the manual's comparisons, the race
+  and class list and the game's hot keys (not checked against the game) are
+  gone. Corrected: a warrior's attacks with weapon specialization, and picking
+  pockets (a failed try rolls move silently, never hide in shadows).
+- **Kits that can't go together** lists only pairs that can meet: a human
+  has one kit for each class, and the game never lets a human change from one
+  warrior class to another, so the Arena Champion and Sentinel clash only with
+  the Shinobi (the README, the guide).
+- **The Kits switch** on the Options tab no longer says half the kits work so
+  far.
 - **The front page** names the kits and INT among the rules, and what has
   changed since 1.2.0.
 - **DEVELOPMENT.md:** the patched game's interrupts are summarised, with
