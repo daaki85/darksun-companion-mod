@@ -980,6 +980,29 @@ class SpecializeTests(unittest.TestCase):
         finally:
             game.RULES_IN_FORCE = old
 
+    def test_justifier(self):
+        """A Justifier (kits on): its chosen weapon spec and the bow specialized, +1 to hit and +2
+        damage, where another ranger has expertise; another kind the plain rate (specialize.skill)."""
+        from dscompanion import specialize
+        both = 4096 | game.RULE_KITS
+        just = dict(classes=(13, 0, 0), levels=(4, 0, 0), chosen=(0,), kit=2, rules=both)
+        self.assertEqual(self.attack(3, self.LONG_SWORD, **just), (3, 14, 5, 8))
+        self.assertEqual(self.attack(2, 1, missile=True, **just)[1:3], (14, 5))  # (item type 1: a bow)
+        self.assertEqual(self.attack(3, self.AXE, **just), (2, 15, 3, 8))
+        self.assertEqual(self.attack(3, self.LONG_SWORD, **dict(just, kit=3)), (3, 15, 3, 8))  # (a Seeker)
+        self.assertEqual(self.attack(3, self.LONG_SWORD, **dict(just, rules=4096)), (3, 15, 3, 8))
+        sheet = bytearray(game.SHEET_SIZE)
+        sheet[0x14], sheet[0x21], sheet[0x24], sheet[0x43] = 1, 13, 4, 2
+        old = game.RULES_IN_FORCE
+        try:
+            game.RULES_IN_FORCE = both
+            self.assertEqual([specialize.skill(bytes(sheet), t) for t in (self.LONG_SWORD, 1, self.AXE)],
+                             [specialize.SPECIAL, specialize.SPECIAL, specialize.PLAIN])
+            game.RULES_IN_FORCE = 4096
+            self.assertEqual(specialize.skill(bytes(sheet), self.LONG_SWORD), specialize.EXPERT)
+        finally:
+            game.RULES_IN_FORCE = old
+
     def test_ranger_expertise(self):
         """A ranger: the rate with the chosen kind, no bonuses; another kind, the plain rate."""
         ranger = dict(classes=(13, 0, 0), levels=(4, 0, 0))
@@ -1241,7 +1264,8 @@ class CanUseTests(unittest.TestCase):
                 rules = game.RULE_RESTRICT | half_rule
                 game.RULES_IN_FORCE = rules | game.RULE_KITS
                 self.mu.mem_write(hdr + 270, struct.pack("<H", 1))
-                for cls, kit in ((10, 2), (10, 3), (13, 1), (5, 1), (5, 2), (17, 3), (9, 3)):
+                for cls, kit in ((10, 2), (10, 3), (13, 1), (5, 1), (5, 2), (17, 3), (9, 3),
+                                 (13, 3), (14, 3), (15, 3), (16, 3), (13, 2)):
                     for race in (2, game.RACE_HALF_GIANT):
                         s = bytearray(test_restrict.sheet(cls, race=race))
                         s[0x43] = kit
@@ -1489,7 +1513,8 @@ class KindsAllowedTests(unittest.TestCase):
         try:  # the kits that limit weapons: a Brute's two-handed melee kinds (no missile spec), a Lifebinder's blunt
             game.RULES_IN_FORCE = game.RULE_KITS
             mu.mem_write(hdr + 270, struct.pack("<H", 1))
-            for classes, kit in (((10,), 3), ((10,), 2), ((5,), 2), ((17,), 3), ((5,), 1), ((11,), 2), ((11,), 1)):
+            for classes, kit in (((10,), 3), ((10,), 2), ((5,), 2), ((17,), 3), ((5,), 1), ((11,), 2), ((11,), 1),
+                                 ((13,), 3), ((14,), 3), ((15,), 3), ((16,), 3), ((13,), 2)):
                 s = bytearray(sheet(*classes))
                 s[0x43] = kit
                 with self.subTest(classes=classes, kit=kit):

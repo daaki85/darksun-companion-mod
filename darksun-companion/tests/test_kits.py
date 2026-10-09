@@ -40,6 +40,20 @@ class KitEffectTests(unittest.TestCase):
     def test_none(self):
         self.assertEqual((kits.melee(0, True), kits.ac(0, True), kits.move(0), kits.name(0)), (0, 0, 0, ""))
 
+    def test_seeker(self):
+        """A Seeker's sphere weapons, as a cleric's of that sphere, but the bow whatever the sphere."""
+        def weapon(flags, mat):
+            t = bytearray(0x14)
+            t[0], t[8] = flags, mat
+            return bytes(t)
+        S = kits.SEEKER
+        obsidian_sword, bone_sword, bow = weapon(kits.MELEE, 3), weapon(kits.MELEE, 1), weapon(kits.MISSILE, 0)
+        self.assertEqual([kits.forbids(S, obsidian_sword, 0, False, sphere=s) for s in range(4)], [True, False, False, True])
+        self.assertEqual([kits.forbids(S, bone_sword, 0, False, sphere=s) for s in range(4)], [True, True, True, False])
+        self.assertEqual([kits.forbids(S, bow, kits.BOW, False, sphere=s) for s in range(4)], [False] * 4)
+        self.assertFalse(kits.forbids(S, weapon(kits.MELEE, 3), 2, False, sphere=0))  # (air: a dagger)
+        self.assertFalse(kits.forbids(kits.JUSTIFIER, bone_sword, 0, False, sphere=2))
+
     def test_forbids(self):
         def typ(flags=0, kinds=0, mat=0x40):
             t = bytearray(0x14)

@@ -40,6 +40,7 @@ BLUNT = frozenset((1, 4, 8, 14, 15))
 # a Shinobi's: dagger, short sword, quarterstaff, chatkcha, bow, sling, staff sling
 SHINOBI_KINDS = frozenset((2, 3, 8, 12, 13, 14, 15))
 SHINOBI = KIT_IDS["Shinobi"]
+BOW = 13  # (the bow's weapon kind: a Seeker keeps it whatever its sphere)
 # a Battle Mage's weapon specs to choose from (DSCLOG's KIT_BM_KINDS): the one-handed melee ones, not
 # thrown: long sword, club, dagger, short sword, mace, axe, pick
 BATTLE_MAGE_KINDS = frozenset((0, 1, 2, 3, 4, 5, 7))
@@ -280,15 +281,17 @@ def allows(kid: int, typ: bytes, kind: Optional[int], chosen: Optional[int], spe
 
 
 def forbids(kid: int, typ: bytes, kind: Optional[int], half_giant: bool, spec: bool = False,
-            off_hand: bool = False) -> bool:
+            off_hand: bool = False, sphere: int = 0) -> bool:
     """Whether the kit keeps a character from an item type (TYP its record; KIND its weapon kind,
     or None), as DSCLOG's KIT_FORBIDS: a Ravager a shield, a missile or thrown weapon and armour that isn't
     light; a Twin-blade a shield, and a two-handed weapon (but a
     half-giant's, HALF_GIANT: with the rule for its hands); a Brute a one-handed melee weapon, a
     shield (but a half-giant's), and, choosing a weapon spec (SPEC), a missile weapon; a Stalker
     armour that isn't light; a Grove Warden a metal weapon; a Lifebinder a weapon of a kind not
-    blunt; a Shinobi a shield, armour that isn't light, a weapon not of SHINOBI_KINDS. Going to the
-    off hand (OFF_HAND): nothing for a Battle Mage, no weapon for a Healer."""
+    blunt; a Shinobi a shield, armour that isn't light, a weapon not of SHINOBI_KINDS; a Seeker a
+    weapon (of a kind) its SPHERE (0 air to 3 water) doesn't allow, as a cleric's
+    (restrict.sphere_allows), but the bow. Going to the off hand (OFF_HAND): nothing for a Battle
+    Mage, no weapon for a Healer."""
     flags, kinds, mat = typ[0], typ[0x0F], typ[8] & 0x4F
     weapon = bool(flags & (MELEE | MISSILE))
     if off_hand and (kid == BATTLE_MAGE or kid == HEALER and flags & (MELEE | MISSILE | THROWN)):
@@ -310,6 +313,9 @@ def forbids(kid: int, typ: bytes, kind: Optional[int], half_giant: bool, spec: b
         return weapon and mat == METAL
     if kid == LIFEBINDER:
         return kind is not None and kind not in BLUNT
+    if kid == SEEKER:
+        from . import restrict
+        return weapon and kind is not None and kind != BOW and not restrict.sphere_allows(sphere, typ, kind)
     if kid == SHINOBI:
         if flags & SHIELD:
             return True

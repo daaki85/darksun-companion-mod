@@ -2927,7 +2927,8 @@ probe_can_use:
 ; with the rule), and with KF_SPEC set (a weapon spec chosen) a missile weapon; a Stalker armour
 ; that isn't light (leather, or of no material); a Grove Warden a metal weapon; a Lifebinder a
 ; weapon of a kind not blunt (KIT_BLUNT); a Shinobi a shield, armour that isn't light, and a
-; weapon not of its kinds (KIT_SHINOBI). DS the game's; all registers kept.
+; weapon not of its kinds (KIT_SHINOBI); a Seeker a weapon its sphere doesn't allow (as a
+; cleric's: SPHERE_ALLOWS), but the bow. DS the game's; all registers kept.
 KT_MELEE   equ 0x01             ; (the item type's +0 flags, +0Fh kind flags)
 KT_MISSILE equ 0x02
 KT_SHIELD  equ 0x04
@@ -2951,7 +2952,10 @@ kit_forbids:
         test word [cs:rules], RULE_HALF_GIANT
         jz .type
         inc ch
-.type:  les bx, [ITEM_TYPES]
+.type:  mov al, [es:bx + 0x21]     ; (a ranger's sphere, for a Seeker: its class less 13)
+        sub al, 13
+        mov [cs:kf_sphere], al
+        les bx, [ITEM_TYPES]
         imul ax, dx, 0x14
         add bx, ax
         mov al, [es:bx]         ; AL the flags, AH the kind flags
@@ -3026,7 +3030,33 @@ kit_forbids:
         je .no
         jmp .ok
 .lifebinder:
-        mov si, kit_blunt
+        cmp cl, KIT_SEEKER      ; a Seeker: its sphere's weapons (SPHERE_ALLOWS), but the bow
+        jne .blunt
+        test al, KT_MELEE | KT_MISSILE
+        jz .ok
+        cmp dx, KIND_TYPES
+        jae .ok
+        mov si, dx
+        mov ah, [cs:si + kind_of_type]
+        sub ah, 1
+        jc .ok                  ; (no kind: as the game has it)
+        cmp ah, BOW_KIND - 1
+        je .ok
+        mov [cs:cu_kind], ah
+        mov [cs:cu_flags], al
+        mov al, [es:bx + 8]     ; (the material, as CLASS_FORBIDS keeps it)
+        mov ah, al
+        and al, 0x0F
+        jnz .mat
+        test ah, 0x40
+        jz .mat
+        mov al, NO_MATERIAL
+.mat:   mov [cs:cu_mat], al
+        mov al, [cs:kf_sphere]
+        call sphere_allows
+        jc .no
+        jmp .ok
+.blunt: mov si, kit_blunt
         cmp cl, KIT_LIFEBINDER
         je .kind
         cmp cl, KIT_SHINOBI
@@ -3127,6 +3157,7 @@ kit_shinobi dw 0xF10C           ; bits by kind: dagger, short sword, quarterstaf
                                 ;   staff sling
 kf_spec    db 0
 kf_off_hand db 0               ; (KIT_FORBIDS: the item going to the off hand)
+kf_sphere  db 0                 ; (KIT_FORBIDS: a ranger's sphere, 0 air to 3 water)
 EQUIP_OFF_HAND equ 14          ; the equip routine's slot for the off (left) hand
 
 ; CLASS_FORBIDS: carry set if the classes of the character whose sheet is at ES:BX keep it from
@@ -6572,7 +6603,8 @@ spec_of:
 ; SPEC_NONE (it has chosen no kinds), SPEC_PLAIN (not this kind), SPEC_EXPERT (a ranger's: no
 ; fighter or gladiator class; and every ranger's with the bow, chosen or not), SPEC_SPECIAL,
 ; SPEC_MASTER (a fighter's own kind, the first, from 5th level; a Myrmidon's second too),
-; SPEC_GRAND (9th).
+; SPEC_GRAND (9th). A Battle Mage's chosen kind SPEC_EXPERT; a Justifier's expertise (its chosen
+; kind and the bow) SPEC_SPECIAL.
 BOW_KIND equ 14                 ; (the bow's kind + 1)
 spec_of_sheet:
         push ax
@@ -6677,7 +6709,13 @@ spec_of_sheet:
         cmp ch, GRAND_MASTERY
         jb .ret
         mov dl, SPEC_GRAND
-.ret:   pop si
+.ret:   cmp dl, SPEC_EXPERT     ; (a Justifier's expertise, the bow's too: specialization)
+        jne .out
+        call kit_id
+        cmp al, KIT_JUSTIFIER
+        jne .out
+        mov dl, SPEC_SPECIAL
+.out:   pop si
         pop cx
         pop ax
         ret

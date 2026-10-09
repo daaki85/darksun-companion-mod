@@ -83,6 +83,19 @@ def active_classes(sheet: bytes) -> List[Tuple[int, int]]:
 
 
 def skill(sheet: bytes, item_type: Optional[int]) -> int:
+    """The character's skill with a weapon type, as DSCLOG's SPEC_OF_SHEET: a Justifier's (kits.py)
+    expertise is specialization."""
+    level = _skill(sheet, item_type)
+    return SPECIAL if level == EXPERT and justifier(sheet) else level
+
+
+def justifier(sheet: bytes) -> bool:
+    """A Justifier (kits.py), the rule for kits in force (game.RULES_IN_FORCE)."""
+    from . import kitpages, kits
+    return bool(game.RULES_IN_FORCE & game.RULE_KITS) and kitpages.kit_id(sheet) == kits.JUSTIFIER
+
+
+def _skill(sheet: bytes, item_type: Optional[int]) -> int:
     chosen = sheet[game.SPEC_SLOTS:game.SPEC_SLOTS + game.SPEC_COUNT]
     if not any(chosen):
         return NONE

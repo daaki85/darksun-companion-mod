@@ -1460,7 +1460,7 @@ game itself does, under [Two weapons](#two-weapons), [Thieves](#thieves) and
 | Rule (its box on the Options tab) | What it changes |
 |---|---|
 | [Weapon specialization](#weapon-specialization) | fighters and gladiators specialize in kinds of weapon, fighters on to mastery and grand mastery, rangers take expertise (and every ranger the bow); specialists and rangers shoot missiles faster; other weapons at a warrior's plain rate (missiles faster from 7th level) |
-| [Kits](#kits) | a character of one class takes one of three kits for its class, or none (being built: half work so far) |
+| [Kits](#kits) | a character of one class takes one of three kits for its class, or none (being built: all but the Elementalist's second sphere work) |
 | [Class restrictions](#class-restrictions) | each class's limits on armour, shields and weapons hold, the strictest winning; a multiclass preserver casts no spells in armour |
 | [Multiclass hit points](#multiclass-hit-points) | each level's die and CON's bonus shared between a character's classes |
 | [Hit dice: the better of two](#hit-dice-the-better-of-two) | each hit die rolled twice, the better kept, for every character |
@@ -1512,7 +1512,7 @@ fighter, gladiator and ranger levels; characters stop at 10):
 |---|---|---|---|---|---|---|---|
 | none | non-warriors: clerics, druids, preservers, psionicists, thieves | 1 | 1 | 2 | 2 | 1 | 1 |
 | not a chosen weapon spec | any warrior | 1 | 3/2 | 2 | 3 | 1 | 3/2 |
-| expertise | a ranger: every bow, and its chosen weapon spec; a [Battle Mage](#kits): its chosen weapon spec (melee only) | 3/2 | 2 | 3 | 4 | 3/2 | 2 |
+| expertise | a ranger: every bow, and its chosen weapon spec (a [Justifier](#kits)'s are specialized); a [Battle Mage](#kits): its chosen weapon spec (melee only) | 3/2 | 2 | 3 | 4 | 3/2 | 2 |
 | specialized | a fighter's or gladiator's chosen weapon spec | 3/2 | 2 | 3 | 4 | 3/2 | 2 |
 | mastery | a fighter's chosen weapon spec, from 5th level | 3/2 | 2 | 3 | 4 | 3/2 | 2 |
 | grand mastery | a fighter's chosen weapon spec, from 9th level | | 3 | | 5 | | 3 |
@@ -1606,7 +1606,7 @@ How it works: [DEVELOPMENT.md](DEVELOPMENT.md#weapon-specialization).
 
 ### Kits
 
-Being built: half the kits work; the rest can be chosen but do nothing yet.
+Being built: every kit works but for the Elementalist's second sphere.
 With **Kits** ticked, a character of one class may take one of three kits for
 its class when it is made, or none (the class as it is). Each gives something
 and costs something.
@@ -1631,8 +1631,8 @@ and costs something.
 | **Scholar** (preserver) | a spell more learnt at each level up (CHOOSE A SPELL comes up twice) | −1 to hit (THAC0 1 worse) |
 | **Crusader** (cleric) | a warrior's THAC0 | one fewer spell slot at each spell level |
 | **Elementalist** (cleric) | *to come:* a second sphere: its spells and its weapons | spell slots a level behind (a 7th-level Elementalist has a 6th-level cleric's; none at 1st level) |
-| **Seeker** (ranger) | priest spell slots from 6th level: one 1st-level slot at 6th, two at 7th, and a 2nd-level slot at 8th, two at 9th, and a 3rd-level slot at 10th (and on), in place of a ranger's, cast at the ranger level less 5 (a ranger's: less 7) | *to come:* its sphere's weapon limits (but it keeps the bow) |
-| **Justifier** (ranger) | *to come:* the bow's and its weapon spec's expertise become specialization | one 1st-level priest spell slot from 10th level, in place of a ranger's slots, cast at the ranger level less 9 |
+| **Seeker** (ranger) | priest spell slots from 6th level: one 1st-level slot at 6th, two at 7th, and a 2nd-level slot at 8th, two at 9th, and a 3rd-level slot at 10th (and on), in place of a ranger's, cast at the ranger level less 5 (a ranger's: less 7) | its sphere's weapon limits, as a cleric of that sphere's (air: missile and thrown weapons, daggers; earth: stone, obsidian, metal, wood; fire: obsidian; water: bone, wood), but it keeps the bow |
+| **Justifier** (ranger) | with weapon specialization, its expertise with the bow and its chosen weapon spec becomes specialization: +1 to hit, +2 damage (SPECIALIZED IN on the Effects screen) | one 1st-level priest spell slot from 10th level, in place of a ranger's slots, cast at the ranger level less 9 |
 | **Battle Mage** (preserver) | a warrior's THAC0; a spell still cast after being hit earlier in the round; a d6 hit die; light armour (leather, or none) worn, and spells cast in it; with weapon specialization, expertise in one weapon spec of its choice (long sword, club, dagger, short sword, mace, axe or pick), whose weapons it may use as well as a preserver's own, at 3/2 attacks a round (2 from 7th level) | one fewer spell slot at each spell level; nothing in the off hand |
 | **Mind Warrior** (psionicist) | a warrior's THAC0; a d8 hit die | a tenth fewer PSP (rounded down) |
 | **Mind Bender** (psionicist) | telepathy powers (the defence modes too) cost 2 PSP less to use | psychokinesis powers cost 2 PSP more |

@@ -75,6 +75,10 @@ Released pull requests are summarised in a line or two each; the release notes
   from 7th level). The game's equip check, the fight, View Character's and the
   inventory's DAM lines, the Effects screen (EXPERT IN) and the Ledger all
   count it.
+- **The Seeker's weapons** are its sphere's, as a cleric's of that sphere,
+  but for the bow, on the weapon pages and when equipping. **The Justifier's**
+  expertise with the bow and its chosen weapon spec is specialization (+1 to
+  hit, +2 damage), with weapon specialization.
 - **Kits' hit dice and PSP:** the Battle Mage rolls a d6 for its hit points,
   the Mind Warrior a d8 and has a tenth fewer PSP (rounded down), and the
   Arcanist a d3, at each level up and on the creation screen: choosing or
