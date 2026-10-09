@@ -174,6 +174,10 @@ themselves have the detail.
   the tables.
 
 **Changed**
+- **Kalzith** wears his Ashen Robe, Cloak and Quarterstaff from the start and
+  sells them with his scrolls (the game's shops sell all a merchant carries, worn
+  or not; nothing marks an item not for sale). He is sold out once he carries
+  nothing; killed, he leaves what he still has and one of his scrolls.
 - **The helper loads into upper memory again,** leaving the game 62 KB more
   conventional memory (632 KB free, was 570): the dice log's ring buffer now
   follows the helper in a segment of its own, so the helper's image is 40 KB

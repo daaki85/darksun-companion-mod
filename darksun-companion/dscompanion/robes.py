@@ -5,7 +5,7 @@ isn't armour: a preserver casts in it, a cloak of protection still counts (DSCLO
 BRACERS_AX, ROBE_PLUS).
 
 - The Ashen Robe (+1): AC 1 better, and +1 on saves against wizards' and priests' spells. Worn by
-  Kalzith once his scrolls are sold, and left with his body (kalzith.py).
+  Kalzith, who sells it, and left with his body (kalzith.py).
 - The Veiled Robe (+2), a robe of the Veiled Alliance: AC 2 better, +1 on every save, and a
   wizard spell slot more at spell levels 1 to 3 where its wearer has any. Sold by Kel
   (worldgear.py).

@@ -2395,7 +2395,7 @@ it.
 
 | Icon | Robe | What it does | Where |
 |---|---|---|---|
-| ![](docs/items/ashen-robe.png) | **Ashen Robe** (+1) | AC 1 better; +1 on saves against wizards' and priests' spells | worn by [Kalzith](#kalzith) once his scrolls are sold, and left with his body if he's killed (6,000) |
+| ![](docs/items/ashen-robe.png) | **Ashen Robe** (+1) | AC 1 better; +1 on saves against wizards' and priests' spells | worn by [Kalzith](#kalzith), who sells it with his scrolls, and left with his body if he's killed (6,000) |
 | ![](docs/items/veiled-robe.png) | **Veiled Robe** (+2), a robe of the Veiled Alliance | AC 2 better; +1 on every save; a wizard spell slot more at spell levels 1, 2 and 3 where the wearer has any | sold by **Kel** (40,000) |
 
 The dice log and the Ledger name a robe among a save's modifiers, and the
@@ -2457,10 +2457,12 @@ Talk button). His conversation is the game's kind, just him speaking:
   it), or a plea that he wins over with a **Charisma check** (the character
   talking rolls it).
 
-Killed, he leaves one of the scrolls he still had, chosen at random, a Cloak
-and a Quarterstaff (the game's own) in his body, and the log says what. Once
-the party has bought all six scrolls, he has nothing more to sell and wears
-the cloak and carries the staff himself. Attacked, he turns on the party as the
+He wears an Ashen Robe and a Cloak and carries a Quarterstaff (the game's
+own), and sells them too: the game's shops sell everything a merchant carries,
+worn or not. Once the party has bought it all, he has nothing more to sell.
+Killed, he leaves whatever of these he still has and one of the scrolls he
+still had, chosen at random, in his body, and the log says which scroll.
+Attacked, he turns on the party as the
 pens' other slaves do, and only the guards near him join the fight. If he dies,
 Dinos and the Trustee speak of him as dead; after the party's escape he is gone
 from the pens with everyone else.

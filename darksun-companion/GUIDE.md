@@ -565,7 +565,7 @@ little for the quieter arts.
 
 *Shinobi.* Spies trained in secret by the Veiled Alliance, who carry a few
 spells beside their knives. Their masters teach them only what they need; they
-learn nothing from scrolls and travel light.
+are unable to read magical script, however, and travel light.
 
 | Kit | Gives | Costs | Starts with |
 |---|---|---|---|
