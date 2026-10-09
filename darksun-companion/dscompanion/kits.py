@@ -67,6 +67,22 @@ def name(kid: int) -> str:
     return KITS[kid // 4][kid % 4 - 1] if kid else ""
 
 
+WARRIOR_ATTACKS = frozenset((CRUSADER, MIND_WARRIOR))
+
+
+def warrior_attacks(halves: int, sheet: bytes) -> int:
+    """The melee attacks a round (in halves) of a character who isn't a warrior (HALVES the game's,
+    2 or fewer), as DSCLOG's WAR_KIT_HALVES: a Crusader's or Mind Warrior's (kit awake) a warrior's
+    extra attacks, 3/2 a round from 7th level of the kit's class, 2 from 13th; else HALVES."""
+    from . import kitpages
+    if halves > 2:
+        return halves
+    for kid in WARRIOR_ATTACKS & set(kitpages.kit_ids(sheet)):
+        level = kitpages.kit_level(sheet, kid)
+        halves = max(halves, 4 if level >= 13 else 3 if level >= 7 else halves)
+    return halves
+
+
 def melee(kid: int, two_handed: bool) -> int:
     """Added to hit and to damage with a melee weapon (KIT_MELEE; TWO_HANDED: one that takes both
     hands, its type's +0Fh 40h): a Ravager's 1, a Brute's 2 with a two-handed one."""

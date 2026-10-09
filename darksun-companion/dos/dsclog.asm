@@ -2575,7 +2575,8 @@ prot_scan:
 ; 58892h), the attacks a round stored. The game gives every fighter, gladiator and ranger AD&D's
 ; specialist's rate (3/2, then 2 from 7th level, 5/2 from 13th); in melee a warrior (more than 2
 ; halves) with a weapon of a kind not chosen has AD&D's plain rate, half an attack less, and a
-; grand master one more. Specialization +1 to hit, mastery +3 (the THAC0 less).
+; grand master one more. A Crusader or Mind Warrior has a warrior's extra attacks in melee
+; (WAR_KIT_OF), whatever RULE_SPECIALIZE. Specialization +1 to hit, mastery +3 (the THAC0 less).
 ; PROBE_SPEC_DAMAGE: INT VEC_SPEC_DAMAGE replaces "add [bp-12h],ax" (3 bytes: INT + NOP; 588F2h),
 ; the strength bonus added to the damage bonus: specialization +2, mastery +3, and grand mastery
 ; the damage dice one size larger (2 more sides: d8 to d10, 2d4 to 2d6).
@@ -2622,7 +2623,8 @@ probe_attacks:
         jmp .done
 .three: sub word [bp + 0x0A], 3
 .done:  pop dx
-.store: mov [bp - 8], ax
+.store: call war_kit_of        ; (a Crusader's or Mind Warrior's extra attacks, in melee)
+        mov [bp - 8], ax
         iret
 .missile:                       ; (a specialist's rate of fire, else the game's)
         push bx
@@ -2753,6 +2755,59 @@ expert_halves:
         inc ax
 .ret:   ret
 
+; WAR_KIT_OF: AX the attacks a round (halves) of PROBE_ATTACKS's attacker ([BP+10h]) made a
+; Crusader's or Mind Warrior's (WAR_KIT_HALVES) for a melee attack ([BP+16h] 1 or less). Others kept.
+war_kit_of:
+        cmp word [bp + 0x16], 1
+        jg .ret
+        push bx
+        push es
+        push ax
+        mov ax, [bp + 0x10]
+        imul ax, ax, 0x47
+        les bx, [0x1661]
+        add bx, ax
+        pop ax
+        call war_kit_halves
+        pop es
+        pop bx
+.ret:   ret
+
+; WAR_KIT_HALVES: AX the melee attacks a round (halves) of a character who isn't a warrior (2 or
+; fewer), ES:BX its sheet: a Crusader's or Mind Warrior's (kit awake) the warrior's extra attacks,
+; 3/2 a round from 7th level of the kit's class, 2 from 13th, the better of the two kits' for a
+; human with both (kits.warrior_attacks). Others kept.
+war_kit_halves:
+        cmp ax, 2
+        ja .ret
+        push dx
+        mov dx, ax
+        call kit_is_b
+        db KIT_CRUSADER
+        jne .mind
+        call .by_level
+.mind:  call kit_is_b
+        db KIT_MIND_WARRIOR
+        jne .back
+        call .by_level
+.back:  mov ax, dx
+        pop dx
+.ret:   ret
+.by_level:                      ; (DL the more of itself and the level's, KIT_WHERE's level)
+        push ax
+        call kit_level
+        mov ah, 3
+        cmp al, 13
+        jb .early
+        inc ah
+.early: cmp al, 7
+        jb .no
+        cmp dl, ah
+        jae .no
+        mov dl, ah
+.no:    pop ax
+        ret
+
 probe_spec_damage:
         add [bp - 0x12], ax
         call kit_attack_damage
@@ -2776,7 +2831,8 @@ probe_spec_damage:
 ; 72A77h) in the routine that writes a melee weapon's "DAM: 1.5x1D8+4" (View Character, the
 ; inventory screen), ES:BX the sheet, SI the weapon's item type, the damage bonus, the dice's sides
 ; and their count pushed (under the INT's return, in that order up). With RULE_SPECIALIZE, the
-; attacks as PROBE_ATTACKS gives them, and the bonus and sides as PROBE_SPEC_DAMAGE does.
+; attacks as PROBE_ATTACKS gives them, and the bonus and sides as PROBE_SPEC_DAMAGE does; a
+; Crusader's or Mind Warrior's extra attacks (WAR_KIT_HALVES) either way.
 probe_dam_line:
         push bp
         mov bp, sp              ; BP+8 the count, +0Ah the sides, +0Ch the bonus
@@ -2820,12 +2876,19 @@ probe_dam_line:
         add word [bp + 0x0A], 2
 .out:   pop dx
         pop bp
-.done:  iret
+.done:  push cx                 ; (a Crusader's or Mind Warrior's extra attacks; AH kept)
+        mov ch, ah
+        xor ah, ah
+        call war_kit_halves
+        mov ah, ch
+        pop cx
+        iret
 
 ; PROBE_VIEW_DAM: INT VEC_VIEW_DAM replaces "mov [bp-0Eh],dx" (3 bytes: INT + NOP; DSUN.EXE 64EB6h)
 ; in View Character's routine for its "DAM: 1.5x1D8+4": DX the damage bonus it stores, its [BP-6]
 ; the attacks a round (halves), [BP-2] the dice's count, [BP-4] their sides, [BP-0Ah] the weapon's
-; item. With RULE_SPECIALIZE, the attacks (not a missile weapon's), the bonus and the sides as the
+; item. A Crusader's or Mind Warrior's extra attacks (WAR_KIT_HALVES, not with a missile weapon).
+; With RULE_SPECIALIZE, the attacks (not a missile weapon's), the bonus and the sides as the
 ; attack has them (PROBE_ATTACKS, PROBE_SPEC_DAMAGE), for the character on show: its number in
 ; the segment the routine's "mov ax,seg" at 64E33h holds, +25Bh (as PROBE_VIEW's CH_WHO).
 VIEW_DAM_WHO equ 0x84           ; that operand, back from the INT's return
@@ -2895,7 +2958,20 @@ probe_view_dam:
         cmp dl, SPEC_GRAND
         jne .out
         add word [bp - 4], 2
-.out:   pop es
+.out:   mov ax, si              ; (a Crusader's or Mind Warrior's extra attacks, not a missile
+        imul ax, ax, 0x14       ; weapon's)
+        push es
+        push bx
+        les bx, [0x1669]
+        add bx, ax
+        test byte [es:bx], 2
+        pop bx
+        pop es
+        jnz .gone
+        mov ax, [bp - 6]
+        call war_kit_halves
+        mov [bp - 6], ax
+.gone:  pop es
         pop di
         pop si
         pop dx

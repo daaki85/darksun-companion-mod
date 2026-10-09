@@ -163,6 +163,12 @@ Released pull requests are summarised in a line or two each; the release notes
   every kit rule, in the helper and the Ledger, now asks for each kit the
   character has awake, and the Effects screen lists them all. Characters
   made before read as they did.
+- **The Crusader and Mind Warrior** have a warrior's extra attacks in melee:
+  3/2 a round from 7th level of the kit's class, 2 from 13th, whether weapon
+  specialization is on or not (the DAM lines and the Ledger's party view show
+  them too).
+- **The Ravager's base AC** is described only up to 10th level, the highest
+  the game goes.
 - **The Arcanist's drawback** is a d3 hit die (a preserver's is a d4), in
   place of −2 CON.
 - **The dice log's ring holds 96 entries** (was 128), and the helper's text

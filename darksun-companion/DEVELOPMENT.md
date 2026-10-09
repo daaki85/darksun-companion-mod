@@ -975,7 +975,7 @@ header's +270) switches them all off.
 |---|---|---|---|
 | Fighter | Myrmidon | a second weapon spec at 1st level, on to mastery and grand mastery as the first | −4 on saves against charm |
 | | Sentinel | +2 AC with a shield, +2 initiative | −1 on saves against spells |
-| | Ravager | +1 to hit and damage in melee; a base AC by level (7 at 1st, 1 better every 2 levels to 3 at 9th, then every 3 to 0 at 18th), armour bettering it | no missile or thrown weapons, no shield, light armour only |
+| | Ravager | +1 to hit and damage in melee; a base AC by level (7 at 1st, 1 better every 2 levels to 3 at 9th and 10th), armour bettering it | no missile or thrown weapons, no shield, light armour only |
 | Gladiator | Arena Champion | with a shield in a hand: +1 to hit and damage in melee, AC 1 better | −1 to hit in melee with no shield |
 | | Twin-blade | no two-weapon penalty | no shield; no two-handed weapon, but a half-giant's held in one hand |
 | | Brute | +2 to hit and damage with a two-handed melee weapon | two-handed melee weapons only (a half-giant may add a shield); missile weapons, but not as a weapon spec |
@@ -987,7 +987,7 @@ header's +270) switches them all off.
 | | Shinobi | preserver spells on the Seeker's table, cast in light armour too | the Seeker's few slots; its own short list of spells, one learnt at each level up from its first slots, none from scrolls; only the dagger, short sword, quarterstaff, chatkcha, sling, staff sling and bow; light armour only; no shield |
 | Cleric | Elementalist | a second sphere: its spells and its weapons | spell slots one level slower (none at 1st level) |
 | | Healer | Cure spells heal 1 more per die | no weapon in the off hand |
-| | Crusader | a fighter's THAC0 | one fewer spell slot at each spell level |
+| | Crusader | a fighter's THAC0, a warrior's extra attacks in melee (3/2 from 7th level, 2 from 13th) | one fewer spell slot at each spell level |
 | Druid | Grove Warden | AC 1 better for every 3 druid levels | no metal weapons |
 | | Lifebinder | healing spells heal a die more | blunt weapons only |
 | | Wanderer | +3 on saves against fire and cold spells (the game's Resist Fire and Resist Cold) | AC 1 worse |
@@ -995,7 +995,7 @@ header's +270) switches them all off.
 | | Battle Mage | a warrior's THAC0, a d6 hit die, expertise in one weapon spec (a one-handed melee weapon: long sword, short sword, dagger, club, mace, axe or pick; no thrown weapon), which it may use as well as a preserver's own weapons; light armour worn and spells cast in it; spells cast though hit earlier in the round (the game stops anyone else's) | one fewer spell slot at each spell level; nothing in the off hand |
 | | Arcanist | a spell slot more at each spell level | a d3 hit die |
 | Psionicist | Mind Bender | telepathy powers cost 2 PSP less | psychokinesis powers 2 more |
-| | Mind Warrior | a warrior's THAC0, a d8 hit die | a tenth fewer PSP |
+| | Mind Warrior | a warrior's THAC0, a warrior's extra attacks in melee (3/2 from 7th level, 2 from 13th), a d8 hit die | a tenth fewer PSP |
 | | Kineticist | psychokinesis powers cost 2 PSP less | telepathy powers 2 more |
 
 The Seeker's and the Justifier's tables are AD&D's (*The Complete Ranger's
@@ -1161,7 +1161,7 @@ in `kitpages.kit_ids`), and emulated tests hold the helper to it:
 | gear allowed | Ravager, Twin-blade, Brute, Stalker, Grove Warden, Lifebinder, Shinobi, Seeker (its sphere's weapons, as a cleric's: `SPHERE_ALLOWS` with `CU_*` set from the item type, its sphere the ranger class less 13; the bow kept) | `PROBE_CAN_USE` and `KINDS_ALLOWED` (`KIT_FORBIDS`: `restrict.kit_forbids`), whatever the class restrictions |
 | skill with a weapon | Justifier (expertise, the bow's and its chosen kind's, becomes specialization) | `SPEC_OF_SHEET`'s end: `SPEC_EXPERT` made `SPEC_SPECIAL` for a Justifier; `specialize.skill` |
 | weapon specs | Myrmidon (two, the second to grand mastery), Brute (no missile spec), Battle Mage (one, of `KIT_BM_KINDS`: expertise) | `WP_TWO`, `SPEC_OF_SHEET` (a Battle Mage's chosen kind `SPEC_EXPERT`), `KIT_FORBIDS`, `KINDS_ALLOWED` (a Battle Mage its own kinds, whatever its class), `LV_DUE` (a Battle Mage one); the creation panel counts a Battle Mage as a warrior (`WP_CLASSES`, so `WP_IDS` gives the disciplines' window with WEAPON SPEC; `kitpages.panel_windows`) |
-| attacks a round | Battle Mage (its chosen kind: expertise, 3/2, 2 from 7th preserver level) | `EXPERT_HALVES` where `PROBE_ATTACKS`, `PROBE_DAM_LINE` and `PROBE_VIEW_DAM` leave a non-warrior's (2 halves or fewer) alone; `specialize.expert_attacks` |
+| attacks a round | Battle Mage (its chosen kind: expertise, 3/2, 2 from 7th preserver level); Crusader and Mind Warrior (a warrior's extra attacks in melee, 3/2 from 7th level of the kit's class, 2 from 13th, weapon specialization on or off) | `EXPERT_HALVES` where `PROBE_ATTACKS`, `PROBE_DAM_LINE` and `PROBE_VIEW_DAM` leave a non-warrior's (2 halves or fewer) alone; `specialize.expert_attacks`. `WAR_KIT_HALVES` in the same three probes, after the rest (`WAR_KIT_OF` in `PROBE_ATTACKS`, not for a missile: `[BP+16h]` above 1, or in View Character a type's `+0` bit 2); `kits.warrior_attacks`, which `GameData.weapon_hits` gives the party view |
 | gear the kit allows | Battle Mage (its chosen kind's weapons, with weapon specialization; light armour) | `KIT_ALLOWS` in `PROBE_CAN_USE`: an item the game's class mask refuses is let through (AX 1), and the class restrictions pass it; `KIT_FORBIDS` still holds (nothing in a Battle Mage's off hand). `kits.allows`, `restrict.kit_allows`. The game has no armour rule for a single class's spells, so it casts in that armour |
 | hit die | Battle Mage (d6), Mind Warrior (d8), Arcanist (d3) | a level's die: `PROBE_HIT_DIE` (`INT A5h`, new: `mov al,es:[bx+0]`, 87308h, the die read from the class's hit point group in the routine rolling a level's hit points, 87250h, which both a level up and the creation screen call; `[BP-4]` the sheet). The creation screen's range (the least and most hit points it allows, `DS:[4998h]` and `[4996h]`, worked out with the rolls by 655D6h): `PROBE_CR_DIE` (`INT A3h`, new: `mov al,es:[bx+14Ah]`, 65677h, the die from its table by creation class). `kits.hit_die` |
 | max PSP | Mind Warrior (a tenth fewer, rounded down) | at a level up: `PROBE_MAX_PSP` (`INT A4h`, new: `les bx,[bp-8]`, 8748Fh, the sum in SI before it goes in the sheet, in the routine at 873B2h); on the creation screen: `PROBE_CR_PSP` (`INT A2h`, new: the end, `pop bp / retf`, of 65B39h, which sums the PSP into the sheet being made's `+0Ch`). `kits.max_psp` |

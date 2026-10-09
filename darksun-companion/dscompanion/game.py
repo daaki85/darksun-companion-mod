@@ -460,7 +460,8 @@ class WeaponHit(NamedTuple):
     parts: List[Tuple[str, int]]  # what is taken off the base THAC0 for it
     skill: int = 0  # weapon specialization's skill with it (specialize.NONE...), with the rule on
     halves: Optional[int] = None  # a missile weapon's attacks a round, in halves (its own, not the
-    # character's), or a Battle Mage's with its chosen weapon spec
+    # character's), or a Battle Mage's with its chosen weapon spec, a Crusader's or Mind Warrior's
+    # from 7th level
 
 
 class ItemSave(NamedTuple):
@@ -1450,6 +1451,10 @@ class GameData:
                 elif skill == specialize.EXPERT and self.sheet(creature)[SHEET_ATTACKS] <= 2:
                     # (a Battle Mage's expertise: DSCLOG's EXPERT_HALVES)
                     halves = specialize.expert_attacks(self.sheet(creature)[SHEET_ATTACKS], skill, self.sheet(creature))
+            if not missile and self.rules & RULE_KITS:  # (a Crusader's or Mind Warrior's extra attacks)
+                have = self.sheet(creature)[SHEET_ATTACKS] if halves is None else halves
+                if kits.warrior_attacks(have, self.sheet(creature)) != have:
+                    halves = kits.warrior_attacks(have, self.sheet(creature))
             parts = [(why, n) for why, n in parts if n]
             out.append(WeaponHit(index, slot, self.item_label(item, typ), base - sum(n for _, n in parts), parts,
                                  skill, halves))

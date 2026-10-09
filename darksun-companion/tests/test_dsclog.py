@@ -1074,15 +1074,16 @@ class SpecializeTests(unittest.TestCase):
     def test_not_a_warrior(self):
         self.assertEqual(self.attack(2, self.AXE, chosen=(0,), classes=(11, 0, 0)), (2, 15, 3, 8))
 
-    def dam_line(self, halves, weapon, chosen=(), classes=(9, 0, 0), levels=(5, 0, 0), rules=4096):
+    def dam_line(self, halves, weapon, chosen=(), classes=(9, 0, 0), levels=(5, 0, 0), rules=4096, kit=0):
         """(attacks, bonus, sides, count) for the DAM line (PROBE_DAM_LINE): bonus 4, 1d8 pushed."""
         mu = self.mu
         at = load_image().find(bytes.fromhex("268a472a2ef706"))
         self.assertGreater(at, 0)
         mu.mem_write(VEC_DAM_LINE * 4, struct.pack("<HH", at, TSR))
-        mu.mem_write(TSR * 16 + load_image().find(HDR_SIG) + self.RULES, struct.pack("<H", rules))
+        mu.mem_write(TSR * 16 + load_image().find(HDR_SIG) + self.RULES, struct.pack("<H", rules & 0xFFFF))
+        mu.mem_write(TSR * 16 + load_image().find(HDR_SIG) + 270, struct.pack("<H", rules >> 16))
         sheet = bytearray(0x47)
-        sheet[0x2A] = halves
+        sheet[0x2A], sheet[0x43] = halves, kit
         for i, k in enumerate(chosen):
             sheet[0x14 + i] = k + 1
         sheet[0x21:0x24], sheet[0x24:0x27] = bytes(classes), bytes(levels)
@@ -1103,6 +1104,37 @@ class SpecializeTests(unittest.TestCase):
         self.assertEqual(self.dam_line(3, self.AXE, chosen=(0,)), (2, 4, 8, 1))
         self.assertEqual(self.dam_line(3, self.LONG_SWORD, chosen=(0,), levels=(4, 0, 0)), (3, 6, 8, 1))
         self.assertEqual(self.dam_line(4, self.LONG_SWORD, chosen=(0,), levels=(9, 0, 0)), (6, 7, 10, 1))
+
+    def test_warrior_kits_attacks(self):
+        """A Crusader (cleric) or Mind Warrior (psionicist), the rule for kits on: a warrior's extra
+        attacks in melee, 3/2 a round from 7th level, 2 from 13th, weapon specialization on or off;
+        not with a missile weapon, nor for another kit or with the rule off (kits.warrior_attacks)."""
+        from dscompanion import kits as kit_rules
+        on = game.RULE_KITS
+        def fresh(probe):  # (a new emulator for each: its cached code at CALLER would be the last probe's)
+            def run(*args, **kw):
+                self.setUp()
+                return probe(*args, **kw)
+            return run
+        self.attack, self.dam_line, self.view_dam = fresh(self.attack), fresh(self.dam_line), fresh(self.view_dam)
+        crusader, mind = dict(classes=(1, 0, 0), kit=3), dict(classes=(12, 0, 0), kit=2)
+        for who in (crusader, mind):
+            for level, want in ((6, 2), (7, 3), (12, 3), (13, 4)):
+                with self.subTest(who=who, level=level):
+                    lv = dict(who, levels=(level, 0, 0))
+                    self.assertEqual(self.attack(2, self.AXE, rules=on, **lv)[0], want)
+                    self.assertEqual(self.attack(2, self.AXE, rules=on | 4096, **lv)[0], want)
+                    self.assertEqual(self.dam_line(2, self.AXE, rules=on, **lv)[0], want)
+                    self.assertEqual(self.view_dam(2, self.AXE, rules=on, **lv)[0], want)
+                    sheet = bytearray(game.SHEET_SIZE)
+                    sheet[0x21], sheet[0x24], sheet[0x43] = who["classes"][0], level, who["kit"]
+                    self.assertEqual(kit_rules.warrior_attacks(2, bytes(sheet)), want)
+        seven = dict(crusader, levels=(7, 0, 0))
+        self.assertEqual(self.attack(2, 1, rules=on, missile=True, **seven)[0], 2)
+        self.assertEqual(self.view_dam(2, 1, rules=on, missile=True, **seven)[0], 2)
+        self.assertEqual(self.attack(2, self.AXE, rules=0, **seven)[0], 2)
+        self.assertEqual(self.dam_line(2, self.AXE, rules=0, **seven)[0], 2)
+        self.assertEqual(self.attack(2, self.AXE, rules=on, **dict(seven, kit=2))[0], 2)  # (a Healer)
 
 
     ITEMS, TYPES, WHO = 0x8800, 0x9000, 0x9800
