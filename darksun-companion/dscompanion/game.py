@@ -465,7 +465,7 @@ class WeaponHit(NamedTuple):
     skill: int = 0  # weapon specialization's skill with it (specialize.NONE...), with the rule on
     halves: Optional[int] = None  # a missile weapon's attacks a round, in halves (its own, not the
     # character's), or a Battle Mage's with its chosen weapon spec, a Crusader's or Mind Warrior's
-    # from 7th level
+    # from 7th level, or the off hand's one a round (the rule for two weapons)
 
 
 class ItemSave(NamedTuple):
@@ -1465,6 +1465,12 @@ class GameData:
                 have = self.sheet(creature)[SHEET_ATTACKS] if halves is None else halves
                 if kits.warrior_attacks(have, self.sheet(creature)) != have:
                     halves = kits.warrior_attacks(have, self.sheet(creature))
+            if not missile and self.rules & RULE_TWO_WEAPONS and slot == WEAPON_HANDS[1]:
+                # (AD&D's two weapons: the off hand one a round, the extra attacks the main hand's;
+                # DSCLOG's OFF_HAND_HALVES)
+                have = self.sheet(creature)[SHEET_ATTACKS] if halves is None else halves
+                if have > 2:
+                    halves = 2
             parts = [(why, n) for why, n in parts if n]
             out.append(WeaponHit(index, slot, self.item_label(item, typ), base - sum(n for _, n in parts), parts,
                                  skill, halves))

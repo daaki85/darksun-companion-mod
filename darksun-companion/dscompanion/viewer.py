@@ -360,7 +360,7 @@ class Viewer:
                 ("no_doubled_save", "Saves against fire, cold and electricity: DEX defensive adjustment "
                                     "instead of a doubled d20"),
                 ("two_weapons", "Two weapons: -2 main hand, -4 off hand, DEX reaction adjustment added "
-                                "(no better than 0; rangers none)"),
+                                "(no better than 0; rangers none); the off hand attacks once a round"),
                 ("thief_table", "Thief skills from AD&D's table by level, with Dark Sun's race and DEX adjustments "
                                 "(the game adds 4 a level to a base of its own, and DEX by a formula)"),
                 ("stealth", "Thieves hide in shadows and move silently to backstab, rangers to attack from behind "

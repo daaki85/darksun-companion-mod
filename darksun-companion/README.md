@@ -775,6 +775,13 @@ at DEX 5 or less, is gone. The dice log names it (`-4 two weapons, off hand at
 DEX 15`), as do the THAC0 lines on the Characters tab and the inventory
 screen.
 
+The off hand attacks once a round, whoever holds it: extra attacks (a
+fighter's, gladiator's or ranger's 3/2 from the game, a specialist's,
+mastery's, the kits') are the main hand's alone. The game gives each hand
+the character's whole rate: a 7th-level Crusader with two clubs attacked
+1+1, then 2+2; with the rule, 1+1, then 2+1. The off hand's DAM lines (the
+inventory screen and View Character) show its one attack.
+
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#two-weapons-adds-penalties).
 
 ## Thieves
@@ -1468,7 +1475,7 @@ game itself does, under [Two weapons](#two-weapons), [Thieves](#thieves) and
 | [Preservers' INT](#preservers-int) | INT gives a preserver a chance to learn a spell from a scroll, and the most spells of each spell level it may know |
 | [Spells saved against with the spell save](#spells-saved-against-with-the-spell-save) | the spell save rather than petrification/polymorph |
 | [Fire, cold and electricity: DEX instead of a doubled d20](#fire-cold-and-electricity-dex-instead-of-a-doubled-d20) | DEX's defensive adjustment on those saves rather than a doubled d20 |
-| [Two weapons](#two-weapons) | -2 main hand, -4 off hand, DEX's reaction adjustment added; rangers none |
+| [Two weapons](#two-weapons) | -2 main hand, -4 off hand, DEX's reaction adjustment added; rangers none; the off hand attacks once a round |
 | [Thief skills from AD&D's table](#thief-skills-from-adds-table) | AD&D's table by level, with Dark Sun's race and DEX adjustments |
 | [Hiding in shadows to backstab](#hiding-in-shadows-to-backstab) | thieves hide and move silently to backstab, rangers to attack from behind; a worn cloak, boots and belt help |
 | [Levels up to 10](#levels-up-to-10) | every class goes to 10th level (the game stops at 9) |

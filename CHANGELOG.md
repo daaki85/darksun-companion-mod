@@ -147,6 +147,11 @@ Released pull requests are summarised in a line or two each; the release notes
 - **Charges in an item's box:** a wand, the Storm Ring or a necklace shows the
   charges it has left (`Charges: 50`) in its item box.
 
+**Changed** (rules)
+- **Two weapons:** the off hand attacks once a round, whoever holds it; the
+  extra attacks (the game's 3/2 for warriors, specialization's, the kits')
+  are the main hand's. The game gave each hand the whole rate.
+
 **Added** (rules)
 - **Preservers' INT**, a new rule change (on by default): AD&D's table for
   INT gives a preserver a chance to learn a spell from a scroll (35% at INT

@@ -1105,6 +1105,22 @@ class SpecializeTests(unittest.TestCase):
         self.assertEqual(self.dam_line(3, self.LONG_SWORD, chosen=(0,), levels=(4, 0, 0)), (3, 6, 8, 1))
         self.assertEqual(self.dam_line(4, self.LONG_SWORD, chosen=(0,), levels=(9, 0, 0)), (6, 7, 10, 1))
 
+    def test_off_hand_attacks(self):
+        """With the rule for two weapons (AD&D's), a weapon in the off hand (the item at [BP+12h], in
+        slot 10: the helper's item 3) attacks once a round, the extra attacks the main hand's; a
+        missile weapon, the main hand or the rule off keep theirs (OFF_HAND_HALVES)."""
+        two = 4
+        for item, rules, missile, want in ((3, two | 4096, False, 2), (0x270F, two | 4096, False, 3),
+                                           (3, 4096, False, 3), (3, two, False, 2), (3, two | 4096, True, 3)):
+            with self.subTest(item=item, rules=rules, missile=missile):
+                self.setUp()
+                self.mu.mem_write(SS * 16 + BP + 0x12, struct.pack("<H", item))
+                self.assertEqual(self.attack(3, self.AXE, rules=rules, missile=missile)[0], want)
+        self.setUp()
+        self.mu.mem_write(SS * 16 + BP + 0x12, struct.pack("<H", 3))  # (a 7th-level Crusader: 3/2, the off hand 1)
+        self.assertEqual(self.attack(2, self.AXE, rules=two | game.RULE_KITS, classes=(1, 0, 0), kit=3,
+                                     levels=(7, 0, 0))[0], 2)
+
     def test_warrior_kits_attacks(self):
         """A Crusader (cleric) or Mind Warrior (psionicist), the rule for kits on: a warrior's extra
         attacks in melee, 3/2 a round from 7th level, 2 from 13th, weapon specialization on or off;
@@ -1836,8 +1852,10 @@ class RuleTests(RingTests):
     def setUp(self):
         super().setUp()
         image = load_image()
-        two = image.find(bytes.fromhex("2ef606") + struct.pack("<H", self.RULES) + bytes([4]))
-        double = image.find(bytes.fromhex("2ef606") + struct.pack("<H", self.RULES) + bytes([16]))
+        def handler(vector):  # (the helper's install code: "mov ax,25xxh / mov dx,handler")
+            at = image.find(bytes((0xB8, vector, 0x25, 0xBA)))
+            return struct.unpack_from("<H", image, at + 4)[0] if at > 0 else -1
+        two, double = handler(VEC_TWO), handler(VEC_DOUBLE)
         self.assertGreater(min(two, double), 0)
         self.mu.mem_write(VEC_TWO * 4, struct.pack("<HH", two, TSR))
         self.mu.mem_write(VEC_DOUBLE * 4, struct.pack("<HH", double, TSR))

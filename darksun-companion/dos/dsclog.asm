@@ -2637,7 +2637,13 @@ probe_attacks:
 .three: sub word [bp + 0x0A], 3
 .done:  pop dx
 .store: call war_kit_of        ; (a Crusader's or Mind Warrior's extra attacks, in melee)
-        mov [bp - 8], ax
+        cmp word [bp + 0x16], 1
+        jg .kept
+        push bx
+        mov bx, [bp + 0x12]     ; (the weapon's item)
+        call off_hand_halves    ; (RULE_TWO_WEAPONS: the off hand's one a round)
+        pop bx
+.kept:  mov [bp - 8], ax
         iret
 .missile:                       ; (a specialist's rate of fire, else the game's)
         push bx
@@ -2768,6 +2774,31 @@ expert_halves:
         inc ax
 .ret:   ret
 
+; OFF_HAND_HALVES: AX the attacks a round (halves) with item BX, a melee weapon: with RULE_TWO_WEAPONS
+; (AD&D's two weapons), no more than one a round (2 halves) in the off hand (its slot OFF_HAND_SLOT),
+; whoever wields it; the extra attacks are the main hand's. DS the game's; others kept.
+OFF_HAND_SLOT equ 10
+off_hand_halves:
+        test byte [cs:rules], RULE_TWO_WEAPONS
+        jz .ret
+        cmp ax, 2
+        jbe .ret
+        cmp bx, 0x270F
+        jae .ret
+        push es
+        push bx
+        push ax
+        imul bx, bx, 0x15
+        les ax, [0x165D]
+        add bx, ax
+        cmp byte [es:bx + 0x11], OFF_HAND_SLOT
+        pop ax
+        pop bx
+        pop es
+        jne .ret
+        mov ax, 2
+.ret:   ret
+
 ; WAR_KIT_OF: AX the attacks a round (halves) of PROBE_ATTACKS's attacker ([BP+10h]) made a
 ; Crusader's or Mind Warrior's (WAR_KIT_HALVES) for a melee attack ([BP+16h] 1 or less). Others kept.
 war_kit_of:
@@ -2889,10 +2920,14 @@ probe_dam_line:
         add word [bp + 0x0A], 2
 .out:   pop dx
         pop bp
-.done:  push cx                 ; (a Crusader's or Mind Warrior's extra attacks; AH kept)
-        mov ch, ah
+.done:  push cx                 ; (a Crusader's or Mind Warrior's extra attacks; the off hand's
+        mov ch, ah              ;  one a round, the item DI; AH kept)
         xor ah, ah
         call war_kit_halves
+        push bx
+        mov bx, di
+        call off_hand_halves
+        pop bx
         mov ah, ch
         pop cx
         iret
@@ -2983,6 +3018,8 @@ probe_view_dam:
         jnz .gone
         mov ax, [bp - 6]
         call war_kit_halves
+        mov bx, [bp - 0x0A]             ; (the item: the off hand's one a round)
+        call off_hand_halves
         mov [bp - 6], ax
 .gone:  pop es
         pop di
