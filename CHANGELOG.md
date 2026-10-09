@@ -93,7 +93,7 @@ Released pull requests are summarised in a line or two each; the release notes
   log's hit point lines name the kit's die.
 - **A kit sleeps when a human dual-classes** (DUAL on a portrait's menu), as
   the class it was chosen with does, and wakes, gifts and costs, once the new
-  class's level passes the old one's. The Effects screen adds DORMANT under
+  class's level passes the old one's. The Effects screen adds (ASLEEP) after
   the kit and the Characters tab names the level to pass. Awake, it goes by
   its own class's level; its hit die counts only for its own class. A Battle
   Mage's chosen weapon spec stays the kit's (expertise when awake, nothing
@@ -123,6 +123,12 @@ Released pull requests are summarised in a line or two each; the release notes
   Champion or Sentinel with Twin-blade, Shinobi or Ravager; Twin-blade with
   Healer; Brute with Shinobi or Lifebinder), and kits a class bars, both ways
   (INT 99h).
+- **The Effects screen a page at a time:** its lower panel has room for five
+  lines, too few for three kits and a gladiator's weapon specs. A kit takes
+  one line (the long names shortened as on the KIT page, "(ASLEEP)" after one
+  that sleeps), and when there are more than five lines the panel shows four
+  and MORE: CLICK HERE; a click on it shows the next page, a weapon spec's
+  heading carried over with its weapons (INT 97h).
 - **A new preserver picks its starting spells** on CHOOSE A SPELL when DONE
   is clicked on the creation screen (two 1st-level spells at 1st level, four
   at 2nd, four and two of 2nd level at 3rd; a Scholar one more a level), in

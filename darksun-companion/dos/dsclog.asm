@@ -131,6 +131,7 @@ VEC_SOUND_42 equ 0x9B      ; PROBE_SOUND_42
 VEC_SOUND_44 equ 0x9A      ; PROBE_SOUND_44
 VEC_DUAL_KIT equ 0x99      ; PROBE_DUAL_KIT
 VEC_CR_SPELLS equ 0x98     ; PROBE_CR_SPELLS
+VEC_EF_CLICK equ 0x97      ; PROBE_EF_CLICK
 TSIZE    equ 4096     ; bytes in the text buffer (a power of two)
 
 NENT    equ 96          ; entries in the ring (96: the helper and it fit in upper memory)
@@ -4553,23 +4554,62 @@ probe_ef_rows:
         pop bp
         iret
 
-; the kinds of party member AX (DS the game's): the skill's line where it changes, then the kind's
+; EF_DRAW: party member AX's lines (DS the game's): a line for each kit, the oldest class's first
+; (KIT_OF_SHEET, "(ASLEEP)" after a kit asleep), then its weapon kinds, the skill's line where it
+; changes, then the kind's (EF_LINES_OF). The panel has room for EF_LINES: with more, a page at a
+; time, EF_LINES - 1 of them and EF_MORE under them; a click on the panel (PROBE_EF_CLICK) shows the
+; next page, after the last the first again.
 ef_draw:
         les bx, [LV_SHEETS]
+        mov dx, ax
         imul ax, ax, 0x47
         add bx, ax
+        mov byte [cs:ef_drawing], 0     ; (counted first)
+        mov word [cs:ef_index], 0
+        call ef_lines_of
+        mov cx, [cs:ef_index]           ; (CX the lines)
+        xor ax, ax                      ; the page: the first, or the next if asked (EF_NEXT)
+        cmp byte [cs:ef_next], 0
+        je .page
+        mov byte [cs:ef_next], 0
+        mov ax, [cs:ef_after]           ; (the line after the last one shown)
+        cmp ax, cx
+        jb .page
+        xor ax, ax
+.page:  cmp cx, EF_LINES
+        ja .set
+        xor ax, ax
+.set:   mov [cs:ef_first], ax
+        mov [cs:ef_count], cx
+        mov word [cs:ef_rows], EF_LINES
+        cmp cx, EF_LINES
+        jbe .draw
+        dec word [cs:ef_rows]
+.draw:  mov byte [cs:ef_drawing], 1
+        mov word [cs:ef_index], 0
+        mov word [cs:ef_used], 0
         mov word [cs:ef_y], USE_FIRST_Y
+        call ef_lines_of
+        cmp cx, EF_LINES
+        jbe .ret
+        mov word [cs:ef_y], USE_FIRST_Y + (EF_LINES - 1) * USE_STEP
+        mov si, ef_more
+        call ef_put
+.ret:   ret
+
+; EF_LINES_OF: EF_DRAW's lines of the character whose sheet is ES:BX, each through EF_LINE.
+ef_lines_of:
         mov byte [cs:ef_last], 0xFF
+        mov word [cs:ef_head], 0
         call kit_place          ; (a line for each kit, the oldest class's first; a human's kit
         jc .specs               ; asleep until its class is passed, as the game's classes are)
 .kit:   call kit_at
         jz .kit_next
         call kit_of_sheet
-        call ef_line
         call kit_awake
-        jnc .kit_next
-        mov si, kit_asleep
-        call ef_line
+        jnc .line
+        call kit_line_asleep
+.line:  call ef_line
 .kit_next:
         dec di
         jns .kit
@@ -4597,7 +4637,9 @@ ef_draw:
         movzx si, al
         shl si, 1
         mov si, [cs:si + ef_skills]
+        mov byte [cs:ef_is_head], 1
         call ef_line
+        mov byte [cs:ef_is_head], 0
 .kind:  mov si, [cs:ef_kind]
         shl si, 1
         mov si, [cs:si + ef_kinds]
@@ -4607,14 +4649,44 @@ ef_draw:
         jb .slot
 .ret:   ret
 
-; KIT_OF_SHEET: CS:SI the line naming kit AL (KIT_AT's, not 0: "KIT: RAVAGER", in KIT_LINE). Others
-; kept.
+; KIT_OF_SHEET: CS:SI the line naming kit AL (KIT_AT's, not 0: "KIT: RAVAGER", in KIT_LINE), a long
+; name shorter (KIT_SHORT). KIT_LINE_ASLEEP: " (ASLEEP)" after it. Others kept.
+kit_line_asleep:
+        push ax
+        push di
+        mov si, kit_line
+.end:   cs lodsb
+        or al, al
+        jnz .end
+        lea di, [si - 1]
+        mov si, kit_asleep
+.copy:  cs lodsb
+        mov [cs:di], al
+        inc di
+        or al, al
+        jnz .copy
+        mov si, kit_line
+        pop di
+        pop ax
+        ret
 kit_of_sheet:
         push ax
         push cx
         push di
-        call kit_name_ptr
-        mov di, kit_line + 5    ; (after "KIT: ")
+        mov si, kit_short
+.short: cmp byte [cs:si], 0
+        je .long
+        cmp [cs:si], al
+        je .found
+.skip:  inc si
+        cmp byte [cs:si], 0
+        jne .skip
+        inc si
+        jmp .short
+.found: inc si
+        jmp .name
+.long:  call kit_name_ptr
+.name:  mov di, kit_line + 5    ; (after "KIT: ")
 .char:  cs lodsb
         mov [cs:di], al
         inc di
@@ -6070,6 +6142,56 @@ probe_cr_spells:
         popad
         iret
 
+; PROBE_EF_CLICK: INT VEC_EF_CLICK replaces "mov si,[bp+8]" (3 bytes: INT + NOP; DSUN.EXE 7EC9Eh) in the
+; Effects screen's handler for its cells (7EC97h; [BP+8] the cell's button, from 2BCDh, [BP+0Ah] the
+; event, EF_CLICKED a click), cells from EF_CELLS on being the lower panel's: a click there while EF_DRAW's
+; lines take more than a page (EF_COUNT) shows the next page (EF_NEXT): the window drawn again as
+; the handler does after a cell's label (118:618h, DS:[11A4h] the window: its background, then its
+; contents, 7E620h, and EF_DRAW in them), the way back in a frame the overlay manager can fix up (as
+; PROBE_LV_PICK), and out of the handler (7EDF5h). Else SI [BP+8].
+EF_CELL_ID   equ 0x2BCD
+EF_CLICKED   equ 0x20                   ; (the events: 2 the pointer onto a cell, 40h a button down,
+                                        ;   20h up again: a click)
+EF_CLICK_OUT equ 0x7EDF5 - 0x7ECA0      ; (the handler's way out, less the address after the INT)
+EF_REDRAW_CALL equ 0x7EDEE - 0x7ECA0    ; (its "call 118:618h", the window drawn again, less that)
+probe_ef_click:
+        mov si, [bp + 8]
+        cmp word [bp + 0x0A], EF_CLICKED
+        jne .iret
+        cmp si, EF_CELL_ID + EF_CELLS
+        jb .iret
+        cmp word [cs:ef_count], EF_LINES
+        ja .page
+.iret:  iret
+.page:  sti
+        pushad
+        push es
+        mov bx, sp              ; the interrupt frame at BX+34: IP, CS, flags
+        mov byte [cs:ef_next], 1
+        push ds
+        lds si, [ss:bx + 34]    ; (the window redraw's far address, in its call, as fixed up)
+        mov eax, [si + EF_REDRAW_CALL]
+        pop ds
+        mov [cs:ef_far], eax
+        push word [ss:bx + 36]
+        mov ax, [ss:bx + 34]
+        add ax, EF_CLICK_OUT
+        push ax
+        push bp
+        mov bp, sp
+        push dword [PK_WINDOW]
+        call far [cs:ef_far]
+        add sp, 4
+        pop bp
+        pop ax                  ; the way back, as the overlay manager has left it
+        pop dx
+        mov bx, sp
+        mov [ss:bx + 34], ax
+        mov [ss:bx + 36], dx
+        pop es
+        popad
+        iret
+
 ; PROBE_SOUND_42 / PROBE_SOUND_44: INT VEC_SOUND_42 replaces "mov dx,[es:bx+42h]" (4 bytes: INT + 2
 ; NOPs; DSUN.EXE 78FDAh) and INT VEC_SOUND_44 "mov ax,[es:bx+44h]" (81DE3h): two sound numbers on
 ; the character sheet (ES:BX), read as words by the game, though the bytes above them are the
@@ -6287,8 +6409,61 @@ kit_move:
 .none:  pop ax
         ret
 
-; CS:SI on the panel's next line (all registers kept: the game's text routine changes ES)
+; EF_LINE: CS:SI EF_DRAW's next line: counted (EF_INDEX), and put on the panel (EF_PUT) if drawing
+; and on the page shown. All registers kept.
 ef_line:
+        push ax
+        mov ax, [cs:ef_index]
+        inc word [cs:ef_index]
+        cmp byte [cs:ef_is_head], 0     ; (a skill's line: the kinds' under it, EF_HEAD)
+        je .drawing
+        mov [cs:ef_head], si
+.drawing:
+        cmp byte [cs:ef_drawing], 0
+        je .out
+        cmp ax, [cs:ef_first]
+        jb .out
+        push ax
+        mov ax, [cs:ef_used]
+        cmp ax, [cs:ef_rows]
+        pop ax
+        jae .out
+        cmp word [cs:ef_used], 0        ; (the page's first line: a kind's, its skill's line over it)
+        jne .put
+        cmp ax, 0
+        je .put
+        cmp byte [cs:ef_is_head], 0
+        jne .put
+        cmp byte [cs:si], ' '
+        jne .put
+        cmp word [cs:ef_head], 0
+        je .put
+        push si
+        mov si, [cs:ef_head]
+        call ef_put
+        pop si
+        inc word [cs:ef_used]
+.put:   cmp byte [cs:ef_is_head], 0      ; (a skill's line last on a page: on the next, with its kinds)
+        je .shown
+        push ax
+        mov ax, [cs:ef_used]
+        inc ax
+        cmp ax, [cs:ef_rows]
+        pop ax
+        jb .shown
+        cmp word [cs:ef_count], EF_LINES
+        jbe .shown
+        mov ax, [cs:ef_rows]
+        mov [cs:ef_used], ax
+        jmp .out
+.shown: call ef_put
+        inc word [cs:ef_used]
+        inc ax
+        mov [cs:ef_after], ax
+.out:   pop ax
+        ret
+; EF_PUT: CS:SI on the panel's next line (all registers kept: the game's text routine changes ES)
+ef_put:
         pusha
         push es
         cmp word [cs:ef_y], USE_FIRST_Y + (EF_LINES - 1) * USE_STEP
@@ -6313,9 +6488,25 @@ kit_names    db 'ELEMENTALIST', 0, 'HEALER', 0, 'CRUSADER', 0
              db 'STALKER', 0, 'JUSTIFIER', 0, 'SEEKER', 0
              db 'SWASHBUCKLER', 0, 'ASSASSIN', 0, 'SHINOBI', 0
 kit_class_of db 1, 1, 1, 1, 2, 2, 2, 2, 3, 4, 5, 6, 7, 7, 7, 7, 8   ; (a sheet's class, 1-17: the screen's)
-kit_asleep   db 'DORMANT', 0
+kit_asleep   db ' (ASLEEP)', 0
+; Shorter names for the Effects screen's line (kitpages.SHORT): the kit, the name. 0 ends it.
+kit_short    db KIT_CHAMPION, 'CHAMPION', 0, KIT_SWASHBUCKLER, 'SWASHBUCK', 0, KIT_ELEMENTALIST, 'ELEMENTAL', 0
+             db KIT_GROVE_WARDEN, 'WARDEN', 0, KIT_BATTLE_MAGE, 'BATTLMAGE', 0, KIT_MIND_BENDER, 'M-BENDER', 0
+             db KIT_MIND_WARRIOR, 'M-WARRIOR', 0, 0
+ef_more      db 'MORE: CLICK HERE', 0
+ef_drawing   db 0
+ef_index     dw 0
+ef_first     dw 0
+ef_rows      dw 0
+ef_count     dw 0
+ef_next      db 0
+ef_after     dw 0
+ef_used      dw 0
+ef_head      dw 0
+ef_is_head   db 0
+ef_far       dd 0
 kit_line     db 'KIT: '
-             times 15 db 0
+             times 24 db 0          ; (the longest name, 14, and " (ASLEEP)")
 ef_y         dw 0
 ef_kind      dw 0
 ef_last      db 0
@@ -11950,6 +12141,9 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_CR_SPELLS
         mov dx, probe_cr_spells
         int 21h
+        mov ax, 2500h + VEC_EF_CLICK
+        mov dx, probe_ef_click
+        int 21h
         mov ax, 2500h + VEC_PICK_LEVEL
         mov dx, probe_pick_level
         int 21h
@@ -12004,10 +12198,10 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or 98h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+busy    db 'DSCLOG: interrupts 60h-65h or 97h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
 all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS, VEC_LV_PICK, VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK, VEC_EF_ROWS, VEC_HP_BEST, VEC_TOME, VEC_INIT, VEC_THAC0, VEC_SLOTS, VEC_SLOT_LEVEL
             db VEC_PSP_USE, VEC_PSP_TABLE, VEC_PSP_DEFENCE, VEC_CURE, VEC_PSP_KEEP, VEC_RANGER_CAST, VEC_PSP_KEEP_DX
-            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY, VEC_RANGER_LEVEL, VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP, VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW, VEC_DUAL_BAN, VEC_DUAL_SPELLS, VEC_SOUND_42, VEC_SOUND_44, VEC_DUAL_KIT, VEC_CR_SPELLS
+            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY, VEC_RANGER_LEVEL, VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP, VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW, VEC_DUAL_BAN, VEC_DUAL_SPELLS, VEC_SOUND_42, VEC_SOUND_44, VEC_DUAL_KIT, VEC_CR_SPELLS, VEC_EF_CLICK
 all_vectors_end:
 
         align 16, db 0

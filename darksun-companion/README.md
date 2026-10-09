@@ -1742,7 +1742,7 @@ A kit belongs to the class it was chosen with. A human who changes class
 (**DUAL** on the menu a right-click on a portrait opens, for a human of 2nd
 level or more) keeps it, but it sleeps as that class does: gifts and costs
 alike count again once the new class's level passes the old one's. The
-Effects screen shows `KIT: BATTLE MAGE` and, below it, `DORMANT` until then;
+Effects screen shows `KIT: BATTLMAGE (ASLEEP)` until then;
 the Ledger's Characters tab says so too (`Battle Mage, dormant until the
 fighter level passes 3`). Once awake, the kit goes by its own class's level
 (a Ravager's AC, a Seeker's slots, a Battle Mage's expertise from 7th
@@ -1768,18 +1768,18 @@ the sphere a new cleric picks), the game's own three-choice menu asks for it:
 row for none. A kit that can't go with the character's other classes or kits
 (below) is left off the menu. A new **Elementalist** then picks its second
 sphere on the same menu (**SPHERE 2: NONE**, then the three other spheres).
-Each kit sleeps and wakes with its own class, and the Effects screen lists
-them all, oldest first:
+Each kit sleeps and wakes with its own class.
 
 ![The KIT menu after DUAL: a Battle Mage turned thief, offered Swashbuckler and Assassin (not the Shinobi)](docs/dual-kit-menu.png)
 
-```
-KIT: ELEMENTALIST
-DORMANT
-KIT: MYRMIDON
-SPECIALIZED IN
-  LONG SWORD
-```
+The Effects screen lists the kits, oldest first, a line each (the longer names
+shortened as on the KIT page, `(ASLEEP)` after one that sleeps), then the
+weapon specs. Its lower panel has room for five lines: when there are more,
+it shows four and **MORE: CLICK HERE** under them, and a click on the panel
+shows the next page (a weapon spec's heading again at the top of a page that
+goes on with its weapons), the first again after the last:
+
+![The Effects screen, a page at a time: a Mind Bender psionicist who became a Twin-blade gladiator, then an Assassin thief, with four weapon specs](docs/effects-pages.png)
 
 With **Weapon specialization** ticked, a human who becomes a fighter,
 gladiator or ranger (or a Battle Mage) then picks the weapon kinds it is due

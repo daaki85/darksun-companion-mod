@@ -767,6 +767,8 @@ class ScriptRandTests(unittest.TestCase):
     searches' counts."""
     COUNTS = 0xA000
 
+    DS = 0x9000  # (the game's DS: its data well clear of DSCLOG's image, at TSR)
+
     def setUp(self):
         image = load_image()
         self.mu = mu = Uc(UC_ARCH_X86, UC_MODE_16)
@@ -778,24 +780,24 @@ class ScriptRandTests(unittest.TestCase):
         self.assertGreater(at, 0)
         mu.mem_write(VEC_SCRIPT_RAND * 4, struct.pack("<HH", at, TSR))
         mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
-        data = (GAME_DS + 0x3781 - 0x4356) * 16
+        data = (self.DS + 0x3781 - 0x4356) * 16
         mu.mem_write(data + 0x192, b"\x01")  # the running script's slot: 1, at 2116
         mu.mem_write(data + 0x295 + 2, struct.pack("<H", 2116))
-        mu.mem_write(GAME_DS * 16 + 0x1356, struct.pack("<HH", 0, self.COUNTS))
+        mu.mem_write(self.DS * 16 + 0x1356, struct.pack("<HH", 0, self.COUNTS))
         mu.mem_write(self.COUNTS * 16 + 21 * 2, struct.pack("<3H", 4, 3, 2))  # junk, hay, wardrobe
 
     def test_recorded(self):
         mu = self.mu
         mu.mem_write(SS * 16 + 0x7FC, struct.pack("<I", 0x7000))  # rand(), pushed
         mu.mem_write(CALLER * 16 + 0x600, bytes((0xCD, VEC_SCRIPT_RAND)))
-        for name, value in dict(cs=CALLER, ds=GAME_DS, ss=SS, esp=0x7FC, ebp=BP, eflags=IF | 2, eax=10,
+        for name, value in dict(cs=CALLER, ds=self.DS, ss=SS, esp=0x7FC, ebp=BP, eflags=IF | 2, eax=10,
                                 ebx=0x2222, ecx=0x3333, edx=0x4444, esi=0x1111, edi=0x5555, es=0x6666).items():
             mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
         mu.emu_start(CALLER * 16 + 0x600, CALLER * 16 + 0x602)
         self.assertEqual([mu.reg_read(x) for x in (r.UC_X86_REG_SP, r.UC_X86_REG_EAX, r.UC_X86_REG_EDX, r.UC_X86_REG_BX,
                                                    r.UC_X86_REG_CX, r.UC_X86_REG_SI, r.UC_X86_REG_DI, r.UC_X86_REG_BP,
                                                    r.UC_X86_REG_DS, r.UC_X86_REG_ES)],
-                         [0x7FC, 11, 11, 0x2222, 0x3333, 0x1111, 0x5555, BP, GAME_DS, 0x6666])
+                         [0x7FC, 11, 11, 0x2222, 0x3333, 0x1111, 0x5555, BP, self.DS, 0x6666])
         seq, _, nent = struct.unpack("<HHH", mu.mem_read(TSR * 16 + self.hdr_off + 8, 6))
         e = Entry.parse(bytes(mu.mem_read(RING_SEG * 16 + self.ring + ((seq - 1) % nent) * Entry.SIZE, Entry.SIZE)))
         self.assertEqual((e.kind, e.raw & 0xFF, e.raw >> 8 & 0xFF, e.extra), (5, 0x7000 * 11 >> 15, 10, 2116))
@@ -2744,10 +2746,10 @@ class KitTests(unittest.TestCase):
         from dscompanion import kitpages
         for name, kid in kitpages.KIT_IDS.items():
             with self.subTest(name=name):
-                self.call(rb"\x50\x51\x57\xe8..\xbf", eax=kid)
+                self.call(rb"\x50\x51\x57\xbe..\x2e\x80\x3c\x00", eax=kid)
                 si = self.mu.reg_read(r.UC_X86_REG_SI)
                 text = bytes(self.mu.mem_read(TSR * 16 + si, 24)).split(b"\0")[0].decode()
-                self.assertEqual(text, "KIT: " + name.upper())
+                self.assertEqual(text, "KIT: " + kitpages.row_text(name))
 
     CREATURES, ITEMS, TYPES = 0x8200, 0x8300, 0x8400
 
