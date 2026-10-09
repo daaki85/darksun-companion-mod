@@ -80,21 +80,18 @@ double-click, with the options as last set.)
 
 ## What's new
 
-**Templar's Ledger 1.2.0**, the mod's last release under that name, is out
-([release notes](release-notes/v1.2.0.md)): weapon specialization and class
-restrictions, new weapons and magic items across Athas, and more, from pull
-requests #19 to #29.
-
-**Since 1.2.0** (in the repository, not yet in a release): the new name,
-Obsidian Edition; kits, three for each class, and up to three for a human who
-changes class; AD&D's class tables; preservers' INT (the chance to learn a
-scroll's spell, and the most spells of each level); the leader's CHA at
-shops; two magic robes; rangers' casting level; the off hand's one attack a
-round with two weapons; the charges left in a wand's item box; and [a
-spoiler-free player's guide](darksun-companion/GUIDE.md).
+**Obsidian Edition 2.0.0** is out ([release notes](release-notes/v2.0.0.md)),
+the first release under the mod's new name: kits, three for each class, and
+up to three for a human who changes class; AD&D's class tables; preservers'
+INT (the chance to learn a scroll's spell, and the most spells of each
+level); the leader's CHA at shops; two magic robes; rangers' casting level;
+the off hand's one attack a round with two weapons; the charges left in a
+wand's item box; and [a spoiler-free player's
+guide](darksun-companion/GUIDE.md). It is pull requests #31 and #32.
 
 Earlier changes, pull request by pull request, are in
 [`CHANGELOG.md`](CHANGELOG.md). Releases have notes of their own:
-[1.2.0](release-notes/v1.2.0.md) (pull requests #19 to #29),
+[2.0.0](release-notes/v2.0.0.md) (pull requests #31 and #32),
+[1.2.0](release-notes/v1.2.0.md) (#19 to #29),
 [1.1.0](release-notes/v1.1.0.md) (#14 to #18) and
 [1.0.0](release-notes/v1.0.0.md) (#1 to #13).
