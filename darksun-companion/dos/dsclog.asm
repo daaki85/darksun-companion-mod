@@ -132,6 +132,10 @@ VEC_SOUND_44 equ 0x9A      ; PROBE_SOUND_44
 VEC_DUAL_KIT equ 0x99      ; PROBE_DUAL_KIT
 VEC_CR_SPELLS equ 0x98     ; PROBE_CR_SPELLS
 VEC_EF_CLICK equ 0x97      ; PROBE_EF_CLICK
+VEC_CAST_MARK equ 0x96     ; PROBE_CAST_MARK
+VEC_ROUND_MARK equ 0x95    ; PROBE_ROUND_MARK
+VEC_CAST_DONE equ 0x94     ; PROBE_CAST_DONE
+VEC_END_TURN equ 0x93      ; PROBE_END_TURN
 TSIZE    equ 4096     ; bytes in the text buffer (a power of two)
 
 NENT    equ 96          ; entries in the ring (96: the helper and it fit in upper memory)
@@ -5617,6 +5621,101 @@ probe_hit_round:
 .out:   pop ax
         iret
 
+; The Arcanist's second preserver spell in a turn. In a fight, a spell cast ends the caster's turn,
+; through the fight's routine that sets a combatant's actions (59256h; with 0, none: the turn is
+; over), called from the routine finishing any use of what the USE screen armed (a spell from a
+; slot, an item's charge: 720F4h, which takes the slot or charge) and from the routines that cast;
+; the routine casting a spell aimed on the map also marks the caster (the mark of a hit, +0AFh in
+; the fight's table), and a marked character is offered no spell. An Arcanist's first preserver
+; spell of its turn (DS:[54FBh] 0: from its wizard slots; DS:[54FCh] the party member) does
+; neither: ARC_CASTS counts them, and ARC_HOLD keeps the turn from ending till the game's main loop
+; runs again (PROBE_SCROLL), so it can cast a second; a hit still marks it.
+; PROBE_CAST_MARK: INT VEC_CAST_MARK replaces "mov byte es:[bx+0AFh],1" (6 bytes: INT + 4 NOPs;
+; DSUN.EXE 845F0h), the caster BX marked. PROBE_CAST_DONE: INT VEC_CAST_DONE replaces the finishing
+; routine's "cmp word es:[19h],0" (6 bytes; 722AFh; ES the segment of the fight's state, not 0 in a
+; fight): counts, sets ARC_HOLD (the party member + 1) for the first, and gives the JE after it
+; the game's flags. PROBE_END_TURN: INT VEC_END_TURN replaces "mov si,[bp+8]" (3 bytes: INT + NOP;
+; 59256h, [BP+6] the combatant, [BP+8] the actions) and returns at once, leaving the actions be,
+; when ending ARC_HOLD's turn from another of the game's code segments (the fight's own routines,
+; a turn ended from the combat menu among them, call it from its own). PROBE_ROUND_MARK: INT
+; VEC_ROUND_MARK replaces "mov byte es:[si+0AFh],0" (6 bytes; 57621h) where creature SI's turn
+; starts and its mark is cleared: its count too.
+ARM_KIND equ 0x54FB             ; (the armed thing's kind: 0 a wizard spell from a slot, 1 a priest's, 3 an item)
+ARM_WHO  equ 0x54FC             ; (the party member using it)
+END_TURN_OUT equ 0x592AF - 0x5925F  ; (the routine's "pop si / leave / retf", from the INT's return: its NOP)
+arc_casts db 0, 0, 0, 0         ; (party members 0-3: an Arcanist's preserver spells this turn)
+arc_hold  db 0                  ; (the party member + 1 whose turn a cast doesn't end; 0 none)
+probe_cast_mark:
+        cmp bx, 4
+        jae .mark
+        cmp byte [ARM_KIND], 0
+        jne .mark
+        cmp byte [cs:arc_casts + bx], 0
+        jne .mark
+        push ax
+        mov ax, bx
+        call cr_is
+        db KIT_ARCANIST
+        pop ax
+        jne .mark
+        iret
+.mark:  mov byte [es:bx + 0xAF], 1
+        iret
+
+probe_cast_done:
+        sti
+        push ax
+        push bx
+        mov byte [cs:arc_hold], 0
+        cmp word [es:0x19], 0
+        je .flags                       ; (not in a fight)
+        cmp byte [ARM_KIND], 0
+        jne .game
+        movzx bx, byte [ARM_WHO]
+        cmp bx, 4
+        jae .game
+        mov ax, bx
+        call cr_is
+        db KIT_ARCANIST
+        jne .game
+        inc byte [cs:arc_casts + bx]
+        cmp byte [cs:arc_casts + bx], 1
+        jne .game
+        inc bx
+        mov [cs:arc_hold], bl
+.game:  cmp word [es:0x19], 0           ; (the game's flags)
+.flags: pop bx
+        pop ax
+        retf 2
+
+probe_end_turn:
+        mov si, [bp + 8]
+        or si, si
+        jnz .ret                        ; (actions left: not the turn's end)
+        push ax
+        push bp
+        movzx ax, byte [cs:arc_hold]
+        dec ax
+        js .ends                        ; (none held)
+        cmp ax, [bp + 6]
+        jne .ends
+        mov ax, [bp + 4]                ; the caller's code segment ...
+        mov bp, sp
+        cmp ax, [bp + 6]                ; ... and the routine's own (the INT's return, past AX and BP)
+        je .ends
+        add word [bp + 4], END_TURN_OUT ; (held: return at once)
+.ends:  pop bp
+        pop ax
+.ret:   iret
+
+probe_round_mark:
+        mov byte [es:si + 0xAF], 0
+        mov byte [cs:arc_hold], 0
+        cmp si, 4
+        jae .ret
+        mov byte [cs:arc_casts + si], 0
+.ret:   iret
+
 ; The Shinobi's spells (kits.SHINOBI_SPELLS): spell, spell level. Wizard spells are 0 to WIZARD_LAST.
 SHINOBI_SPELLS:
         db 6, 1,  2, 1,  9, 1,  4, 1,  11, 1           ; Gaze Reflection, Charm Person, Shield, Color Spray, Wall of Fog
@@ -10665,6 +10764,7 @@ probe_scroll:
         push si
         push di
         inc word [cs:main_ticks]
+        mov byte [cs:arc_hold], 0       ; (an Arcanist's cast is over: PROBE_END_TURN)
         call dust_tick
         call target_click
         cmp word [cs:view_redraw], 0
@@ -12255,6 +12355,18 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_EF_CLICK
         mov dx, probe_ef_click
         int 21h
+        mov ax, 2500h + VEC_CAST_MARK
+        mov dx, probe_cast_mark
+        int 21h
+        mov ax, 2500h + VEC_ROUND_MARK
+        mov dx, probe_round_mark
+        int 21h
+        mov ax, 2500h + VEC_CAST_DONE
+        mov dx, probe_cast_done
+        int 21h
+        mov ax, 2500h + VEC_END_TURN
+        mov dx, probe_end_turn
+        int 21h
         mov ax, 2500h + VEC_PICK_LEVEL
         mov dx, probe_pick_level
         int 21h
@@ -12309,10 +12421,10 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or 97h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+busy    db 'DSCLOG: interrupts 60h-65h or 93h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
 all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS, VEC_LV_PICK, VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK, VEC_EF_ROWS, VEC_HP_BEST, VEC_TOME, VEC_INIT, VEC_THAC0, VEC_SLOTS, VEC_SLOT_LEVEL
             db VEC_PSP_USE, VEC_PSP_TABLE, VEC_PSP_DEFENCE, VEC_CURE, VEC_PSP_KEEP, VEC_RANGER_CAST, VEC_PSP_KEEP_DX
-            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY, VEC_RANGER_LEVEL, VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP, VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW, VEC_DUAL_BAN, VEC_DUAL_SPELLS, VEC_SOUND_42, VEC_SOUND_44, VEC_DUAL_KIT, VEC_CR_SPELLS, VEC_EF_CLICK
+            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY, VEC_RANGER_LEVEL, VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP, VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW, VEC_DUAL_BAN, VEC_DUAL_SPELLS, VEC_SOUND_42, VEC_SOUND_44, VEC_DUAL_KIT, VEC_CR_SPELLS, VEC_EF_CLICK, VEC_CAST_MARK, VEC_ROUND_MARK, VEC_CAST_DONE, VEC_END_TURN
 all_vectors_end:
 
         align 16, db 0

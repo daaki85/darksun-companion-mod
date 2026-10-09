@@ -163,6 +163,8 @@ Released pull requests are summarised in a line or two each; the release notes
   every kit rule, in the helper and the Ledger, now asks for each kit the
   character has awake, and the Effects screen lists them all. Characters
   made before read as they did.
+- **The Arcanist casts two preserver spells in a turn** in a fight: its first
+  doesn't end the turn (a hit still keeps it from a second).
 - **The Crusader and Mind Warrior** have a warrior's extra attacks in melee:
   3/2 a round from 7th level of the kit's class, 2 from 13th, whether weapon
   specialization is on or not (the DAM lines and the Ledger's party view show
