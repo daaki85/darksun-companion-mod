@@ -77,6 +77,7 @@ VEC_DUAL_BAN, VEC_DUAL_SPELLS, VEC_SOUND_42, VEC_SOUND_44, VEC_DUAL_KIT = 0x9D, 
 VEC_CR_SPELLS, VEC_EF_CLICK = 0x98, 0x97
 VEC_CAST_MARK, VEC_ROUND_MARK, VEC_CAST_DONE, VEC_END_TURN = 0x96, 0x95, 0x94, 0x93
 VEC_LEARN_SAID, VEC_LEARN_REFUSED = 0x92, 0x91
+VEC_XP, VEC_PRIEST_THAC0, VEC_ADND_SLOTS = 0x90, 0x8F, 0x8E
 
 
 SCRIPT_BUFFER = 0x2E00  # the scripts' buffer, made bigger (the game's: 10000 bytes)
@@ -416,6 +417,12 @@ PATCHES = (
     # (a spell level full for the reader's INT)
     Patch("learn_said", 0x8B712, bytes.fromhex("1e68f133"), _interrupt(VEC_LEARN_SAID, 4)),
     Patch("learn_refused", 0x8B719, bytes.fromhex("1e680534"), _interrupt(VEC_LEARN_REFUSED, 4)),
+    # AD&D's class tables (game.RULE_ADND_TABLES): the XP for the next level, at a level up and
+    # on View Character; priests' THAC0; clerics', druids' and preservers' spell slots
+    Patch("xp_level_up", 0x87BBB, bytes.fromhex("666bc064"), _interrupt(VEC_XP, 4)),
+    Patch("xp_view", 0x67D41, bytes.fromhex("666bc064"), _interrupt(VEC_XP, 4)),
+    Patch("priest_thac0", 0x876AB, bytes.fromhex("8946fe"), _interrupt(VEC_PRIEST_THAC0, 3)),
+    Patch("adnd_slots", 0x5E240, bytes.fromhex("900ee87d02"), _interrupt(VEC_ADND_SLOTS, 5)),
     # A new preserver picks its spells on CHOOSE A SPELL at creation (the game gives Grease, Magic
     # Missile and more by its level)
     Patch("cr_spells", 0x66F2D, bytes.fromhex("8b46fe"), _interrupt(VEC_CR_SPELLS, 3)),

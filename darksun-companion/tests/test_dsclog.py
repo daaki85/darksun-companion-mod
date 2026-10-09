@@ -4082,3 +4082,107 @@ class KitTests(unittest.TestCase):
                             self.assertEqual(place, kitpages.kit_place_of(bytes(sheet), kid))
         self.assertEqual(kitpages.KIT_IDS["Ravager"], 15)
         self.assertEqual(kitpages.KIT_IDS["Shinobi"], 35)
+
+
+@unittest.skipIf(Uc is None, "unicorn is not installed")
+class AdndTablesTests(unittest.TestCase):
+    """RULE_HI_TABLES (game.RULE_ADND_TABLES) against tables.py: PROBE_XP (the XP the next level
+    needs), PROBE_PRIEST_THAC0 (what a class group takes off 20) and PROBE_ADND_SLOTS (a class's
+    slots at a spell level); with the rule off, the game's."""
+    DS, TABLE, PAIR = 0x9000, 0x8000, 0x700
+    RULES, RULES_HI = 170, 270
+
+    def setUp(self):
+        self.image = load_image()
+        self.mu = mu = Uc(UC_ARCH_X86, UC_MODE_16)
+        mu.mem_map(0, 0x100000)
+        mu.mem_write(TSR * 16, self.image)
+        mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
+        self.hdr = TSR * 16 + self.image.find(HDR_SIG)
+
+    def rules(self, on):
+        self.mu.mem_write(self.hdr + self.RULES_HI, struct.pack("<H", 8 if on else 0))
+
+    def run_vector(self, vector, code_len, stack=b"", **regs):
+        """INT VECTOR and its NOPs (CODE_LEN in all), STACK the words on the stack at the INT."""
+        at = self.image.find(bytes((0xB8, vector, 0x25, 0xBA)))
+        self.assertGreater(at, 0)
+        self.mu.mem_write(vector * 4, struct.pack("<HH", struct.unpack_from("<H", self.image, at + 4)[0], TSR))
+        site = 0x400
+        self.mu.mem_write(CALLER * 16 + site, bytes((0xCD, vector)) + b"\x90" * (code_len - 2))
+        sp = 0x7FC - len(stack)
+        self.mu.mem_write(SS * 16 + sp, stack)
+        for name, value in dict(cs=CALLER, ds=self.DS, ss=SS, esp=sp, ebp=BP, eflags=IF | 2, **regs).items():
+            self.mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+        self.mu.emu_start(CALLER * 16 + site, CALLER * 16 + site + code_len, count=20000)
+        self.assertEqual((self.mu.reg_read(r.UC_X86_REG_IP), self.mu.reg_read(r.UC_X86_REG_SP)),
+                         (site + code_len, sp))
+
+    def test_xp(self):
+        """PROBE_XP: the table's word (BX the row x 40 + the level x 2) x 100, or AD&D's."""
+        from dscompanion import tables
+        from dscompanion.gamepatch import VEC_XP
+        for on in (False, True):
+            self.rules(on)
+            for row, name in enumerate(tables.ROWS, 1):
+                for level in (0, 1, 2, 5, 9, 10):
+                    with self.subTest(on=on, row=name, level=level):
+                        bx = row * 40 + level * 2
+                        self.mu.mem_write(self.TABLE * 16 + bx + 0x27C, struct.pack("<H", 123))
+                        self.run_vector(VEC_XP, 4, eax=0xDEAD0000 | 123, ebx=bx, ecx=0x3333, edx=0x4444,
+                                        esi=0x5555, es=self.TABLE)
+                        want = tables.xp_needed(name, level) if on else 12300
+                        self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_EAX, r.UC_X86_REG_BX,
+                                                                        r.UC_X86_REG_CX, r.UC_X86_REG_DX,
+                                                                        r.UC_X86_REG_SI)],
+                                         [want, bx, 0x3333, 0x4444, 0x5555])
+
+    def test_priest_thac0(self):
+        """PROBE_PRIEST_THAC0: [BP-2] the AX given, but a priest's (CX 0, its level at [BP-0Ah])
+        AD&D's with the rule: 2 for every 3 levels."""
+        from dscompanion import tables
+        from dscompanion.gamepatch import VEC_PRIEST_THAC0
+        for on in (False, True):
+            self.rules(on)
+            for group in range(4):
+                for level in range(1, 11):
+                    with self.subTest(on=on, group=group, level=level):
+                        self.mu.mem_write(SS * 16 + BP - 0x0A + group * 2, bytes((level, 0)))
+                        self.run_vector(VEC_PRIEST_THAC0, 3, eax=77, ebx=0x2222, ecx=group, edx=0x4444,
+                                        esi=0x5555)
+                        got, = struct.unpack("<H", self.mu.mem_read(SS * 16 + BP - 2, 2))
+                        want = 20 - tables.priest_thac0(level) if on and group == 0 else 77
+                        self.assertEqual(got, want)
+                        self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_BX, r.UC_X86_REG_CX,
+                                                                        r.UC_X86_REG_DX, r.UC_X86_REG_SI)],
+                                         [0x2222, group, 0x4444, 0x5555])
+
+    # the game's routine, a stand-in: AX = the level x 100 + WIS + the spell level x 1000, BX and CX spoilt
+    STUB = bytes.fromhex("55" "89e5" "8b5e08" "368a07" "b400" "6bc064" "360fb64f01" "01c8"
+                         "8b4e0a" "69c9e803" "01c8" "bbffff" "b9ffff" "5d" "cb")
+
+    def test_slots(self):
+        """PROBE_ADND_SLOTS: the routine's count; with the rule, for a cleric, druid or preserver,
+        AD&D's for the level and the routine's for WIS alone (asked with the level 0, then the
+        level put back)."""
+        from dscompanion import tables
+        from dscompanion.gamepatch import VEC_ADND_SLOTS
+        self.mu.mem_write(CALLER * 16 + 0x402 + 0x5E4C2 - 0x5E242, self.STUB)
+        for on in (False, True):
+            self.rules(on)
+            for cls in (1, 4, 5, 8, 11, 13, 9):
+                for level in (1, 3, 9, 10):
+                    for spell in range(1, 6):
+                        with self.subTest(on=on, cls=cls, level=level, spell=spell):
+                            self.mu.mem_write(SS * 16 + self.PAIR, bytes((level, 17)))
+                            stack = struct.pack("<HHH", cls, self.PAIR, spell)
+                            self.run_vector(VEC_ADND_SLOTS, 5, stack=stack, eax=0x1111, ebx=0x2222,
+                                            ecx=0x3333, esi=0x5555, edi=0x6666)
+                            ours = tables.slots(cls, level, spell) if on else None
+                            want = ours + 17 + spell * 1000 if ours is not None else level * 100 + 17 + spell * 1000
+                            self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), want)
+                            self.assertEqual(bytes(self.mu.mem_read(SS * 16 + self.PAIR, 2)), bytes((level, 17)))
+                            self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_BX, r.UC_X86_REG_CX,
+                                                                            r.UC_X86_REG_SI, r.UC_X86_REG_DI,
+                                                                            r.UC_X86_REG_BP)],
+                                             [0x2222, 0x3333, 0x5555, 0x6666, BP])

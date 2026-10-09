@@ -130,6 +130,9 @@ RULE_RANGER_CAST = 131072
 # INT's chance to learn a scroll's spell and the most spells a level a preserver may know
 # (intlearn.py; DSCLOG's INT_LEARN)
 RULE_INT_LEARN = 262144
+# AD&D's class tables (tables.py; DSCLOG's RULE_HI_TABLES): the XP each class needs, priests'
+# THAC0, and clerics', druids' and preservers' spell slots by level
+RULE_ADND_TABLES = 524288
 SPEC_SLOTS, SPEC_COUNT = 0x14, 4
 # AD&D's item saving throws against acid (the DMG's table), by the game's materials: wood
 # (thick), bone, stone and obsidian (glass's), metal, leather; and cloth for no material
@@ -146,7 +149,8 @@ RULE_SETTINGS = (("helm_ac", RULE_HELMS), ("boots_move", RULE_BOOTS), ("two_weap
                  ("protection_rules", RULE_PROTECTION), ("item_saves", RULE_ITEM_SAVES),
                  ("weapon_specialization", RULE_SPECIALIZE), ("class_restrictions", RULE_RESTRICT),
                  ("multiclass_hp", RULE_MULTI_HP), ("best_hit_die", RULE_HP_BEST), ("kits", RULE_KITS),
-                 ("ranger_casting_level", RULE_RANGER_CAST), ("int_learning", RULE_INT_LEARN))
+                 ("ranger_casting_level", RULE_RANGER_CAST), ("int_learning", RULE_INT_LEARN),
+                 ("adnd_tables", RULE_ADND_TABLES))
 # Cat's Grace (RULE_CATS_GRACE): Flaming Sphere (wizard level 2) gets Strength's record and the
 # name, and DSCLOG sends it to Strength's code, which rolls 1d6 into an effect of its own (54,
 # a number the game leaves unused) that adds to DEX, at most 24, as Strength's adds to STR.
@@ -1118,7 +1122,7 @@ class GameData:
             return 0
         ability = self.creature(member)[CREATURE_ABILITIES + 4]
         magic = self.guest.read((self.load_seg + CLASS_MAGIC_SEG) * 16 + CLASS_MAGIC_OFF, 4 * 32)
-        from . import kitpages, kits
+        from . import kitpages, kits, tables
         kids = self.kit_ids(member)
         total = 0
         for n in range(3):  # (an Elementalist's slots behind for its own class alone)
@@ -1129,7 +1133,11 @@ class GameData:
             if n and sheet[SHEET_RACE] == HUMAN and level >= sheet[SHEET_LEVELS]:
                 continue
             rules = self.guest.read(self.ds * 16 + SLOT_CLASS_RULES + cls, 1)[0]
-            for value in (level, ability) if wis else (level,):
+            ours = tables.slots(cls, level, spell_level) if self.rules & RULE_ADND_TABLES else None
+            if ours is not None:  # (AD&D's for the level, the game's for WIS: DSCLOG's PROBE_ADND_SLOTS)
+                total += ours
+                rules >>= 4
+            for value in ((ability,) if wis else ()) if ours is not None else ((level, ability) if wis else (level,)):
                 if not rules:
                     break
                 word, = struct.unpack("<H", self.guest.read(self.ds * 16 + SLOT_RULES + (rules & 0x0F) * 2, 2))

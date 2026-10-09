@@ -353,6 +353,9 @@ class Viewer:
                 ("int_learning", "Preservers' INT: a chance to learn a spell from a scroll (35% at INT 9 "
                                  "to 100% at 24; a failed try uses the scroll up) and the most spells of "
                                  "each spell level they may know (6 at INT 9, all from 19)"),
+                ("adnd_tables", "AD&D's class tables: the XP each class needs (a gladiator's its own, not the "
+                                "fighter's), priests' THAC0 (2 better every 3 levels), and clerics', druids' and "
+                                "preservers' spell slots by level (WIS's bonus slots stay the game's)"),
                 ("best_hit_die", "Hit dice rolled twice, the better kept, at creation and at every level "
                                  "(every character)"),
                 ("spell_save", "Spells are saved against with the spell save (the game uses "

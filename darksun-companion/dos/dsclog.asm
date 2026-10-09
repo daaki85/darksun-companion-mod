@@ -138,6 +138,9 @@ VEC_CAST_DONE equ 0x94     ; PROBE_CAST_DONE
 VEC_END_TURN equ 0x93      ; PROBE_END_TURN
 VEC_LEARN_SAID equ 0x92    ; PROBE_LEARN_SAID
 VEC_LEARN_REFUSED equ 0x91 ; PROBE_LEARN_REFUSED
+VEC_XP equ 0x90            ; PROBE_XP
+VEC_PRIEST_THAC0 equ 0x8F  ; PROBE_PRIEST_THAC0
+VEC_ADND_SLOTS equ 0x8E    ; PROBE_ADND_SLOTS
 TSIZE    equ 4096     ; bytes in the text buffer (a power of two)
 
 NENT    equ 96          ; entries in the ring (96: the helper and it fit in upper memory)
@@ -8505,6 +8508,179 @@ kind_of_type  db 16, 14, 7, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 2, 10, 
               db 10, 0, 0, 0, 0, 0, 0, 0, 3   ; (136: the air clerics' metal dagger, Galefang's)
               db 7, 7, 3                      ; (137, 138: the bone and obsidian great axes; 139 the bone dagger)
 
+; AD&D's class tables (RULE_HI_TABLES): the XP each class needs, priests' THAC0, and clerics',
+; druids' and preservers' spell slots by level, as AD&D's Player's Handbook and Dark Sun have them
+; (tables.py). The game's own: a gladiator on the fighter's XP, ranger's and thief's 2nd levels
+; (2,250 and 1,250) out of reach of its table in hundreds, priests' THAC0 2/3 a level (19 at
+; 3rd), its own slot tables.
+;
+; XP_NEED: EAX the XP class row SI (1-8: cleric, druid, fighter, gladiator, preserver,
+; psionicist, ranger, thief, as the game's XP table and View Character's copy number them) needs
+; at level index CX (the entry the game reads: the level the character has), EAX coming in as the
+; game's table word: the game's x100, or with RULE_HI_TABLES AD&D's (levels 0-10). Others kept.
+xp_need:
+        test word [cs:rules_hi], RULE_HI_TABLES
+        jz .game
+        cmp si, 8
+        ja .game
+        or si, si
+        jz .game
+        cmp cx, 10
+        ja .game
+        push bx
+        imul bx, si, 11 * 4
+        add bx, cx
+        add bx, cx
+        add bx, cx
+        add bx, cx
+        mov eax, [cs:bx + adnd_xp - 11 * 4]
+        pop bx
+        ret
+.game:  imul eax, eax, 100
+        ret
+; by class row (1-8), the XP needed at each level 0-10 (the next level's: AD&D's, levels 1-11)
+adnd_xp dd 0, 1500, 3000, 6000, 13000, 27500, 55000, 110000, 225000, 450000, 675000       ; cleric
+        dd 0, 2000, 4000, 7500, 12500, 20000, 35000, 60000, 90000, 125000, 200000        ; druid
+        dd 0, 2000, 4000, 8000, 16000, 32000, 64000, 125000, 250000, 500000, 750000      ; fighter
+        dd 0, 2250, 4500, 9000, 18000, 36000, 75000, 150000, 300000, 600000, 900000      ; gladiator
+        dd 0, 2500, 5000, 10000, 20000, 40000, 60000, 90000, 135000, 250000, 375000      ; preserver
+        dd 0, 2200, 4400, 8800, 16500, 30000, 55000, 100000, 200000, 400000, 600000      ; psionicist
+        dd 0, 2250, 4500, 9000, 18000, 36000, 75000, 150000, 300000, 600000, 900000      ; ranger
+        dd 0, 1250, 2500, 5000, 10000, 20000, 40000, 70000, 110000, 160000, 220000       ; thief
+
+; PROBE_XP: INT VEC_XP replaces "imul eax,eax,64h" (4 bytes: INT + 2 NOPs) where the game takes the
+; XP for the next level from its table, at a level up (DSUN.EXE 87BBBh) and on View Character
+; (67D41h): EAX the table's word, BX its place (the class row x 40 + the level x 2). XP_NEED.
+probe_xp:
+        push si
+        push cx
+        push dx
+        mov ax, bx
+        xor dx, dx
+        mov si, 40
+        div si
+        mov cx, dx
+        shr cx, 1
+        xchg si, ax             ; (SI the row, AX 40)
+        movzx eax, word [es:bx + 0x27C]
+        call xp_need
+        pop dx
+        pop cx
+        pop si
+        iret
+
+; PROBE_PRIEST_THAC0: INT VEC_PRIEST_THAC0 replaces "mov [bp-2],ax" (3 bytes: INT + NOP; DSUN.EXE
+; 876ABh) in the game's THAC0 routine, AX what a class group takes off 20 at its level: (level - 1)
+; x the group's factor / 12, the groups (CX 0-3) priest (8), warrior (12), wizard (4), rogue (6),
+; their levels the bytes at [BP-0Ah] + CX x 2. With RULE_HI_TABLES a priest's is AD&D's, 2 for
+; every 3 levels (20, 20, 20, 18, 18, 18, 16...); the others are AD&D's already.
+probe_priest_thac0:
+        test word [cs:rules_hi], RULE_HI_TABLES
+        jz .done
+        or cx, cx
+        jnz .done
+        push bx
+        push dx
+        push si
+        mov si, cx
+        add si, si
+        mov al, [bp + si - 0x0A]
+        pop si
+        cbw
+        dec ax
+        jns .some
+        xor ax, ax
+.some:  xor dx, dx
+        mov bx, 3
+        div bx
+        add ax, ax
+        pop dx
+        pop bx
+.done:  mov [bp - 2], ax
+        iret
+
+; PROBE_ADND_SLOTS: INT VEC_ADND_SLOTS replaces "nop / push cs / call 5E4C2h" (5 bytes: INT + 3
+; NOPs; DSUN.EXE 5E240h) where the game's slot routine asks one class's slots at a spell level:
+; the arguments pushed (the class, a near pointer in SS to its level and WIS, the spell level),
+; and the routine's AX its count from both (level and WIS rules). With RULE_HI_TABLES, for a
+; cleric, druid or preserver, AD&D's slots for its level (ADND_SLOTS) and the game's for its WIS
+; alone (the routine called with the level 0); the others', and with the rule off, the game's.
+SLOT_CALL equ 0x5E4C2 - 0x5E242   ; the routine, from the INT's return
+probe_adnd_slots:
+        push bp
+        mov bp, sp              ; +2 the INT's IP, +4 CS, +6 flags; +8 the class, +0Ah the
+        push bx                 ; pointer, +0Ch the spell level
+        push cx
+        push si
+        mov si, [bp + 0x0A]
+        mov cx, [ss:si]         ; (CL the level, CH WIS)
+        mov bx, [bp + 8]
+        test word [cs:rules_hi], RULE_HI_TABLES
+        jz .game
+        cmp bx, 11
+        je .wizard
+        cmp bx, 8
+        ja .game
+        or bx, bx
+        jz .game
+        xor bx, bx              ; (a priest: the first table)
+        jmp .ours
+.wizard:
+        mov bx, 1
+.ours:  mov byte [ss:si], 0     ; the game's for WIS alone
+        call .call
+        mov [ss:si], cl
+        push ax
+        mov al, cl              ; and AD&D's for the level
+        cmp al, 10
+        jbe .lv
+        mov al, 10
+.lv:    mov ah, 0
+        imul bx, bx, 10 * 5
+        dec ax
+        js .none
+        imul ax, ax, 5
+        add bx, ax
+        mov ax, [bp + 0x0C]
+        dec ax
+        cmp ax, 5
+        jae .none
+        add bx, ax
+        mov al, [cs:bx + adnd_slots]
+        mov ah, 0
+        jmp .sum
+.none:  xor ax, ax
+.sum:   pop bx
+        add ax, bx
+        jmp .out
+.game:  call .call
+.out:   pop si
+        pop cx
+        pop bx
+        pop bp
+        iret
+.call:  push bx                 ; (the routine, a far call in the game's segment: CS from the INT;
+        push cx                 ; it keeps only SI, DI and BP)
+        push dx
+        push word [bp + 0x0C]
+        push word [bp + 0x0A]
+        push word [bp + 8]
+        push cs
+        push word .back
+        push word [bp + 4]
+        mov ax, [bp + 2]
+        add ax, SLOT_CALL
+        push ax
+        retf
+.back:  add sp, 6
+        pop dx
+        pop cx
+        pop bx
+        ret
+; AD&D's spell slots by level 1-10, spell levels 1-5: priests (clerics and druids), then wizards
+adnd_slots db 1,0,0,0,0, 2,0,0,0,0, 2,1,0,0,0, 3,2,0,0,0, 3,3,1,0,0, 3,3,2,0,0, 3,3,2,1,0, 3,3,3,2,0, 4,4,3,2,1, 4,4,3,3,2
+           db 1,0,0,0,0, 2,0,0,0,0, 2,1,0,0,0, 3,2,0,0,0, 4,2,1,0,0, 4,2,2,0,0, 4,3,2,1,0, 4,3,3,2,0, 4,3,3,2,1, 4,4,3,2,2
+
 ; PROBE_XP_NEXT: INT VEC_XP_NEXT replaces "push 10F4h" (3 bytes: INT + NOP; DSUN.EXE 67DBEh) in
 ; View Character's line "EXP:10301 (16000)", where the game adds ")" (DS:10F4h) after the XP the
 ; next level needs: the least of its classes' ([BP-6], a dword, never 0 here), each class's from
@@ -8566,7 +8742,10 @@ probe_xp_next:
         add si, ax
         movzx eax, word [gs:si + 0x27C]
         pop si
-        imul eax, eax, 100
+        push cx
+        movzx cx, ch
+        call xp_need            ; (AD&D's, with RULE_HI_TABLES)
+        pop cx
         cmp eax, [bp - 6]
         jne .next
         cmp di, xp_suffix + 1
@@ -8931,6 +9110,7 @@ RULE_RESTRICT equ 8192          ; class restrictions on armour, shields and weap
 RULE_MULTI_HP equ 16384         ; multiclass hit points as in AD&D (PROBE_MC_*)
 RULE_HP_BEST equ 32768          ; a hit die rolled twice, the better kept (PROBE_HP_BEST)
 RULE_HI_KITS equ 1              ; (RULES_HI) kits, chosen on the creation panel's KIT page (KIT_*)
+RULE_HI_TABLES equ 8            ; (RULES_HI) AD&D's class tables: XP, priests' THAC0, spell slots (XP_NEED, PROBE_*)
 RULE_HI_INT    equ 4            ; (RULES_HI) INT's chance to learn a scroll's spell and most spells a level (INT_LEARN)
 RULE_HI_RANGER equ 2            ; (RULES_HI) a ranger's spells' durations and damage at its level less 7 (PROBE_RANGER_LEVEL)
 FOOT      equ 13               ; the item's slot byte while worn on the feet
@@ -12827,6 +13007,15 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_LEARN_REFUSED
         mov dx, probe_learn_refused
         int 21h
+        mov ax, 2500h + VEC_XP
+        mov dx, probe_xp
+        int 21h
+        mov ax, 2500h + VEC_PRIEST_THAC0
+        mov dx, probe_priest_thac0
+        int 21h
+        mov ax, 2500h + VEC_ADND_SLOTS
+        mov dx, probe_adnd_slots
+        int 21h
         mov ax, 2500h + VEC_PICK_LEVEL
         mov dx, probe_pick_level
         int 21h
@@ -12881,10 +13070,10 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or 91h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+busy    db 'DSCLOG: interrupts 60h-65h or 8Eh-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
 all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS, VEC_LV_PICK, VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK, VEC_EF_ROWS, VEC_HP_BEST, VEC_TOME, VEC_INIT, VEC_THAC0, VEC_SLOTS, VEC_SLOT_LEVEL
             db VEC_PSP_USE, VEC_PSP_TABLE, VEC_PSP_DEFENCE, VEC_CURE, VEC_PSP_KEEP, VEC_RANGER_CAST, VEC_PSP_KEEP_DX
-            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY, VEC_RANGER_LEVEL, VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP, VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW, VEC_DUAL_BAN, VEC_DUAL_SPELLS, VEC_SOUND_42, VEC_SOUND_44, VEC_DUAL_KIT, VEC_CR_SPELLS, VEC_EF_CLICK, VEC_CAST_MARK, VEC_ROUND_MARK, VEC_CAST_DONE, VEC_END_TURN, VEC_LEARN_SAID, VEC_LEARN_REFUSED
+            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY, VEC_RANGER_LEVEL, VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP, VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW, VEC_DUAL_BAN, VEC_DUAL_SPELLS, VEC_SOUND_42, VEC_SOUND_44, VEC_DUAL_KIT, VEC_CR_SPELLS, VEC_EF_CLICK, VEC_CAST_MARK, VEC_ROUND_MARK, VEC_CAST_DONE, VEC_END_TURN, VEC_LEARN_SAID, VEC_LEARN_REFUSED, VEC_XP, VEC_PRIEST_THAC0, VEC_ADND_SLOTS
 all_vectors_end:
 
         align 16, db 0

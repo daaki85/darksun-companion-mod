@@ -144,6 +144,13 @@ themselves have the detail.
   9 to 100% at 24; a failed try uses the scroll up) and the most spells of
   each spell level it may know (6 at INT 9, all from 19), which also limits
   CHOOSE A SPELL at a level up. The dice log shows each try.
+- **AD&D's class tables**, a new rule change (on by default): AD&D's XP
+  tables (a gladiator's and ranger's 2nd level 2,250, a thief's 1,250; the
+  game had a gladiator on the fighter's), priests' THAC0 (2 better every 3
+  levels from 4th; the game's from 3rd) and spell slots (AD&D's priest table
+  for clerics and druids, its wizard table for preservers), through three new
+  probes (INT 90h, 8Fh, 8Eh). Hit points were AD&D's already. The guide has
+  the tables.
 
 **Changed**
 - **The helper loads into upper memory again,** leaving the game 62 KB more

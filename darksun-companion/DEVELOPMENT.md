@@ -11,7 +11,7 @@ Every roll in the game goes through one function, Borland C++'s `rand()`.
 1. When you start the game with the dice log, the launcher writes
    `dos\DSUNLOG.EXE`: a copy of the game's `DSUN.EXE` with about 140 small
    changes, listed in `PATCHES` in `dscompanion/gamepatch.py`. Most replace a
-   few bytes of the game's code with an `INT` (60h to 65h, and 91h to FEh)
+   few bytes of the game's code with an `INT` (60h to 65h, and 8Eh to FEh)
    that the helper answers: `rand()`, the saving throw, AC, the dialogue
    window and message boxes for the dice log; the inventory, View Character,
    USE and Effects screens and the Look box for what the Ledger adds to them;
@@ -530,6 +530,33 @@ the member, spell, INT, chance, d100 or spells known, result;
 `PROBE_PICK_LIST` drops the game's list's spells of a full level, and
 `PROBE_PICK_ANY` (`PICK_INT_ANY`) doesn't open CHOOSE A SPELL when no unknown
 wizard spell is left at a level on offer that isn't full.
+
+### AD&D's class tables
+
+([In the README](README.md#adds-class-tables); `tables.py`.)
+
+The game's XP table is 8 rows of 20 words (classes 1-8: cleric, druid,
+fighter, gladiator, preserver, psionicist, ranger, thief; the gladiator's row
+the fighter's), at its segment + 27Ch + the row x 40 + the level x 2, in
+hundreds. Its THAC0 routine (87666h) takes off 20 the most of each class
+group's (level - 1) x factor / 12: priests 8, warriors 12, wizards 4, rogues
+and psionicists 6 (the records at `LEVEL_HP_SEG`: hit die, last die level,
+fixed gain, factor); only the priests' differs from AD&D's. Its slot routine
+(5E0ACh) asks 5E4C2h for each class (the class, a near pointer to the pair
+level, WIS, the spell level 1-5), which applies one rule word for each byte
+of the pair (`GameData.max_spell_slots`).
+
+How (`RULE_HI_TABLES`, the second rules word's 8: `game.RULE_ADND_TABLES`):
+`PROBE_XP` (`INT 90h`) replaces `imul eax,eax,64h` where a level up
+(87BBBh) and View Character (67D41h) read the table: `XP_NEED` gives the row
+and level's from `ADND_XP` (`PROBE_XP_NEXT` uses it too). `PROBE_PRIEST_THAC0`
+(`INT 8Fh`) replaces `mov [bp-2],ax` (876ABh) in the THAC0 routine's loop:
+for the priest group (CX 0), 2 x (level - 1) / 3. `PROBE_ADND_SLOTS`
+(`INT 8Eh`) replaces `nop / push cs / call 5E4C2h` (5E240h): for a cleric,
+druid or preserver it calls the routine with the level byte 0 (WIS's part
+alone; the routine keeps only SI, DI and BP, so the probe keeps the rest)
+and adds `ADND_SLOTS`; anyone else, or with the rule off, the routine as it
+was.
 
 ### Levels up to 10
 

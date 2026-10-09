@@ -45,6 +45,7 @@ GOG release) in DOSBox.
   - [Hit dice: the better of two](#hit-dice-the-better-of-two)
   - [Rangers' casting level](#rangers-casting-level)
   - [Preservers' INT](#preservers-int)
+  - [AD&D's class tables](#adds-class-tables)
   - [Spells saved against with the spell save](#spells-saved-against-with-the-spell-save)
   - [Fire, cold and electricity: DEX instead of a doubled d20](#fire-cold-and-electricity-dex-instead-of-a-doubled-d20)
   - [Two weapons](#two-weapons)
@@ -1225,6 +1226,7 @@ works](#how-the-game-works) has what the game does without them.
 | [Hit dice: the better of two](#hit-dice-the-better-of-two) | each hit die rolled twice, the better kept, for every character |
 | [Rangers' casting level](#rangers-casting-level) | a ranger's spells last and do damage as cast at its level less 7, as the spell levels it may cast already count it |
 | [Preservers' INT](#preservers-int) | INT gives a preserver a chance to learn a spell from a scroll, and the most spells of each spell level it may know |
+| [AD&D's class tables](#adds-class-tables) | the XP for each level, priests' THAC0, and clerics', druids' and preservers' spell slots from AD&D's tables |
 | [Spells saved against with the spell save](#spells-saved-against-with-the-spell-save) | the spell save rather than petrification/polymorph |
 | [Fire, cold and electricity: DEX instead of a doubled d20](#fire-cold-and-electricity-dex-instead-of-a-doubled-d20) | DEX's defensive adjustment on those saves rather than a doubled d20 |
 | [Two weapons](#two-weapons) | -2 main hand, -4 off hand, DEX's reaction adjustment added; rangers none; the off hand attacks once a round |
@@ -1709,6 +1711,29 @@ d100 = 37, needs 60 or less (INT 14) -> learnt`. Priest spells and psionic
 powers are as the game has them.
 
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#preservers-int).
+
+### AD&D's class tables
+
+The game has tables of its own where AD&D's differ. With **AD&D's class
+tables** ticked, AD&D's hold (the [player's guide](GUIDE.md) has them in
+full):
+
+- **Experience:** a gladiator needs 2,250 XP for 2nd level (the game uses
+  the fighter's table), a ranger 2,250 (2,200) and a thief 1,250 (1,200);
+  the rest are as the game has them. View Character's next-level figure and
+  the level ups both follow it.
+- **Priests' THAC0:** clerics and druids improve by 2 every 3 levels from
+  4th (20, 20, 20, 18...), as AD&D's priests do; the game has them improve
+  from 3rd (19 at 3rd, 17 at 6th, 15 at 9th). The new THAC0 comes at the
+  next level up. Warriors', wizards' and rogues' were AD&D's already.
+- **Spell slots:** clerics and druids take AD&D's priest table (3 3 1 at 5th
+  level, the game 3 2 1), preservers AD&D's wizard table (4 2 1 at 5th); WIS
+  still adds a priest's bonus slots. Rangers' slots were AD&D's already.
+
+Hit points were AD&D's already (with [Levels up to 10](#levels-up-to-10)).
+Kits change these as before.
+
+How it works: [DEVELOPMENT.md](DEVELOPMENT.md#adds-class-tables).
 
 ### Spells saved against with the spell save
 

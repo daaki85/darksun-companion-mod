@@ -232,7 +232,7 @@ A new preserver **chooses its first spells** on the CHOOSE A SPELL window: two
 ## The classes
 
 **Warriors: fighters, gladiators and rangers.** The best hit dice and THAC0
-(it improves by 1 a level). They train in weapons
+(see [the table below](#thac0-by-level)). They train in weapons
 ([weapon specialization](#weapon-specialization-and-attacks)):
 
 - **Fighters** specialize in one kind of weapon, then master it (5th level) and
@@ -263,6 +263,21 @@ the start, and get bonus slots for WIS.
 psychometabolism and telepathy) and gain a new power at each level (two at odd
 levels and at 4th). A d6 hit die. Every other character has one discipline and
 uses its powers as a 1st-level psionicist.
+
+#### THAC0 by level
+
+AD&D's tables; a character of several classes uses its best.
+
+| Level | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Fighter, gladiator, ranger | 20 | 19 | 18 | 17 | 16 | 15 | 14 | 13 | 12 | 11 |
+| Cleric, druid | 20 | 20 | 20 | 18 | 18 | 18 | 16 | 16 | 16 | 14 |
+| Thief | 20 | 20 | 19 | 19 | 18 | 18 | 17 | 17 | 16 | 16 |
+| Psionicist | 20 | 20 | 19 | 19 | 18 | 18 | 17 | 17 | 16 | 16 |
+| Preserver | 20 | 20 | 20 | 19 | 19 | 19 | 18 | 18 | 18 | 17 |
+
+*Without the mod:* clerics and druids improve by 2 every 3 levels from 1st
+(19 at 3rd, 17 at 6th, 15 at 9th); the rest are as above.
 
 ### What each class may use
 
@@ -370,20 +385,20 @@ The dice log names each change.
 ### Kits' spell slots
 
 The kits that change spell slots, by the level of the kit's class (spells of
-1st to 5th level):
+1st to 5th level), with [AD&D's class tables](#spell-slots) on:
 
 | Level | Preserver | Arcanist | Battle Mage | Cleric | Crusader | Elementalist | Seeker (ranger) | Justifier (ranger) | Shinobi (thief) |
 |---|---|---|---|---|---|---|---|---|---|
 | 1 | 1 | 2 | — | 1 | — | — | | | |
 | 2 | 2 | 3 | 1 | 2 | 1 | 1 | | | |
 | 3 | 2 1 | 3 2 | 1 | 2 1 | 1 | 2 | | | |
-| 4 | 2 2 | 3 3 | 1 1 | 2 2 | 1 1 | 2 1 | | | |
-| 5 | 3 2 1 | 4 3 2 | 2 1 | 3 2 1 | 2 1 | 2 2 | | | |
-| 6 | 3 2 2 | 4 3 3 | 2 1 1 | 3 2 2 | 2 1 1 | 3 2 1 | 1 | | 1 |
-| 7 | 4 3 2 1 | 5 4 3 2 | 3 2 1 | 4 3 2 1 | 3 2 1 | 3 2 2 | 2 | | 2 |
-| 8 | 4 3 2 2 | 5 4 3 3 | 3 2 1 1 | 4 3 2 2 | 3 2 1 1 | 4 3 2 1 | 2 1 | | 2 1 |
-| 9 | 5 4 3 2 1 | 6 5 4 3 2 | 4 3 2 1 | 5 4 3 2 1 | 4 3 2 1 | 4 3 2 2 | 2 2 | | 2 2 |
-| 10 | 5 4 3 2 2 | 6 5 4 3 3 | 4 3 2 1 1 | 5 4 3 2 2 | 4 3 2 1 1 | 5 4 3 2 1 | 2 2 1 | 1 | 2 2 1 |
+| 4 | 3 2 | 4 3 | 2 1 | 3 2 | 2 1 | 2 1 | | | |
+| 5 | 4 2 1 | 5 3 2 | 3 1 | 3 3 1 | 2 2 | 3 2 | | | |
+| 6 | 4 2 2 | 5 3 3 | 3 1 1 | 3 3 2 | 2 2 1 | 3 3 1 | 1 | | 1 |
+| 7 | 4 3 2 1 | 5 4 3 2 | 3 2 1 | 3 3 2 1 | 2 2 1 | 3 3 2 | 2 | | 2 |
+| 8 | 4 3 3 2 | 5 4 4 3 | 3 2 2 1 | 3 3 3 2 | 2 2 2 1 | 3 3 2 1 | 2 1 | | 2 1 |
+| 9 | 4 3 3 2 1 | 5 4 4 3 2 | 3 2 2 1 | 4 4 3 2 1 | 3 3 2 1 | 3 3 3 2 | 2 2 | | 2 2 |
+| 10 | 4 4 3 2 2 | 5 5 4 3 3 | 3 3 2 1 1 | 4 4 3 3 2 | 3 3 2 2 1 | 4 4 3 2 1 | 2 2 1 | 1 | 2 2 1 |
 
 - A **Crusader** and an **Elementalist** add WIS's bonus slots as a cleric
   does; the Crusader still has one fewer at each spell level with them.
@@ -634,22 +649,27 @@ or has anything in the quiver or on the legs.
 
 Casting uses a slot of the spell's level; resting fills them.
 
-| Level | 1st | 2nd | 3rd | 4th | 5th |
-|---|---|---|---|---|---|
-| 1 | 1 | | | | |
-| 2 | 2 | | | | |
-| 3 | 2 | 1 | | | |
-| 4 | 2 | 2 | | | |
-| 5 | 3 | 2 | 1 | | |
-| 6 | 3 | 2 | 2 | | |
-| 7 | 4 | 3 | 2 | 1 | |
-| 8 | 4 | 3 | 2 | 2 | |
-| 9 | 5 | 4 | 3 | 2 | 1 |
-| 10 | 5 | 4 | 3 | 2 | 2 |
+AD&D's tables:
 
-That is for preservers, clerics and druids alike. **Rangers** have one
-1st-level slot at 8th level, two at 9th, and a 2nd-level slot at 10th. No spell
-is above 5th level.
+| Level | Cleric, druid | Preserver |
+|---|---|---|
+| 1 | 1 | 1 |
+| 2 | 2 | 2 |
+| 3 | 2 1 | 2 1 |
+| 4 | 3 2 | 3 2 |
+| 5 | 3 3 1 | 4 2 1 |
+| 6 | 3 3 2 | 4 2 2 |
+| 7 | 3 3 2 1 | 4 3 2 1 |
+| 8 | 3 3 3 2 | 4 3 3 2 |
+| 9 | 4 4 3 2 1 | 4 3 3 2 1 |
+| 10 | 4 4 3 3 2 | 4 4 3 2 2 |
+
+(The slots at 1st, 2nd, 3rd... spell level.) *Without the mod:* one table for
+all three: 1; 2; 2 1; 2 2; 3 2 1; 3 2 2; 4 3 2 1; 4 3 2 2; 5 4 3 2 1;
+5 4 3 2 2.
+
+**Rangers** have one 1st-level slot at 8th level, two at 9th, and a 2nd-level
+slot at 10th, as in AD&D. No spell is above 5th level.
 
 **Clerics and druids** have more for WIS, only at spell levels their class
 level reaches:
@@ -874,9 +894,11 @@ preserver spell or psionic power, and any weapon spec due.
 
 Every class goes up to **10th level**. *Without the mod:* 9th.
 
-| To reach level | Fighter, gladiator | Ranger | Cleric | Druid | Preserver | Psionicist | Thief |
+AD&D's tables:
+
+| To reach level | Fighter | Gladiator, ranger | Cleric | Druid | Preserver | Psionicist | Thief |
 |---|---|---|---|---|---|---|---|
-| 2 | 2,000 | 2,200 | 1,500 | 2,000 | 2,500 | 2,200 | 1,200 |
+| 2 | 2,000 | 2,250 | 1,500 | 2,000 | 2,500 | 2,200 | 1,250 |
 | 3 | 4,000 | 4,500 | 3,000 | 4,000 | 5,000 | 4,400 | 2,500 |
 | 4 | 8,000 | 9,000 | 6,000 | 7,500 | 10,000 | 8,800 | 5,000 |
 | 5 | 16,000 | 18,000 | 13,000 | 12,500 | 20,000 | 16,500 | 10,000 |
@@ -885,6 +907,9 @@ Every class goes up to **10th level**. *Without the mod:* 9th.
 | 8 | 125,000 | 150,000 | 110,000 | 60,000 | 90,000 | 100,000 | 70,000 |
 | 9 | 250,000 | 300,000 | 225,000 | 90,000 | 135,000 | 200,000 | 110,000 |
 | 10 | 500,000 | 600,000 | 450,000 | 125,000 | 250,000 | 400,000 | 160,000 |
+
+*Without the mod:* a gladiator needs what a fighter does, a ranger 2,200 for
+2nd level and a thief 1,200.
 
 ## Worth knowing
 
@@ -930,7 +955,7 @@ Every class goes up to **10th level**. *Without the mod:* 9th.
 |---|---|---|
 | In the game | show each turn's rolls in the game | off |
 | | describe monsters when you Look at them in a fight | on |
-| Rule changes | weapon specialization; kits; class restrictions; multiclass hit points; rangers' casting level; preservers' INT; hit dice rolled twice; the spell save; DEX instead of a doubled d20; two weapons; levels up to 10; items saving against acid; rings and cloaks of protection; half-giants' two-handed weapons; Cat's Grace; helms AC 1; boots for movement | all on |
+| Rule changes | weapon specialization; kits; AD&D's class tables; class restrictions; multiclass hit points; rangers' casting level; preservers' INT; hit dice rolled twice; the spell save; DEX instead of a doubled d20; two weapons; levels up to 10; items saving against acid; rings and cloaks of protection; half-giants' two-handed weapons; Cat's Grace; helms AC 1; boots for movement | all on |
 | Thieves | thief skills from AD&D's table; hiding in shadows to backstab; the cloak, boots and belt; picking pockets | on |
 | | ... or P in a conversation (the leader, a thief, picks the pocket of the one talked to) | off |
 | New content | new people, a small quest, new items | on |
