@@ -148,6 +148,14 @@ Released pull requests are summarised in a line or two each; the release notes
   numbers on the character sheet (`+42h`, `+44h`) as words, and the kit
   (`+43h`) and second sphere (`+45h`) sit in their high bytes; they are read a
   byte each now (INT 9Bh, 9Ah).
+- **Arena crash after a kill (hardened):** DOSBox could close as a creature
+  died in a fight. The shadows drew from a list the Ledger refreshes only
+  twice a second, so a creature dying since could still be given a shadow,
+  and the helper loaded its new death pictures from inside the game's floor
+  drawing. The helper now checks the creature's status as it draws and gives
+  a dying or dead one no shadow; the Ledger's list leaves out the dying too.
+  The crash didn't happen again in testing, but it was never reproduced
+  either.
 
 **Changed** (for the kits)
 - **A kit for each class:** the kit byte keeps two bits for each of a

@@ -9971,6 +9971,39 @@ shadow_pass:
 .done:  call vga_restore
         ret
 
+; SHADOW_GONE: CF set if thing BX (DS the game's) is a creature dying or dead (its +1Ch, 4 or 5): the
+; companion's SHADOW_TAB is made afresh only every half second, and a creature's death changes its
+; pictures, which SHADOW_OF would load from the floor routine, in the middle of the game's drawing.
+; All registers kept.
+SH_DYING     equ 4
+SH_DEAD      equ 5
+shadow_gone:
+        push ax
+        push si
+        push es
+        mov ax, ds
+        add ax, THINGS_SEG
+        mov es, ax
+        imul si, bx, 3
+        cmp byte [es:si + THINGS], 2
+        jne .alive                      ; (not a creature)
+        mov ax, [es:si + THINGS + 1]
+        les si, [CREATURES]
+        imul ax, ax, 0x3A
+        add si, ax
+        mov al, [es:si + 0x1C]
+        cmp al, SH_DYING
+        je .gone
+        cmp al, SH_DEAD
+        je .gone
+.alive: clc
+        jmp .out
+.gone:  stc
+.out:   pop es
+        pop si
+        pop ax
+        ret
+
 ; the shadow of the thing at ES:DI (DS = the game's), if it casts one
 shadow_of:
         mov bx, [es:di + 6]
@@ -9978,6 +10011,8 @@ shadow_of:
         ja .no                          ; (none)
         cmp byte [cs:shadow_tab + bx], 0
         je .no
+        call shadow_gone                ; (a creature dying or dead since SHADOW_TAB was made: none,
+        jc .no                          ;   nor its new pictures loaded in the middle of a drawing)
         shl bx, 5
         add bx, MAP_THINGS
         test byte [bx], 0x80

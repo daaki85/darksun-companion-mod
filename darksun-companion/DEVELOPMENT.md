@@ -860,6 +860,13 @@ DSCLOG draw the view again when it changes (from the game's main loop, as
 centring the view does: marking the figures changed instead, as the game's own
 code does to draw one again, can set one in a fight walking again).
 
+The list can be up to half a second old, so as it draws DSCLOG also checks
+the creature's status (`SHADOW_GONE`: the things table, then the creature's
+`+1Ch`) and gives a dying (4) or dead (5) one no shadow. Otherwise it would
+load the dying creature's new pictures through the game's picture loader from
+inside the floor drawing, the most likely cause of a crash seen in the arena
+as a creature died (not reproduced).
+
 ### Dust
 
 ([In the README](README.md#dust).)
