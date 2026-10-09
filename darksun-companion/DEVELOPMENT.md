@@ -1212,9 +1212,14 @@ helper's code (emulated) to the Python.
    Battle Mage, Mind Warrior, Scholar) and the Swashbuckler's thief skills.
    Done too: the spell slots (Crusader, Battle Mage, Arcanist, Elementalist,
    Justifier, Seeker), checked against the game's own routine run on a
-   running game's memory. Left for later: the Scholar's spell learnt, with the
-   CHOOSE A SPELL screen (the Shinobi's step), and whether the game lets a
-   Seeker below 8th level choose priest spells for its slots.
+   running game's memory. Left for later then: the Scholar's spell learnt, with
+   the CHOOSE A SPELL screen (done in step 5), and whether the game lets a
+   Seeker below 8th level cast priest spells with its slots. It does: a ranger
+   knows every spell of its sphere from the start (the creation screen's DONE,
+   66F83h, and the dual routine, 86E1Eh, mark them known with no level test),
+   and casting asks only for a slot of the spell's level. Checked in the game:
+   a 6th-level fire Seeker's USE screen has PRI .../1 (the Seeker's table), and
+   it cast Bless at caster level 1 (6 less 5: `PROBE_RANGER_CAST`).
 4. Done: PSP costs (Mind Bender, Kineticist), the cures' dice
    (Healer, Lifebinder), the cost to keep a power up (Mind Bender,
    Kineticist), casting level (Seeker, Justifier), a spell cast though hit,
@@ -1260,3 +1265,16 @@ helper's code (emulated) to the Python.
    with water made with DONE knows the water spells (93, 108, 114, 126) as
    well as earth's (75, 92, 111, 125, 133). Its casting of them and the
    weapons are held to the Python by emulated tests.
+8. Done: kits for a human's classes after DUAL. The kit byte has two bits for
+   each class, and every rule asks for each kit the character has awake
+   (`KIT_IS`). The KIT menu after DUAL (`PROBE_DUAL_KIT`) bars kits both ways
+   (`DUAL_BANS`, `KIT_PAIRS`); a new Elementalist picks its second sphere and
+   a new warrior (or Battle Mage) its weapon kinds there too; a new preserver
+   picks its spells on CHOOSE A SPELL, on DUAL and at creation
+   (`PROBE_DUAL_SPELLS`, `PROBE_CR_SPELLS`). The Effects screen lists the kits
+   a line each and goes a page at a time when its panel is full
+   (`PROBE_EF_CLICK`). Checked in the game: a Battle Mage turned thief offered
+   Swashbuckler and Assassin (the Shinobi left off), an Elementalist turned
+   fighter taking Myrmidon and a long sword spec, a new 3rd-level preserver's
+   six spells its own, and the Effects pages of three kits and four weapon
+   specs.
