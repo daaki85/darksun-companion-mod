@@ -2481,6 +2481,12 @@ power, and who carries it), and the Ledger's, in **bold**. In **Where**, "—"
 means the item isn't placed with anyone in the data: the game's scripts hand it
 out (a reward, a gift or a find).
 
+An item that casts a spell with charges (the wands, the Storm Ring, the
+necklaces) shows the charges it has left in its item box (right-click it on
+the inventory screen), under its name, counting down as it's used:
+
+![The Wand of Missiles' item box in the game: 65000 coins, "Wand of Missiles", "Charges: 50"](docs/wand-charges.png)
+
 **Weapons**, by material, then kind:
 
 | Icon | Material | Kind | Item | Bonus / power | Where |

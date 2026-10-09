@@ -12136,8 +12136,10 @@ probe_hit:
 ; 8C1A1h), its lines drawn (SI: the item's type, DI: the row after them, but for AC BONUS's).
 ; With SKILLS_ON's bits, a cloak's or boots' bonus to hiding in shadows or moving silently (the
 ; Ledger's rule: stealth.py), or a belt's to picking pockets and opening locks (PROBE_BELT), in the
-; next row, with the routine's own text routine, as it draws AC BONUS; then the push, as the code
-; would have.
+; next row, with the routine's own text routine, as it draws AC BONUS; an item that casts a spell
+; with charges (a wand, a ring, a necklace: its spell byte, +0Fh, a spell's + 1 below ITEM_SPECIAL;
+; its charges, +0Eh, not 0; not fruit, eaten whole) its charges left there ("Charges: 50"; the
+; item [BP+6]); then the push, as the code would have.
 IB_DRAW   equ 0x8C19A - 0x8C1A3 ; (DSUN.EXE) the text routine's far address in the call before,
                                 ;   less the way back
 TYPES_PTR equ 0x1669            ; DS: far pointer to the item types, 20 bytes each
@@ -12146,16 +12148,23 @@ SKILLS_STEALTH equ 1            ; (SKILLS_ON's bits)
 SKILLS_BELT equ 2
 SKILLS_ELVEN equ 4              ; (the Cloak and Boots of Elvenkind's: the stealth rule on)
 TYPE_ARMOUR equ 0x0F            ; ... 80h: armour (AC BONUS drawn)
+ITEM_CHARGES equ 0x0E          ; (an item's charges left and its spell + 1)
+ITEM_SPELL   equ 0x0F
+ITEM_SPECIAL equ 0xF9           ; (spell bytes from here are the game's own effects: a belt's STR...)
+TYPE_FRUIT   equ 60
 probe_item_box:
         pushad
         push es
-        cmp word [cs:skills_on], 0
-        je .push
         cmp si, 0x270F
         jae .push
         les bx, [TYPES_PTR]             ; (DS: the game's)
         imul ax, si, 20
         add bx, ax
+        call ib_charges                 ; (DX the line, or 0)
+        or dx, dx
+        jnz .draw
+        cmp word [cs:skills_on], 0
+        je .push
         mov ax, si                      ; the Cloak and Boots of Elvenkind: their own lines
         sub ax, [cs:types_first]
         mov cl, SKILLS_ELVEN
@@ -12179,7 +12188,7 @@ probe_item_box:
         jne .push
 .want:  test [cs:skills_on], cl
         jz .push
-        mov ax, di                      ; the row: after AC BONUS's, if the box drew it
+.draw:  mov ax, di                      ; the row: after AC BONUS's, if the box drew it
         test byte [es:bx + TYPE_ARMOUR], 0x80
         jz .row
         add ax, 7
@@ -12213,7 +12222,61 @@ probe_item_box:
         pop bp
         iret
 
+; IB_CHARGES: DX IB_CHARGES_TEXT with the charges of PROBE_ITEM_BOX's item ([BP+6]; SI its
+; type) if it casts a spell with charges, else 0. DS the game's; others kept.
+ib_charges:
+        xor dx, dx
+        cmp si, TYPE_FRUIT
+        je .ret
+        push ax
+        push bx
+        push es
+        les bx, [0x165D]                ; (the items, 15h bytes each)
+        imul ax, [bp + 6], 0x15
+        add bx, ax
+        mov al, [es:bx + ITEM_SPELL]
+        or al, al
+        jz .none
+        cmp al, ITEM_SPECIAL
+        jae .none
+        movzx ax, byte [es:bx + ITEM_CHARGES]
+        or ax, ax
+        jz .none
+        mov bl, 10                      ; (up to 255: three digits at most)
+        mov dx, ib_charges_num
+        push di
+        mov di, dx
+        div bl                          ; AL tens and hundreds, AH ones
+        mov dh, ah
+        xor ah, ah
+        div bl                          ; AL hundreds, AH tens
+        or al, al
+        jz .tens
+        add al, '0'
+        mov [cs:di], al
+        inc di
+        jmp .tens_always
+.tens:  or ah, ah
+        jz .ones
+.tens_always:
+        add ah, '0'
+        mov [cs:di], ah
+        inc di
+.ones:  add dh, '0'
+        mov [cs:di], dh
+        mov byte [cs:di + 1], 0
+        pop di
+        mov dx, ib_charges_text
+        jmp .out
+.none:  xor dx, dx
+.out:   pop es
+        pop bx
+        pop ax
+.ret:   ret
+
 ib_draw    dd 0
+ib_charges_text db 'Charges: '
+ib_charges_num  db '000', 0
 ib_hide    db 'Hide +10', 0     ; (the skills' short names, as the inventory screen's thief rows
 ib_quiet   db 'Move +10', 0     ;   have them: HIDE, MOVE, PICK, LOCK; mixed case, as item names)
 ib_belt    db 'Pick +5, Lock +5', 0

@@ -506,6 +506,18 @@ Seeker's 5 and a Justifier's 9 come off there whatever the rule
 Checked in the game: a 9th-level air ranger's Protection from Evil lasted 6
 rounds (caster level 2; 27 without the rule).
 
+### Charges in an item's box
+
+([In the README](README.md#every-magic-item).)
+
+An item that casts a spell has the spell + 1 in its `+0Fh` and its charges
+left in `+0Eh` (the routine finishing an item's use takes one off, 721E4h,
+unless its type's `+0Fh` has 2). `PROBE_ITEM_BOX` (`INT DAh`, at the end of the routine filling an item's box,
+8C1A1h, the item `[BP+6]`) draws `Charges: n` in the row after the box's own
+lines (`IB_CHARGES`) when the spell byte is below F9h (from there the game's
+own effects: a belt's STR, a ring's AC...) and the charges aren't 0, but not
+for fruit (type 60, eaten whole).
+
 ### Preservers' INT
 
 ([In the README](README.md#preservers-int).)
