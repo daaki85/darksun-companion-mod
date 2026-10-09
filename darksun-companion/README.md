@@ -1,7 +1,8 @@
-# Templar's Ledger
+# Obsidian Edition
 
-Templar's Ledger is a companion and mod for **Dark Sun: Shattered Lands** (the
-GOG release) in DOSBox.
+Obsidian Edition is a mod for **Dark Sun: Shattered Lands** (the GOG release)
+in DOSBox, with its own companion window, **Templar's Ledger**, beside the
+game. (Up to its 1.2.0 release, the whole mod was called Templar's Ledger.)
 
 ## Contents
 
@@ -161,15 +162,17 @@ slows instead of speeding up: choose the next setting down.
 
 ## Running it (Windows)
 
-Templar's Ledger is a separate program that runs next to the game. You don't
+Templar's Ledger, the mod's companion window, is a separate program that runs
+next to the game. You don't
 install anything into the game folder.
 
 ### One-time setup
 
-1. Download the latest release, `Templars-Ledger-<version>.zip`, from the
+1. Download the latest release, `Obsidian-Edition-<version>.zip`
+   (`Templars-Ledger-<version>.zip` up to 1.2.0), from the
    [Releases page](https://github.com/daaki85/darksun-companion-mod/releases),
    and unzip it anywhere: the files you need are in its
-   `Templars-Ledger-<version>` folder. (Or the project as it stands: on its
+   `Obsidian-Edition-<version>` folder. (Or the project as it stands: on its
    GitHub page click **Code → Download ZIP**; the files are then in its
    `darksun-companion` folder.)
 2. Python: the first time you double-click one of the `.bat` files, it
@@ -196,7 +199,7 @@ no packaged program to trust.
 
 ### Every time you play
 
-1. Double-click **`Start Templar's Ledger.bat`** in that
+1. Double-click **`Start Obsidian Edition.bat`** in that
    folder. The Ledger opens on its own.
 2. On its **Options** tab, pick what you want: the rule changes, the new
    content, picking pockets, each turn's rolls in the game and so on (see
@@ -251,7 +254,7 @@ also says how DOSBox closed: `DOSBox closed: it crashed (an access violation,
 code C0000005h)` means DOSBox itself failed, not the game.
 
 Either way, the Ledger saves a crash report in the
-`crash-logs` folder (beside `Start Templar's Ledger.bat`), named for the time,
+`crash-logs` folder (beside `Start Obsidian Edition.bat`), named for the time,
 such as `crash-logs\crash-2026-10-04-213012.txt`, and says so in the dice log
 (or, with `Play Dark Sun (in-game rolls).bat`, in a message box). It holds:
 - how DOSBox closed (its exit code), and what the game left on the screen;

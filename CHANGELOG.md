@@ -1,6 +1,7 @@
 # Changelog
 
-What changed in Templar's Ledger, pull request by pull request, newest first.
+What changed in Obsidian Edition (called Templar's Ledger up to 1.2.0), pull
+request by pull request, newest first.
 Released pull requests are summarised in a line or two each; the release notes
 ([1.2.0](release-notes/v1.2.0.md): #19 to #29; [1.1.0](release-notes/v1.1.0.md):
 #14 to #18; [1.0.0](release-notes/v1.0.0.md): #1 to #13) and the pull requests
@@ -174,6 +175,10 @@ themselves have the detail.
   the tables.
 
 **Changed**
+- **The mod is now Obsidian Edition.** Templar's Ledger stays the name of its
+  companion window. The launcher is `Start Obsidian Edition.bat`, releases are
+  `Obsidian-Edition-<version>.zip`, and crash reports are headed "Obsidian
+  Edition crash report".
 - **Kalzith** wears his Ashen Robe, Cloak and Quarterstaff from the start and
   sells them with his scrolls (the game's shops sell all a merchant carries, worn
   or not; nothing marks an item not for sale). He is sold out once he carries

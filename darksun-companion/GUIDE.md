@@ -1,6 +1,6 @@
-# Templar's Ledger: the player's guide
+# Obsidian Edition: the player's guide
 
-How **Dark Sun: Shattered Lands** plays with Templar's Ledger: making a party,
+How **Dark Sun: Shattered Lands** plays with the Obsidian Edition mod: making a party,
 the classes and kits, fighting, magic, psionics, equipment and levels, with
 the tables you need.
 
@@ -58,7 +58,7 @@ The [README](README.md) has every rule in full detail.
 
 ## Getting started
 
-1. Unzip the Ledger anywhere and double-click **`Start Templar's Ledger.bat`**
+1. Unzip the Ledger anywhere and double-click **`Start Obsidian Edition.bat`**
    (the first time, it offers to install Python; see the
    [README](README.md#running-it-windows)).
 2. Press **Start the game**. The game opens beside the Ledger, whose dice log

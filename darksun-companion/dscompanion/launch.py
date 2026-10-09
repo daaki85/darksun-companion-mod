@@ -360,7 +360,7 @@ def crash_report(code: int, note: Optional[str], settings: dict, dice: str, dial
     """The text of a crash report: how DOSBox closed, what the game left on screen, the switches,
     and the end of the dice log and the dialogue."""
     stamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(now))
-    lines = [f"Templar's Ledger crash report, {stamp}", "", closed_line(code)]
+    lines = [f"Obsidian Edition crash report, {stamp}", "", closed_line(code)]
     if started:
         lines.append(f"The game ran for {round((now - started) / 60)} minutes.")
     if note:

@@ -1,6 +1,6 @@
-# Templar's Ledger: development
+# Obsidian Edition: development
 
-How Templar's Ledger works inside: the patched game and its helper, what's known
+How Obsidian Edition and its companion window, Templar's Ledger, work inside: the patched game and its helper, what's known
 of the game's data, the tools for mapping it, and how each part of the
 [README](README.md) is done.
 

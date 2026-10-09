@@ -1,7 +1,8 @@
-# Templar's Ledger
+# Obsidian Edition
 
-Templar's Ledger is a companion and mod for **Dark Sun: Shattered Lands** (the
-GOG release) in DOSBox.
+Obsidian Edition is a mod for **Dark Sun: Shattered Lands** (the GOG release)
+in DOSBox, with its own companion window, **Templar's Ledger**, beside the
+game. (Up to its 1.2.0 release, the whole mod was called Templar's Ledger.)
 
 ## Contents
 
@@ -56,10 +57,12 @@ folder only what you'd expect: your saves (pages 2 to 4 as files of their own,
 
 1. Download the latest release from the
    [Releases page](https://github.com/daaki85/darksun-companion-mod/releases)
-   (`Templars-Ledger-<version>.zip`) and unzip it anywhere. (Or this repository
-   as it stands: **Code → Download ZIP**.)
-2. In the unzipped folder (`Templars-Ledger-<version>`, or `darksun-companion`
-   in a download of the repository), double-click **`Start Templar's Ledger.bat`**.
+   (`Obsidian-Edition-<version>.zip`; `Templars-Ledger-<version>.zip` up to
+   1.2.0) and unzip it anywhere. (Or this repository as it stands: **Code →
+   Download ZIP**.)
+2. In the unzipped folder (`Obsidian-Edition-<version>`, or `darksun-companion`
+   in a download of the repository), double-click **`Start Obsidian Edition.bat`**
+   (`Start Templar's Ledger.bat` up to 1.2.0).
    The first time, it offers to install 64-bit Python if you don't have it.
    If Windows shows "Open File - Security Warning" (it does for any `.bat`
    from a download), press **Run**: the Ledger then unblocks its own files, so
@@ -75,7 +78,7 @@ double-click, with the options as last set.)
 
 ## What's new
 
-**Templar's Ledger 1.2.0** is out ([release notes](release-notes/v1.2.0.md)):
+**Templar's Ledger 1.2.0**, the mod's last release under that name, is out ([release notes](release-notes/v1.2.0.md)):
 weapon specialization and class restrictions, new weapons and magic items
 across Athas, and more, from pull requests #19 to #29.
 
