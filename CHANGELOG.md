@@ -117,8 +117,9 @@ Released pull requests are summarised in a line or two each; the release notes
   the character's other classes or kits left off), and a new Elementalist's
   second sphere; with weapon specialization a new fighter, gladiator, ranger
   or Battle Mage then picks the weapon kinds it is due, as at a level up. Up
-  to three kits, one for each class, each asleep with its class. A Scholar
-  turned preserver picks three spells. Kits that can't go together (Arena
+  to three kits, one for each class, each asleep with its class. A human
+  who becomes a preserver and takes the Scholar kit picks three spells, not
+  two. Kits that can't go together (Arena
   Champion or Sentinel with Twin-blade, Shinobi or Ravager; Twin-blade with
   Healer; Brute with Shinobi or Lifebinder), and kits a class bars, both ways
   (INT 99h).
@@ -150,8 +151,8 @@ Released pull requests are summarised in a line or two each; the release notes
   made before read as they did.
 - **The Arcanist's drawback** is a d3 hit die (a preserver's is a d4), in
   place of −2 CON.
-- **The dice log's ring holds 96 entries** (was 128), making room in upper
-  memory for the kits' code.
+- **The dice log's ring holds 96 entries** (was 128), and the helper's text
+  buffer is 4 KB (was 8), making room in upper memory for the kits' code.
 - **The helper's interrupts** are now 98h to FEh (and 60h to 65h); the
   message when they are in use says so.
 

@@ -131,7 +131,7 @@ VEC_SOUND_42 equ 0x9B      ; PROBE_SOUND_42
 VEC_SOUND_44 equ 0x9A      ; PROBE_SOUND_44
 VEC_DUAL_KIT equ 0x99      ; PROBE_DUAL_KIT
 VEC_CR_SPELLS equ 0x98     ; PROBE_CR_SPELLS
-TSIZE    equ 8192     ; bytes in the text buffer
+TSIZE    equ 4096     ; bytes in the text buffer (a power of two)
 
 NENT    equ 96          ; entries in the ring (96: the helper and it fit in upper memory)
 ESIZE   equ 192         ; bytes per entry (see ENTRY LAYOUT)
@@ -5773,7 +5773,8 @@ probe_dual_spells:
         imul ax, si, 0x47
         add bx, ax
         pop ax
-        call kit_is_b           ; (a Scholar's one more, as at its level ups)
+        call kit_is_b           ; (the Scholar kit taken for the new preserver class: one more, as
+                                ; at its level ups)
         db KIT_SCHOLAR
         jne .pick
         inc cx

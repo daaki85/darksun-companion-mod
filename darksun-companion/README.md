@@ -1788,8 +1788,9 @@ has already.
 
 A human who becomes a preserver picks its first two spells on the game's
 **CHOOSE A SPELL** window, twice over, from the 1st-level ones (the game gave
-it Grease and Magic Missile), as a preserver picks one at each level up; a
-**Scholar** picks three.
+it Grease and Magic Missile), as a preserver picks one at each level up. If
+it takes the **Scholar** kit for its new preserver class, it picks a third,
+as a Scholar picks one more at each level up.
 
 A new preserver picks its starting spells the same way when **DONE** is
 clicked on the creation screen, in place of the ones the game handed out by
