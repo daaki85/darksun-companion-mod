@@ -141,12 +141,12 @@ class RestrictTests(unittest.TestCase):
 
 
     def test_dual_class_keeps_specialized_weapons(self):
-        """A fighter turned psionicist keeps the long sword it specialized in, once its new level
-        passes its fighter level; never another kind."""
+        """A fighter turned psionicist keeps the long sword it specialized in, its fighter class
+        asleep or not; never another kind."""
         s = bytearray(sheet(12, 9, race=game.HUMAN))
         s[game.SPEC_SLOTS] = 1  # (the long sword)
         s[game.SHEET_LEVELS:game.SHEET_LEVELS + 2] = bytes((4, 5))
-        self.assertFalse(ok(bytes(s), 45))
+        self.assertTrue(ok(bytes(s), 45))
         s[game.SHEET_LEVELS] = 6
         self.assertTrue(ok(bytes(s), 45))
         self.assertTrue(ok(bytes(s), 81))  # (any long sword)
@@ -155,14 +155,14 @@ class RestrictTests(unittest.TestCase):
 
     def test_rangers_bow(self):
         """A ranger's bow is its own: a fire cleric/fire ranger may use it (the fire sphere alone
-        forbids it), and a human fire ranger turned fire cleric once its cleric level passes."""
+        forbids it), and a human fire ranger turned fire cleric, its ranger class asleep or not."""
         self.assertFalse(ok(sheet(3), 1))  # a fire cleric: no bow
         self.assertTrue(ok(sheet(3, 15), 1))  # with fire ranger: the bow
         self.assertTrue(ok(sheet(15, 3), 1))
         self.assertFalse(ok(sheet(3, 15), 22))  # (the axe: still the cleric's rule)
         s = bytearray(sheet(3, 15, race=game.HUMAN))
         s[game.SHEET_LEVELS:game.SHEET_LEVELS + 2] = bytes((4, 5))
-        self.assertFalse(ok(bytes(s), 1))  # a cleric not yet past its ranger level
+        self.assertTrue(ok(bytes(s), 1))  # a cleric not yet past its ranger level: the bow all the same
         s[game.SHEET_LEVELS] = 6
         self.assertTrue(ok(bytes(s), 1))
         self.assertTrue(ok(sheet(15, 3, race=game.HUMAN), 1))  # a ranger now

@@ -1305,7 +1305,22 @@ class CanUseTests(unittest.TestCase):
                         with self.subTest(cls=cls, kit=kit, type=t, slot=slot):
                             self.assertEqual(self.can_use(bytes(s), t, rules=rules, slot=slot),
                                              self.expected(s, t, off_hand=slot == 14))
+            # a weapon of a kind it specialized in: no kit's limit on it, but the off hand's
+            for cls, kit, kind in ((17, 3, "long sword"), (5, 2, "axe"), (10, 3, "axe"), (1, 2, "long sword"),
+                                   (9, 3, "bow")):
+                s = bytearray(test_restrict.sheet(cls))
+                s[0x43], s[0x14] = kit, specialize.KINDS.index(kind) + 1
+                for t in test_restrict.TYPES:
+                    for slot in (7, 14):
+                        with self.subTest(cls=cls, kit=kit, kind=kind, type=t, slot=slot):
+                            self.assertEqual(self.can_use(bytes(s), t, rules=rules, slot=slot),
+                                             self.expected(s, t, off_hand=slot == 14))
             game.RULES_IN_FORCE = game.RULE_KITS
+            shinobi = bytearray(test_restrict.sheet(17))
+            shinobi[0x43], shinobi[0x14] = 3, 1  # (a long sword spec: a thief turned ... back again)
+            self.assertFalse(restrict.kit_forbids(bytes(shinobi), 45, test_restrict.record(45)))
+            self.assertTrue(restrict.kit_forbids(bytes(shinobi), 45, test_restrict.record(45), spec=True))
+            self.assertTrue(restrict.kit_forbids(bytes(shinobi), 22, test_restrict.record(22)))  # (an axe: not chosen)
             healer, mage = bytearray(test_restrict.sheet(1)), bytearray(test_restrict.sheet(11))
             healer[0x43], mage[0x43] = 2, 2
             self.assertTrue(restrict.kit_forbids(bytes(healer), 22, test_restrict.record(22), off_hand=True))
@@ -3260,13 +3275,14 @@ class KitTests(unittest.TestCase):
         self.creature(13, 3)  # (DS:1661h the sheets)
         for rules in (game.RULE_KITS, 0):
             self.rules(rules)
-            for cls, kit in ((13, 3), (14, 2), (13, 1), (17, 3), (17, 1), (11, 2)):
+            for cls, kit in ((13, 3), (14, 2), (13, 1), (17, 3), (17, 1), (11, 2), (1, 3), (12, 2), (10, 1),
+                             (9, 2), (10, 3), (10, 2), (5, 2)):
                 sheet = bytearray(game.SHEET_SIZE)
                 sheet[0x18], sheet[0x21], sheet[0x24], sheet[kitpages.KIT_BYTE] = 1, cls, 5, kit
                 self.mu.mem_write(self.SHEET * 16 + 2 * game.SHEET_SIZE, bytes(sheet))
                 self.mu.mem_write(SS * 16 + BP + 6, struct.pack("<H", 2))
                 kid = kitpages.kit_any(bytes(sheet)) if rules else 0
-                for new in (1, 5, 8, 9, 11, 12):
+                for new in (1, 2, 5, 8, 9, 10, 11, 12, 13, 16, 17):
                     for given in (0, 1):
                         with self.subTest(rules=rules, cls=cls, kit=kit, new=new, given=given):
                             self.run_vector(VEC_DUAL_BAN, 2, eax=given, ebx=0x2222, esi=new, es=0x6666)

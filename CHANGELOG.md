@@ -98,9 +98,18 @@ Released pull requests are summarised in a line or two each; the release notes
   its own class's level; its hit die counts only for its own class. A Battle
   Mage's chosen weapon spec stays the kit's (expertise when awake, nothing
   while asleep), not a new fighter's specialization.
-- **Classes a kit bars on dual-classing:** a Seeker or Justifier can't become
-  a cleric or druid, a Shinobi a preserver, greyed on the DUAL window (INT
-  9Dh): their own slot tables would replace the new class's slots.
+- **Classes a kit bars on dual-classing,** greyed on the DUAL window (INT
+  9Dh): a Seeker or Justifier can't become a cleric or druid, a Shinobi a
+  preserver (their own slot tables would replace the new class's); the
+  Swashbuckler, Crusader, Battle Mage and Mind Warrior no warrior class (they
+  have a warrior's THAC0 already); an Arena Champion or Sentinel no druid or
+  preserver (no shield); a Brute no psionicist or air cleric (no two-handed
+  melee weapon).
+- **Weapon specs are weapons learnt for good:** no kit forbids a kind the
+  character specialized in (but for the off hand's rules), and a human who has
+  changed class may use its chosen kinds (and a ranger's bow) whatever the new
+  class allows, its old class asleep or not (was: once the new class's level
+  passed the old).
 - **The Stalker hides in shadows indoors** with its full chance (the stealth
   rule halves a ranger's indoors).
 - **Starting gear fitted to the kit:** the game's class gear, given at DONE,

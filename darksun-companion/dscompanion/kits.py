@@ -278,14 +278,22 @@ def second_sphere(kid: int, sheet: bytes) -> Optional[int]:
     return sheet[SPHERE2] - 1
 
 
+_PRIEST, _WARRIOR = frozenset(range(1, 9)), frozenset((9, 10)) | frozenset(RANGER_CLASSES)
+_NO_SHIELD = frozenset(range(5, 9)) | {11}  # (druids and the preserver: no shield)
+# By kit, the classes (1-17) a human with it may not change to (DSCLOG's DUAL_BANS): its own slot
+# table would take the new class's place (a Seeker's or Justifier's priest slots, a Shinobi's
+# wizard ones); a warrior's THAC0 is a warrior class's already (Swashbuckler, Crusader, Battle
+# Mage, Mind Warrior); it needs a shield the class can't hold (Arena Champion, Sentinel), or a
+# two-handed melee weapon the class can't use (Brute: a psionicist's, an air cleric's).
+DUAL_BANS = {SEEKER: _PRIEST, JUSTIFIER: _PRIEST, SHINOBI: frozenset((11,)),
+             **{k: _WARRIOR for k in WARRIOR_THAC0},
+             CHAMPION: _NO_SHIELD, SENTINEL: _NO_SHIELD, BRUTE: frozenset((12, 1))}
+
+
 def dual_banned(kid: int, cls: int) -> bool:
     """Whether a human with kit KID (asleep or not) may not change to class CLS (1-17), as DSCLOG's
-    PROBE_DUAL_BAN greys it on the DUAL window: a Seeker or Justifier a cleric or druid (1-8), a
-    Shinobi a preserver (11). Their own slot tables (SEEKER_SLOTS, by the kit's class level) would
-    take the new class's slots' place once the kit woke."""
-    if kid in (SEEKER, JUSTIFIER):
-        return 1 <= cls <= 8
-    return kid == SHINOBI and cls == 11
+    PROBE_DUAL_BAN greys it on the DUAL window (DUAL_BANS)."""
+    return cls in DUAL_BANS.get(kid, ())
 
 
 def spell_spheres(kid: int, cls: int, second: Optional[int], spheres: int) -> int:
@@ -310,6 +318,12 @@ def allows(kid: int, typ: bytes, kind: Optional[int], chosen: Optional[int], spe
     return specialize and kind is not None and kind == chosen
 
 
+def forbids_off_hand(kid: int, typ: bytes) -> bool:
+    """Whether the kit keeps an item from the off hand: anything a Battle Mage's, a weapon a
+    Healer's (DSCLOG's KIT_FORBIDS with KF_OFF_HAND)."""
+    return kid == BATTLE_MAGE or kid == HEALER and bool(typ[0] & (MELEE | MISSILE | THROWN))
+
+
 def forbids(kid: int, typ: bytes, kind: Optional[int], half_giant: bool, spec: bool = False,
             off_hand: bool = False, sphere: int = 0) -> bool:
     """Whether the kit keeps a character from an item type (TYP its record; KIND its weapon kind,
@@ -324,7 +338,7 @@ def forbids(kid: int, typ: bytes, kind: Optional[int], half_giant: bool, spec: b
     Mage, no weapon for a Healer."""
     flags, kinds, mat = typ[0], typ[0x0F], typ[8] & 0x4F
     weapon = bool(flags & (MELEE | MISSILE))
-    if off_hand and (kid == BATTLE_MAGE or kid == HEALER and flags & (MELEE | MISSILE | THROWN)):
+    if off_hand and forbids_off_hand(kid, typ):
         return True
     light = not kinds & ARMOUR or bool(flags & SHIELD) or mat in (LEATHER, NO_MATERIAL)
     if kid == RAVAGER:

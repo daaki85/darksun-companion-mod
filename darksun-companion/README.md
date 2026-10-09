@@ -1599,8 +1599,9 @@ character's melee rate whatever weapon is ready.
 ![The Effects screen: Daaki, a 9th-level fighter, GRAND MASTER OF LONG SWORD](docs/effects-weapons.png)
 
 A human who dual-classes keeps what it earned as a fighter, gladiator or
-ranger: it counts again (and so do those weapons, whatever the new class
-allows) once the new class's level passes the old.
+ranger: its weapon specs count again once the new class's level passes the
+old, and its chosen weapons stay its own to use all along, whatever the new
+class (or a kit) allows.
 
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#weapon-specialization).
 
@@ -1753,11 +1754,21 @@ expertise with it once the kit wakes. A warrior's own weapon specs stay, as
 the game keeps them, and count again once the new class's level passes the
 old.
 
-Two kits keep a human from some classes, greyed on the DUAL window as the
-game greys those it already bars: a **Seeker** or **Justifier** can't become a
-cleric or druid, and a **Shinobi** can't become a preserver. Each casts from a
-slot table of its own, which would take the place of the new class's slots
-once the kit woke.
+A weapon spec is a weapon learnt for good: no kit keeps a character from a
+kind of weapon it specialized in (but for the off hand's rules: the Healer's,
+the Battle Mage's), and a human who has changed class may use the kinds it
+chose whatever the new class allows, its old class asleep or not.
+
+Some kits keep a human from some classes, greyed on the DUAL window as the
+game greys those it already bars:
+
+| Kit | Can't become | Why |
+|---|---|---|
+| Seeker, Justifier | cleric, druid | their own priest slot tables would take the new class's slots' place |
+| Shinobi | preserver | its own wizard slot table would take the new class's slots' place |
+| Swashbuckler, Crusader, Battle Mage, Mind Warrior | fighter, gladiator, ranger | a warrior's THAC0 is already their kit's |
+| Arena Champion, Sentinel | druid, preserver | their gift needs a shield, which those classes can't hold |
+| Brute | psionicist, air cleric | it needs a two-handed melee weapon, which those classes can't use |
 
 ### Class restrictions
 
@@ -1781,10 +1792,10 @@ doesn't), as the game's own "No spell use" stops them. The **USE** screen
 heads its spell slots **NO SPELLS IN ARMOUR**, and the Characters tab adds
 "(no spells in armour)" to them. A human who has
 changed class is held by the class it has now; another race by all of its
-classes. A ranger turned cleric uses both spheres' weapons, and a warrior who
-dual-classed uses the weapons it specialized in once the new class's level
-passes the old (a fighter's, gladiator's or ranger's chosen weapon specs, and a
-ranger's bow). A ranger's bow is always its own: a fire ranger/cleric, whose
+classes. A ranger turned cleric uses both spheres' weapons, and a human who
+dual-classed uses the weapons it specialized in whatever the new class allows,
+its old class asleep or not (a fighter's, gladiator's or ranger's chosen weapon
+specs, a Battle Mage's, and a ranger's bow). A ranger's bow is always its own: a fire ranger/cleric, whose
 fire sphere allows only obsidian weapons, may still use bows.
 
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#class-restrictions).

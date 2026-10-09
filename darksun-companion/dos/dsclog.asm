@@ -2936,7 +2936,9 @@ probe_can_use:
 ; that isn't light (leather, or of no material); a Grove Warden a metal weapon; a Lifebinder a
 ; weapon of a kind not blunt (KIT_BLUNT); a Shinobi a shield, armour that isn't light, and a
 ; weapon not of its kinds (KIT_SHINOBI); a Seeker a weapon its sphere doesn't allow (as a
-; cleric's: SPHERE_ALLOWS), but the bow. DS the game's; all registers kept.
+; cleric's: SPHERE_ALLOWS), but the bow. A weapon of a kind the character specialized in (its
+; SPEC_SLOTS; but choosing one, KF_SPEC) none, but for the off hand's. DS the game's; all
+; registers kept.
 KT_MELEE   equ 0x01             ; (the item type's +0 flags, +0Fh kind flags)
 KT_MISSILE equ 0x02
 KT_SHIELD  equ 0x04
@@ -2963,6 +2965,28 @@ kit_forbids:
 .type:  call kit_class_of_sheet     ; (a ranger's sphere, for a Seeker: its class less 13)
         sub al, 13
         mov [cs:kf_sphere], al
+        mov byte [cs:kf_chosen], 0      ; (a weapon of a kind it specialized in: the kit keeps
+        cmp byte [cs:kf_spec], 0        ; it from none, but for the off hand's rules)
+        jne .forbids
+        cmp dx, KIND_TYPES
+        jae .forbids
+        push si
+        mov si, dx
+        mov al, [cs:si + kind_of_type]
+        pop si
+        or al, al
+        jz .forbids
+        cmp [es:bx + SPEC_SLOTS], al
+        je .chosen
+        cmp [es:bx + SPEC_SLOTS + 1], al
+        je .chosen
+        cmp [es:bx + SPEC_SLOTS + 2], al
+        je .chosen
+        cmp [es:bx + SPEC_SLOTS + 3], al
+        jne .forbids
+.chosen:
+        mov byte [cs:kf_chosen], 1
+.forbids:
         les bx, [ITEM_TYPES]
         imul ax, dx, 0x14
         add bx, ax
@@ -2977,6 +3001,8 @@ kit_forbids:
         test al, KT_MELEE | KT_MISSILE | KT_THROWN
         jnz .no
 .ravager:
+        cmp byte [cs:kf_chosen], 0
+        jne .ok
         cmp cl, KIT_RAVAGER     ; a Ravager: no shield, no missile or thrown weapon, light armour only
         jne .twin
         test al, KT_SHIELD
@@ -3166,6 +3192,7 @@ kit_shinobi dw 0xF10C           ; bits by kind: dagger, short sword, quarterstaf
 kf_spec    db 0
 kf_off_hand db 0               ; (KIT_FORBIDS: the item going to the off hand)
 kf_sphere  db 0                 ; (KIT_FORBIDS: a ranger's sphere, 0 air to 3 water)
+kf_chosen  db 0                 ; (KIT_FORBIDS: a weapon of a kind it specialized in)
 EQUIP_OFF_HAND equ 14          ; the equip routine's slot for the off (left) hand
 
 ; CLASS_FORBIDS: carry set if the classes of the character whose sheet is at ES:BX keep it from
@@ -3261,11 +3288,10 @@ class_forbids:
         pop ax
         ret
 
-; SPECIALIZED_BACK: carry set if CU_KIND is a kind the character (sheet ES:BX) specialized in as a
-; fighter, gladiator or ranger, a human who has dual-classed and whose new class's level has
-; passed the old; or the bow, for a ranger (a multiclass one always, a human while a ranger or
-; once its new class's level has passed its ranger level): restrict.specialized_back. All
-; registers kept.
+; SPECIALIZED_BACK: carry set if CU_KIND is a kind the character (sheet ES:BX), a human who has
+; dual-classed, specialized in (its SPEC_SLOTS: a warrior class's, a Battle Mage's), asleep or not;
+; or the bow, for a ranger, now or before: the new class's limits don't shrink what it has
+; learnt (restrict.specialized_back). All registers kept.
 specialized_back:
         pusha
         mov al, [cs:cu_kind]
@@ -3280,13 +3306,7 @@ specialized_back:
         jb .rnext
         cmp al, 16
         ja .rnext
-        cmp byte [es:bx + 0x18], 1      ; (not human: multiclass, always)
-        jne .yes
-        or si, si                       ; (a human ranger now)
-        jz .yes
-        mov al, [es:bx + si + 0x24]
-        cmp al, [es:bx + 0x24]
-        jb .yes
+        jmp .yes                        ; (a ranger, now or before)
 .rnext: inc si
         cmp si, 3
         jb .rclass
@@ -3302,23 +3322,8 @@ specialized_back:
         je .kind
         cmp [es:bx + SPEC_SLOTS + 3], al
         jne .no
-.kind:  mov si, 1
-.class: mov al, [es:bx + si + 0x21]
-        cmp al, FIGHTER_CLASS
-        je .warrior
-        cmp al, GLADIATOR_CLASS
-        je .warrior
-        cmp al, 13
-        jb .next
-        cmp al, 16
-        ja .next
-.warrior:
-        mov al, [es:bx + si + 0x24]
-        cmp al, [es:bx + 0x24]
-        jb .yes
-.next:  inc si
-        cmp si, 3
-        jb .class
+.kind:  cmp byte [es:bx + 0x22], 0      ; (a human who has changed class: its weapon specs its
+        jne .yes                        ; own, whatever the new class or a kit allows)
 .no:    popa
         clc
         ret
@@ -6849,40 +6854,70 @@ probe_el_know:
 ; PROBE_DUAL_BAN: INT VEC_DUAL_BAN replaces "or ax,ax" (2 bytes; DSUN.EXE 866FFh) after the test
 ; whether a human may change to a class (86E94h: AX 1 if so), made for each class (SI, 1-17) as
 ; the DUAL window (866C7h, for member [BP+6]) greys those it can't: AX 0 for a class its kit bars
-; (kits.dual_banned): a Seeker or Justifier a cleric or druid (1-8), a Shinobi a preserver, whose
-; slot tables would take the new class's place. The test's flags back to the JZ (RETF 2).
+; (KIT_ANY, asleep too; DUAL_BANS, kits.DUAL_BANS). The test's flags back to the JZ (RETF 2).
 probe_dual_ban:
         sti
         or ax, ax
         jz .out
         push bx
+        push ecx
+        push si
         push es
         les bx, [0x1661]
         imul ax, [bp + 6], 0x47
         add bx, ax
         call kit_any
-        mov ah, al
-        mov al, 1
-        cmp ah, KIT_SHINOBI
-        jne .ranger
-        cmp si, PRESERVER_CLASS
-        jne .back
-        jmp .barred
-.ranger:
-        cmp ah, KIT_SEEKER
-        je .priest
-        cmp ah, KIT_JUSTIFIER
-        jne .back
-.priest:
-        cmp si, 8
-        ja .back
-.barred:
-        xor al, al
-.back:  xor ah, ah
-        pop es
+        movzx ecx, si           ; (ECX the class)
+        mov si, dual_bans
+.next:  cmp byte [cs:si], 0
+        je .free
+        cmp [cs:si], al
+        je .kit
+        add si, 5
+        jmp .next
+.kit:   push eax
+        mov eax, [cs:si + 1]
+        bt eax, ecx
+        pop eax
+        jnc .free
+        xor ax, ax
+        jmp .back
+.free:  mov ax, 1
+.back:  pop es
+        pop si
+        pop ecx
         pop bx
 .out:   or ax, ax
         retf 2
+; By kit (KIT_ID's number), the classes (bit n: class n, 1-17) a human with it may not change to
+; (kits.DUAL_BANS): slot tables of its own that would take the new class's place (a Seeker's or
+; Justifier's priest slots, a Shinobi's wizard ones); a warrior's THAC0 (a warrior class instead);
+; a shield it needs (a class with none: druid, preserver); a two-handed melee weapon it needs (a
+; class with none: psionicist, air cleric). 0 ends it.
+DB_PRIEST   equ 0x1FE                   ; (clerics and druids, 1-8)
+DB_WARRIOR  equ 0x1E600                 ; (fighter 9, gladiator 10, rangers 13-16)
+DB_NO_SHIELD equ 0x1E0 | (1 << 11)      ; (druids 5-8, the preserver)
+dual_bans   db KIT_SEEKER
+            dd DB_PRIEST
+            db KIT_JUSTIFIER
+            dd DB_PRIEST
+            db KIT_SHINOBI
+            dd 1 << 11
+            db KIT_SWASHBUCKLER
+            dd DB_WARRIOR
+            db KIT_CRUSADER
+            dd DB_WARRIOR
+            db KIT_BATTLE_MAGE
+            dd DB_WARRIOR
+            db KIT_MIND_WARRIOR
+            dd DB_WARRIOR
+            db KIT_CHAMPION
+            dd DB_NO_SHIELD
+            db KIT_SENTINEL
+            dd DB_NO_SHIELD
+            db KIT_BRUTE
+            dd (1 << 12) | (1 << 1)     ; (the psionicist, the air cleric)
+            db 0
 
 ; EL_SPHERES: EAX a spell's mask, for caster [BP+6]: an Elementalist's second sphere's spells its
 ; own sphere's too. Others kept.
