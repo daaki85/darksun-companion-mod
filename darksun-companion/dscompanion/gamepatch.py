@@ -78,6 +78,7 @@ VEC_CR_SPELLS, VEC_EF_CLICK = 0x98, 0x97
 VEC_CAST_MARK, VEC_ROUND_MARK, VEC_CAST_DONE, VEC_END_TURN = 0x96, 0x95, 0x94, 0x93
 VEC_LEARN_SAID, VEC_LEARN_REFUSED = 0x92, 0x91
 VEC_XP, VEC_PRIEST_THAC0, VEC_ADND_SLOTS = 0x90, 0x8F, 0x8E
+VEC_PRICE, VEC_PRICE_EAX = 0x8D, 0x8C
 
 
 SCRIPT_BUFFER = 0x2E00  # the scripts' buffer, made bigger (the game's: 10000 bytes)
@@ -423,6 +424,11 @@ PATCHES = (
     Patch("xp_view", 0x67D41, bytes.fromhex("666bc064"), _interrupt(VEC_XP, 4)),
     Patch("priest_thac0", 0x876AB, bytes.fromhex("8946fe"), _interrupt(VEC_PRIEST_THAC0, 3)),
     Patch("adnd_slots", 0x5E240, bytes.fromhex("900ee87d02"), _interrupt(VEC_ADND_SLOTS, 5)),
+    # the leader's CHA lowers what a shop asks (game.RULE_CHA_PRICES, prices.py): the price charged,
+    # the one shown under an item, and the one the list greys an item it can't afford by
+    Patch("price_buy", 0x8384B, bytes.fromhex("268b4f06"), _interrupt(VEC_PRICE, 4)),
+    Patch("price_shown", 0x83BB1, bytes.fromhex("268b4f06"), _interrupt(VEC_PRICE, 4)),
+    Patch("price_afford", 0x8310C, bytes.fromhex("66260fbf4706"), _interrupt(VEC_PRICE_EAX, 6)),
     # A new preserver picks its spells on CHOOSE A SPELL at creation (the game gives Grease, Magic
     # Missile and more by its level)
     Patch("cr_spells", 0x66F2D, bytes.fromhex("8b46fe"), _interrupt(VEC_CR_SPELLS, 3)),

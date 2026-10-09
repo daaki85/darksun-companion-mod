@@ -133,6 +133,7 @@ RULE_INT_LEARN = 262144
 # AD&D's class tables (tables.py; DSCLOG's RULE_HI_TABLES): the XP each class needs, priests'
 # THAC0, and clerics', druids' and preservers' spell slots by level
 RULE_ADND_TABLES = 524288
+RULE_CHA_PRICES = 1048576
 SPEC_SLOTS, SPEC_COUNT = 0x14, 4
 # AD&D's item saving throws against acid (the DMG's table), by the game's materials: wood
 # (thick), bone, stone and obsidian (glass's), metal, leather; and cloth for no material
@@ -150,7 +151,7 @@ RULE_SETTINGS = (("helm_ac", RULE_HELMS), ("boots_move", RULE_BOOTS), ("two_weap
                  ("weapon_specialization", RULE_SPECIALIZE), ("class_restrictions", RULE_RESTRICT),
                  ("multiclass_hp", RULE_MULTI_HP), ("best_hit_die", RULE_HP_BEST), ("kits", RULE_KITS),
                  ("ranger_casting_level", RULE_RANGER_CAST), ("int_learning", RULE_INT_LEARN),
-                 ("adnd_tables", RULE_ADND_TABLES))
+                 ("adnd_tables", RULE_ADND_TABLES), ("cha_prices", RULE_CHA_PRICES))
 # Cat's Grace (RULE_CATS_GRACE): Flaming Sphere (wizard level 2) gets Strength's record and the
 # name, and DSCLOG sends it to Strength's code, which rolls 1d6 into an effect of its own (54,
 # a number the game leaves unused) that adds to DEX, at most 24, as Strength's adds to STR.

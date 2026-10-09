@@ -4108,7 +4108,7 @@ class AdndTablesTests(unittest.TestCase):
         at = self.image.find(bytes((0xB8, vector, 0x25, 0xBA)))
         self.assertGreater(at, 0)
         self.mu.mem_write(vector * 4, struct.pack("<HH", struct.unpack_from("<H", self.image, at + 4)[0], TSR))
-        site = 0x400
+        site = 0x400 + (vector & 0x1F) * 0x10  # (one for each vector: the emulator keeps code it has seen)
         self.mu.mem_write(CALLER * 16 + site, bytes((0xCD, vector)) + b"\x90" * (code_len - 2))
         sp = 0x7FC - len(stack)
         self.mu.mem_write(SS * 16 + sp, stack)
@@ -4167,7 +4167,7 @@ class AdndTablesTests(unittest.TestCase):
         level put back)."""
         from dscompanion import tables
         from dscompanion.gamepatch import VEC_ADND_SLOTS
-        self.mu.mem_write(CALLER * 16 + 0x402 + 0x5E4C2 - 0x5E242, self.STUB)
+        self.mu.mem_write(CALLER * 16 + 0x400 + (VEC_ADND_SLOTS & 0x1F) * 0x10 + 2 + 0x5E4C2 - 0x5E242, self.STUB)
         for on in (False, True):
             self.rules(on)
             for cls in (1, 4, 5, 8, 11, 13, 9):
@@ -4186,3 +4186,42 @@ class AdndTablesTests(unittest.TestCase):
                                                                             r.UC_X86_REG_SI, r.UC_X86_REG_DI,
                                                                             r.UC_X86_REG_BP)],
                                              [0x2222, 0x3333, 0x5555, 0x6666, BP])
+
+
+@unittest.skipIf(Uc is None, "unicorn is not installed")
+class ChaPriceTests(AdndTablesTests):
+    """RULE_HI_CHA_PRICES (game.RULE_CHA_PRICES) against prices.py: PROBE_PRICE (CX the price a
+    shop asks, ES:BX+6 the item's) and PROBE_PRICE_EAX (EAX, sign-extended, as the game reads it),
+    by the leader's CHA (the party member at DS:4979h, its creature record's +27h)."""
+    test_xp = test_priest_thac0 = test_slots = None  # (AdndTablesTests' own)
+    ITEM, CREATURES = 0x8000, 0x8100
+
+    def setUp(self):
+        super().setUp()
+        self.mu.mem_write(self.DS * 16 + 0x1665, struct.pack("<HH", 0, self.CREATURES))
+
+    def leader(self, member, cha, on=True):
+        self.mu.mem_write(self.hdr + self.RULES_HI, struct.pack("<H", 16 if on else 0))
+        self.mu.mem_write(self.DS * 16 + 0x4979, struct.pack("<H", member))
+        self.mu.mem_write(self.CREATURES * 16 + member * 0x3A + 0x27, bytes((cha,)))
+
+    def test_prices(self):
+        from dscompanion import prices
+        from dscompanion.gamepatch import VEC_PRICE, VEC_PRICE_EAX
+        for on in (False, True):
+            for member, cha in ((0, 15), (1, 16), (2, 18), (3, 19), (0, 20), (2, 25), (5, 25)):
+                for value in (0, 1, 3, 10, 1000, 9999, 30000, 43500):
+                    with self.subTest(on=on, member=member, cha=cha, value=value):
+                        self.leader(member, cha, on)
+                        self.mu.mem_write(self.ITEM * 16 + 0x20 + 6, struct.pack("<H", value))
+                        want = prices.price(value, cha) if on and member < 4 else value
+                        self.run_vector(VEC_PRICE, 4, es=self.ITEM, ebx=0x20, ecx=0x3333, eax=0x1111,
+                                        edx=0x4444)
+                        self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_CX, r.UC_X86_REG_AX,
+                                                                        r.UC_X86_REG_BX, r.UC_X86_REG_DX,
+                                                                        r.UC_X86_REG_ES)],
+                                         [want, 0x1111, 0x20, 0x4444, self.ITEM])
+                        self.run_vector(VEC_PRICE_EAX, 6, es=self.ITEM, ebx=0x20, ecx=0x3333, eax=0xDEADBEEF)
+                        self.assertEqual(self.mu.reg_read(r.UC_X86_REG_EAX), want - 0x10000 & 0xFFFFFFFF
+                                         if want >= 0x8000 else want)
+                        self.assertEqual(self.mu.reg_read(r.UC_X86_REG_CX), 0x3333)

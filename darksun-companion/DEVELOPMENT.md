@@ -11,7 +11,7 @@ Every roll in the game goes through one function, Borland C++'s `rand()`.
 1. When you start the game with the dice log, the launcher writes
    `dos\DSUNLOG.EXE`: a copy of the game's `DSUN.EXE` with about 140 small
    changes, listed in `PATCHES` in `dscompanion/gamepatch.py`. Most replace a
-   few bytes of the game's code with an `INT` (60h to 65h, and 8Eh to FEh)
+   few bytes of the game's code with an `INT` (60h to 65h, and 8Ch to FEh)
    that the helper answers: `rand()`, the saving throw, AC, the dialogue
    window and message boxes for the dice log; the inventory, View Character,
    USE and Effects screens and the Look box for what the Ledger adds to them;
@@ -530,6 +530,25 @@ the member, spell, INT, chance, d100 or spells known, result;
 `PROBE_PICK_LIST` drops the game's list's spells of a full level, and
 `PROBE_PICK_ANY` (`PICK_INT_ANY`) doesn't open CHOOSE A SPELL when no unknown
 wizard spell is left at a level on offer that isn't full.
+
+### The leader's CHA at shops
+
+([In the README](README.md#the-leaders-cha-at-shops); `prices.py`.)
+
+The shop (overlay at 83000h) reads an item's price, the word at its `+6`,
+straight from the item: `mov cx,es:[bx+6]` to charge it (8384Bh: times the
+count for a stack, against the party's money, the dword at 2C0:357h; NOT
+ENOUGH MONEY, DS:2EE7h, if short) and to show it under the item (83BB1h, as
+`%d$`), and `movsx eax,word es:[bx+6]` where the list colours an item the party
+can't afford (8310Ch). Selling (83CCAh) is left alone; 9999 there is "I
+COULDN'T SELL THAT".
+
+How (`RULE_HI_CHA_PRICES`, the second rules word's 16: `game.RULE_CHA_PRICES`):
+`PROBE_PRICE` (`INT 8Dh`) at the first two and `PROBE_PRICE_EAX` (`INT 8Ch`)
+at the third read the price and pass it through `CHA_PRICE`: the leader is
+the party member at `DS:4979h` (whose turn it is; outside a fight, the
+leader), its CHA its creature record's `+27h`; the price times (100 − 5 for
+each point of CHA past 15, at most 25) / 100, never below 1, and 9999 kept.
 
 ### AD&D's class tables
 

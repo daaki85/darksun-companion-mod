@@ -141,6 +141,8 @@ VEC_LEARN_REFUSED equ 0x91 ; PROBE_LEARN_REFUSED
 VEC_XP equ 0x90            ; PROBE_XP
 VEC_PRIEST_THAC0 equ 0x8F  ; PROBE_PRIEST_THAC0
 VEC_ADND_SLOTS equ 0x8E    ; PROBE_ADND_SLOTS
+VEC_PRICE equ 0x8D         ; PROBE_PRICE
+VEC_PRICE_EAX equ 0x8C     ; PROBE_PRICE_EAX
 TSIZE    equ 4096     ; bytes in the text buffer (a power of two)
 
 NENT    equ 96          ; entries in the ring (96: the helper and it fit in upper memory)
@@ -8681,6 +8683,69 @@ probe_adnd_slots:
 adnd_slots db 1,0,0,0,0, 2,0,0,0,0, 2,1,0,0,0, 3,2,0,0,0, 3,3,1,0,0, 3,3,2,0,0, 3,3,2,1,0, 3,3,3,2,0, 4,4,3,2,1, 4,4,3,3,2
            db 1,0,0,0,0, 2,0,0,0,0, 2,1,0,0,0, 3,2,0,0,0, 4,2,1,0,0, 4,2,2,0,0, 4,3,2,1,0, 4,3,3,2,0, 4,3,3,2,1, 4,4,3,2,2
 
+; The leader's CHA and shop prices (RULE_HI_CHA_PRICES; prices.py), as Baldur's Gate has them:
+; buying costs 5% less at CHA 16, 10% at 17, 15% at 18, 20% at 19 and 25% from 20. The leader
+; is the party member whose turn it is outside a fight (DS:4979h). Selling is as the game has it.
+;
+; CHA_PRICE: CX an item's price (the word at its +6), lowered for the leader's CHA (never below
+; 1; the game's 9999, "not for sale", kept). DS the game's; others kept.
+cha_price:
+        test word [cs:rules_hi], RULE_HI_CHA_PRICES
+        jz .out
+        cmp cx, 9999
+        je .out
+        jcxz .out
+        push ax
+        push bx
+        push dx
+        push es
+        mov bx, [WHOSE_TURN]
+        cmp bx, 3
+        ja .done
+        les ax, [CREATURES]
+        imul bx, bx, 0x3A
+        add bx, ax
+        mov al, [es:bx + 0x27]          ; (the abilities from +22h: STR, DEX, CON, INT, WIS, CHA)
+        sub al, 15
+        jle .done
+        cmp al, 5
+        jbe .pct
+        mov al, 5
+.pct:   mov ah, 5
+        mul ah                          ; AX the discount in %
+        mov bx, 100
+        sub bx, ax
+        mov ax, cx
+        mul bx                          ; DX:AX the price x (100 - discount)
+        mov bx, 100
+        div bx
+        or ax, ax
+        jnz .set
+        inc ax
+.set:   mov cx, ax
+.done:  pop es
+        pop dx
+        pop bx
+        pop ax
+.out:   ret
+
+; PROBE_PRICE: INT VEC_PRICE replaces "mov cx,es:[bx+6]" (4 bytes: INT + 2 NOPs) where a shop
+; reads an item's price to charge it (DSUN.EXE 8384Bh) and to show it under the item (83BB1h).
+probe_price:
+        mov cx, [es:bx + 6]
+        call cha_price
+        iret
+
+; PROBE_PRICE_EAX: INT VEC_PRICE_EAX replaces "movsx eax,word es:[bx+6]" (6 bytes: INT + 4 NOPs)
+; where a shop's list greys an item the party can't afford (8310Ch).
+probe_price_eax:
+        push cx
+        mov cx, [es:bx + 6]
+        call cha_price
+        movsx eax, cx
+        pop cx
+        iret
+
 ; PROBE_XP_NEXT: INT VEC_XP_NEXT replaces "push 10F4h" (3 bytes: INT + NOP; DSUN.EXE 67DBEh) in
 ; View Character's line "EXP:10301 (16000)", where the game adds ")" (DS:10F4h) after the XP the
 ; next level needs: the least of its classes' ([BP-6], a dword, never 0 here), each class's from
@@ -9110,6 +9175,7 @@ RULE_RESTRICT equ 8192          ; class restrictions on armour, shields and weap
 RULE_MULTI_HP equ 16384         ; multiclass hit points as in AD&D (PROBE_MC_*)
 RULE_HP_BEST equ 32768          ; a hit die rolled twice, the better kept (PROBE_HP_BEST)
 RULE_HI_KITS equ 1              ; (RULES_HI) kits, chosen on the creation panel's KIT page (KIT_*)
+RULE_HI_CHA_PRICES equ 16      ; (RULES_HI) the leader's CHA lowers what shops ask (CHA_PRICE)
 RULE_HI_TABLES equ 8            ; (RULES_HI) AD&D's class tables: XP, priests' THAC0, spell slots (XP_NEED, PROBE_*)
 RULE_HI_INT    equ 4            ; (RULES_HI) INT's chance to learn a scroll's spell and most spells a level (INT_LEARN)
 RULE_HI_RANGER equ 2            ; (RULES_HI) a ranger's spells' durations and damage at its level less 7 (PROBE_RANGER_LEVEL)
@@ -13016,6 +13082,12 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_ADND_SLOTS
         mov dx, probe_adnd_slots
         int 21h
+        mov ax, 2500h + VEC_PRICE
+        mov dx, probe_price
+        int 21h
+        mov ax, 2500h + VEC_PRICE_EAX
+        mov dx, probe_price_eax
+        int 21h
         mov ax, 2500h + VEC_PICK_LEVEL
         mov dx, probe_pick_level
         int 21h
@@ -13070,10 +13142,10 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or 8Eh-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+busy    db 'DSCLOG: interrupts 60h-65h or 8Ch-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
 all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS, VEC_LV_PICK, VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK, VEC_EF_ROWS, VEC_HP_BEST, VEC_TOME, VEC_INIT, VEC_THAC0, VEC_SLOTS, VEC_SLOT_LEVEL
             db VEC_PSP_USE, VEC_PSP_TABLE, VEC_PSP_DEFENCE, VEC_CURE, VEC_PSP_KEEP, VEC_RANGER_CAST, VEC_PSP_KEEP_DX
-            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY, VEC_RANGER_LEVEL, VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP, VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW, VEC_DUAL_BAN, VEC_DUAL_SPELLS, VEC_SOUND_42, VEC_SOUND_44, VEC_DUAL_KIT, VEC_CR_SPELLS, VEC_EF_CLICK, VEC_CAST_MARK, VEC_ROUND_MARK, VEC_CAST_DONE, VEC_END_TURN, VEC_LEARN_SAID, VEC_LEARN_REFUSED, VEC_XP, VEC_PRIEST_THAC0, VEC_ADND_SLOTS
+            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY, VEC_RANGER_LEVEL, VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP, VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW, VEC_DUAL_BAN, VEC_DUAL_SPELLS, VEC_SOUND_42, VEC_SOUND_44, VEC_DUAL_KIT, VEC_CR_SPELLS, VEC_EF_CLICK, VEC_CAST_MARK, VEC_ROUND_MARK, VEC_CAST_DONE, VEC_END_TURN, VEC_LEARN_SAID, VEC_LEARN_REFUSED, VEC_XP, VEC_PRIEST_THAC0, VEC_ADND_SLOTS, VEC_PRICE, VEC_PRICE_EAX
 all_vectors_end:
 
         align 16, db 0

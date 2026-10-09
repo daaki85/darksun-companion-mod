@@ -46,6 +46,7 @@ GOG release) in DOSBox.
   - [Rangers' casting level](#rangers-casting-level)
   - [Preservers' INT](#preservers-int)
   - [AD&D's class tables](#adds-class-tables)
+  - [The leader's CHA at shops](#the-leaders-cha-at-shops)
   - [Spells saved against with the spell save](#spells-saved-against-with-the-spell-save)
   - [Fire, cold and electricity: DEX instead of a doubled d20](#fire-cold-and-electricity-dex-instead-of-a-doubled-d20)
   - [Two weapons](#two-weapons)
@@ -1226,6 +1227,7 @@ works](#how-the-game-works) has what the game does without them.
 | [Hit dice: the better of two](#hit-dice-the-better-of-two) | each hit die rolled twice, the better kept, for every character |
 | [Rangers' casting level](#rangers-casting-level) | a ranger's spells last and do damage as cast at its level less 7, as the spell levels it may cast already count it |
 | [Preservers' INT](#preservers-int) | INT gives a preserver a chance to learn a spell from a scroll, and the most spells of each spell level it may know |
+| [The leader's CHA at shops](#the-leaders-cha-at-shops) | the party leader's CHA 16 or more lowers what shops ask, 5% to 25%, as in Baldur's Gate |
 | [AD&D's class tables](#adds-class-tables) | the XP for each level, priests' THAC0, and clerics', druids' and preservers' spell slots from AD&D's tables |
 | [Spells saved against with the spell save](#spells-saved-against-with-the-spell-save) | the spell save rather than petrification/polymorph |
 | [Fire, cold and electricity: DEX instead of a doubled d20](#fire-cold-and-electricity-dex-instead-of-a-doubled-d20) | DEX's defensive adjustment on those saves rather than a doubled d20 |
@@ -1734,6 +1736,22 @@ Hit points were AD&D's already (with [Levels up to 10](#levels-up-to-10)).
 Kits change these as before.
 
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#adds-class-tables).
+
+### The leader's CHA at shops
+
+The game's shops ask an item's price whoever buys. With **The leader's CHA at
+shops** ticked, the party leader's CHA lowers it, as Baldur's Gate's table
+has it:
+
+| Leader's CHA | 15 or less | 16 | 17 | 18 | 19 | 20 or more |
+|---|---|---|---|---|---|---|
+| Discount | none | 5% | 10% | 15% | 20% | 25% |
+
+The price shown under each item, the one charged, and whether the shop's list
+greys an item as too dear all follow it (never below 1). Selling is as the
+game has it.
+
+How it works: [DEVELOPMENT.md](DEVELOPMENT.md#the-leaders-cha-at-shops).
 
 ### Spells saved against with the spell save
 

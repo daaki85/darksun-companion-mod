@@ -144,6 +144,13 @@ themselves have the detail.
   9 to 100% at 24; a failed try uses the scroll up) and the most spells of
   each spell level it may know (6 at INT 9, all from 19), which also limits
   CHOOSE A SPELL at a level up. The dice log shows each try.
+- **The leader's CHA at shops**, a new rule change (on by default): the
+  party leader's CHA lowers what shops ask, as Baldur's Gate's table has it
+  (5% at CHA 16 to 25% from 20), in the price shown, the price charged and
+  the list's greying of what the party can't afford; selling unchanged.
+  Through two new probes (INT 8Dh, 8Ch).
+- **The guide's races:** each race's range of scores, and why a half-giant's
+  large penalties give the Dark Sun book's caps.
 - **AD&D's class tables**, a new rule change (on by default): AD&D's XP
   tables (a gladiator's and ranger's 2nd level 2,250, a thief's 1,250; the
   game had a gladiator on the fighter's), priests' THAC0 (2 better every 3

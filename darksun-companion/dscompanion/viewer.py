@@ -356,6 +356,8 @@ class Viewer:
                 ("adnd_tables", "AD&D's class tables: the XP each class needs (a gladiator's its own, not the "
                                 "fighter's), priests' THAC0 (2 better every 3 levels), and clerics', druids' and "
                                 "preservers' spell slots by level (WIS's bonus slots stay the game's)"),
+                ("cha_prices", "The leader's CHA lowers what shops ask, as in Baldur's Gate: 5% off at CHA 16, "
+                               "10% at 17, 15% at 18, 20% at 19, 25% from 20 (selling as the game has it)"),
                 ("best_hit_die", "Hit dice rolled twice, the better kept, at creation and at every level "
                                  "(every character)"),
                 ("spell_save", "Spells are saved against with the spell save (the game uses "

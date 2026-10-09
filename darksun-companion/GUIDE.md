@@ -157,7 +157,14 @@ What the scores do:
   many spells of each level they can know
   ([learning spells](#learning-preserver-spells)).
 - **WIS:** priests' bonus spell slots, and saves against mind-affecting magic.
-- **CHA:** how some people take to the party.
+- **CHA:** how some people take to the party, and the **party leader's**
+  CHA lowers what shops ask, as in Baldur's Gate:
+
+  | Leader's CHA | 15 or less | 16 | 17 | 18 | 19 | 20 or more |
+  |---|---|---|---|---|---|---|
+  | Shops ask | full price | 5% less | 10% less | 15% less | 20% less | 25% less |
+
+  Selling is unchanged. *Without the mod:* CHA makes no difference to prices.
 
 ### Races
 
@@ -171,6 +178,12 @@ What the scores do:
 | Halfling | −2 | +2 | −1 | | +2 | −1 | better CON saves |
 | Mul | +2 | | +1 | −1 | | −2 | |
 | Thri-kreen | | +2 | | −1 | +1 | −2 | base AC 5, moves 15 (others 12); no armour, cloaks, belts, boots or rings |
+
+With each score rolled 8 to 20 before the adjustment, a race's scores run from
+8 to 20 plus its adjustment: a half-giant's STR 12 to 24, its DEX and INT 3 to
+15, its WIS and CHA 5 to 17. (The Dark Sun book caps a half-giant's DEX and
+INT at 15 and its WIS and CHA at 17, with smaller adjustments; the game gets
+the same caps from these larger ones.)
 
 **Classes by race** (the creation screen greys the rest):
 
@@ -1435,7 +1448,7 @@ AD&D's tables:
 |---|---|---|
 | In the game | show each turn's rolls in the game | off |
 | | describe monsters when you Look at them in a fight | on |
-| Rule changes | weapon specialization; kits; AD&D's class tables; class restrictions; multiclass hit points; rangers' casting level; preservers' INT; hit dice rolled twice; the spell save; DEX instead of a doubled d20; two weapons; levels up to 10; items saving against acid; rings and cloaks of protection; half-giants' two-handed weapons; Cat's Grace; helms AC 1; boots for movement | all on |
+| Rule changes | weapon specialization; kits; AD&D's class tables; the leader's CHA at shops; class restrictions; multiclass hit points; rangers' casting level; preservers' INT; hit dice rolled twice; the spell save; DEX instead of a doubled d20; two weapons; levels up to 10; items saving against acid; rings and cloaks of protection; half-giants' two-handed weapons; Cat's Grace; helms AC 1; boots for movement | all on |
 | Thieves | thief skills from AD&D's table; hiding in shadows to backstab; the cloak, boots and belt; picking pockets | on |
 | | ... or P in a conversation (the leader, a thief, picks the pocket of the one talked to) | off |
 | New content | new people, a small quest, new items | on |
