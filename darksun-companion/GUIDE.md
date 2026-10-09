@@ -582,7 +582,7 @@ allows them).
 |---|---|---|---|
 | **Arcanist** | a spell slot more at each spell level it has; in a fight, casts two preserver spells each turn instead of one | a d3 hit die | the preserver's gear |
 | **Scholar** | a spell more learnt at each level up | THAC0 1 worse | the preserver's gear |
-| **Battle Mage** | a warrior's THAC0; casts though hit earlier in the round; a d6 hit die; leather armour, cast in; expertise in one kind of weapon | one fewer spell slot at each spell level; nothing in the off hand | with weapon specialization, a plain weapon of its chosen kind in place of the quarterstaff |
+| **Battle Mage** | a warrior's THAC0; casts though hit earlier in the round; a d6 hit die; leather armour, cast in; expertise in one kind of weapon (3/2 attacks a round with it, 2 from 7th level) | one fewer spell slot at each spell level; nothing in the off hand | with weapon specialization, a plain weapon of its chosen kind in place of the quarterstaff |
 
 A Battle Mage can't later become a fighter, gladiator or ranger. The
 Battle Mage chooses its weapon on the weapon pages after taking the kit.

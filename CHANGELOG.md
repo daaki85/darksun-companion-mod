@@ -217,6 +217,8 @@ themselves have the detail.
   either.
 
 **Documentation**
+- **The guide's Battle Mage** now says its chosen kind of weapon gives 3/2
+  attacks a round, 2 from 7th level.
 - **Kits:** DEVELOPMENT.md has how they are built: room in the helper, the
   sheet byte for the kit, the creation page, and each effect's hook.
 - **The player's guide** (`GUIDE.md`), new: the game's rules as its code works
