@@ -3329,6 +3329,28 @@ class KitTests(unittest.TestCase):
                         self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_BX, r.UC_X86_REG_ES)],
                                          [0x2222, 0x6666])
 
+    def test_dual_spells(self):
+        """PROBE_DUAL_SPELLS: a new preserver picks two spells on CHOOSE A SPELL (620:5Ch, through
+        its stub at DS less 4Ch), the spell levels on offer up to 1st meanwhile (PICK_CAP, as
+        PROBE_PICK_LEVEL gives them), as it was after."""
+        from dscompanion.gamepatch import VEC_DUAL_SPELLS, VEC_PICK_LEVEL
+        at = self.image.find(bytes((0xB8, VEC_PICK_LEVEL, 0x25, 0xBA)))
+        self.mu.mem_write(VEC_PICK_LEVEL * 4, struct.pack("<HH", struct.unpack_from("<H", self.image, at + 4)[0], TSR))
+        self.rules(0)
+        self.picker_sheet(11, 0, 9)
+        stub = (self.DS + 0x430A - 0x4356) * 16 + 0x5C
+        # the stub as the window: count the call, and the preserver level 9's spell levels then
+        self.mu.mem_write(stub, bytes.fromhex("53508b1e00f0b009cd%02x888702f0ff0600f0585bcb" % VEC_PICK_LEVEL))
+        self.mu.mem_write(self.DS * 16 + 0xF000, bytes(8))
+        self.run_vector(VEC_DUAL_SPELLS, 22, esi=3, eax=0x1234, ecx=0x5678)
+        count, = struct.unpack("<H", self.mu.mem_read(self.DS * 16 + 0xF000, 2))
+        self.assertEqual(count, 2)
+        self.assertEqual(bytes(self.mu.mem_read(self.DS * 16 + 0xF002, 2)), bytes((2, 2)))  # (up to 1st: AL 1, + 1)
+        self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_AX, r.UC_X86_REG_CX, r.UC_X86_REG_SI)],
+                         [0x1234, 0x5678, 3])
+        self.run_vector(VEC_PICK_LEVEL, 2, eax=9)
+        self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AL), 10)  # (no cap after)
+
     def test_pick_list(self):
         """PROBE_PICK_LIST: DI the list's length (AX), for a Shinobi its own spells up to the spell
         level on offer it doesn't know, put in the list (kits.pick_list)."""

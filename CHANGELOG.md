@@ -109,6 +109,9 @@ Released pull requests are summarised in a line or two each; the release notes
   gave them is awake: no kit forbids a kind the character specialized in (but
   for the off hand's rules). A dual-classed human's chosen kinds sleep with
   their class, as before, and come back when it wakes.
+- **A human who becomes a preserver picks its two spells** on the game's
+  CHOOSE A SPELL window (1st level only), not Grease and Magic Missile (INT
+  9Ch).
 - **The Stalker hides in shadows indoors** with its full chance (the stealth
   rule halves a ranger's indoors).
 - **Starting gear fitted to the kit:** the game's class gear, given at DONE,
@@ -124,7 +127,7 @@ Released pull requests are summarised in a line or two each; the release notes
   place of −2 CON.
 - **The dice log's ring holds 96 entries** (was 128), making room in upper
   memory for the kits' code.
-- **The helper's interrupts** are now 9Dh to FEh (and 60h to 65h); the
+- **The helper's interrupts** are now 9Ch to FEh (and 60h to 65h); the
   message when they are in use says so.
 
 **Documentation**

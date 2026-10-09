@@ -126,6 +126,7 @@ VEC_EL_CAST equ 0xA0       ; PROBE_EL_CAST
 VEC_EL_LEVEL equ 0x9F      ; PROBE_EL_LEVEL
 VEC_EL_KNOW equ 0x9E       ; PROBE_EL_KNOW
 VEC_DUAL_BAN equ 0x9D      ; PROBE_DUAL_BAN
+VEC_DUAL_SPELLS equ 0x9C   ; PROBE_DUAL_SPELLS
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 96          ; entries in the ring (96: the helper and it fit in upper memory)
@@ -5567,8 +5568,8 @@ shinobi_unknown:
 
 ; PROBE_PICK_LEVEL: INT VEC_PICK_LEVEL replaces "inc al" (2 bytes; DSUN.EXE 85861h) in the CHOOSE A
 ; SPELL window, where AL is the character's preserver level and the spell levels on offer are up to
-; (AL + 1) / 2 (DS:[119Ch] its sheet, far): a Shinobi's its casting level (SHINOBI_CAST). Then
-; AL + 1, as the code was.
+; (AL + 1) / 2 (DS:[119Ch] its sheet, far): a Shinobi's its casting level (SHINOBI_CAST); no more
+; than PICK_CAP's spell level while PICK_SPELLS sets one. Then AL + 1, as the code was.
 PICK_SHEET   equ 0x119C
 probe_pick_level:
         push bx
@@ -5582,9 +5583,74 @@ probe_pick_level:
         call kit_level
         movzx ax, al
         call shinobi_cast
-.out:   inc al
+.out:   cmp byte [cs:pick_cap], 0   ; (PICK_SPELLS's: spell levels up to PICK_CAP)
+        je .inc
+        push cx
+        mov cl, [cs:pick_cap]
+        shl cl, 1
+        dec cl
+        cmp al, cl
+        jbe .capped
+        mov al, cl
+.capped:
+        pop cx
+.inc:   inc al
         pop es
         pop bx
+        iret
+
+; PICK_SPELLS: member SI picks its preserver spells on the game's CHOOSE A SPELL (620:5Ch, through
+; its stub, PICK_STUB from DS; the routine a preserver's level up calls), CL of them with the
+; spell levels on offer up to 1st, then CH up to 2nd (PICK_CAP, for PROBE_PICK_LEVEL). DS the
+; game's, interrupts on; all registers kept. Only from code of CHOOSE A SPELL's own overlay (85560h
+; on: the DUAL window's): from another, its loading may take that code's place (the creation
+; screen's DONE: the game is lost on the way back).
+PICK_STUB  equ 0x430A - 0x4356          ; (the stub's segment, less DS's, as WP_STUB)
+PICK_ENTRY equ 0x5C
+pick_spells:
+        pusha
+        push es
+        mov byte [cs:pick_cap], 1
+.first: or cl, cl
+        jz .second
+        call .one
+        dec cl
+        jmp .first
+.second:
+        mov byte [cs:pick_cap], 2
+.more:  or ch, ch
+        jz .done
+        call .one
+        dec ch
+        jmp .more
+.done:  mov byte [cs:pick_cap], 0
+        pop es
+        popa
+        ret
+.one:   push cx
+        mov ax, ds
+        add ax, PICK_STUB
+        mov [cs:pick_far + 2], ax
+        mov word [cs:pick_far], PICK_ENTRY
+        push si
+        call far [cs:pick_far]
+        add sp, 2
+        pop cx
+        ret
+pick_far   dd 0
+pick_cap   db 0
+
+; PROBE_DUAL_SPELLS: INT VEC_DUAL_SPELLS replaces "push 8 / push si / call 500:43h / add sp,4 /
+; push 7 / push si / call 500:43h / add sp,4" (22 bytes: INT + 20 NOPs; DSUN.EXE 86DE4h) in the
+; routine that changes a human's class (86C80h), where the game, its wizard spells taken away,
+; makes a new preserver (member SI) know Grease and Magic Missile: it picks two 1st-level spells
+; of its own instead on CHOOSE A SPELL (PICK_SPELLS), as a preserver does at a level up.
+probe_dual_spells:
+        sti
+        push cx
+        mov cx, 2
+        call pick_spells
+        pop cx
         iret
 
 ; PROBE_PICK_LIST: INT VEC_PICK_LIST replaces "mov di,ax" (2 bytes; DSUN.EXE 8563Fh) in the CHOOSE A
@@ -11424,6 +11490,9 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_DUAL_BAN
         mov dx, probe_dual_ban
         int 21h
+        mov ax, 2500h + VEC_DUAL_SPELLS
+        mov dx, probe_dual_spells
+        int 21h
         mov ax, 2500h + VEC_PICK_LEVEL
         mov dx, probe_pick_level
         int 21h
@@ -11478,10 +11547,10 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or 9Dh-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+busy    db 'DSCLOG: interrupts 60h-65h or 9Ch-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
 all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS, VEC_LV_PICK, VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK, VEC_EF_ROWS, VEC_HP_BEST, VEC_TOME, VEC_INIT, VEC_THAC0, VEC_SLOTS, VEC_SLOT_LEVEL
             db VEC_PSP_USE, VEC_PSP_TABLE, VEC_PSP_DEFENCE, VEC_CURE, VEC_PSP_KEEP, VEC_RANGER_CAST, VEC_PSP_KEEP_DX
-            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY, VEC_RANGER_LEVEL, VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP, VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW, VEC_DUAL_BAN
+            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY, VEC_RANGER_LEVEL, VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP, VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW, VEC_DUAL_BAN, VEC_DUAL_SPELLS
 all_vectors_end:
 
         align 16, db 0

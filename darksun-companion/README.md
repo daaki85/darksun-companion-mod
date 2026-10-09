@@ -1761,6 +1761,10 @@ who has changed class may use the kinds it chose whatever the new class
 allows. While that class or kit sleeps, the kinds go with it, and come back
 when it wakes.
 
+A human who becomes a preserver picks its first two spells on the game's
+**CHOOSE A SPELL** window, twice over, from the 1st-level ones (the game gave
+it Grease and Magic Missile), as a preserver picks one at each level up.
+
 Some kits keep a human from some classes, greyed on the DUAL window as the
 game greys those it already bars:
 
