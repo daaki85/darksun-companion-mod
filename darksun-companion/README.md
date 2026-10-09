@@ -1624,7 +1624,7 @@ and costs something.
 | **Swashbuckler** (thief) | a warrior's THAC0 (21 less its level) | −10 to every thief skill |
 | **Grove Warden** (druid) | AC 1 better for every 3 druid levels | no metal weapons |
 | **Wanderer** (druid) | resists fire and cold as the Resist Fire and Resist Cold spells do: +3 on saves against fire and cold spells | AC 1 worse |
-| **Arcanist** (preserver) | a spell slot more at each spell level it has slots at | −2 CON |
+| **Arcanist** (preserver) | a spell slot more at each spell level it has slots at | a d3 hit die (a preserver's is a d4) |
 | **Shinobi** (thief) | preserver spells from 6th level, on the Seeker's slots (one 1st-level slot at 6th, two at 7th, and a 2nd-level slot at 8th, two at 9th, and a 3rd-level slot at 10th), cast at the thief level less 5, in light armour too: its own 14 (Gaze Reflection, Charm Person, Shield, Color Spray, Wall of Fog; Invisibility, Mirror Image, Blur, Detect Invisibility, Fog Cloud; Blink, Haste, Protection from Normal Missiles, Hold Person), one learnt at each level up from 6th | none learnt from scrolls; dagger, short sword, quarterstaff, chatkcha, sling, staff sling and bow only; light armour only; no shield |
 | **Lifebinder** (druid) | Cure Light, Serious and Critical Wounds heal a d8 more, Blood Flow a d6 | blunt weapons only (club, mace, quarterstaff, sling, staff sling) |
 | **Healer** (cleric) | Cure Light, Serious and Critical Wounds heal 1 more a die (+1, +2, +3) | no weapon in the off hand (a shield is fine) |
@@ -1633,8 +1633,8 @@ and costs something.
 | **Elementalist** (cleric) | *to come:* a second sphere: its spells and its weapons | spell slots a level behind (a 7th-level Elementalist has a 6th-level cleric's; none at 1st level) |
 | **Seeker** (ranger) | priest spell slots from 6th level: one 1st-level slot at 6th, two at 7th, and a 2nd-level slot at 8th, two at 9th, and a 3rd-level slot at 10th (and on), in place of a ranger's, cast at the ranger level less 5 (a ranger's: less 7) | *to come:* its sphere's weapon limits (but it keeps the bow) |
 | **Justifier** (ranger) | *to come:* the bow's and its weapon spec's expertise become specialization | one 1st-level priest spell slot from 10th level, in place of a ranger's slots, cast at the ranger level less 9 |
-| **Battle Mage** (preserver) | a warrior's THAC0; a spell still cast after being hit earlier in the round; *to come:* a d6 hit die, expertise in a one-handed melee weapon, spells cast in light armour | one fewer spell slot at each spell level; nothing in the off hand |
-| **Mind Warrior** (psionicist) | a warrior's THAC0; *to come:* a d8 hit die | *to come:* a tenth fewer PSP |
+| **Battle Mage** (preserver) | a warrior's THAC0; a spell still cast after being hit earlier in the round; a d6 hit die; *to come:* expertise in a one-handed melee weapon, spells cast in light armour | one fewer spell slot at each spell level; nothing in the off hand |
+| **Mind Warrior** (psionicist) | a warrior's THAC0; a d8 hit die | a tenth fewer PSP (rounded down) |
 | **Mind Bender** (psionicist) | telepathy powers (the defence modes too) cost 2 PSP less to use | psychokinesis powers cost 2 PSP more |
 | **Kineticist** (psionicist) | psychokinesis powers cost 2 PSP less to use | telepathy powers (the defence modes too) cost 2 PSP more |
 
@@ -1667,8 +1667,13 @@ than the character's class's; it and the Scholar's are in the THAC0 the game
 keeps for the character (View Character's, the attack's), worked out when the
 character is made and at each level up.
 
-The Arcanist's CON changes once, when the character is first played, kept
-within 3 to 25. The Brute's +2 is for melee: a bow or staff sling, two-handed
+The kits' hit dice (the Battle Mage's, Mind Warrior's and Arcanist's) are
+rolled at every level up and on the creation screen. The game rolls a new
+character's hit points and works out its PSP when a class is clicked, before
+a kit can be chosen, so choosing or taking back one of these kits on the KIT
+page rolls the hit points and works out the PSP again, and the screen shows
+the new numbers; the dice log's hit point line names the kit's die
+(`Preserver d6 per level`). The Brute's +2 is for melee: a bow or staff sling, two-handed
 as it is, doesn't get it. The game's Resist Fire and Resist Cold don't halve
 fire's or cold's damage, so neither does the Wanderer's resistance. The Myrmidon takes its second weapon spec on
 the weapon pages after the kit is taken (go back to them from the KIT page),

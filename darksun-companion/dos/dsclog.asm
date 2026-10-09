@@ -117,6 +117,10 @@ VEC_SCROLL_LEARN equ 0xA9  ; PROBE_SCROLL_LEARN
 VEC_SPELL_LEVEL equ 0xA8   ; PROBE_SPELL_LEVEL
 VEC_PICK_ANY equ 0xA7      ; PROBE_PICK_ANY
 VEC_RANGER_LEVEL equ 0xA6  ; PROBE_RANGER_LEVEL
+VEC_HIT_DIE equ 0xA5       ; PROBE_HIT_DIE
+VEC_MAX_PSP equ 0xA4       ; PROBE_MAX_PSP
+VEC_CR_DIE equ 0xA3        ; PROBE_CR_DIE
+VEC_CR_PSP equ 0xA2        ; PROBE_CR_PSP
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 96          ; entries in the ring (96: the helper and it fit in upper memory)
@@ -3548,6 +3552,8 @@ WP_CALL_HELP   equ 0x641AF
 WP_CALL_BUTTON equ 0x6422F
 WP_CALL_REDRAW equ 0x642E2
 WP_CALL_MARK   equ 0x63FC4          ; (the row's mark: A0:3180h, as 63FEEh draws it)
+WP_CALL_BACKDROP equ 0x639E9        ; (a number's backdrop put back: A0:30C3h, as 639D5h shows the PSP)
+WP_STAT_SEG    equ 0x639D5          ; ("mov ax,340h": the backdrops' words' segment)
 WP_MARK_SEG    equ 0x63FB2          ; ("mov ax,338h": the marks' table's segment, +1ABh)
 WP_MARK_WIN    equ 0xF32            ; DS: the window the marks are drawn through (far)
 WP_SPHERE_SEG  equ 0x6412F          ; ("push 538h": the spheres' routine's stub segment, as fixed)
@@ -5824,6 +5830,14 @@ wp_click:
         mov ax, [cs:wp_end_file]  ; go on at the routine's end
         sub ax, [cs:wp_ret_file]
         add [bp + 2], ax
+        cmp byte [cs:kit_reroll_due], 0
+        je .game
+        sti
+        pushad
+        push es
+        call kit_reroll
+        pop es
+        popad
 .game:  pop ax
         pop bp
         mov bx, [cs:wp_button]
@@ -5849,7 +5863,12 @@ wp_harvest:
         add bx, [bp + 2]
         mov ax, [es:bx]
         mov [cs:wp_sphere_seg], ax
-        mov cx, 8
+        mov bx, (WP_STAT_SEG + 1) & 0xFFFF
+        sub bx, [cs:wp_ret_file]
+        add bx, [bp + 2]
+        mov ax, [es:bx]
+        mov [cs:wp_stat_seg], ax
+        mov cx, (wp_calls_end - wp_calls) / 6
 .one:   mov bx, [cs:si]         ; a call's file offset (low word), less the return's
         sub bx, [cs:wp_ret_file]
         add bx, [bp + 2]
@@ -6197,7 +6216,11 @@ kit_row:
         cmp dl, dh              ; another, while one is chosen: out of use (nothing)
         jne kit_marks
         mov dl, KIT_OPEN        ; the one chosen: taken back, the rest in use again
-.put:   mov [es:bx + KIT_BYTE], dl
+.put:   call kit_made           ; (a Battle Mage or Mind Warrior before or after: rolls again)
+        call kit_rolls
+        mov [es:bx + KIT_BYTE], dl
+        call kit_made
+        call kit_rolls
         call wp_two             ; (no Myrmidon now: its second kind gone)
         jnz kit_marks
         mov byte [es:bx + SPEC_SLOTS + 1], 0
@@ -6246,6 +6269,112 @@ kit_marks:
         pop es
         ret
 
+; KIT_ROLLS: kit AL one with its own hit die or PSP (a Battle Mage, a Mind Warrior, an Arcanist):
+; KIT_REROLL due.
+kit_rolls:
+        cmp al, KIT_BATTLE_MAGE
+        je .due
+        cmp al, KIT_MIND_WARRIOR
+        je .due
+        cmp al, KIT_ARCANIST
+        jne .ret
+.due:   mov byte [cs:kit_reroll_due], 1
+.ret:   ret
+
+; KIT_REROLL: (WP_CLICK, at its end, BP the probe's frame, the way back to the game's in it as the
+; overlay manager needs it) the sheet being made's hit points rolled again and its PSP worked out
+; again, by the game's own routines for a click on a class (655D6h, flag 1, and 65B39h through the
+; creation overlay's stub, as 63E44h and 639C0h call them), with its kit now: the hit points kept
+; within the range 655D6h gives, as 63E5Fh keeps them, and both put on the creature and shown
+; again (the game's 64C6Bh and 64CEDh, as 63E9Ch and 639D5h). DS the game's.
+CR_STUB      equ 0x422E - 0x4356    ; the creation rolls' overlay's stub, less DS: its entries
+CR_HP        equ 0x66               ; (655D6h: the hit points, rolled with a flag)
+CR_PSP       equ 0x6B               ; (65B39h: the most PSP)
+CR_HP_MIN    equ 0x4998             ; DS: the least and most hit points 655D6h works out
+CR_HP_MAX    equ 0x4996
+CR_CREATURE  equ 0x11A0             ; DS: the creature being made (far)
+CR_PORTRAIT  equ 0x11A4             ; DS: (far; 64C6Bh's first)
+CR_HP_SHOW   equ 0x3E               ; (64C6Bh, through WP_STUB: a number shown)
+CR_PSP_SHOW  equ 0x43               ; (64CEDh)
+kit_reroll:
+        mov byte [cs:kit_reroll_due], 0
+        push word 1
+        push word CR_HP_MAX
+        push word CR_HP_MIN
+        les bx, [WP_CREATION]
+        lea ax, [bx + 8]
+        push es
+        push ax
+        mov ax, CR_HP
+        call cr_far
+        call far [cs:wp_far]
+        add sp, 10
+        les bx, [WP_CREATION]
+        mov ax, [es:bx + 8]
+        cmp ax, [CR_HP_MAX]
+        jle .not_over
+        mov ax, [CR_HP_MAX]
+.not_over:
+        cmp ax, [CR_HP_MIN]
+        jge .not_under
+        mov ax, [CR_HP_MIN]
+.not_under:
+        mov [es:bx + 8], ax
+        les bx, [CR_CREATURE]
+        mov [es:bx], ax
+        mov si, 0x3F0           ; (the backdrop's words, 340h:3F0h and 404h)
+        mov di, 0xF92           ; (the number's place, DS: x then y)
+        mov ax, CR_HP_SHOW
+        call cr_show
+        mov ax, CR_PSP
+        call cr_far
+        call far [cs:wp_far]
+        les bx, [WP_CREATION]
+        mov ax, [es:bx + 0x0C]
+        les bx, [CR_CREATURE]
+        mov [es:bx + 2], ax
+        mov si, 0x3F2
+        mov di, 0xF9A
+        mov ax, CR_PSP_SHOW
+        jmp cr_show
+
+; CR_FAR: WP_FAR the creation rolls' overlay's entry AX. DS the game's.
+cr_far:
+        mov [cs:wp_far], ax
+        mov ax, ds
+        add ax, CR_STUB
+        mov [cs:wp_far + 2], ax
+        ret
+
+; CR_SHOW: a number of the creation screen shown again, as the game does: its backdrop put back
+; (WP_BACKDROP, with the words at 340h:SI and SI+14h), then the creation overlay's entry AX with the
+; number's place (DS:DI, x then y).
+cr_show:
+        push ax
+        mov es, [cs:wp_stat_seg]
+        push word [es:si]
+        push word [es:si + 0x14]
+        call far [cs:wp_backdrop]
+        add sp, 4
+        pop ax
+        mov [cs:wp_far], ax
+        mov ax, [di + 2]
+        sub ax, 2
+        push ax
+        mov ax, [di]
+        add ax, 0x15
+        push ax
+        push dword [CR_CREATURE]
+        push dword [WP_CREATION]
+        push dword [CR_PORTRAIT]
+        mov ax, ds
+        add ax, WP_STUB
+        mov [cs:wp_far + 2], ax
+        call far [cs:wp_far]
+        add sp, 16
+        ret
+
+kit_reroll_due db 0
 kit_title  db 'KITS', 0
 kit_keep   db 0                 ; 1 while the panel goes back to the disciplines (the kit kept)
 WP_TITLE_SIZE equ 16
@@ -6284,6 +6413,10 @@ wp_button_fn dd 0
 wp_redraw  dd 0
            dw WP_CALL_MARK & 0xFFFF
 wp_mark_fn dd 0
+           dw WP_CALL_BACKDROP & 0xFFFF
+wp_backdrop dd 0
+wp_calls_end:
+wp_stat_seg dw 0
 wp_mark_seg dw 0
 wp_sphere_seg dw 0
 
@@ -7035,6 +7168,176 @@ probe_hd_con:
 ; that times the classes, which the game divides again), and CON's bonus is shared out too.
 ; PROBE_MC_ROLL: INT VEC_MC_ROLL replaces "add es:[bx+0Ah],cx" (4 bytes: INT + 2 NOPs; DSUN.EXE
 ; 8735Eh) where a new level's hit points go into the base: ES:BX the sheet, CX the gain.
+; PROBE_HIT_DIE: INT VEC_HIT_DIE replaces "mov al,es:[bx+0]" (5 bytes: INT + 3 NOPs; DSUN.EXE 87308h)
+; where a new level's hit die is taken from its class's hit point group (ES:BX; the routine's
+; [BP-4] the sheet, far), at a level up and at creation: AL that, a Battle Mage's a d6 (a
+; preserver's d4), a Mind Warrior's a d8 (a psionicist's d6), an Arcanist's a d3 (kits.hit_die).
+probe_hit_die:
+        mov al, [es:bx]
+        push bx
+        push cx
+        push es
+        mov cl, al
+        les bx, [bp - 4]
+        call kit_id
+        cmp al, KIT_BATTLE_MAGE
+        jne .warrior
+        mov cl, 6
+.warrior:
+        cmp al, KIT_MIND_WARRIOR
+        jne .arcanist
+        mov cl, 8
+.arcanist:
+        cmp al, KIT_ARCANIST
+        jne .out
+        mov cl, 3
+.out:   mov al, cl
+        pop es
+        pop cx
+        pop bx
+        iret
+
+; PROBE_MAX_PSP: INT VEC_MAX_PSP replaces "les bx,[bp-8]" (3 bytes: INT + NOP; DSUN.EXE 8748Fh) where
+; the level-up routine has a character's most PSP worked out (SI) and puts it in the sheet ([BP-8],
+; far: its +0Ch) when more than it was, the gain on the creature's PSP too: ES:BX the sheet, and a
+; Mind Warrior's SI a tenth less (kits.max_psp).
+probe_max_psp:
+        les bx, [bp - 8]
+        push ax
+        call kit_id
+        cmp al, KIT_MIND_WARRIOR
+        jne .out
+        push cx
+        push dx
+        mov ax, si
+        xor dx, dx
+        mov cx, 10
+        div cx
+        sub si, ax
+        pop dx
+        pop cx
+.out:   pop ax
+        iret
+
+; At creation the game rolls a character's hit points and works out its PSP when a class is
+; clicked, before a kit can be chosen; picking or taking back a Battle Mage, a Mind Warrior or an
+; Arcanist on the kit page has KIT_REROLL roll them again (KIT_ROW). The sheet being made has its
+; classes numbered 1-8; the game copies it to the party's sheet (66AC4h, which numbers them 1-17)
+; before the rolls.
+; PROBE_CR_DIE: INT VEC_CR_DIE replaces "mov al,es:[bx+14Ah]" (5 bytes: INT + 3 NOPs; DSUN.EXE
+; 65677h) where the creation hit points' routine (655D6h) takes the class's die for the most hit
+; points it can give (ES:BX the table, by class): AL that, a Battle Mage's 6, a Mind Warrior's 8,
+; an Arcanist's 3 (kits.hit_die). A kit left from the classes before a click on a class
+; (PROBE_WP_CLASS takes it away only after the rolls) is taken away first, from the party's sheet
+; too, so the rolls go by the class's own die.
+CR_MEMBER_SEG equ 0x65689 - 0x65679   ; ("mov ax,348h": the member's number's segment, +25Bh)
+CR_MEMBER     equ 0x25B
+probe_cr_die:
+        push cx
+        mov cl, [es:bx + 0x14A]
+        call kit_stale
+        call kit_made
+        cmp al, KIT_BATTLE_MAGE
+        jne .warrior
+        mov cl, 6
+.warrior:
+        cmp al, KIT_MIND_WARRIOR
+        jne .arcanist
+        mov cl, 8
+.arcanist:
+        cmp al, KIT_ARCANIST
+        jne .out
+        mov cl, 3
+.out:   mov al, cl
+        pop cx
+        iret
+
+; KIT_STALE: (PROBE_CR_DIE, its interrupt frame at SP+6) a kit on the sheet being made while its
+; classes are not those PROBE_WP_CLASS last saw: taken away, from the party's sheet too. DS the
+; game's; all registers kept.
+kit_stale:
+        test word [cs:rules_hi], RULE_HI_KITS
+        jz .ret
+        push eax
+        push bx
+        push es
+        les bx, [WP_CREATION]
+        mov eax, [es:bx + 0x21]
+        and eax, 0x00FFFFFF
+        cmp eax, [cs:wp_classes_seen]
+        je .out
+        mov byte [es:bx + KIT_BYTE], 0
+        mov bx, sp
+        les bx, [ss:bx + 12]            ; (the INT's return, in the overlay, past CX and the call)
+        mov ax, [es:bx + CR_MEMBER_SEG]
+        mov es, ax
+        imul ax, [es:CR_MEMBER], 0x47
+        les bx, [0x1661]
+        add bx, ax
+        mov byte [es:bx + KIT_BYTE], 0
+.out:   pop es
+        pop bx
+        pop eax
+.ret:   ret
+
+; KIT_MADE: AL the kit (KIT_ID's numbers) of the sheet being made, ZF clear; 0 and ZF set if none
+; (the rule off, more than one class, none chosen, or its classes changed since PROBE_WP_CLASS last
+; saw them). DS the game's; others kept.
+kit_made:
+        push bx
+        push es
+        call kit_class
+        or al, al
+        jz .out
+        les bx, [WP_CREATION]
+        push eax
+        mov eax, [es:bx + 0x21]
+        and eax, 0x00FFFFFF
+        cmp eax, [cs:wp_classes_seen]
+        pop eax
+        jne .none
+        mov bl, [es:bx + KIT_BYTE]
+        dec bl
+        cmp bl, 2
+        ja .none
+        shl al, 2
+        add al, bl
+        inc al
+        jmp .out
+.none:  xor al, al
+.out:   pop es
+        pop bx
+        or al, al
+        ret
+
+; PROBE_CR_PSP: INT VEC_CR_PSP replaces "pop bp; retf" (2 bytes; DSUN.EXE 65C3Dh), the end of the
+; creation PSP routine (65B39h), which has put the sheet being made's most PSP in its +0Ch: a Mind
+; Warrior's a tenth fewer, rounded down (kits.max_psp). Then the routine's own end, the interrupt
+; frame dropped.
+probe_cr_psp:
+        add sp, 6
+        push ax
+        call kit_made
+        cmp al, KIT_MIND_WARRIOR
+        jne .out
+        push bx
+        push cx
+        push dx
+        push es
+        les bx, [WP_CREATION]
+        mov ax, [es:bx + 0x0C]
+        xor dx, dx
+        mov cx, 10
+        div cx
+        sub [es:bx + 0x0C], ax
+        pop es
+        pop dx
+        pop cx
+        pop bx
+.out:   pop ax
+        pop bp
+        retf
+
 ; PROBE_MC_CON: INT VEC_MC_CON replaces "add di,ax" (2 bytes; 87523h) where the most hit points
 ; get CON's bonus: AX the bonus, SI the sheet's number.
 ; PROBE_MC_UNCON: INT VEC_MC_UNCON replaces "sub dx,ax" (2 bytes; 877DAh) where the game takes
@@ -10407,6 +10710,18 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_RANGER_LEVEL
         mov dx, probe_ranger_level
         int 21h
+        mov ax, 2500h + VEC_HIT_DIE
+        mov dx, probe_hit_die
+        int 21h
+        mov ax, 2500h + VEC_MAX_PSP
+        mov dx, probe_max_psp
+        int 21h
+        mov ax, 2500h + VEC_CR_DIE
+        mov dx, probe_cr_die
+        int 21h
+        mov ax, 2500h + VEC_CR_PSP
+        mov dx, probe_cr_psp
+        int 21h
         mov ax, 2500h + VEC_PICK_LEVEL
         mov dx, probe_pick_level
         int 21h
@@ -10461,10 +10776,10 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or A6h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+busy    db 'DSCLOG: interrupts 60h-65h or A2h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
 all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS, VEC_LV_PICK, VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK, VEC_EF_ROWS, VEC_HP_BEST, VEC_TOME, VEC_INIT, VEC_THAC0, VEC_SLOTS, VEC_SLOT_LEVEL
             db VEC_PSP_USE, VEC_PSP_TABLE, VEC_PSP_DEFENCE, VEC_CURE, VEC_PSP_KEEP, VEC_RANGER_CAST, VEC_PSP_KEEP_DX
-            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY, VEC_RANGER_LEVEL
+            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY, VEC_RANGER_LEVEL, VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP
 all_vectors_end:
 
         align 16, db 0

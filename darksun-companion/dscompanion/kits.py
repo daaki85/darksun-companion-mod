@@ -32,12 +32,6 @@ WARRIOR_THAC0 = frozenset((SWASHBUCKLER, CRUSADER, BATTLE_MAGE, MIND_WARRIOR))
 TWIN_BLADE, BRUTE = KIT_IDS["Twin-blade"], KIT_IDS["Brute"]
 GROVE_WARDEN, LIFEBINDER = KIT_IDS["Grove Warden"], KIT_IDS["Lifebinder"]
 WANDERER, ARCANIST = KIT_IDS["Wanderer"], KIT_IDS["Arcanist"]
-# the scores a kit changes (STR, DEX, CON, INT, WIS, CHA), once, before the character is first
-# played (apply_scores); SCORES_DONE the sheet's byte that says it has been
-SCORES = {ARCANIST: (0, 0, -2, 0, 0, 0)}
-SCORES_DONE = 0x45
-SCORE_LEAST, SCORE_MOST = 3, 25
-ABILITY_NAMES = ("STR", "DEX", "CON", "INT", "WIS", "CHA")
 # the item type's +00h flags and +0Fh kind flags, +08h material (restrict.py's)
 MELEE, MISSILE, SHIELD, THROWN, TWO_HANDED, ARMOUR = 0x01, 0x02, 0x04, 0x10, 0x40, 0x80
 METAL, LEATHER, NO_MATERIAL = 4, 5, 0x40
@@ -197,6 +191,18 @@ def spell_class_level(kid: int, cls: int, level: int, ranger_rule: bool) -> int:
     return max(0, level - drop)
 
 
+def hit_die(kid: int, sides: int) -> int:
+    """A level's hit die, SIDES the class's (PROBE_HIT_DIE, PROBE_CR_DIE): a Battle Mage's a d6,
+    a Mind Warrior's a d8, an Arcanist's a d3."""
+    return {BATTLE_MAGE: 6, MIND_WARRIOR: 8, ARCANIST: 3}.get(kid, sides)
+
+
+def max_psp(kid: int, psp: int) -> int:
+    """The most PSP a level up gives, PSP the game's (PROBE_MAX_PSP): a Mind Warrior's a tenth
+    fewer (rounded down)."""
+    return psp - psp // 10 if kid == MIND_WARRIOR else psp
+
+
 def shinobi_pick_level(level: int) -> int:
     """The highest spell level a Shinobi of thief level LEVEL may learn (CHOOSE A SPELL's), half its
     casting level rounded up, as the game's for a preserver."""
@@ -295,44 +301,3 @@ def forbids(kid: int, typ: bytes, kind: Optional[int], half_giant: bool, spec: b
             return mat not in (LEATHER, NO_MATERIAL)
         return kind is not None and kind not in SHINOBI_KINDS
     return False
-
-
-def scores_after(kid: int, scores) -> list:
-    """The six scores after the kit's changes (SCORES), each kept within 3 to 25."""
-    change = SCORES.get(kid, (0,) * 6)
-    return [max(SCORE_LEAST, min(SCORE_MOST, v + d)) if d else v for v, d in zip(scores, change)]
-
-
-def apply_scores(gd, member: int) -> list:
-    """A New party member's kit's score changes (SCORES), in its sheet and creature record, once
-    (the sheet's SCORES_DONE byte): lines for the log."""
-    import struct
-    from . import game
-    kid = gd.kit_id(member)
-    if kid not in SCORES:
-        return []
-    rec = gd.creature(member)
-    index = struct.unpack_from("<H", rec, game.CREATURE_SHEET_INDEX)[0]
-    at = game.far_pointer(gd.guest, gd.ds, game.SHEETS_PTR) + index * game.SHEET_SIZE
-    sheet = gd.guest.read(at, game.SHEET_SIZE)
-    if len(sheet) < game.SHEET_SIZE or sheet[SCORES_DONE]:
-        return []
-    before = list(sheet[game.SHEET_ABILITIES:game.SHEET_ABILITIES + 6])
-    after = scores_after(kid, before)
-    gd.guest.write(at + game.SHEET_ABILITIES, bytes(after))
-    table = game.far_pointer(gd.guest, gd.ds, game.CREATURES_PTR) + member * game.CREATURE_SIZE
-    gd.guest.write(table + game.CREATURE_ABILITIES, bytes(after))
-    gd.guest.write(at + SCORES_DONE, b"\x01")
-    changes = ", ".join(f"{ABILITY_NAMES[i]} {b} to {a}" for i, (b, a) in enumerate(zip(before, after)) if a != b)
-    return [f"{gd.creature_name(member)}, a {name(kid)}: {changes}"] if changes else []
-
-
-def finish_new(gd) -> list:
-    """The kits' score changes for the party's New characters (apply_scores): lines for the log."""
-    from . import game
-    out = []
-    for member in range(game.PARTY_SIZE):
-        rec = gd.creature(member)
-        if len(rec) >= game.CREATURE_SIZE and rec[game.CREATURE_NAME] and rec[game.CREATURE_STATUS] == game.STATUS_NEW:
-            out += apply_scores(gd, member)
-    return out

@@ -3107,6 +3107,135 @@ class KitTests(unittest.TestCase):
                           kits.spell_class_level(kits.SEEKER, 13, 9, False), kits.spell_class_level(0, 1, 6, True),
                           kits.spell_class_level(kits.JUSTIFIER, 13, 7, True)], [2, 9, 4, 6, 0])
 
+    def test_hit_die(self):
+        """PROBE_HIT_DIE: AL the group's die (ES:BX), a Battle Mage's a d6, a Mind Warrior's a d8 and
+        an Arcanist's a d3 (kits.hit_die; [BP-4] the sheet)."""
+        from dscompanion import kits
+        from dscompanion.gamepatch import VEC_HIT_DIE
+        group = 0x8800
+        for rules in (game.RULE_KITS, 0):
+            self.rules(rules)
+            for cls, kit in ((11, 2), (11, 1), (11, 3), (12, 2), (12, 1), (9, 2), (17, 2)):
+                kid = self.kit_of(cls, kit, rules)
+                self.creature(cls, kit, index=5)
+                for die in (4, 6, 10):
+                    with self.subTest(rules=rules, cls=cls, kit=kit, die=die):
+                        self.mu.mem_write(group * 16, bytes((die,)))
+                        self.mu.mem_write(SS * 16 + BP - 4, struct.pack("<HH", 5 * 0x47, self.SHEET))
+                        self.run_vector(VEC_HIT_DIE, 5, eax=0x1100, ebx=0, ecx=0x3333, es=group)
+                        self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), 0x1100 | kits.hit_die(kid, die))
+                        self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_BX, r.UC_X86_REG_CX,
+                                                                        r.UC_X86_REG_ES)], [0, 0x3333, group])
+        self.assertEqual([kits.hit_die(kits.BATTLE_MAGE, 4), kits.hit_die(kits.MIND_WARRIOR, 6),
+                          kits.hit_die(kits.ARCANIST, 4), kits.hit_die(kits.SCHOLAR, 4)], [6, 8, 3, 4])
+
+    def made(self, cls, kit, seen=True):
+        """The sheet being made of creation class CLS (1-8) with kit KIT, PROBE_WP_CLASS having seen
+        its classes (SEEN) or another's."""
+        from dscompanion import kitpages
+        from dscompanion.gamepatch import VEC_WP_CLASS
+        mu = self.mu
+        mu.mem_write(self.DS * 16 + 0xEA2, bytes(8))  # (no panel window up)
+        sheet = bytearray(game.SHEET_SIZE)
+        sheet[0x21] = cls if seen else cls % 8 + 1
+        mu.mem_write(self.CREATION * 16, bytes(sheet))
+        if not getattr(self, "hooked", False):
+            mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
+            self.hooked = True
+        at = self.image.find(bytes((0xB8, VEC_WP_CLASS, 0x25, 0xBA)))
+        mu.mem_write(VEC_WP_CLASS * 4, struct.pack("<HH", struct.unpack_from("<H", self.image, at + 4)[0], TSR))
+        site = 0x600  # (a site of its own: run_vector's for VEC_CR_DIE shares the low bits)
+        mu.mem_write(CALLER * 16 + site, bytes((0xCD, VEC_WP_CLASS, 0x90)))
+        for name, value in dict(cs=CALLER, ds=self.DS, ss=SS, esp=0x7FC, ebp=BP, eflags=IF | 2).items():
+            mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+        mu.emu_start(CALLER * 16 + site, CALLER * 16 + site + 3, count=20000)
+        sheet[0x21], sheet[kitpages.KIT_BYTE] = cls, kit
+        mu.mem_write(self.CREATION * 16, bytes(sheet))
+
+    def test_cr_die(self):
+        """PROBE_CR_DIE: AL the class's die at creation (ES:BX+14Ah), the kit's (kits.hit_die) for
+        the sheet being made; a kit left from other classes (a class just clicked) taken away from it
+        and from the party's sheet ([348h:25Bh] its number, the segment read from the overlay's code
+        past the INT), the class's die then."""
+        from dscompanion import kits, kitpages
+        from dscompanion.gamepatch import VEC_CR_DIE
+        table, member_seg = 0x8800, 0x8900
+        site = 0x400 + (VEC_CR_DIE & 0x1F) * 0x10
+        self.mu.mem_write(CALLER * 16 + site + 2 + 0x10, struct.pack("<H", member_seg))
+        self.mu.mem_write(member_seg * 16 + 0x25B, struct.pack("<H", 2))
+        self.mu.mem_write(self.DS * 16 + 0x1661, struct.pack("<HH", 0, self.SHEET))
+        for rules in (game.RULE_KITS, 0):
+            self.rules(rules)
+            for cls, kit in ((5, 2), (5, 3), (5, 1), (6, 2), (6, 1), (3, 2)):
+                for seen in (True, False):
+                    for die in (4, 6, 10):
+                        with self.subTest(rules=rules, cls=cls, kit=kit, seen=seen, die=die):
+                            self.made(cls, kit, seen)
+                            self.mu.mem_write(self.SHEET * 16 + 2 * 0x47 + kitpages.KIT_BYTE, bytes((kit,)))
+                            self.mu.mem_write(table * 16 + cls + 0x14A, bytes((die,)))
+                            self.run_vector(VEC_CR_DIE, 5, eax=0x1100, ebx=cls, ecx=0x3333, es=table)
+                            kid = cls * 4 + kit if rules and seen else 0
+                            self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), 0x1100 | kits.hit_die(kid, die))
+                            self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_BX, r.UC_X86_REG_CX,
+                                                                            r.UC_X86_REG_ES)], [cls, 0x3333, table])
+                            left = kit if seen or not rules else 0
+                            self.assertEqual([self.mu.mem_read(at * 16 + off + kitpages.KIT_BYTE, 1)[0] for at, off
+                                              in ((self.CREATION, 0), (self.SHEET, 2 * 0x47))], [left, left])
+
+    def test_cr_psp(self):
+        """PROBE_CR_PSP: the creation PSP routine's end ("pop bp / retf"), the sheet being made's
+        most PSP (+0Ch) a tenth less for a Mind Warrior (kits.max_psp)."""
+        from dscompanion import kits
+        from dscompanion.gamepatch import VEC_CR_PSP
+        mu = self.mu
+        if not getattr(self, "hooked", False):
+            mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
+            self.hooked = True
+        at = self.image.find(bytes((0xB8, VEC_CR_PSP, 0x25, 0xBA)))
+        mu.mem_write(VEC_CR_PSP * 4, struct.pack("<HH", struct.unpack_from("<H", self.image, at + 4)[0], TSR))
+        site, back = 0x500, 0x520
+        mu.mem_write(CALLER * 16 + site, bytes((0xCD, VEC_CR_PSP)))
+        for rules in (game.RULE_KITS, 0):
+            self.rules(rules)
+            for cls, kit in ((6, 2), (6, 1), (5, 2)):
+                for psp in (0, 9, 10, 52, 125):
+                    with self.subTest(rules=rules, cls=cls, kit=kit, psp=psp):
+                        self.made(cls, kit)
+                        mu.mem_write(self.CREATION * 16 + 0x0C, struct.pack("<H", psp))
+                        mu.mem_write(SS * 16 + 0x7F6, struct.pack("<HHH", 0x1234, back, CALLER))
+                        for name, value in dict(cs=CALLER, ds=self.DS, ss=SS, esp=0x7F6, ebp=BP, eflags=IF | 2,
+                                                eax=0x1111, ebx=0x2222, ecx=0x3333, edx=0x4444).items():
+                            mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+                        mu.emu_start(CALLER * 16 + site, CALLER * 16 + back, count=20000)
+                        kid = cls * 4 + kit if rules else 0
+                        self.assertEqual(struct.unpack("<H", mu.mem_read(self.CREATION * 16 + 0x0C, 2))[0],
+                                         kits.max_psp(kid, psp))
+                        self.assertEqual([mu.reg_read(x) for x in (r.UC_X86_REG_IP, r.UC_X86_REG_SP, r.UC_X86_REG_BP,
+                                                                   r.UC_X86_REG_AX, r.UC_X86_REG_BX, r.UC_X86_REG_CX,
+                                                                   r.UC_X86_REG_DX)],
+                                         [back, 0x7FC, 0x1234, 0x1111, 0x2222, 0x3333, 0x4444])
+
+    def test_max_psp(self):
+        """PROBE_MAX_PSP: ES:BX the sheet ([BP-8]), and SI (the most PSP) a tenth less for a Mind
+        Warrior (kits.max_psp)."""
+        from dscompanion import kits
+        from dscompanion.gamepatch import VEC_MAX_PSP
+        for rules in (game.RULE_KITS, 0):
+            self.rules(rules)
+            for cls, kit in ((12, 2), (12, 1), (12, 0), (9, 2)):
+                kid = self.kit_of(cls, kit, rules)
+                self.creature(cls, kit, index=5)
+                for psp in (0, 9, 10, 37, 125):
+                    with self.subTest(rules=rules, cls=cls, kit=kit, psp=psp):
+                        self.mu.mem_write(SS * 16 + BP - 8, struct.pack("<HH", 5 * 0x47, self.SHEET))
+                        self.run_vector(VEC_MAX_PSP, 3, eax=0x1111, esi=psp, ecx=0x3333, edx=0x4444, es=0x6666)
+                        self.assertEqual(self.mu.reg_read(r.UC_X86_REG_SI), kits.max_psp(kid, psp))
+                        self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_AX, r.UC_X86_REG_BX,
+                                                                        r.UC_X86_REG_CX, r.UC_X86_REG_DX,
+                                                                        r.UC_X86_REG_ES)],
+                                         [0x1111, 5 * 0x47, 0x3333, 0x4444, self.SHEET])
+        self.assertEqual([kits.max_psp(kits.MIND_WARRIOR, 37), kits.max_psp(kits.MIND_BENDER, 37)], [34, 37])
+
     def test_pick_any(self):
         """PROBE_PICK_ANY: [BP-2] and flags as "mov [bp-2],ax / or ax,ax" (the JG after going on for
         a preserver level); for a Shinobi, CHOOSE A SPELL (on PICK_OPEN past the INT, DI 1) while it

@@ -20,7 +20,6 @@ class KitEffectTests(unittest.TestCase):
 
     def test_brute(self):
         self.assertEqual((kits.melee(kits.BRUTE, True), kits.melee(kits.BRUTE, False)), (2, 0))
-        self.assertEqual(kits.scores_after(kits.BRUTE, [16, 17, 15, 10, 12, 9]), [16, 17, 15, 10, 12, 9])
 
     def test_wanderer(self):
         self.assertEqual(kits.ac(kits.WANDERER, True), 1)
@@ -40,11 +39,6 @@ class KitEffectTests(unittest.TestCase):
 
     def test_none(self):
         self.assertEqual((kits.melee(0, True), kits.ac(0, True), kits.move(0), kits.name(0)), (0, 0, 0, ""))
-
-    def test_scores(self):
-        self.assertEqual(kits.scores_after(kits.ARCANIST, [16, 17, 4, 18, 12, 9]), [16, 17, 3, 18, 12, 9])
-        self.assertEqual(kits.scores_after(kits.ARCANIST, [16, 17, 15, 18, 12, 9]), [16, 17, 13, 18, 12, 9])
-        self.assertEqual(kits.scores_after(kits.RAVAGER, [1, 2, 3, 4, 5, 6]), [1, 2, 3, 4, 5, 6])
 
     def test_forbids(self):
         def typ(flags=0, kinds=0, mat=0x40):

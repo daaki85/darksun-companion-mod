@@ -1046,8 +1046,6 @@ class DiceLog:
             ring.name_items(self.game, self.rules)
             if not names.update(self.game, self.tsr_hdr):
                 return out  # no names for them yet: none given
-            if self.rules & game.RULE_KITS:  # (new characters' kits' scores)
-                out += kits.finish_new(self.game)
             if self.rules & game.RULE_SPECIALIZE:  # (new characters' weapon kinds and starting weapon)
                 out += weaponchoice.finish_new(self.game)
             out += defaultparty.ready(self.game, self.rules, self._party_done)  # (the game's own party, once)
@@ -2071,6 +2069,13 @@ class DiceLog:
         self._hp_first = (key, roll)
         return None
 
+    def _kit(self, sheet: bytes) -> int:
+        """A sheet's kit (kitpages.kit_id), with kits on; else 0."""
+        if not self.game.rules & game.RULE_KITS or len(sheet) < game.SHEET_SIZE:
+            return 0
+        from . import kitpages
+        return kitpages.kit_id(sheet)
+
     def _level_hp(self, e: Entry, sides: int, roll: int) -> Optional[List[str]]:
         """The hit point roll of a new level: the caller's arguments are (party member, class, level).
         None if it isn't one."""
@@ -2084,7 +2089,7 @@ class DiceLog:
         if not slots or sheet[game.SHEET_LEVELS + slots[0]] != level:
             return None
         rule = self.game.level_hp_rule(cls)
-        if rule is None or rule.sides != sides:
+        if rule is None or kits.hit_die(self._kit(sheet), rule.sides) != sides:
             return None
         rolls = self._hp_rolls(("level", member, cls, level), roll)
         if rolls is None:
@@ -2211,7 +2216,7 @@ class DiceLog:
         parts = []
         for cls, texts in by_class.items():
             rule = g.level_hp_rule(cls)
-            die = f" d{rule.sides}" if rule else ""
+            die = f" d{kits.hit_die(self._kit(sheet), rule.sides)}" if rule else ""
             parts.append(f"{game.CLASS_NAMES.get(cls, f'class {cls}')}{die} per level: {' + '.join(texts)}")
         rolled = sum(r[2] for r in rolls)
         steps = "; ".join(parts)

@@ -982,7 +982,7 @@ header's +270) switches them all off.
 | | Wanderer | +3 on saves against fire and cold spells (the game's Resist Fire and Resist Cold) | AC 1 worse |
 | Preserver | Scholar | a spell more learnt at each level up | −1 to hit |
 | | Battle Mage | a warrior's THAC0, a d6 hit die, expertise in one weapon spec (a one-handed melee weapon: long sword, short sword, dagger, club, mace, axe or pick; no thrown weapon), which it may use as well as a preserver's own weapons; light armour worn and spells cast in it; spells cast though hit earlier in the round (the game stops anyone else's) | one fewer spell slot at each spell level; nothing in the off hand |
-| | Arcanist | a spell slot more at each spell level | −2 CON |
+| | Arcanist | a spell slot more at each spell level | a d3 hit die |
 | Psionicist | Mind Bender | telepathy powers cost 2 PSP less | psychokinesis powers 2 more |
 | | Mind Warrior | a warrior's THAC0, a d8 hit die | a tenth fewer PSP |
 | | Kineticist | psychokinesis powers cost 2 PSP less | telepathy powers 2 more |
@@ -1036,7 +1036,8 @@ give 6 KB, the text buffer (`TSIZE`, 8 KB) a little more.
 Sheet `+43h`: zero in every sheet of the saves and saved characters at hand
 (176), and nothing in DSUN.EXE reads or writes it (no `es:[bx+43h]` access of
 any kind), as with the weapon specs' `+14h` to `+17h`, which saves and the
-roster keep. `+45h` is the same, if a second byte is needed. 0: no kit; 1 to 3
+roster keep. `+45h` is the same, if a second byte is needed (the Arcanist's CON
+change used it, once, before that became its d3). 0: no kit; 1 to 3
 the class's kits.
 
 ### Choosing one
@@ -1084,10 +1085,6 @@ The Effects screen's lower panel (`PROBE_EF_ROWS`) has the kit's line first,
 `KIT: RAVAGER`, before the weapon specs; the Characters tab has `Kit: Ravager`
 (`GameData.kit`).
 
-The kits' score changes are made when the character is first played, not on
-the creation screen (the game keeps no record of which scores the player
-rolled, so a change made there couldn't be taken back cleanly when the kit is).
-
 ### Where each effect goes
 
 Built (step 2). `KIT_ID` gives a sheet's kit as one number (the creation
@@ -1118,13 +1115,24 @@ emulated tests hold the helper to it:
 | the two-weapon penalty | Twin-blade | `PROBE_TWO` |
 | gear allowed | Ravager, Twin-blade, Brute, Stalker, Grove Warden, Lifebinder, Shinobi | `PROBE_CAN_USE` and `KINDS_ALLOWED` (`KIT_FORBIDS`: `restrict.kit_forbids`), whatever the class restrictions |
 | weapon specs | Myrmidon (two, the second to grand mastery), Brute (no missile spec) | `WP_TWO`, `SPEC_OF_SHEET`, `KIT_FORBIDS` |
-| scores | Arcanist | `kits.finish_new`, once, before the character is first played (the sheet's `+45h` marks it) |
+| hit die | Battle Mage (d6), Mind Warrior (d8), Arcanist (d3) | a level's die: `PROBE_HIT_DIE` (`INT A5h`, new: `mov al,es:[bx+0]`, 87308h, the die read from the class's hit point group in the routine rolling a level's hit points, 87250h, which both a level up and the creation screen call; `[BP-4]` the sheet). The creation screen's range (the least and most hit points it allows, `DS:[4998h]` and `[4996h]`, worked out with the rolls by 655D6h): `PROBE_CR_DIE` (`INT A3h`, new: `mov al,es:[bx+14Ah]`, 65677h, the die from its table by creation class). `kits.hit_die` |
+| max PSP | Mind Warrior (a tenth fewer, rounded down) | at a level up: `PROBE_MAX_PSP` (`INT A4h`, new: `les bx,[bp-8]`, 8748Fh, the sum in SI before it goes in the sheet, in the routine at 873B2h); on the creation screen: `PROBE_CR_PSP` (`INT A2h`, new: the end, `pop bp / retf`, of 65B39h, which sums the PSP into the sheet being made's `+0Ch`). `kits.max_psp` |
 
-Still to build, a new hook at a place already found:
-
-| Effect | Kits | Where |
-|---|---|---|
-| max PSP | Mind Warrior | the level-up's sum at 873B2h |
+The creation screen rolls the hit points and works out the PSP when a class
+is clicked, before a kit can be chosen. Choosing or taking back a Battle
+Mage, Mind Warrior or Arcanist on the KIT page (`KIT_ROW`) has `KIT_REROLL`
+call the game's own routines again (655D6h with its roll flag, then 65B39h,
+through the creation overlay's stub 422Eh, entries 66h and 6Bh), keep the
+hit points in the range, put both on the creature and show them again
+(64C6Bh and 64CEDh, through the panel's own stub, after A0:30C3h puts the
+numbers' backdrop back; its far address and the backdrop words' segment are
+read from the panel overlay's code, `WP_HARVEST`). It runs at the end of the
+sphere click probe, once its way back is set, so the overlay manager can fix
+up the frame if loading the other overlay moves the panel's. 655D6h copies
+the sheet being made to the party's sheet (66AC4h) before its rolls, so the
+kit byte goes with it; a kit left from the classes before a click on a class
+(`PROBE_WP_CLASS` clears it only after the click's rolls) is cleared first
+(`KIT_STALE`), so the class's own die is rolled.
 
 Still to find:
 
@@ -1142,7 +1150,8 @@ helper's code (emulated) to the Python.
    KIT page, the Effects screen's line, the Characters tab, the rule switch.
 2. Done: the kits on hooks there already: Ravager, Sentinel (with an
    initiative hook), Myrmidon, Arena Champion, Twin-blade, Brute, Stalker,
-   Assassin, Grove Warden, Wanderer, Arcanist's CON, Lifebinder's weapons; and
+   Assassin, Grove Warden, Wanderer, Arcanist's CON (since replaced by a d3
+   hit die, step 6), Lifebinder's weapons; and
    the ring at 96 entries, for room in upper memory.
 3. THAC0 and spell slot hooks. Done: the THAC0 (Swashbuckler, Crusader,
    Battle Mage, Mind Warrior, Scholar) and the Swashbuckler's thief skills.
@@ -1168,3 +1177,18 @@ helper's code (emulated) to the Python.
    a game scroll of Shield refused (nothing learnt, the scroll kept), where a
    preserver learns its scroll with the same clicks; and a Scholar's level up
    to 2nd: CHOOSE A SPELL twice, a spell learnt from each.
+6. Hit dice and PSP done: the Battle Mage's d6, the Mind Warrior's d8 and a
+   tenth fewer PSP, and the Arcanist's d3 (in place of its −2 CON), at a level
+   up and on the creation screen, where choosing or taking back one of those
+   kits rolls the hit points and works out the PSP again. Checked in the
+   game: on the creation screen, a 3rd-level preserver's range 9 to 18 (d4)
+   became 9 to 24 with Battle Mage (d6 rolls in the dice log) and 9 to 15
+   with Arcanist (d3), a psionicist's 9 to 24 became 9 to 30 with Mind
+   Warrior (d8) and its PSP 52 became 47, each back again when the kit was
+   taken back, and a class clicked with a kit left from the class before
+   rolled the class's own die; the numbers on screen, the creature and the
+   party's sheet agree after DONE. The level up's PSP is checked by emulation
+   only. Still to come in this step: the Battle Mage's weapon expertise and
+   light armour, the Seeker's sphere weapons, the Justifier's
+   specialization.
+7. The Elementalist's second sphere.

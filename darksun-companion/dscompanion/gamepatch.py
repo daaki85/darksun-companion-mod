@@ -71,6 +71,7 @@ VEC_CURE, VEC_PSP_KEEP = 0xB1, 0xB0
 VEC_RANGER_CAST, VEC_PSP_KEEP_DX, VEC_HIT_ROUND = 0xAF, 0xAE, 0xAD
 VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL = 0xAC, 0xAB, 0xAA, 0xA9, 0xA8
 VEC_PICK_ANY, VEC_RANGER_LEVEL = 0xA7, 0xA6
+VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP = 0xA5, 0xA4, 0xA3, 0xA2
 
 
 SCRIPT_BUFFER = 0x2E00  # the scripts' buffer, made bigger (the game's: 10000 bytes)
@@ -374,6 +375,14 @@ PATCHES = (
     # ranger's whole (its spell levels count it 7 less), 7 less with the rule, a Seeker's 5 and a
     # Justifier's 9 (kits.spell_class_level)
     Patch("ranger_level", 0x5E3B8, bytes.fromhex("268a4724"), _interrupt(VEC_RANGER_LEVEL, 4)),
+    # A kit's hit die (the Battle Mage's d6, the Mind Warrior's d8) where a level's die is taken from
+    # the class's group, and the Mind Warrior's a tenth fewer PSP where a level up sets them; at
+    # creation, the die for the most hit points a new character can have, and the end of the
+    # routine working out its PSP
+    Patch("hit_die", 0x87308, bytes.fromhex("268a870000"), _interrupt(VEC_HIT_DIE, 5)),
+    Patch("max_psp", 0x8748F, bytes.fromhex("c45ef8"), _interrupt(VEC_MAX_PSP, 3)),
+    Patch("cr_die", 0x65677, bytes.fromhex("268a874a01"), _interrupt(VEC_CR_DIE, 5)),
+    Patch("cr_psp", 0x65C3D, bytes.fromhex("5dcb"), _interrupt(VEC_CR_PSP, 2)),
     Patch("pick_any", 0x85580, bytes.fromhex("8946fe0bc0"), _interrupt(VEC_PICK_ANY, 5)),
     Patch("pick_level", 0x85861, bytes.fromhex("fec0"), _interrupt(VEC_PICK_LEVEL, 2)),
     Patch("pick_list", 0x8563F, bytes.fromhex("8bf8"), _interrupt(VEC_PICK_LIST, 2)),

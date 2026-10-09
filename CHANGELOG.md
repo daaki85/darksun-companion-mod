@@ -26,8 +26,8 @@ Released pull requests are summarised in a line or two each; the release notes
   changes.
 - **Kits that work so far:** the Myrmidon, Sentinel and Ravager (fighter); the
   Arena Champion, Twin-blade and Brute (gladiator); the Stalker (ranger); the
-  Assassin (thief); the Grove Warden and Wanderer (druid); the Arcanist's CON,
-  the Lifebinder's weapons, and the Shinobi's weapons and armour. The guide's
+  Assassin (thief); the Grove Warden and Wanderer (druid); the Lifebinder's
+  weapons, and the Shinobi's weapons and armour. The guide's
   Kits has what each does. The dice log and the Ledger show each kit's part; a
   new probe in the game (INT B8h) makes the Sentinel's initiative.
 - **Kits' THAC0:** the Swashbuckler, Crusader, Battle Mage and Mind Warrior
@@ -67,11 +67,20 @@ Released pull requests are summarised in a line or two each; the release notes
   The Ledger's Spells tab shows its slots.
 - **The Scholar** learns a spell more at each level up: CHOOSE A SPELL comes
   up twice.
+- **Kits' hit dice and PSP:** the Battle Mage rolls a d6 for its hit points,
+  the Mind Warrior a d8 and has a tenth fewer PSP (rounded down), and the
+  Arcanist a d3, at each level up and on the creation screen: choosing or
+  taking back one of these kits rolls the new character's hit points and
+  works out its PSP again (the game did both only when a class was clicked),
+  and the screen shows the new numbers (INT A5h, A4h, A3h, A2h). The dice
+  log's hit point lines name the kit's die.
 
 **Changed** (for the kits)
+- **The Arcanist's drawback** is a d3 hit die (a preserver's is a d4), in
+  place of −2 CON.
 - **The dice log's ring holds 96 entries** (was 128), making room in upper
   memory for the kits' code.
-- **The helper's interrupts** are now A6h to FEh (and 60h to 65h); the
+- **The helper's interrupts** are now A2h to FEh (and 60h to 65h); the
   message when they are in use says so.
 
 **Documentation**
