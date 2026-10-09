@@ -8,7 +8,7 @@ Released pull requests are summarised in a line or two each; the release notes
 [1.0.0](release-notes/v1.0.0.md): #1 to #13) and the pull requests themselves
 have the detail.
 
-## Pull request #33 (in progress)
+## Pull request #33 ([merged 2026-10-09](https://github.com/daaki85/darksun-obsidian-edition/pull/33))
 
 **Release**
 - **Obsidian Edition 2.0.0:** the version is 2.0.0, the first release under
