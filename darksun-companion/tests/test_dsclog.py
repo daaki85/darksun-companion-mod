@@ -3357,6 +3357,45 @@ class KitTests(unittest.TestCase):
         self.mu.mem_write(self.SHEET * 16 + member * 0x47, bytes(sheet))
         return bytes(sheet)
 
+    def test_cr_spells(self):
+        """PROBE_CR_SPELLS: a new preserver of level [BP-2] 1-3 picks its spells on CHOOSE A SPELL (2,
+        4, or 4 and two of 2nd level) and goes on past the game's grants (66F83h); another level:
+        AX [BP-2], on as before."""
+        from dscompanion.gamepatch import VEC_CR_SPELLS, VEC_PICK_LEVEL
+        at = self.image.find(bytes((0xB8, VEC_PICK_LEVEL, 0x25, 0xBA)))
+        self.mu.mem_write(VEC_PICK_LEVEL * 4, struct.pack("<HH", struct.unpack_from("<H", self.image, at + 4)[0], TSR))
+        self.rules(0)
+        stub = (self.DS + 0x430A - 0x4356) * 16 + 0x5C
+        # the stub as the window: count the calls, and the spell levels on offer at preserver level 9
+        self.mu.mem_write(stub, bytes.fromhex("53508b1e00f0b009cd%02x888702f0ff0600f0585bcb" % VEC_PICK_LEVEL))
+        at = self.image.find(bytes((0xB8, VEC_CR_SPELLS, 0x25, 0xBA)))
+        self.mu.mem_write(VEC_CR_SPELLS * 4, struct.pack("<HH", struct.unpack_from("<H", self.image, at + 4)[0], TSR))
+        if not getattr(self, "hooked", False):
+            self.mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
+            self.hooked = True
+        site = 0x400 + (VEC_CR_SPELLS & 0x1F) * 0x10
+        past = site + 2 + (0x66F83 - 0x66F2F)
+        self.mu.mem_write(CALLER * 16 + site, bytes((0xCD, VEC_CR_SPELLS, 0x90)))
+        self.mu.mem_write(CALLER * 16 + past, b"\x90")
+        for level, picks in ((0, None), (1, (2, 2)), (2, (2, 2, 2, 2)), (3, (2, 2, 2, 2, 4, 4)), (4, None)):
+            with self.subTest(level=level):
+                self.mu.mem_write(self.DS * 16 + 0xF000, bytes(8))
+                self.mu.mem_write(SS * 16 + BP - 2, struct.pack("<H", level))
+                for name, value in dict(cs=CALLER, ds=self.DS, ss=SS, esp=0x7FC, ebp=BP, eflags=IF | 2, esi=3,
+                                        eax=0x1234, ecx=0x5678).items():
+                    self.mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+                end = past if picks else site + 3
+                self.mu.emu_start(CALLER * 16 + site, CALLER * 16 + end, count=50000)
+                self.assertEqual((self.mu.reg_read(r.UC_X86_REG_IP), self.mu.reg_read(r.UC_X86_REG_SP)), (end, 0x7FC))
+                count, = struct.unpack("<H", self.mu.mem_read(self.DS * 16 + 0xF000, 2))
+                self.assertEqual(count, len(picks) if picks else 0)
+                if picks:
+                    self.assertEqual(bytes(self.mu.mem_read(self.DS * 16 + 0xF002, len(picks))), bytes(picks))
+                    self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_AX, r.UC_X86_REG_CX, r.UC_X86_REG_SI,
+                                                                    r.UC_X86_REG_BP)], [level, 0x5678, 3, BP])
+                else:
+                    self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), level)
+
     def test_dual_kit_banned(self):
         """DK_BANNED: a kit for a human's new class (first on its sheet) barred by its other classes
         or their kits, asleep too (kits.dual_kit_banned)."""

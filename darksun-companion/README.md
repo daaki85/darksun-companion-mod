@@ -1791,6 +1791,13 @@ A human who becomes a preserver picks its first two spells on the game's
 it Grease and Magic Missile), as a preserver picks one at each level up; a
 **Scholar** picks three.
 
+A new preserver picks its starting spells the same way when **DONE** is
+clicked on the creation screen, in place of the ones the game handed out by
+its starting level: two 1st-level spells at 1st level (the game's Grease and
+Magic Missile), four at 2nd (and Shield and Wall of Fog), four and two of 2nd
+level at 3rd (and Fog Cloud and Mirror Image). A Scholar picks one more for
+each level. A multiclass preserver too.
+
 Some kits keep a human from some classes, both ways: greyed on the DUAL
 window for a human who has the kit (as the game greys the classes it already
 bars), and left off the KIT menu for a human who has had the class:

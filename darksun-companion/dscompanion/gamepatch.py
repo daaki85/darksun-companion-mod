@@ -74,6 +74,7 @@ VEC_PICK_ANY, VEC_RANGER_LEVEL = 0xA7, 0xA6
 VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP = 0xA5, 0xA4, 0xA3, 0xA2
 VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW = 0xA1, 0xA0, 0x9F, 0x9E
 VEC_DUAL_BAN, VEC_DUAL_SPELLS, VEC_SOUND_42, VEC_SOUND_44, VEC_DUAL_KIT = 0x9D, 0x9C, 0x9B, 0x9A, 0x99
+VEC_CR_SPELLS = 0x98
 
 
 SCRIPT_BUFFER = 0x2E00  # the scripts' buffer, made bigger (the game's: 10000 bytes)
@@ -400,6 +401,9 @@ PATCHES = (
     # game gives Grease and Magic Missile)
     Patch("dual_spells", 0x86DE4, bytes.fromhex("6a08569a4300000583c4046a07569a4300000583c404"),
           _interrupt(VEC_DUAL_SPELLS, 22)),
+    # A new preserver picks its spells on CHOOSE A SPELL at creation (the game gives Grease, Magic
+    # Missile and more by its level)
+    Patch("cr_spells", 0x66F2D, bytes.fromhex("8b46fe"), _interrupt(VEC_CR_SPELLS, 3)),
     # After DUAL: the new class's kit on the game's three-choice menu (an Elementalist's second sphere
     # too), and a new warrior's weapon kinds
     Patch("dual_kit", 0x86D90, bytes.fromhex("837e080c"), _interrupt(VEC_DUAL_KIT, 4)),

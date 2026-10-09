@@ -122,6 +122,10 @@ Released pull requests are summarised in a line or two each; the release notes
   Champion or Sentinel with Twin-blade, Shinobi or Ravager; Twin-blade with
   Healer; Brute with Shinobi or Lifebinder), and kits a class bars, both ways
   (INT 99h).
+- **A new preserver picks its starting spells** on CHOOSE A SPELL when DONE
+  is clicked on the creation screen (two 1st-level spells at 1st level, four
+  at 2nd, four and two of 2nd level at 3rd; a Scholar one more a level), in
+  place of the ones the game handed out (INT 98h).
 - **The Stalker hides in shadows indoors** with its full chance (the stealth
   rule halves a ranger's indoors).
 - **Starting gear fitted to the kit:** the game's class gear, given at DONE,
@@ -148,7 +152,7 @@ Released pull requests are summarised in a line or two each; the release notes
   place of −2 CON.
 - **The dice log's ring holds 96 entries** (was 128), making room in upper
   memory for the kits' code.
-- **The helper's interrupts** are now 99h to FEh (and 60h to 65h); the
+- **The helper's interrupts** are now 98h to FEh (and 60h to 65h); the
   message when they are in use says so.
 
 **Documentation**

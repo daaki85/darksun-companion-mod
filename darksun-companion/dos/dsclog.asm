@@ -130,6 +130,7 @@ VEC_DUAL_SPELLS equ 0x9C   ; PROBE_DUAL_SPELLS
 VEC_SOUND_42 equ 0x9B      ; PROBE_SOUND_42
 VEC_SOUND_44 equ 0x9A      ; PROBE_SOUND_44
 VEC_DUAL_KIT equ 0x99      ; PROBE_DUAL_KIT
+VEC_CR_SPELLS equ 0x98     ; PROBE_CR_SPELLS
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 96          ; entries in the ring (96: the helper and it fit in upper memory)
@@ -5718,9 +5719,9 @@ probe_pick_level:
 ; PICK_SPELLS: member SI picks its preserver spells on the game's CHOOSE A SPELL (620:5Ch, through
 ; its stub, PICK_STUB from DS; the routine a preserver's level up calls), CL of them with the
 ; spell levels on offer up to 1st, then CH up to 2nd (PICK_CAP, for PROBE_PICK_LEVEL). DS the
-; game's, interrupts on; all registers kept. Only from code of CHOOSE A SPELL's own overlay (85560h
-; on: the DUAL window's): from another, its loading may take that code's place (the creation
-; screen's DONE: the game is lost on the way back).
+; game's, interrupts on; all registers kept. From code of another overlay than CHOOSE A SPELL's
+; (85560h on: the DUAL window's), only with the way back in a frame the overlay manager can fix
+; up (PROBE_CR_SPELLS): its loading may take that code's place.
 PICK_STUB  equ 0x430A - 0x4356          ; (the stub's segment, less DS's, as WP_STUB)
 PICK_ENTRY equ 0x5C
 pick_spells:
@@ -6016,6 +6017,57 @@ dk_title   db 'KIT: NONE', 0
 dk_title2  db 'SPHERE 2: NONE', 0
 dk_blank   db 0
 dk_spheres db 'AIR', 0, 0, 0, 'EARTH', 0, 'FIRE', 0, 0, 'WATER', 0
+
+; PROBE_CR_SPELLS: INT VEC_CR_SPELLS replaces "mov ax,[bp-2]" (3 bytes: INT + NOP; DSUN.EXE 66F2Dh) in
+; the creation screen's DONE (overlay 65480h), where the game makes a new preserver (SI, its
+; preserver level [BP-2]) know spells of its choosing: Grease and Magic Missile at 1st level,
+; Shield and Wall of Fog too at 2nd, Fog Cloud and Mirror Image too at 3rd. It picks as many on
+; CHOOSE A SPELL instead (PICK_SPELLS: 2, 4, or 4 and two of 2nd level), a Scholar one more for
+; each level (KIT_MADE), then on past the game's (CR_SPELLS_PAST). CHOOSE A SPELL is overlay code
+; of its own: the way back is put in a frame the overlay manager can fix up, as for PROBE_LV_PICK
+; (without it the game's code is lost). Another level: AX [BP-2], on as before.
+CR_SPELLS_PAST equ 0x66F83 - 0x66F2F    ; (past the game's grants, less the address after the INT)
+probe_cr_spells:
+        mov ax, [bp - 2]
+        or ax, ax
+        jz .iret
+        cmp ax, 3
+        jbe .pick
+.iret:  iret
+.pick:  sti
+        pushad
+        push es
+        mov bx, sp              ; the interrupt frame at BX+34: IP, CS, flags
+        mov cx, 2               ; (CL 1st-level picks, CH 2nd-level)
+        cmp al, 1
+        je .scholar
+        mov cl, 4
+        cmp al, 3
+        jne .scholar
+        mov ch, 2
+.scholar:
+        push ax
+        call kit_made
+        cmp al, KIT_SCHOLAR
+        pop ax
+        jne .frame
+        add cl, al
+.frame: push word [ss:bx + 36]
+        mov ax, [ss:bx + 34]
+        add ax, CR_SPELLS_PAST
+        push ax
+        push bp
+        mov bp, sp
+        call pick_spells
+        pop bp
+        pop ax                  ; the way back, as the overlay manager has left it
+        pop dx
+        mov bx, sp
+        mov [ss:bx + 34], ax
+        mov [ss:bx + 36], dx
+        pop es
+        popad
+        iret
 
 ; PROBE_SOUND_42 / PROBE_SOUND_44: INT VEC_SOUND_42 replaces "mov dx,[es:bx+42h]" (4 bytes: INT + 2
 ; NOPs; DSUN.EXE 78FDAh) and INT VEC_SOUND_44 "mov ax,[es:bx+44h]" (81DE3h): two sound numbers on
@@ -11894,6 +11946,9 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_DUAL_KIT
         mov dx, probe_dual_kit
         int 21h
+        mov ax, 2500h + VEC_CR_SPELLS
+        mov dx, probe_cr_spells
+        int 21h
         mov ax, 2500h + VEC_PICK_LEVEL
         mov dx, probe_pick_level
         int 21h
@@ -11948,10 +12003,10 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or 99h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+busy    db 'DSCLOG: interrupts 60h-65h or 98h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
 all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS, VEC_LV_PICK, VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK, VEC_EF_ROWS, VEC_HP_BEST, VEC_TOME, VEC_INIT, VEC_THAC0, VEC_SLOTS, VEC_SLOT_LEVEL
             db VEC_PSP_USE, VEC_PSP_TABLE, VEC_PSP_DEFENCE, VEC_CURE, VEC_PSP_KEEP, VEC_RANGER_CAST, VEC_PSP_KEEP_DX
-            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY, VEC_RANGER_LEVEL, VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP, VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW, VEC_DUAL_BAN, VEC_DUAL_SPELLS, VEC_SOUND_42, VEC_SOUND_44, VEC_DUAL_KIT
+            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY, VEC_RANGER_LEVEL, VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP, VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW, VEC_DUAL_BAN, VEC_DUAL_SPELLS, VEC_SOUND_42, VEC_SOUND_44, VEC_DUAL_KIT, VEC_CR_SPELLS
 all_vectors_end:
 
         align 16, db 0
