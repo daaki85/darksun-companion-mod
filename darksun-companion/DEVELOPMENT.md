@@ -1007,14 +1007,13 @@ handler it gives it (`INT 33h`, function 0Ch). DSCLOG hooks `INT 33h` and puts
 its own handler in between, which keeps the middle button (the wheel pressed)
 from the game, and, with the right button dragging too, keeps the right button
 from it while it is held: a click reaches the game when it is let go (pressed
-and released where it was pressed), a drag never does. The game's main loop asks where the pointer
-is (to scroll at the screen's edge); there DSCLOG has the game centre its view
-where the drag puts it, with the game's own routine (the one clicking on the
-overview map uses, which draws the view again), and keeps the pointer it reports
-off the edges meanwhile. DOSBox 0.74, GOG's, never passes the wheel on to the
-game, so the Ledger watches for it in Windows (a low-level mouse hook, only
-while DOSBox's window is in front) and tells DSCLOG how far to scroll
-(`dscompanion/scrolling.py`).
+and released where it was pressed), a drag never does. The game's main loop
+asks where the pointer is (to scroll at the screen's edge); there DSCLOG has
+the game centre its view where the drag puts it, with the game's own routine
+(the one clicking on the overview map uses, which draws the view again), and
+keeps the pointer it reports off the edges meanwhile. The Ledger only switches
+it (`dscompanion/scrolling.py`). (Turning the wheel isn't used: DOSBox 0.74,
+GOG's, never passes it on to the game.)
 
 ### More saves
 

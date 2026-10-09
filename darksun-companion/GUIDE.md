@@ -82,7 +82,7 @@ easier.
 | Change | What it does |
 |---|---|
 | **Tab and Enter** | On a party member's turn in a fight, **Tab** chooses the nearest enemy (Tab again for the next, **Shift+Tab** back) and **Enter** attacks it, walking up to it first if need be, even behind someone else: no aiming with the mouse. A red ring marks the enemy chosen (or, on the Options tab, every enemy). |
-| **Scrolling with the mouse** | Press the wheel and drag the map, or turn the wheel (Shift for sideways). Optionally, hold the right button and drag. |
+| **Scrolling with the mouse** | Press the wheel and drag the map. Optionally, hold the right button and drag. |
 | **40 saves** | Four pages of ten in the save and load window (**PAGE 1** to **PAGE 4**, or **PgUp** and **PgDn**). *Without the mod:* 10. |
 | **29 characters on disk** | The roster keeps 29 characters made with CREATE CHARACTERS. *Without the mod:* 19. |
 | **DELETE in the roster** | Deletes the character you chose. *Without the mod:* with the list scrolled, it deleted another one. |

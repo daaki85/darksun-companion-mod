@@ -9,6 +9,7 @@ game. (Up to its 1.2.0 release, the whole mod was called Templar's Ledger.)
 - [What it does](#what-it-does)
 - [Getting started](#getting-started)
 - [What's new](#whats-new)
+- [Patch notes](PATCH-NOTES.md): every change from the original game, in one page to share
 - [Changelog](CHANGELOG.md)
 - [The player's guide](darksun-companion/GUIDE.md): the rules and tables, without spoilers
 - [The full documentation](darksun-companion/README.md): everything in detail
@@ -41,7 +42,7 @@ shadows, and kick up dirt as they walk ([On the
 screen](darksun-companion/README.md#on-the-screen)).
 
 Quality of life changes: choosing an enemy with Tab and attacking it with Enter,
-scrolling the map with the mouse wheel
+scrolling the map by dragging with the mouse wheel
 ([Controls](darksun-companion/README.md#controls)), 40 saves and 29 saved
 characters ([More saves and
 characters](darksun-companion/README.md#more-saves-and-characters)), a game

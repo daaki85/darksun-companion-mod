@@ -8,6 +8,17 @@ Released pull requests are summarised in a line or two each; the release notes
 [1.0.0](release-notes/v1.0.0.md): #1 to #13) and the pull requests themselves
 have the detail.
 
+## Pull request #35 (in progress)
+
+**Removed**
+- **Turning the mouse wheel** no longer scrolls the map (the Ledger's Windows
+  mouse hook is gone); pressing the wheel and dragging still does.
+
+**Documentation**
+- **Patch notes** (`PATCH-NOTES.md`, and `patch-notes.html` as a page with a
+  copy-as-Markdown button): every change from the original game, laid out as
+  patch notes, to share online. Linked from the front page.
+
 ## Pull request #33 ([merged 2026-10-09](https://github.com/daaki85/darksun-obsidian-edition/pull/33))
 
 **Release**

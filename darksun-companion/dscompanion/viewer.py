@@ -444,8 +444,7 @@ class Viewer:
             ttk.Radiobutton(controls, text=text, value=value, variable=self.ring_mode,
                             command=self._popups_changed).pack(anchor="w", padx=(20, 0))
         self.scroll_map = tk.BooleanVar(value=bool(settings.get("scroll_map", True)))
-        ttk.Checkbutton(controls, text="Scroll the map with the mouse wheel: press it and move, or turn it "
-                        "(Shift: sideways)", variable=self.scroll_map,
+        ttk.Checkbutton(controls, text="Scroll the map by pressing the mouse wheel and moving", variable=self.scroll_map,
                         command=self._popups_changed).pack(anchor="w", pady=(4, 0))
         self.scroll_right = tk.BooleanVar(value=bool(settings.get("scroll_right", False)))
         ttk.Checkbutton(controls, text="... or by holding the right mouse button and moving (a right "

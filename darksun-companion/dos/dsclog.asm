@@ -272,7 +272,7 @@ shadow_passes dw 0              ; +226 shadow passes drawn (counted)
 scroll_on  dw 0                 ; +228 the companion sets SCROLL_MIDDLE and/or SCROLL_RIGHT to have
                                 ;      a drag with that button scroll the map (SCROLLING)
 pan_x      dw 0                 ; +230 the companion adds to these (wrapping) to scroll the map by
-pan_y      dw 0                 ; +232   as many pixels (the mouse wheel, read in Windows)
+pan_y      dw 0                 ; +232   as many pixels (to a chosen enemy: TARGETING)
 dust_on    dw 0                 ; +234 the companion sets 1 once LIGHT is made, to have walkers raise
                                 ;      dust (DUST)
 light_off  dw light             ; +236 offset of LIGHT: each colour's lighter one (0: none, not ground

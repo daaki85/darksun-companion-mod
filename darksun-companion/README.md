@@ -117,11 +117,11 @@ armour the party wears, have characters cast shadows, and kick up dirt as they
 walk ([On the screen](#on-the-screen)).
 
 Quality of life changes: choosing an enemy with Tab and attacking it with
-Enter, scrolling the map with the mouse wheel ([Controls](#controls)), 40 saves
-and 29 saved characters ([More saves and characters](#more-saves-and-characters)),
-a game speed setting ([Game speed](#game-speed)), crash reports, and no dragon
-asking for a word from the manual, the game's copy protection ([No manual
-check](#no-manual-check)).
+Enter, scrolling the map by dragging with the mouse wheel
+([Controls](#controls)), 40 saves and 29 saved characters ([More saves and
+characters](#more-saves-and-characters)), a game speed setting ([Game
+speed](#game-speed)), crash reports, and no dragon asking for a word from the
+manual, the game's copy protection ([No manual check](#no-manual-check)).
 
 Nothing in the game folder or your save files is changed, except what play
 writes there: save pages 2 to 4 as files of their own beside the game's,
@@ -2856,13 +2856,11 @@ How it works: [DEVELOPMENT.md](DEVELOPMENT.md#choosing-an-enemy-tab-enter-and-th
 ### Scrolling the map
 
 Press the mouse wheel on the map and move the mouse: the map moves with the
-pointer, as if dragged, in fights too. In Windows, turning the wheel scrolls the
-map up and down while the game's window is in front, and sideways with Shift
-held (or a wheel that tilts). On the Options tab it can be switched off, or
-holding the right button made to drag the map as well (a right click, let go
-before the pointer has moved, still changes the pointer between walking, using
-and looking). The game still scrolls on its own when the pointer touches the
-screen's edge, and still brings the view back to whoever's turn it is in a
+pointer, as if dragged, in fights too. On the Options tab it can be switched
+off, or holding the right button made to drag the map as well (a right click,
+let go before the pointer has moved, still changes the pointer between walking,
+using and looking). The game still scrolls on its own when the pointer touches
+the screen's edge, and still brings the view back to whoever's turn it is in a
 fight.
 
 The view can't be zoomed: the game draws a 320 by 200 screen at one scale,
