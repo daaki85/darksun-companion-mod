@@ -73,7 +73,7 @@ VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL
 VEC_PICK_ANY, VEC_RANGER_LEVEL = 0xA7, 0xA6
 VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP = 0xA5, 0xA4, 0xA3, 0xA2
 VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW = 0xA1, 0xA0, 0x9F, 0x9E
-VEC_DUAL_BAN, VEC_DUAL_SPELLS = 0x9D, 0x9C
+VEC_DUAL_BAN, VEC_DUAL_SPELLS, VEC_SOUND_42, VEC_SOUND_44 = 0x9D, 0x9C, 0x9B, 0x9A
 
 
 SCRIPT_BUFFER = 0x2E00  # the scripts' buffer, made bigger (the game's: 10000 bytes)
@@ -400,6 +400,10 @@ PATCHES = (
     # game gives Grease and Magic Missile)
     Patch("dual_spells", 0x86DE4, bytes.fromhex("6a08569a4300000583c4046a07569a4300000583c404"),
           _interrupt(VEC_DUAL_SPELLS, 22)),
+    # Two sound numbers on the sheet the game reads as words, the kit (43h) and the second sphere
+    # (45h) their high bytes: the low byte alone
+    Patch("sound_42", 0x78FDA, bytes.fromhex("268b5742"), _interrupt(VEC_SOUND_42, 4)),
+    Patch("sound_44", 0x81DE3, bytes.fromhex("268b4744"), _interrupt(VEC_SOUND_44, 4)),
     Patch("pick_any", 0x85580, bytes.fromhex("8946fe0bc0"), _interrupt(VEC_PICK_ANY, 5)),
     Patch("pick_level", 0x85861, bytes.fromhex("fec0"), _interrupt(VEC_PICK_LEVEL, 2)),
     Patch("pick_list", 0x8563F, bytes.fromhex("8bf8"), _interrupt(VEC_PICK_LIST, 2)),

@@ -122,12 +122,18 @@ Released pull requests are summarised in a line or two each; the release notes
   becomes a shield, and a Battle Mage's quarterstaff its weapon spec's weapon.
   The dice log names each change. The guide lists each class's starting gear.
 
+**Fixed** (for the kits)
+- **A kit or a second sphere could change a sound.** The game reads two sound
+  numbers on the character sheet (`+42h`, `+44h`) as words, and the kit
+  (`+43h`) and second sphere (`+45h`) sit in their high bytes; they are read a
+  byte each now (INT 9Bh, 9Ah).
+
 **Changed** (for the kits)
 - **The Arcanist's drawback** is a d3 hit die (a preserver's is a d4), in
   place of −2 CON.
 - **The dice log's ring holds 96 entries** (was 128), making room in upper
   memory for the kits' code.
-- **The helper's interrupts** are now 9Ch to FEh (and 60h to 65h); the
+- **The helper's interrupts** are now 9Ah to FEh (and 60h to 65h); the
   message when they are in use says so.
 
 **Documentation**

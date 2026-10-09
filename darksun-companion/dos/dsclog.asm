@@ -127,6 +127,8 @@ VEC_EL_LEVEL equ 0x9F      ; PROBE_EL_LEVEL
 VEC_EL_KNOW equ 0x9E       ; PROBE_EL_KNOW
 VEC_DUAL_BAN equ 0x9D      ; PROBE_DUAL_BAN
 VEC_DUAL_SPELLS equ 0x9C   ; PROBE_DUAL_SPELLS
+VEC_SOUND_42 equ 0x9B      ; PROBE_SOUND_42
+VEC_SOUND_44 equ 0x9A      ; PROBE_SOUND_44
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 96          ; entries in the ring (96: the helper and it fit in upper memory)
@@ -5651,6 +5653,18 @@ probe_dual_spells:
         mov cx, 2
         call pick_spells
         pop cx
+        iret
+
+; PROBE_SOUND_42 / PROBE_SOUND_44: INT VEC_SOUND_42 replaces "mov dx,[es:bx+42h]" (4 bytes: INT + 2
+; NOPs; DSUN.EXE 78FDAh) and INT VEC_SOUND_44 "mov ax,[es:bx+44h]" (81DE3h): two sound numbers on
+; the character sheet (ES:BX), read as words by the game, though the bytes above them are the
+; kit (KIT_BYTE, 43h) and the second sphere (SPHERE2, 45h); the low byte alone (0 above it in every one of
+; the game's sheets), so a kit or a sphere doesn't play another sound.
+probe_sound_42:
+        movzx dx, byte [es:bx+0x42]
+        iret
+probe_sound_44:
+        movzx ax, byte [es:bx+0x44]
         iret
 
 ; PROBE_PICK_LIST: INT VEC_PICK_LIST replaces "mov di,ax" (2 bytes; DSUN.EXE 8563Fh) in the CHOOSE A
@@ -11493,6 +11507,12 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_DUAL_SPELLS
         mov dx, probe_dual_spells
         int 21h
+        mov ax, 2500h + VEC_SOUND_42
+        mov dx, probe_sound_42
+        int 21h
+        mov ax, 2500h + VEC_SOUND_44
+        mov dx, probe_sound_44
+        int 21h
         mov ax, 2500h + VEC_PICK_LEVEL
         mov dx, probe_pick_level
         int 21h
@@ -11547,10 +11567,10 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or 9Ch-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+busy    db 'DSCLOG: interrupts 60h-65h or 9Ah-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
 all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS, VEC_LV_PICK, VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK, VEC_EF_ROWS, VEC_HP_BEST, VEC_TOME, VEC_INIT, VEC_THAC0, VEC_SLOTS, VEC_SLOT_LEVEL
             db VEC_PSP_USE, VEC_PSP_TABLE, VEC_PSP_DEFENCE, VEC_CURE, VEC_PSP_KEEP, VEC_RANGER_CAST, VEC_PSP_KEEP_DX
-            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY, VEC_RANGER_LEVEL, VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP, VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW, VEC_DUAL_BAN, VEC_DUAL_SPELLS
+            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY, VEC_RANGER_LEVEL, VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP, VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW, VEC_DUAL_BAN, VEC_DUAL_SPELLS, VEC_SOUND_42, VEC_SOUND_44
 all_vectors_end:
 
         align 16, db 0

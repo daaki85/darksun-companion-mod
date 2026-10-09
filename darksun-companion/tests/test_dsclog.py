@@ -3351,6 +3351,17 @@ class KitTests(unittest.TestCase):
         self.run_vector(VEC_PICK_LEVEL, 2, eax=9)
         self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AL), 10)  # (no cap after)
 
+    def test_sound_bytes(self):
+        """PROBE_SOUND_42 / PROBE_SOUND_44: the sheet's (ES:BX) sound numbers at 42h and 44h, read
+        a byte only, the kit (43h) and the second sphere (45h) above them left out."""
+        from dscompanion.gamepatch import VEC_SOUND_42, VEC_SOUND_44
+        sheet = 0x6666 * 16 + 0x2222
+        self.mu.mem_write(sheet + 0x42, bytes((0x17, 0x05, 0x00, 0x03)))
+        self.run_vector(VEC_SOUND_42, 4, ebx=0x2222, es=0x6666, edx=0xFFFF, eax=0x1111)
+        self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_DX, r.UC_X86_REG_AX)], [0x17, 0x1111])
+        self.run_vector(VEC_SOUND_44, 4, ebx=0x2222, es=0x6666, edx=0x3333, eax=0xFFFF)
+        self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_AX, r.UC_X86_REG_DX)], [0, 0x3333])
+
     def test_pick_list(self):
         """PROBE_PICK_LIST: DI the list's length (AX), for a Shinobi its own spells up to the spell
         level on offer it doesn't know, put in the list (kits.pick_list)."""
