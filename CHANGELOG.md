@@ -143,6 +143,13 @@ Released pull requests are summarised in a line or two each; the release notes
   becomes a shield, and a Battle Mage's quarterstaff its weapon spec's weapon.
   The dice log names each change. The guide lists each class's starting gear.
 
+**Added** (rules)
+- **Preservers' INT**, a new rule change (on by default): AD&D's table for
+  INT gives a preserver a chance to learn a spell from a scroll (35% at INT
+  9 to 100% at 24; a failed try uses the scroll up) and the most spells of
+  each spell level it may know (6 at INT 9, all from 19), which also limits
+  CHOOSE A SPELL at a level up. The dice log shows each try.
+
 **Fixed** (for the kits)
 - **A kit or a second sphere could change a sound.** The game reads two sound
   numbers on the character sheet (`+42h`, `+44h`) as words, and the kit

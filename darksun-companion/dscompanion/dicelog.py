@@ -57,6 +57,7 @@ SKILLS_STEALTH, SKILLS_BELT = 1, 2  # a worn belt adds to picking pockets and op
 SKILLS_ELVEN = 4  # the Cloak and Boots of Elvenkind's boxes name their chances (the hiding rule on)
 TSR_RING_SEG = 268  # the ring's segment (past the image, so it takes none of DSCLOG's 64 KB)
 TSR_RULES_HI = 270  # the rules' bits past 16 (game.RULE_KITS), shifted down
+TSR_LEARN = 272  # a preserver's try at a scroll's spell: count, who, spell, INT, chance, d100, result (intlearn.py)
 TSR_PICK_SEQ, TSR_PICK_REPLY, TSR_PICK_OFF, TSR_PICK_ON, PICK_SIZE = 172, 174, 176, 178, 240
 PICK_TOOLS, PICK_KEY = 1, 2  # (TSR_PICK_ON: the thieving tools on someone; P in a conversation too)
 TSR_USE_SEQ, TSR_USE_REPLY, TSR_USE_WHO, TSR_USE_TAKEN, TSR_USE_ITEM = 180, 182, 184, 186, 188
@@ -376,6 +377,7 @@ class DiceLog:
         self.stealth_roll: Callable[[], int] = lambda: random.randint(1, 100)  # hiding, moving silently
         self._ring_check = 0.0
         self._main_ticks: Optional[int] = None  # DSCLOG's count of the map's main loop, last read
+        self._learn_seq: Optional[int] = None  # DSCLOG's count of tries at a scroll's spell, last read
         self._look_seq = 0
         self._turn_seq = 0
         self._turn_attacks: Dict[int, List[dict]] = {}  # creature -> this turn's attacks
@@ -1018,6 +1020,7 @@ class DiceLog:
                 out += self._arena_ring(now)
                 out += self._drawn(now)
                 self._kalzith_sold_out()
+                out += self._learn_lines()
                 self._dress_now(now)
         self._scroll()
         if self._initiative and now - self._initiative_at >= INITIATIVE_WAIT:
@@ -1096,6 +1099,24 @@ class DiceLog:
         except (struct.error, IndexError, ValueError):
             return []
         return out
+
+    def _learn_lines(self) -> List[str]:
+        """A preserver's tries at a scroll's spell since the last look (the rule for INT's chance:
+        DSCLOG's INT_LEARN tells the last one in its header)."""
+        if self.tsr_hdr is None or self.game is None:
+            return []
+        try:
+            seq, who, spell, intelligence, rate, roll, result = struct.unpack(
+                "<H6B", self.guest.read(self.tsr_hdr + TSR_LEARN, 8))
+            if self._learn_seq is None or seq == self._learn_seq:
+                self._learn_seq = seq
+                return []
+            self._learn_seq = seq
+            from . import intlearn
+            return [intlearn.line(self.game.creature_name(who), self.game.spell_name(spell), intelligence, rate,
+                                  roll, result, self.game.spell_level(spell))]
+        except (struct.error, IndexError, ValueError):
+            return []
 
     def _kalzith_sold_out(self) -> None:
         """All six of Kalzith's scrolls bought: no more shop, and he carries his two, put on him

@@ -3879,6 +3879,139 @@ class KitTests(unittest.TestCase):
                         self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_BX, r.UC_X86_REG_SI,
                                                                         r.UC_X86_REG_ES)], [0x2222, 0x4444, 0x6666])
 
+    # spell levels as the game's table has them (wizard spells 1-68)
+    WIZARD_LEVELS = {s: 1 if s <= 11 else 2 if s <= 24 else 3 if s <= 39 else 4 if s <= 55 else 5 for s in range(1, 69)}
+
+    def int_setup(self, who, intelligence, known):
+        """Party member WHO a preserver of INT INTELLIGENCE knowing the spells KNOWN; the game's
+        spell levels; the rule for INT on."""
+        self.rules(game.RULE_INT_LEARN)
+        self.creature(11, 0, index=who, level=5)
+        self.mu.mem_write(self.CREATURES * 16 + who * 0x3A + 0x25, bytes((intelligence,)))
+        levels = ((self.DS + 0x3FB9 - 0x4356) & 0xFFFF) * 16 + 0x19C
+        for spell, level in self.WIZARD_LEVELS.items():
+            self.mu.mem_write(levels + spell * 7, bytes((level,)))
+        known_at = (self.DS - (0x4356 - 0x3800)) * 16 + 0x168 + who * 0x8A
+        self.mu.mem_write(known_at, bytes(1 if n in known else 0 for n in range(0x8A)))
+        return known_at
+
+    def said(self, vector, site):
+        """INT VECTOR (a message probe) run from SITE: the far pointer it leaves pushed, the text."""
+        install = self.image.find(bytes((0xB8, vector, 0x25, 0xBA)))
+        self.mu.mem_write(vector * 4, struct.pack("<HH", struct.unpack_from("<H", self.image, install + 4)[0], TSR))
+        if not getattr(self, "hooked", False):
+            self.mu.hook_add(UC_HOOK_INTR, real_mode_interrupt)
+            self.hooked = True
+        self.mu.mem_write(CALLER * 16 + site, bytes((0xCD, vector, 0x90, 0x90, 0xF4)))
+        for name, value in dict(cs=CALLER, ds=self.DS, ss=SS, esp=0x7FC, ebp=BP, eflags=IF | 2, eax=0x1111).items():
+            self.mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+        self.mu.emu_start(CALLER * 16 + site, CALLER * 16 + site + 4, count=500)
+        self.assertEqual((self.mu.reg_read(r.UC_X86_REG_SP), self.mu.reg_read(r.UC_X86_REG_AX)), (0x7F8, 0x1111))
+        off, seg = struct.unpack("<HH", self.mu.mem_read(SS * 16 + 0x7F8, 4))
+        text = bytes(self.mu.mem_read(seg * 16 + off, 40)).split(b"\0")[0] if seg == TSR else b""
+        return seg, off, text
+
+    def test_int_learn(self):
+        """PROBE_SCROLL_LEARN with the rule for INT (intlearn.py): a preserver's spell level full
+        for its INT refuses the scroll (AX 0; PROBE_LEARN_REFUSED's TOO MANY..., the scroll kept);
+        else a d100 against INT's chance, a failure letting the game teach it and use the scroll up,
+        then PROBE_LEARN_SAID taking it back with YOU FAIL...; the try told in the header (+272).
+        Without the rule, or a priest spell, the game's own (its messages pushed as they were)."""
+        from dscompanion import intlearn
+        from dscompanion.gamepatch import VEC_SCROLL_LEARN, VEC_LEARN_SAID, VEC_LEARN_REFUSED
+        seg, who = 0x8700, 2
+        site = 0x400 + (VEC_SCROLL_LEARN & 0x1F) * 0x10
+        self.mu.mem_write(CALLER * 16 + site + 2 + (0x8B6C2 - 0x8B6D5), struct.pack("<H", seg))
+        self.mu.mem_write(seg * 16 + 0x25B, struct.pack("<H", who))
+        hdr = self.hdr
+        def learn(spell, ax=1):
+            self.mu.mem_write(SS * 16 + BP - 3, bytes((spell,)))
+            before = struct.unpack("<H", self.mu.mem_read(hdr + 272, 2))[0]
+            self.run_vector(VEC_SCROLL_LEARN, 2, eax=ax, ebx=0x2222, esi=0x4444, es=0x6666, edx=0x5555)
+            self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_BX, r.UC_X86_REG_SI, r.UC_X86_REG_ES,
+                                                            r.UC_X86_REG_DX)], [0x2222, 0x4444, 0x6666, 0x5555])
+            ax = self.mu.reg_read(r.UC_X86_REG_AX)
+            self.assertEqual(bool(self.mu.reg_read(r.UC_X86_REG_EFLAGS) & 0x40), not ax)
+            seq, *told = struct.unpack("<H6B", self.mu.mem_read(hdr + 272, 8))
+            return ax, (told if seq != before else None)
+        first = [s for s in range(1, 12)]
+        # INT 9: 6 1st-level spells at most, 35%
+        known_at = self.int_setup(who, 9, first[:6])
+        ax, told = learn(8)
+        self.assertEqual((ax, told), (0, [who, 8, 9, 35, 6, intlearn.FULL]))
+        self.assertEqual(self.said(VEC_LEARN_REFUSED, 0x680)[2], b"TOO MANY SPELLS OF THAT LEVEL")
+        self.assertEqual(self.said(VEC_LEARN_REFUSED, 0x690)[:2], (self.DS, 0x3405))  # (once only)
+        ax, told = learn(12)  # (a 2nd-level spell: room)
+        self.assertEqual(told[:4], [who, 12, 9, 35])
+        results = set()
+        for n in range(40):
+            self.int_setup(who, 9, first[:5])
+            ax, told = learn(8)
+            roll, result = told[4], told[5]
+            self.assertTrue(1 <= roll <= 100)
+            self.assertEqual(result, intlearn.LEARNT if roll <= 35 else intlearn.FAILED)
+            self.assertEqual(ax, 1)
+            self.mu.mem_write(known_at + 8, b"\1")  # (the game teaches it)
+            seg_, off, text = self.said(VEC_LEARN_SAID, 0x6A0 + (n % 2) * 0x10)
+            if result == intlearn.FAILED:
+                self.assertEqual(text, b"YOU FAIL TO LEARN THE SPELL")
+                self.assertEqual(self.mu.mem_read(known_at + 8, 1)[0] & 0x0F, 0)
+            else:
+                self.assertEqual((seg_, off), (self.DS, 0x33F1))
+                self.assertEqual(self.mu.mem_read(known_at + 8, 1)[0], 1)
+            results.add(result)
+        self.assertEqual(results, {intlearn.LEARNT, intlearn.FAILED})
+        # INT 19 and more: no most, 95%
+        self.int_setup(who, 19, first[:10])
+        self.assertEqual(learn(11)[1][:4], [who, 11, 19, 95])
+        # the game's own: the rule off, a priest spell, or a spell it knows (AX 0 already)
+        self.int_setup(who, 9, first[:6])
+        self.rules(0)
+        self.assertEqual(learn(8), (1, None))
+        self.rules(game.RULE_INT_LEARN)
+        self.assertEqual(learn(80), (1, None))
+        self.assertEqual(learn(8, ax=0), (0, None))
+        self.assertEqual([intlearn.chance(i) for i in (3, 9, 12, 18, 19, 24, 25, 30)], [35, 35, 50, 85, 95, 100, 100, 100])
+        self.assertEqual([intlearn.most(i) for i in (9, 13, 17, 18, 19)], [6, 9, 14, 18, None])
+
+    def test_int_pick(self):
+        """CHOOSE A SPELL with the rule for INT: PROBE_PICK_LIST leaves out the spells of a level the
+        preserver knows its INT's most of; PROBE_PICK_ANY doesn't open it (AX 0) when no spell is
+        left to learn at a level on offer that isn't full."""
+        from dscompanion.gamepatch import VEC_PICK_LIST, VEC_PICK_ANY
+        seg, who = 0x8700, 2
+        site = 0x400 + (VEC_PICK_LIST & 0x1F) * 0x10
+        self.mu.mem_write(CALLER * 16 + site + 2 + (0x8562E - 0x85641), struct.pack("<H", seg))
+        self.mu.mem_write(seg * 16 + 0x25B, struct.pack("<H", who))
+        first = list(range(1, 12))
+        for rules, known, want in ((game.RULE_INT_LEARN, first[:6], [12, 13]), (game.RULE_INT_LEARN, first[:5], [7, 8, 12, 13]),
+                                   (0, first[:6], [7, 8, 12, 13])):
+            with self.subTest(rules=rules, known=known):
+                self.int_setup(who, 9, known)
+                self.rules(rules)
+                self.picker_sheet(11, 0, 5)
+                self.mu.mem_write(self.DS * 16 + 0x4AEC, bytes((2,)))
+                self.mu.mem_write(seg * 16 + 7, struct.pack("<4H", 7, 8, 12, 13))
+                self.run_vector(VEC_PICK_LIST, 2, eax=4, ebx=0x2222, ecx=0x3333, esi=0x4444, es=0x6666)
+                di = self.mu.reg_read(r.UC_X86_REG_DI)
+                self.assertEqual(list(struct.unpack("<%dH" % di, self.mu.mem_read(seg * 16 + 7, 2 * di))), want)
+                self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_AX, r.UC_X86_REG_BX, r.UC_X86_REG_CX,
+                                                                r.UC_X86_REG_SI, r.UC_X86_REG_ES)],
+                                 [4, 0x2222, 0x3333, 0x4444, 0x6666])
+        # PROBE_PICK_ANY: preserver level 1 (1st-level spells on offer), INT 9
+        at = self.image.find(bytes((0xB8, VEC_PICK_ANY, 0x25, 0xBA)))
+        self.mu.mem_write(VEC_PICK_ANY * 4, struct.pack("<HH", struct.unpack_from("<H", self.image, at + 4)[0], TSR))
+        for rules, known, level, opens in ((game.RULE_INT_LEARN, first[:6], 1, False), (game.RULE_INT_LEARN, first[:5], 1, True),
+                                           (game.RULE_INT_LEARN, first[:6], 3, True), (0, first[:6], 1, True)):
+            with self.subTest(rules=rules, known=known, level=level):
+                self.int_setup(who, 9, known)
+                self.rules(rules)
+                self.creature(11, 0, index=who, level=level)
+                self.mu.mem_write(self.CREATURES * 16 + who * 0x3A + 0x25, bytes((9,)))
+                self.run_vector(VEC_PICK_ANY, 5, eax=level, esi=who, ebx=0x2222, edi=0)
+                self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), level if opens else 0)
+                self.assertEqual(bool(self.mu.reg_read(r.UC_X86_REG_EFLAGS) & 0x40), not opens)
+
     def test_kit_at(self):
         """KIT_AT: the kit of the class at place DI (kitpages.kit_at), two bits a class in KIT_BYTE."""
         from dscompanion import kitpages

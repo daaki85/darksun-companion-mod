@@ -350,6 +350,9 @@ class Viewer:
                 ("ranger_casting_level", "Rangers' spells last and do damage as cast at the ranger level less 7, "
                                          "as the spell levels they may cast count it (the game takes the whole "
                                          "level)"),
+                ("int_learning", "Preservers' INT: a chance to learn a spell from a scroll (35% at INT 9 "
+                                 "to 100% at 24; a failed try uses the scroll up) and the most spells of "
+                                 "each spell level they may know (6 at INT 9, all from 19)"),
                 ("best_hit_die", "Hit dice rolled twice, the better kept, at creation and at every level "
                                  "(every character)"),
                 ("spell_save", "Spells are saved against with the spell save (the game uses "

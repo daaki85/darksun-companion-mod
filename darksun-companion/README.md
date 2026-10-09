@@ -1448,7 +1448,7 @@ How it works: [DEVELOPMENT.md](DEVELOPMENT.md#no-manual-check).
 
 ## Rule changes
 
-Eighteen changes to the game's rules, each with its own box on the Options tab,
+Nineteen changes to the game's rules, each with its own box on the Options tab,
 under **Rule changes** (the two thief rules under **Thieves**). All are on by
 default, and they take effect in games started with the dice log: with the
 Ledger running, or with **Play Dark Sun (in-game rolls)**, which uses the
@@ -1465,6 +1465,7 @@ game itself does, under [Two weapons](#two-weapons), [Thieves](#thieves) and
 | [Multiclass hit points](#multiclass-hit-points) | each level's die and CON's bonus shared between a character's classes |
 | [Hit dice: the better of two](#hit-dice-the-better-of-two) | each hit die rolled twice, the better kept, for every character |
 | [Rangers' casting level](#rangers-casting-level) | a ranger's spells last and do damage as cast at its level less 7, as the spell levels it may cast already count it |
+| [Preservers' INT](#preservers-int) | INT gives a preserver a chance to learn a spell from a scroll, and the most spells of each spell level it may know |
 | [Spells saved against with the spell save](#spells-saved-against-with-the-spell-save) | the spell save rather than petrification/polymorph |
 | [Fire, cold and electricity: DEX instead of a doubled d20](#fire-cold-and-electricity-dex-instead-of-a-doubled-d20) | DEX's defensive adjustment on those saves rather than a doubled d20 |
 | [Two weapons](#two-weapons) | -2 main hand, -4 off hand, DEX's reaction adjustment added; rangers none |
@@ -1901,6 +1902,44 @@ take 5 and 9 off, ticked or not. A 9th-level ranger's Protection from Evil
 duration and damage lines show the level wherever they roll dice.
 
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#rangers-casting-level).
+
+### Preservers' INT
+
+In the game a preserver learns any spell from a scroll it reads, and may know
+every spell. With **Preservers' INT** ticked, AD&D's table for INT holds:
+
+| INT | Chance to learn a spell | Most spells of each spell level |
+|---|---|---|
+| 9 | 35% | 6 |
+| 10 | 40% | 7 |
+| 11 | 45% | 7 |
+| 12 | 50% | 7 |
+| 13 | 55% | 9 |
+| 14 | 60% | 9 |
+| 15 | 65% | 11 |
+| 16 | 70% | 11 |
+| 17 | 75% | 14 |
+| 18 | 85% | 18 |
+| 19 | 95% | all |
+| 20 to 23 | 96% to 99% | all |
+| 24 and 25 | 100% | all |
+
+- **Reading a scroll:** the preserver rolls d100 against its chance. Under
+  it, the spell is learnt and the scroll used up, as in the game; over it,
+  the spell isn't learnt (YOU FAIL TO LEARN THE SPELL) and the scroll is used
+  up all the same.
+- **A full spell level:** a preserver that already knows the most spells of
+  the scroll's spell level can't learn it (TOO MANY SPELLS OF THAT LEVEL),
+  and keeps the scroll.
+- **Level ups and new characters:** CHOOSE A SPELL leaves out the spells of a
+  level the preserver already knows the most of, and doesn't open when
+  nothing else is left to learn.
+
+The dice log shows each try: `Dreamwalker reads the scroll of Magic Missile:
+d100 = 37, needs 60 or less (INT 14) -> learnt`. Priest spells and psionic
+powers are as the game has them.
+
+How it works: [DEVELOPMENT.md](DEVELOPMENT.md#preservers-int).
 
 ### Levels up to 10
 

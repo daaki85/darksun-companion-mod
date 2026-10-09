@@ -136,6 +136,8 @@ VEC_CAST_MARK equ 0x96     ; PROBE_CAST_MARK
 VEC_ROUND_MARK equ 0x95    ; PROBE_ROUND_MARK
 VEC_CAST_DONE equ 0x94     ; PROBE_CAST_DONE
 VEC_END_TURN equ 0x93      ; PROBE_END_TURN
+VEC_LEARN_SAID equ 0x92    ; PROBE_LEARN_SAID
+VEC_LEARN_REFUSED equ 0x91 ; PROBE_LEARN_REFUSED
 TSIZE    equ 4096     ; bytes in the text buffer (a power of two)
 
 NENT    equ 96          ; entries in the ring (96: the helper and it fit in upper memory)
@@ -299,6 +301,13 @@ ring_seg   dw 0                 ; +268 the ring's segment: the paragraphs after 
                                 ;      outside this one, so the ring takes none of its 64 KB (set
                                 ;      when installed; RING_OFF its offset there)
 rules_hi   dw 0                 ; +270 more rule changes the companion turns on (RULE_HI_KITS)
+learn_seq  dw 0                 ; +272 a preserver's try at a scroll's spell (INT_LEARN), counted ...
+learn_who  db 0                 ; +274 ... the party member ...
+learn_spell db 0                ; +275 ... the spell ...
+learn_int  db 0                 ; +276 ... its INT ...
+learn_chance db 0               ; +277 ... the chance to learn (%) ...
+learn_roll db 0                 ; +278 ... the d100 (LEARN_FULL: the spells of that level known) ...
+learn_result db 0               ; +279 ... and LEARN_LEARNT, LEARN_FAILED or LEARN_FULL
 
 ; TEXT BUFFER: what the game sends to its dialogue window, as records of
 ;   byte 0FEh, byte kind (the dialogue window's: 0 = a reply to choose, the
@@ -5874,7 +5883,7 @@ probe_pick_any:
         call kit_is_b
         db KIT_SHINOBI
         mov ax, cx
-        jne .flags
+        jne .int
         call kit_level
         movzx ax, al
         call shinobi_cast
@@ -5886,6 +5895,8 @@ probe_pick_any:
         jnc .flags
         mov di, 1
         add word [bp + 2], PICK_OPEN
+        jmp .flags
+.int:   call pick_int_any               ; (RULE_HI_INT: a spell left to learn, its level not full)
 .flags: or ax, ax
         pushf
         pop cx
@@ -6400,7 +6411,7 @@ probe_pick_list:
         les bx, [PICK_SHEET]
         call kit_is_b
         db KIT_SHINOBI
-        jne .out
+        jne .int
         mov bp, sp
         les si, [ss:bp + 14]    ; (the INT's way back: CS:IP)
         mov es, [es:si + PICK_LIST_SEG]
@@ -6428,6 +6439,37 @@ probe_pick_list:
         jb .spell
         pop ds
         shr di, 1
+        jmp .out
+.int:   test word [cs:rules_hi], RULE_HI_INT    ; (a preserver: the list without the spells of a
+        jz .out                                 ; level it knows its INT's most of)
+        call is_preserver
+        jnc .out
+        mov bp, sp
+        les si, [ss:bp + 14]
+        mov es, [es:si + PICK_LIST_SEG]
+        mov si, [es:PICK_WHO]
+        mov dx, di              ; (DX the game's count)
+        xor di, di
+        xor bx, bx
+.each:  cmp bx, dx
+        jae .counted
+        push bx
+        shl bx, 1
+        mov ax, [es:PICK_LIST + bx]
+        pop bx
+        call spell_level_of
+        push ax
+        call level_full
+        pop ax
+        jc .skip
+        push di
+        shl di, 1
+        mov [es:PICK_LIST + di], ax
+        pop di
+        inc di
+.skip:  inc bx
+        jmp .each
+.counted:
 .out:   pop bp
         pop es
         pop si
@@ -6437,10 +6479,75 @@ probe_pick_list:
         pop ax
         iret
 
+; PICK_INT_ANY: (PROBE_PICK_ANY, not a Shinobi: SI the character, ES:BX its sheet, AX its
+; preserver level) with RULE_HI_INT, AX 0 (CHOOSE A SPELL not opened) when no wizard spell it
+; doesn't know is left at a spell level on offer (up to (AX + 1) / 2, no more than PICK_CAP's) that
+; isn't full (LEVEL_FULL). DS the game's; others kept.
+pick_int_any:
+        test word [cs:rules_hi], RULE_HI_INT
+        jz .ret
+        cmp ax, 0
+        jle .ret
+        call is_preserver
+        jnc .ret
+        push ax
+        push bx
+        push cx
+        push dx
+        inc ax
+        shr ax, 1
+        mov dl, al              ; (DL the highest spell level on offer)
+        mov al, [cs:pick_cap]
+        or al, al
+        jz .capped
+        cmp dl, al
+        jbe .capped
+        mov dl, al
+.capped:
+        imul bx, si, KNOWN_SIZE
+        add bx, KNOWN_OFF
+        mov al, 1
+.spell: push ds
+        push ax
+        mov ax, ds
+        sub ax, KNOWN_FROM_DS
+        mov ds, ax
+        pop ax
+        push bx
+        movzx cx, al
+        add bx, cx
+        test byte [bx], 0x0F
+        pop bx
+        pop ds
+        jnz .next               ; (known)
+        call spell_level_of
+        cmp cl, dl
+        ja .next
+        push ax
+        call level_full
+        pop ax
+        jnc .found
+.next:  inc al
+        cmp al, WIZARD_LAST
+        jbe .spell
+        pop dx
+        pop cx
+        pop bx
+        pop ax
+        xor ax, ax              ; (nothing to learn)
+        ret
+.found: pop dx
+        pop cx
+        pop bx
+        pop ax
+.ret:   ret
+
 ; PROBE_SCROLL_LEARN: INT VEC_SCROLL_LEARN replaces "or ax,ax" (2 bytes; DSUN.EXE 8B6D3h, then the
-; game's "jz", to "CANNOT LEARN FROM THIS ITEM") after the game's check whether the character on
-; show (the segment of "mov ax,348h" before, its 25Bh) may learn a scroll's spell: none for a
-; Shinobi, who learns only at a level up. ZF as "or ax,ax" leaves it.
+; game's "jz", to "YOU ALREADY KNOW THIS SPELL") after the game's check whether the character on
+; show (the segment of "mov ax,348h" before, its 25Bh) may learn a scroll's spell ([BP-3] of the
+; game's frame; the game's only check is that it doesn't know it yet): none for a Shinobi, who
+; learns only at a level up; with RULE_HI_INT, a preserver's try at a wizard spell as INT_LEARN has
+; it. ZF as "or ax,ax" leaves it.
 SCROLL_WHO_SEG equ 0x8B6C2 - 0x8B6D5
 probe_scroll_learn:
         or ax, ax
@@ -6452,14 +6559,22 @@ probe_scroll_learn:
         mov bp, sp
         les si, [ss:bp + 8]     ; (the INT's way back)
         mov es, [es:si + SCROLL_WHO_SEG]
-        mov bx, [es:PICK_WHO]
-        imul bx, bx, 0x47
+        mov si, [es:PICK_WHO]   ; (SI the reader)
+        imul bx, si, 0x47
+        push si
         les si, [0x1661]
         add bx, si
+        pop si
         call kit_is_b
         db KIT_SHINOBI
-        jne .keep
+        jne .int
         xor ax, ax
+        jmp .keep
+.int:   push dx
+        mov bp, [ss:bp]         ; (the game's frame: [BP-3] the spell)
+        mov dl, [bp - 3]
+        call int_learn
+        pop dx
 .keep:  pop bp
         pop es
         pop si
@@ -6472,6 +6587,244 @@ probe_scroll_learn:
         or word [bp + 6], 0x40
 .done:  pop bp
         iret
+
+; INT_LEARN (RULE_HI_INT; dscompanion/intlearn.py): party member SI, its sheet ES:BX, tries to learn
+; wizard spell DL from a scroll, AX not 0 (the game would teach it). A preserver's INT (the creature
+; record's) gives, as AD&D's table, the chance to learn a spell (INT_CHANCE) and the most spells of a
+; spell level it may know (INT_MOST): knowing that many of the spell's level, it can't (AX 0, and
+; PROBE_LEARN_REFUSED's message, LEARN_FULL_TEXT: the scroll is kept); else a d100 above the chance
+; and it fails (AX kept: the game teaches it and uses the scroll up, PROBE_LEARN_SAID takes the
+; spell back and says so). The try is told to the companion (LEARN_SEQ...). DS the game's; others kept.
+INT_FIRST    equ 9                      ; (the rows' first INT; a preserver's least)
+INT_ROWS     equ 17                     ; (9 to 25)
+INT_ALL      equ 255                    ; (no most)
+int_chance   db 35, 40, 45, 50, 55, 60, 65, 70, 75, 85, 95, 96, 97, 98, 99, 100, 100
+int_most     db 6, 7, 7, 7, 9, 9, 11, 11, 14, 18, INT_ALL, INT_ALL, INT_ALL, INT_ALL, INT_ALL, INT_ALL, INT_ALL
+LEARN_LEARNT equ 0
+LEARN_FAILED equ 1
+LEARN_FULL   equ 2
+SPELL_LEVELS_SEG equ 0x3FB9 - 0x4356    ; the spells' table (7 bytes a spell): its segment less DS's ...
+SPELL_LEVELS equ 0x19C                  ; ... and each spell's level there
+learn_msg    db 0                       ; (LEARN_FAILED or LEARN_FULL: the game's message to change)
+int_learn:
+        or ax, ax
+        jz .ret
+        test word [cs:rules_hi], RULE_HI_INT
+        jz .ret
+        cmp dl, WIZARD_LAST
+        ja .ret
+        call is_preserver
+        jnc .ret
+        push ax
+        push bx
+        push cx
+        mov ax, si
+        mov [cs:learn_who], al
+        mov [cs:learn_spell], dl
+        call int_row                    ; (BX the INT's row, AL the INT)
+        mov [cs:learn_int], al
+        mov al, [cs:int_chance + bx]
+        mov [cs:learn_chance], al
+        mov al, dl
+        call spell_level_of             ; (CL the spell's level)
+        call level_full                 ; (AL the spells of that level known)
+        jnc .roll
+        mov [cs:learn_roll], al
+        mov byte [cs:learn_result], LEARN_FULL
+        mov byte [cs:learn_msg], LEARN_FULL
+        pop cx
+        pop bx
+        pop ax
+        xor ax, ax
+        jmp .told
+.roll:  call d100
+        mov [cs:learn_roll], al
+        mov byte [cs:learn_result], LEARN_LEARNT
+        cmp al, [cs:learn_chance]
+        jbe .out
+        mov byte [cs:learn_result], LEARN_FAILED
+        mov byte [cs:learn_msg], LEARN_FAILED
+.out:   pop cx
+        pop bx
+        pop ax
+.told:  inc word [cs:learn_seq]
+.ret:   ret
+
+; IS_PRESERVER: CF set if sheet ES:BX has the preserver class among its classes. All kept.
+is_preserver:
+        cmp byte [es:bx + 0x21], PRESERVER_CLASS
+        je .yes
+        cmp byte [es:bx + 0x22], PRESERVER_CLASS
+        je .yes
+        cmp byte [es:bx + 0x23], PRESERVER_CLASS
+        je .yes
+        clc
+        ret
+.yes:   stc
+        ret
+
+; INT_ROW: BX the row of INT_CHANCE and INT_MOST for party member SI's INT (its creature record's,
+; 9 or less the first row, 25 or more the last), AL the INT. DS the game's; others kept.
+int_row:
+        push es
+        les bx, [CREATURES]
+        push ax
+        imul ax, si, 0x3A
+        add bx, ax
+        pop ax
+        mov al, [es:bx + 0x25]          ; (the abilities from +22h: STR, DEX, CON, INT)
+        movzx bx, al
+        sub bx, INT_FIRST
+        jge .high
+        xor bx, bx
+.high:  cmp bx, INT_ROWS - 1
+        jbe .row
+        mov bx, INT_ROWS - 1
+.row:   pop es
+        ret
+
+; SPELL_LEVEL_OF: CL the spell level of spell AL. DS the game's; others kept.
+spell_level_of:
+        push ax
+        push bx
+        push es
+        mov bx, ds
+        add bx, SPELL_LEVELS_SEG
+        mov es, bx
+        movzx bx, al
+        imul bx, bx, 7
+        mov cl, [es:bx + SPELL_LEVELS]
+        pop es
+        pop bx
+        pop ax
+        ret
+
+; LEVEL_FULL: CF set if party member SI knows as many wizard spells of spell level CL as its INT
+; lets it (INT_MOST; RULE_HI_INT), AL how many it knows. DS the game's; others kept.
+level_full:
+        push bx
+        push dx
+        push si
+        push ds
+        mov dl, cl
+        call int_row
+        mov dh, [cs:int_most + bx]      ; (DH the most)
+        imul bx, si, KNOWN_SIZE
+        add bx, KNOWN_OFF
+        mov si, ds
+        mov ax, ds
+        sub ax, KNOWN_FROM_DS
+        mov ds, ax
+        xor ah, ah                      ; (AH the count)
+        mov al, 1                       ; (AL the spell)
+.spell: test byte [bx + 1], 0x0F        ; (known: the game's low four bits)
+        jz .next
+        push ds
+        mov ds, si
+        call spell_level_of
+        pop ds
+        cmp cl, dl
+        jne .next
+        inc ah
+.next:  mov cl, dl
+        inc bx
+        inc al
+        cmp al, WIZARD_LAST
+        jbe .spell
+        mov al, ah
+        cmp al, dh                      ; (CF set while fewer)
+        cmc
+        pop ds
+        pop si
+        pop dx
+        pop bx
+        ret
+
+; D100: AL 1 to 100, from the helper's own generator (stirred by the BIOS's timer ticks). Others kept.
+d100_seed dw 0x1234
+d100:
+        push dx
+        push es
+        push cx
+        mov ax, 0x40
+        mov es, ax
+        mov ax, [es:0x6C]
+        add ax, [cs:d100_seed]
+        mov cx, 25173
+        mul cx
+        add ax, 13849
+        mov [cs:d100_seed], ax
+        mov al, ah                      ; (the high byte: the better half of such a generator)
+        xor ah, ah
+        mul word [cs:d100_hundred]
+        mov al, ah
+        inc al                          ; (0-255 scaled to 1-100)
+        pop cx
+        pop es
+        pop dx
+        ret
+d100_hundred dw 100
+
+; PROBE_LEARN_SAID: INT VEC_LEARN_SAID replaces "push ds / push 33F1h" (4 bytes: INT + 2 NOPs;
+; DSUN.EXE 8B712h), the scroll's spell taught and the scroll used up, its message ("YOU LEARN THE
+; SPELL"): after INT_LEARN's failed d100, the spell taken back (the known spells' table, DS less
+; KNOWN_FROM_DS) and LEARN_FAILED_TEXT pushed in its place. PROBE_LEARN_REFUSED: INT
+; VEC_LEARN_REFUSED replaces "push ds / push 3405h" (8B719h, "YOU ALREADY KNOW THIS SPELL"): after
+; INT_LEARN found the spell's level full, LEARN_FULL_TEXT.
+learn_failed_text db 'YOU FAIL TO LEARN THE SPELL', 0
+learn_full_text   db 'TOO MANY SPELLS OF THAT LEVEL', 0
+lm_ip dw 0
+lm_cs dw 0
+lm_fl dw 0
+probe_learn_said:
+        cmp byte [cs:learn_msg], LEARN_FAILED
+        jne .game
+        push ax
+        push bx
+        push ds
+        movzx bx, byte [cs:learn_who]
+        imul bx, bx, KNOWN_SIZE
+        add bx, KNOWN_OFF
+        movzx ax, byte [cs:learn_spell]
+        add bx, ax
+        mov ax, ds
+        sub ax, KNOWN_FROM_DS
+        mov ds, ax
+        and byte [bx], 0xF0
+        pop ds
+        pop bx
+        pop ax
+        mov byte [cs:learn_msg], 0
+        pop word [cs:lm_ip]
+        pop word [cs:lm_cs]
+        pop word [cs:lm_fl]
+        push cs
+        push learn_failed_text
+        jmp learn_back
+.game:  pop word [cs:lm_ip]
+        pop word [cs:lm_cs]
+        pop word [cs:lm_fl]
+        push ds
+        push 0x33F1
+learn_back:
+        push word [cs:lm_fl]
+        push word [cs:lm_cs]
+        push word [cs:lm_ip]
+        iret
+
+probe_learn_refused:
+        pop word [cs:lm_ip]
+        pop word [cs:lm_cs]
+        pop word [cs:lm_fl]
+        cmp byte [cs:learn_msg], LEARN_FULL
+        jne .game
+        mov byte [cs:learn_msg], 0
+        push cs
+        push learn_full_text
+        jmp learn_back
+.game:  push ds
+        push 0x3405
+        jmp learn_back
 
 ; PROBE_RANGER_CAST: INT VEC_RANGER_CAST replaces "sub dx,7" (3 bytes: INT + NOP; DSUN.EXE 81B6Ah)
 ; in the game's caster level routine (its [BP+6] the combatant, [BP+8] the spell), where a ranger's
@@ -8541,6 +8894,7 @@ RULE_RESTRICT equ 8192          ; class restrictions on armour, shields and weap
 RULE_MULTI_HP equ 16384         ; multiclass hit points as in AD&D (PROBE_MC_*)
 RULE_HP_BEST equ 32768          ; a hit die rolled twice, the better kept (PROBE_HP_BEST)
 RULE_HI_KITS equ 1              ; (RULES_HI) kits, chosen on the creation panel's KIT page (KIT_*)
+RULE_HI_INT    equ 4            ; (RULES_HI) INT's chance to learn a scroll's spell and most spells a level (INT_LEARN)
 RULE_HI_RANGER equ 2            ; (RULES_HI) a ranger's spells' durations and damage at its level less 7 (PROBE_RANGER_LEVEL)
 FOOT      equ 13               ; the item's slot byte while worn on the feet
 THINGS_SEG equ 0x3972 - 0x4356  ; the things table's segment, relative to DS
@@ -12367,6 +12721,12 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_END_TURN
         mov dx, probe_end_turn
         int 21h
+        mov ax, 2500h + VEC_LEARN_SAID
+        mov dx, probe_learn_said
+        int 21h
+        mov ax, 2500h + VEC_LEARN_REFUSED
+        mov dx, probe_learn_refused
+        int 21h
         mov ax, 2500h + VEC_PICK_LEVEL
         mov dx, probe_pick_level
         int 21h
@@ -12421,10 +12781,10 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or 93h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+busy    db 'DSCLOG: interrupts 60h-65h or 91h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
 all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS, VEC_LV_PICK, VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK, VEC_EF_ROWS, VEC_HP_BEST, VEC_TOME, VEC_INIT, VEC_THAC0, VEC_SLOTS, VEC_SLOT_LEVEL
             db VEC_PSP_USE, VEC_PSP_TABLE, VEC_PSP_DEFENCE, VEC_CURE, VEC_PSP_KEEP, VEC_RANGER_CAST, VEC_PSP_KEEP_DX
-            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY, VEC_RANGER_LEVEL, VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP, VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW, VEC_DUAL_BAN, VEC_DUAL_SPELLS, VEC_SOUND_42, VEC_SOUND_44, VEC_DUAL_KIT, VEC_CR_SPELLS, VEC_EF_CLICK, VEC_CAST_MARK, VEC_ROUND_MARK, VEC_CAST_DONE, VEC_END_TURN
+            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY, VEC_RANGER_LEVEL, VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP, VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW, VEC_DUAL_BAN, VEC_DUAL_SPELLS, VEC_SOUND_42, VEC_SOUND_44, VEC_DUAL_KIT, VEC_CR_SPELLS, VEC_EF_CLICK, VEC_CAST_MARK, VEC_ROUND_MARK, VEC_CAST_DONE, VEC_END_TURN, VEC_LEARN_SAID, VEC_LEARN_REFUSED
 all_vectors_end:
 
         align 16, db 0

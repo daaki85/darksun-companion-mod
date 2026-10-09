@@ -219,7 +219,7 @@ class SettingsTests(unittest.TestCase):
                           | game.RULE_STEALTH | game.RULE_LEVEL_10 | game.RULE_THIEF_TABLE
                           | game.RULE_HALF_GIANT | game.RULE_PROTECTION | game.RULE_ITEM_SAVES
                           | game.RULE_SPECIALIZE | game.RULE_RESTRICT | game.RULE_MULTI_HP | game.RULE_HP_BEST
-                          | game.RULE_KITS | game.RULE_RANGER_CAST, False, True))
+                          | game.RULE_KITS | game.RULE_RANGER_CAST | game.RULE_INT_LEARN, False, True))
 
 
 class SpeakerTests(unittest.TestCase):

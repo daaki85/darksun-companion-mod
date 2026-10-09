@@ -127,6 +127,9 @@ RULE_KITS = 65536  # kits for characters of one class (kitpages.py; DSCLOG's sec
 # a ranger's spells' durations and damage at its level less 7, as the spell levels it may cast are
 # (the game takes the whole level: DSCLOG's PROBE_RANGER_LEVEL, kits.spell_class_level)
 RULE_RANGER_CAST = 131072
+# INT's chance to learn a scroll's spell and the most spells a level a preserver may know
+# (intlearn.py; DSCLOG's INT_LEARN)
+RULE_INT_LEARN = 262144
 SPEC_SLOTS, SPEC_COUNT = 0x14, 4
 # AD&D's item saving throws against acid (the DMG's table), by the game's materials: wood
 # (thick), bone, stone and obsidian (glass's), metal, leather; and cloth for no material
@@ -143,7 +146,7 @@ RULE_SETTINGS = (("helm_ac", RULE_HELMS), ("boots_move", RULE_BOOTS), ("two_weap
                  ("protection_rules", RULE_PROTECTION), ("item_saves", RULE_ITEM_SAVES),
                  ("weapon_specialization", RULE_SPECIALIZE), ("class_restrictions", RULE_RESTRICT),
                  ("multiclass_hp", RULE_MULTI_HP), ("best_hit_die", RULE_HP_BEST), ("kits", RULE_KITS),
-                 ("ranger_casting_level", RULE_RANGER_CAST))
+                 ("ranger_casting_level", RULE_RANGER_CAST), ("int_learning", RULE_INT_LEARN))
 # Cat's Grace (RULE_CATS_GRACE): Flaming Sphere (wizard level 2) gets Strength's record and the
 # name, and DSCLOG sends it to Strength's code, which rolls 1d6 into an effect of its own (54,
 # a number the game leaves unused) that adds to DEX, at most 24, as Strength's adds to STR.
@@ -238,6 +241,7 @@ PSIONIC_FIRST, PSIONIC_COUNT = 138, 34
 # (0x86: the d20 is doubled) and a byte at +0Fh (bits 1-4: a save modifier,
 # bits 5-7: the kind of save)
 SPELLS_SEG, SPELLS_OFF, SPELL_SIZE = 0x3CB4, 0x40, 0x20
+SPELL_LEVELS_SEG, SPELL_LEVELS_OFF = 0x3FB9, 0x19C  # each spell's level, 7 bytes a spell (DSCLOG's SPELL_LEVELS)
 SHEET_MAGIC_RESISTANCE = 0x29
 SPHERE_NAMES = ("air", "earth", "fire", "water")  # the clerics' and druids' spheres, by class order
 SHEET_ATTACKS = 0x2A  # the game's attacks a round, in halves (2: 1, 3: 3/2)
@@ -916,6 +920,12 @@ class GameData:
         name_off = name_at - self.ds * 16 if on else NO_NAME
         self.guest.write(entry, struct.pack("<HHH", name_off, self.ds, GRACE_ICON if on else 0))
         return True
+
+    def spell_level(self, spell: int) -> int:
+        """The spell's level (the game's table of spells, 7 bytes each: SPELL_LEVELS)."""
+        if not 0 <= spell < 256:
+            return 0
+        return self.guest.read((self.load_seg + SPELL_LEVELS_SEG) * 16 + SPELL_LEVELS_OFF + spell * 7, 1)[0]
 
     def spell_record(self, spell: int) -> bytes:
         """The spell's whole 32-byte record (it starts 10h before the fields SPELLS_OFF names)."""

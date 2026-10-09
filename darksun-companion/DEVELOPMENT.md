@@ -506,6 +506,38 @@ Seeker's 5 and a Justifier's 9 come off there whatever the rule
 Checked in the game: a 9th-level air ranger's Protection from Evil lasted 6
 rounds (caster level 2; 27 without the rule).
 
+### Preservers' INT
+
+([In the README](README.md#preservers-int).)
+
+When a scroll's icon is clicked in its box, the game's routine (DSUN.EXE
+8B690h) asks whether the character on show may learn the scroll's spell
+(500:39h: only whether it already knows it; then 8B6D3h's `or ax,ax`), and
+if so teaches it (500:43h sets the low four bits of its byte in the known
+spells' table), uses the scroll up and says YOU LEARN THE SPELL (`push
+ds / push 33F1h`, 8B712h); if not, YOU ALREADY KNOW THIS SPELL (`push ds /
+push 3405h`, 8B719h) and the scroll is kept. Each spell's level is a byte of
+the game's table of spells at the load segment + 3FB9h, 19Ch + 7 a spell
+(`SPELL_LEVELS`; `GameData.spell_level`).
+
+How (`RULE_HI_INT`, the second rules word's 4: `game.RULE_INT_LEARN`):
+`PROBE_SCROLL_LEARN` (`INT A9h`) goes on to `INT_LEARN` for a preserver (the
+class among its sheet's) and a wizard spell. Its INT is the creature
+record's (`+25h`), its row of `INT_CHANCE` and `INT_MOST` (`intlearn.py`);
+`LEVEL_FULL` counts the wizard spells of the scroll's level it knows. Full:
+AX 0 (the game refuses, the scroll kept), and `PROBE_LEARN_REFUSED` (`INT
+91h`, new, 8B719h) pushes TOO MANY SPELLS OF THAT LEVEL in place of the
+game's message. Else a d100 of the helper's own (`D100`: a generator
+stirred by the BIOS's timer ticks); over the chance, the game teaches the
+spell and uses the scroll up, and `PROBE_LEARN_SAID` (`INT 92h`, new, 8B712h)
+takes it back (the four bits cleared) and pushes YOU FAIL TO LEARN THE SPELL.
+Each try is told to the Ledger in the helper's header (`+272`: a count, then
+the member, spell, INT, chance, d100 or spells known, result;
+`DiceLog._learn_lines`). At a level up (and a new preserver's picks),
+`PROBE_PICK_LIST` drops the game's list's spells of a full level, and
+`PROBE_PICK_ANY` (`PICK_INT_ANY`) doesn't open CHOOSE A SPELL when no unknown
+wizard spell is left at a level on offer that isn't full.
+
 ### Levels up to 10
 
 ([In the README](README.md#levels-up-to-10).)
