@@ -12,9 +12,9 @@ class KitEffectTests(unittest.TestCase):
         self.assertEqual((kits.melee(kits.RAVAGER, False), kits.melee(kits.RAVAGER, True), kits.move(kits.RAVAGER)),
                          (1, 1, 0))
         self.assertEqual(kits.name(kits.RAVAGER), "Ravager")
-        # the table by level, where it betters the sheet's base AC
+        # the table by level (1-10, the highest the game goes; 10th's held past it), where it betters the sheet's base AC
         self.assertEqual([kits.ac(kits.RAVAGER, False, level) for level in (1, 2, 3, 9, 11, 12, 15, 18, 20)],
-                         [-3, -3, -4, -7, -7, -8, -9, -10, -10])
+                         [-3, -3, -4, -7, -7, -7, -7, -7, -7])
         self.assertEqual(kits.ac(kits.RAVAGER, False, 1, base=5), 0)
         self.assertEqual(kits.ac(kits.RAVAGER, False, 3, base=8), -2)
 
