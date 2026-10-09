@@ -8,7 +8,7 @@ Released pull requests are summarised in a line or two each; the release notes
 [1.0.0](release-notes/v1.0.0.md): #1 to #13) and the pull requests themselves
 have the detail.
 
-## Pull request #35 (in progress)
+## Pull request #35 ([merged 2026-10-09](https://github.com/daaki85/darksun-obsidian-edition/pull/35))
 
 **Added**
 - **Scores and hit points as rolled** (a new rule, on by default, its own box
