@@ -186,7 +186,7 @@ class StealthTests(unittest.TestCase):
         from dscompanion import kits
         self.ranger(level=1)
         self.region(0x29)
-        with mock.patch.object(self.gd, "kit_id", lambda creature: kits.STALKER):
+        with mock.patch.object(self.gd, "kit_ids", lambda creature: [kits.STALKER]):
             lines, _ = stealth.turn(self.gd, 0, rolls(99))
         self.assertIn("a Stalker: not halved indoors", lines[0])
         need = int(lines[0].split("needs ")[1].split(" ")[0])

@@ -966,17 +966,19 @@ class DiceLog:
         self.last_seq = seq
         return [entries[s] for s in sorted(entries, key=lambda s: (s - seq - 1) & 0xFFFF)]
 
-    def _kit_attack(self, attacker: Optional[int], item_type: Optional[int], mode: Optional[int]) -> Tuple[int, int, int]:
-        """(kit, to hit, damage) the attacker's kit adds to a weapon attack, as DSCLOG's KIT_TO_HIT
-        and KIT_ATTACK_DAMAGE: a Ravager's, a Brute's (in melee), an Arena Champion's."""
+    def _kit_attack(self, attacker: Optional[int], item_type: Optional[int], mode: Optional[int]) -> Tuple[str, int, int]:
+        """(the kits' names, to hit, damage) the attacker's kits add to a weapon attack, as DSCLOG's
+        KIT_TO_HIT and KIT_ATTACK_DAMAGE: a Ravager's, a Brute's (in melee), an Arena Champion's."""
         g = self.game
-        kid = g.kit_id(attacker) if attacker is not None else 0
-        if not kid:
-            return 0, 0, 0
+        names, to_hit, damage = [], 0, 0
         melee = mode is not None and mode <= 1
-        weapon = kits.melee(kid, g.two_handed_type(item_type)) if melee and not g.missile_type(item_type) else 0
-        hit, damage = kits.champion(kid, g.holds_shield(attacker), melee)
-        return kid, weapon + hit, weapon + damage
+        for kid in (g.kit_ids(attacker) if attacker is not None else []):
+            weapon = kits.melee(kid, g.two_handed_type(item_type)) if melee and not g.missile_type(item_type) else 0
+            hit, dam = kits.champion(kid, g.holds_shield(attacker), melee)
+            if weapon or hit or dam:
+                names.append(kits.name(kid))
+                to_hit, damage = to_hit + weapon + hit, damage + weapon + dam
+        return " and ".join(names), to_hit, damage
 
     def lines(self, show_all: bool = False, now: Optional[float] = None) -> List[str]:
         """Everything new since the last call, as log lines. Call it every few tens of ms."""
@@ -1573,9 +1575,9 @@ class DiceLog:
                 parts.append((dex, "DEX"))
             ids = {x.id for x in effects if x.owner == combatant and x.id in game.INITIATIVE_EFFECTS}
             parts += [(game.INITIATIVE_EFFECTS[eid], EFFECT_NAMES[eid]) for eid in sorted(ids)]
-            kid = g.kit_id(index)
-            if kits.initiative(kid):
-                parts.append((kits.initiative(kid), kits.name(kid)))
+            for kid in g.kit_ids(index):
+                if kits.initiative(kid):
+                    parts.append((kits.initiative(kid), kits.name(kid)))
             score = INITIATIVE_BASE + roll + sum(v for v, _ in parts)
             stored = table[index][0]
             if stored >= 0 and stored != score:  # not acted yet, and something else counted
@@ -1646,7 +1648,7 @@ class DiceLog:
         parts = self.game.thief_skill_parts(creature, skill) if creature is not None else None
         if parts is None:
             return [head]
-        kid = self.game.kit_id(creature)
+        kid = next((k for k in self.game.kit_ids(creature) if kits.thief_skill(k, skill)), 0)
         kit = kits.thief_skill(kid, skill)
         if kit and chance == 0:  # (no less than 0: what the kit took off can't be told apart)
             kit = 0
@@ -1687,10 +1689,10 @@ class DiceLog:
         head = (f"{g.creature_name(attacker)} attacks {target}{how}{with_what}: d20 = {d20}{note}, "
                 f"{needs} ({chance}%), hits AC {thac0 - d20}, target AC {ac} -> {'HIT' if hit else 'miss'}")
         skill = self.weapon_skill(attacker, item_type)
-        kid, kit_hit, _ = self._kit_attack(attacker, item_type, mode)
+        kit_name, kit_hit, _ = self._kit_attack(attacker, item_type, mode)
         breakdown = self._thac0_breakdown(e, thac0, attacker, attacker_combatant, target_combatant, weapon, mode,
                                           (specialize.SKILL_NAMES.get(skill, ""), specialize.to_hit(skill)),
-                                          [(kits.name(kid), kit_hit)] if kit_hit else [])
+                                          [(kit_name, kit_hit)] if kit_hit else [])
         self._turn_attacks.setdefault(attacker, []).append(
             {"target": target, "d20": d20, "need": need, "hit": hit, "damage": None})
         return [head, "    " + breakdown]
@@ -1840,7 +1842,8 @@ class DiceLog:
                 total = sum(faces) + handler
                 kit = ""
                 caster = self.game.combatant_creature(e.parent_arg(8)) if e.parent_arg(8) is not None else None
-                kid = self.game.kit_id(caster) if caster is not None else 0
+                kid = next((k for k in self.game.kit_ids(caster) if kits.cure_bonus(k, spell) or kits.cure_die(k, spell)),
+                           0) if caster is not None else 0
                 if kits.cure_bonus(kid, spell):  # (DSCLOG's PROBE_CURE)
                     total += kits.cure_bonus(kid, spell)
                     kit = f" {signed(kits.cure_bonus(kid, spell))} {kits.name(kid)}"
@@ -1872,10 +1875,10 @@ class DiceLog:
         total = max(sum(faces) + bonus, 1)
         skill = self.weapon_skill(attacker, e.parent_arg(0x14))
         extra = specialize.damage(skill)
-        kid, _, kit = self._kit_attack(attacker, e.parent_arg(0x14), mode)
+        kit_name, _, kit = self._kit_attack(attacker, e.parent_arg(0x14), mode)
         steps = f"{count}d{sides} = {faces_text}" + (f" {signed(bonus - extra - kit)} weapon" if bonus - extra - kit else "") \
             + (f" {signed(extra)} {specialize.SKILL_NAMES[skill]}" if extra else "") \
-            + (f" {signed(kit)} {kits.name(kid)}" if kit else "")
+            + (f" {signed(kit)} {kit_name}" if kit else "")
         if skill == specialize.GRAND:
             steps += f" (d{sides} for d{sides - 2}: grand mastery)"
         if sum(faces) + bonus < 1:
@@ -2072,12 +2075,12 @@ class DiceLog:
         return None
 
     def _kit(self, sheet: bytes) -> int:
-        """A sheet's kit for its hit dice (kitpages.kit_id), with kits on; else 0. A human who has
+        """A sheet's kit for its hit dice (kitpages.kit_at), with kits on; else 0. A human who has
         changed class rolls for its new class, not the kit's (DSCLOG's PROBE_HIT_DIE)."""
         if not self.game.rules & game.RULE_KITS or len(sheet) < game.SHEET_SIZE or sheet[0x22]:
             return 0
         from . import kitpages
-        return kitpages.kit_id(sheet)
+        return kitpages.kit_at(sheet, 0)
 
     def _level_hp(self, e: Entry, sides: int, roll: int) -> Optional[List[str]]:
         """The hit point roll of a new level: the caller's arguments are (party member, class, level).

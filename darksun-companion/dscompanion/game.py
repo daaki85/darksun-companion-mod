@@ -1000,9 +1000,9 @@ class GameData:
         out: List[Tuple[int, str]] = []
         out += self.protection(ti)
         from . import kits
-        kid = self.kit_id(ti)
-        if kits.save(kid, spell, kinds):
-            out.append((kits.save(kid, spell, kinds), kits.name(kid)))
+        for kid in self.kit_ids(ti):
+            if kits.save(kid, spell, kinds):
+                out.append((kits.save(kid, spell, kinds), kits.name(kid)))
         if EFFECT_SAVE_PENALTY in mine:
             out.append((-1, EFFECT_NAMES[EFFECT_SAVE_PENALTY]))
         if EFFECT_SPIRIT_ARMOR in mine and save != PPD_SAVE:
@@ -1108,11 +1108,11 @@ class GameData:
         ability = self.creature(member)[CREATURE_ABILITIES + 4]
         magic = self.guest.read((self.load_seg + CLASS_MAGIC_SEG) * 16 + CLASS_MAGIC_OFF, 4 * 32)
         from . import kitpages, kits
-        kid = self.kit_id(member)
-        place = kitpages.kit_place(sheet)
+        kids = self.kit_ids(member)
         total = 0
         for n in range(3):  # (an Elementalist's slots behind for its own class alone)
-            cls, level = sheet[SHEET_CLASSES + n], kits.slot_level(kid if n == place else 0, sheet[SHEET_LEVELS + n])
+            own = kitpages.kit_at(sheet, n) if self.rules & RULE_KITS and kitpages.kit_awake(sheet, n) else 0
+            cls, level = sheet[SHEET_CLASSES + n], kits.slot_level(own, sheet[SHEET_LEVELS + n])
             if not cls or cls >= 32 or not magic[cls * 4] & bit:
                 continue
             if n and sheet[SHEET_RACE] == HUMAN and level >= sheet[SHEET_LEVELS]:
@@ -1128,7 +1128,9 @@ class GameData:
                     count += 1
                 total += min(max(count, 0), most)
                 rules >>= 4
-        return kits.slots(kid, bit, kitpages.kit_level(sheet), spell_level, total)
+        for kid in kids:
+            total = kits.slots(kid, bit, kitpages.kit_level(sheet, kid), spell_level, total)
+        return total
 
     def class_level(self, creature: int, cls: int) -> int:
         """The creature's level in one class (0 if it hasn't that class)."""
@@ -1149,17 +1151,21 @@ class GameData:
             (self.load_seg + SPELL_SPHERES_SEG) * 16 + SPELL_SPHERES_OFF + spell * SPELL_SPHERES_SIZE, 4))
         classes = self.guest.read((self.load_seg + CLASS_MAGIC_SEG) * 16 + CLASS_MAGIC_OFF, 4 * 20)
         from . import kitpages, kits
-        kid = self.kit_id(creature)
+        kids = self.kit_ids(creature)
         sheet = self.sheet(creature)
         if len(sheet) >= SHEET_SIZE:  # (an Elementalist's second sphere: DSCLOG's PROBE_EL_CAST)
-            spheres = kits.spell_spheres(kid, kitpages.kit_class_of(sheet), kits.second_sphere(kid, sheet), spheres)
-        drop = kits.ranger_cast_drop(kid)  # (the game's 7; DSCLOG's PROBE_RANGER_CAST)
+            for kid in kids:
+                spheres = kits.spell_spheres(kid, kitpages.kit_class_of(sheet, kid), kits.second_sphere(kid, sheet),
+                                             spheres)
+        drop = kits.ranger_cast_drop(next((k for k in kids if k in (kits.SEEKER, kits.JUSTIFIER)), 0))  # (the game's 7)
         best = 0
         for cls in range(1, 20):
             if struct.unpack_from("<I", classes, cls * 4)[0] & spheres:
                 level = self.class_level(creature, cls) - (drop if cls in RANGER_CLASSES else 0)
                 best = max(best, level)
-        return kits.cast_level(kid, spell, best, self.class_level(creature, THIEF))
+        for kid in kids:
+            best = kits.cast_level(kid, spell, best, self.class_level(creature, THIEF))
+        return best
 
     def thief_skill_parts(self, creature: int, skill: int) -> Optional[List[Tuple[str, int]]]:
         """What a thief skill's chance (percent) is made of, before armour, effects and the
@@ -1233,9 +1239,9 @@ class GameData:
             parts.append((RACE_NAMES[race], signed_byte(THIEF_RACE + race * 8 + skill)))
         parts.append((f"DEX {dex}", self._dex_part(table, dex, skill)))
         from . import kits
-        kid = self.kit_id(creature)
-        if kits.stealth(kid):  # (a Stalker's)
-            parts.append((kits.name(kid), kits.stealth(kid)))
+        for kid in self.kit_ids(creature):
+            if kits.stealth(kid):  # (a Stalker's)
+                parts.append((kits.name(kid), kits.stealth(kid)))
         return [(what, n) for what, n in parts if n or what.startswith("ranger")]
 
     def ranger_skill_now(self, creature: int, skill: int) -> Optional[int]:
@@ -1272,7 +1278,7 @@ class GameData:
         okay = rec[CREATURE_STATUS] in STATUS_ABLE
         belt = self.belt and any(item[ITEM_SLOT] == WAIST for _, item, _ in self._worn(creature))
         from . import kits
-        kid = self.kit_id(creature)
+        kids = self.kit_ids(creature)
         out = []
         for skill in skills:
             parts = self.thief_skill_parts(creature, skill)
@@ -1281,8 +1287,9 @@ class GameData:
             chance = sum(n for _, n in parts) - (table[skill] if penalty and len(table) == 8 else 0)
             if belt and skill in BELT_SKILLS:
                 chance += BELT_BONUS
-            if kits.thief_skill(kid, skill):  # (an Assassin's, a Swashbuckler's: no less than 0, as DSCLOG's PROBE_BELT)
-                chance = max(0, chance + kits.thief_skill(kid, skill))
+            for kid in kids:  # (an Assassin's, a Swashbuckler's: no less than 0, as DSCLOG's PROBE_BELT)
+                if kits.thief_skill(kid, skill):
+                    chance = max(0, chance + kits.thief_skill(kid, skill))
             if any(skill in THIEF_CERTAIN.get(e, ()) for e in ids):
                 chance = 100
             elif not okay or any(skill in THIEF_BLOCKED.get(e, ()) for e in ids):
@@ -1401,7 +1408,7 @@ class GameData:
         if prayer is not None:
             common.append(("Prayer", prayer))
         from . import kits
-        kid, shield = self.kit_id(creature), self.holds_shield(creature)
+        kids, shield = self.kit_ids(creature), self.holds_shield(creature)
         strength, dex = rec[CREATURE_ABILITIES], rec[CREATURE_ABILITIES + 1]
         table = lambda off, score: struct.unpack("b", self.guest.read(self.ds * 16 + off + score, 1))[0] \
             if score < 26 else 0
@@ -1428,10 +1435,11 @@ class GameData:
             skill = 0
             halves = typ[0x0B] if missile else None  # (the game's rate of fire: the weapon's own)
             # the kit's (DSCLOG's KIT_TO_HIT): a Ravager's, a Brute's, an Arena Champion's
-            kit = kits.champion(kid, shield, not missile)[0] \
-                + (kits.melee(kid, bool(typ[0x0F] & 0x40)) if not missile and not typ[0] & 2 else 0)
-            if kit:
-                parts.append((kits.name(kid), kit))
+            for kid in kids:
+                kit = kits.champion(kid, shield, not missile)[0] \
+                    + (kits.melee(kid, bool(typ[0x0F] & 0x40)) if not missile and not typ[0] & 2 else 0)
+                if kit:
+                    parts.append((kits.name(kid), kit))
             if self.rules & RULE_SPECIALIZE:  # (weapon specialization: DSCLOG's PROBE_ATTACKS)
                 from . import specialize
                 kind = struct.unpack_from("<H", item, ITEM_TYPE)[0]
@@ -1465,7 +1473,7 @@ class GameData:
         if ranger:
             return f"two weapons, {hand} (ranger)", 0
         from . import kits
-        if self.kit_id(creature) == kits.TWIN_BLADE:
+        if kits.TWIN_BLADE in self.kit_ids(creature):
             return f"two weapons, {hand} (Twin-blade)", 0
         if slot not in WEAPON_HANDS or not self.melee_weapon_in(creature, sum(WEAPON_HANDS) - slot):
             return "two weapons", 0  # not a hand's weapon, or nothing to fight with in the other hand
@@ -1562,28 +1570,35 @@ class GameData:
             out.append((cloak, "Cloak of Protection"))
         return out
 
-    def kit_id(self, creature: int) -> int:
-        """With kits, the creature's kit as kitpages.kit_id numbers it, else 0."""
+    def kit_ids(self, creature: int) -> List[int]:
+        """With kits, the creature's kits that count (kitpages.kit_ids: awake), else []."""
         if not self.rules & RULE_KITS:
-            return 0
+            return []
         from . import kitpages
-        return kitpages.kit_id(self.sheet(creature))
+        return kitpages.kit_ids(self.sheet(creature))
+
+    def has_kit(self, creature: int, kid: int) -> bool:
+        return kid in self.kit_ids(creature)
 
     def kit(self, creature: int) -> Optional[str]:
-        """With kits, the kit the creature took when made (kitpages.KITS), or None; an Elementalist's
-        with its second sphere ("Elementalist (and water)")."""
+        """With kits, the kits the creature took (kitpages.KITS), the oldest class's first, or None;
+        an Elementalist's with its second sphere ("Elementalist (and water)"), a kit asleep with the
+        level its class sleeps till."""
         if not self.rules & RULE_KITS:
             return None
         from . import kitpages, kits
         sheet = self.sheet(creature)
-        name = kitpages.kit_name(sheet)
-        second = kits.second_sphere(kitpages.kit_any(sheet), sheet)
-        if name and second is not None:
-            name = f"{name} (and {SPHERE_NAMES[second]})"
-        if name and not kitpages.kit_awake(sheet):  # (a human's who has changed class)
-            name += (f", dormant until the {CLASS_NAMES[sheet[SHEET_CLASSES]].split(' (')[0].lower()} level passes "
-                     f"{kitpages.kit_level(sheet)}")
-        return name
+        names = []
+        for kid, place, awake in kitpages.kits_of(sheet):
+            name = kitpages.name_of(kid)
+            second = kits.second_sphere(kid, sheet)
+            if second is not None:
+                name = f"{name} (and {SPHERE_NAMES[second]})"
+            if not awake:  # (a human's who has changed class)
+                name += (f", dormant until the {CLASS_NAMES[sheet[SHEET_CLASSES]].split(' (')[0].lower()} level "
+                         f"passes {sheet[SHEET_LEVELS + place]}")
+            names.append(name)
+        return "; ".join(names) or None
 
     def specializations(self, creature: int) -> List[Tuple[str, str]]:
         """With weapon specialization, (kind, skill) for each weapon kind the creature has chosen:

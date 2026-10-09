@@ -1,6 +1,6 @@
 """The kits' effects, as DSCLOG makes them (its KIT_* routines): for the Ledger and the dice log.
 
-A kit is a sheet's KIT_BYTE (kitpages.py, which also numbers them: kitpages.kit_id); these take
+A kit is a sheet's KIT_BYTE (kitpages.py, which also numbers them: kitpages.kit_at); these take
 that number, 0 for none (the rule off, more than one class, none chosen).
 """
 

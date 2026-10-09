@@ -90,7 +90,7 @@ def elementalist_sphere(sheet: bytes) -> Set[int]:
     from . import kitpages, kits
     if not game.RULES_IN_FORCE & game.RULE_KITS:
         return set()
-    second = kits.second_sphere(kitpages.kit_id(sheet), sheet)
+    second = kits.second_sphere(kits.ELEMENTALIST if kits.ELEMENTALIST in kitpages.kit_ids(sheet) else 0, sheet)
     return set() if second is None else {second}
 
 
@@ -130,23 +130,29 @@ def specs_awake(sheet: bytes) -> bool:
         return True
     if any(c in WARRIORS and (i == 0 or levels[i] < levels[0]) for i, c in enumerate(classes)):
         return True
-    return bool(game.RULES_IN_FORCE & game.RULE_KITS) and kitpages.kit_id(sheet) == kits.BATTLE_MAGE
+    return bool(game.RULES_IN_FORCE & game.RULE_KITS) and kits.BATTLE_MAGE in kitpages.kit_ids(sheet)
 
 
 def kit_forbids(sheet: bytes, item_type: int, typ: bytes, spec: bool = False, off_hand: bool = False) -> bool:
-    """Whether the character's kit (kits.py, the rule for kits in force) keeps it from an item
-    type, whatever the class restrictions; SPEC: choosing a weapon spec; OFF_HAND: to the off hand."""
+    """Whether one of the character's kits that count (kits.py, the rule for kits in force) keeps it
+    from an item type, whatever the class restrictions; SPEC: choosing a weapon spec; OFF_HAND: to
+    the off hand."""
     from . import kitpages, kits
     if not game.RULES_IN_FORCE & game.RULE_KITS:
         return False
     kind = specialize.kind_of(item_type) if is_weapon(typ) else None
-    if not spec and kind is not None and kind + 1 in sheet[game.SPEC_SLOTS:game.SPEC_SLOTS + game.SPEC_COUNT] \
-            and specs_awake(sheet):
-        # (a kind it specialized in, its specs counting: none, but for the off hand's rules)
-        return off_hand and kits.forbids_off_hand(kitpages.kit_id(sheet), typ)
+    chosen = not spec and kind is not None and kind + 1 in sheet[game.SPEC_SLOTS:game.SPEC_SLOTS + game.SPEC_COUNT] \
+        and specs_awake(sheet)
     half_giant = sheet[game.SHEET_RACE] == game.RACE_HALF_GIANT and bool(game.RULES_IN_FORCE & game.RULE_HALF_GIANT)
-    sphere = (kitpages.kit_class_of(sheet) - 1) % 4  # (a ranger's, for a Seeker)
-    return kits.forbids(kitpages.kit_id(sheet), typ, kind, half_giant, spec, off_hand, sphere)
+    for kid in kitpages.kit_ids(sheet):
+        if chosen:  # (a kind it specialized in, its specs counting: none, but for the off hand's rules)
+            if off_hand and kits.forbids_off_hand(kid, typ):
+                return True
+            continue
+        sphere = (kitpages.kit_class_of(sheet, kid) - 1) % 4  # (a ranger's, for a Seeker)
+        if kits.forbids(kid, typ, kind, half_giant, spec, off_hand, sphere):
+            return True
+    return False
 
 
 def kit_allows(sheet: bytes, item_type: int, typ: bytes) -> bool:
@@ -158,7 +164,8 @@ def kit_allows(sheet: bytes, item_type: int, typ: bytes) -> bool:
         return False
     kind = specialize.kind_of(item_type) if is_weapon(typ) else None
     chosen = sheet[game.SPEC_SLOTS] - 1 if sheet[game.SPEC_SLOTS] else None
-    return kits.allows(kitpages.kit_id(sheet), typ, kind, chosen, bool(game.RULES_IN_FORCE & game.RULE_SPECIALIZE))
+    return any(kits.allows(kid, typ, kind, chosen, bool(game.RULES_IN_FORCE & game.RULE_SPECIALIZE))
+               for kid in kitpages.kit_ids(sheet))
 
 
 def allowed(sheet: bytes, item_type: int, typ: bytes) -> bool:
@@ -222,7 +229,7 @@ def allowed_kinds(sheet: bytes, type_record) -> List[int]:
     KINDS_ALLOWED. Not the bow for a ranger: it has expertise with the bow already. A Battle Mage
     (kits.py) its own, whatever its class."""
     from . import kitpages, kits
-    if game.RULES_IN_FORCE & game.RULE_KITS and kitpages.kit_id(sheet) == kits.BATTLE_MAGE:
+    if game.RULES_IN_FORCE & game.RULE_KITS and kits.BATTLE_MAGE in kitpages.kit_ids(sheet):
         return sorted(kits.BATTLE_MAGE_KINDS)
     ranger = int.from_bytes(sheet[game.SHEET_FLAGS:game.SHEET_FLAGS + 2], "little") & 0x200
     return [kind for kind, name in enumerate(specialize.KINDS)

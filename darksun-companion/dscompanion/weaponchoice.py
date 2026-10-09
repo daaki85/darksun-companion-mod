@@ -252,10 +252,10 @@ def kit_gear(gd) -> List[str]:
             continue
         index = struct.unpack_from("<H", rec, game.CREATURE_SHEET_INDEX)[0]
         sheet = gd.guest.read(sheets + index * game.SHEET_SIZE, game.SHEET_SIZE)
-        kid = kitpages.kit_id(sheet) if len(sheet) >= game.SHEET_SIZE else 0
+        kid = kitpages.kit_at(sheet, 0) if len(sheet) >= game.SHEET_SIZE else 0  # (a new character's one)
         if not kid:
             continue
-        who, kit = gd.creature_name(member), kitpages.kit_name(sheet)
+        who, kit = gd.creature_name(member), kitpages.name_of(kid)
         chosen = [k - 1 for k in sheet[game.SPEC_SLOTS:game.SPEC_SLOTS + game.SPEC_COUNT] if k]
         owned = list(gd._worn(member))
         name = lambda item: gd.item_name(struct.unpack_from("<H", item, game.ITEM_NAME)[0])

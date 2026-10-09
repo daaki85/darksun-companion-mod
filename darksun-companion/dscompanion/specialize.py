@@ -92,7 +92,7 @@ def skill(sheet: bytes, item_type: Optional[int]) -> int:
 def justifier(sheet: bytes) -> bool:
     """A Justifier (kits.py), the rule for kits in force (game.RULES_IN_FORCE)."""
     from . import kitpages, kits
-    return bool(game.RULES_IN_FORCE & game.RULE_KITS) and kitpages.kit_id(sheet) == kits.JUSTIFIER
+    return bool(game.RULES_IN_FORCE & game.RULE_KITS) and kits.JUSTIFIER in kitpages.kit_ids(sheet)
 
 
 def _skill(sheet: bytes, item_type: Optional[int]) -> int:
@@ -101,9 +101,10 @@ def _skill(sheet: bytes, item_type: Optional[int]) -> int:
     if not any(chosen):
         return NONE
     kind = kind_of(item_type) if item_type is not None else None
-    if game.RULES_IN_FORCE & game.RULE_KITS and kitpages.kit_any(sheet) == kits.BATTLE_MAGE and sheet[0x22]:
+    bm = kitpages.kit_place_of(sheet, kits.BATTLE_MAGE)
+    if game.RULES_IN_FORCE & game.RULE_KITS and bm is not None and sheet[0x22]:
         # (a Battle Mage who has changed class: its weapon spec the kit's alone, nothing while asleep)
-        if not kitpages.kit_awake(sheet):
+        if not kitpages.kit_awake(sheet, bm):
             return NONE
         return EXPERT if kind is not None and kind + 1 == chosen[0] else PLAIN
     if kind is None or kind + 1 not in chosen:
@@ -128,23 +129,23 @@ def _skill(sheet: bytes, item_type: Optional[int]) -> int:
 def myrmidon(sheet: bytes) -> bool:
     """A Myrmidon (kits.py), the rule for kits in force (game.RULES_IN_FORCE)."""
     from . import kitpages
-    return bool(game.RULES_IN_FORCE & game.RULE_KITS) and kitpages.kit_id(sheet) == kitpages.KIT_IDS["Myrmidon"]
+    return bool(game.RULES_IN_FORCE & game.RULE_KITS) and kitpages.KIT_IDS["Myrmidon"] in kitpages.kit_ids(sheet)
 
 
 def battle_mage(sheet: bytes) -> bool:
     """A Battle Mage (kits.py), the rule for kits in force (game.RULES_IN_FORCE)."""
     from . import kitpages, kits
-    return bool(game.RULES_IN_FORCE & game.RULE_KITS) and kitpages.kit_id(sheet) == kits.BATTLE_MAGE
+    return bool(game.RULES_IN_FORCE & game.RULE_KITS) and kits.BATTLE_MAGE in kitpages.kit_ids(sheet)
 
 
 def expert_attacks(halves: int, level: int, sheet: bytes) -> int:
     """The melee attacks a round (in halves) of a character who isn't a warrior (HALVES the game's,
     2 or fewer) with skill LEVEL, as DSCLOG's EXPERT_HALVES: a Battle Mage's chosen weapon spec
     (EXPERT) the expertise rate, 3/2 a round, 2 from 7th level; else HALVES."""
-    from . import kitpages
+    from . import kitpages, kits
     if level != EXPERT or halves > 2:
         return halves
-    return 4 if kitpages.kit_level(sheet) >= 7 else 3  # (the preserver level: a human's first class)
+    return 4 if kitpages.kit_level(sheet, kits.BATTLE_MAGE) >= 7 else 3  # (the Battle Mage's preserver level)
 
 
 def attacks(halves: int, level: int, missile: bool = False) -> int:

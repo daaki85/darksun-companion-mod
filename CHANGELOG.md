@@ -129,6 +129,11 @@ Released pull requests are summarised in a line or two each; the release notes
   byte each now (INT 9Bh, 9Ah).
 
 **Changed** (for the kits)
+- **A kit for each class:** the kit byte keeps two bits for each of a
+  human's classes, so a human who changes class can have up to three kits;
+  every kit rule, in the helper and the Ledger, now asks for each kit the
+  character has awake, and the Effects screen lists them all. Characters
+  made before read as they did.
 - **The Arcanist's drawback** is a d3 hit die (a preserver's is a d4), in
   place of −2 CON.
 - **The dice log's ring holds 96 entries** (was 128), making room in upper

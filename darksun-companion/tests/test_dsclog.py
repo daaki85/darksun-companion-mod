@@ -72,6 +72,20 @@ def real_mode_interrupt(mu, intno, _):
     mu.reg_write(r.UC_X86_REG_IP, off)
 
 
+
+def first_kit(sheet: bytes) -> int:
+    """The sheet's first kit that counts (kitpages.kit_ids), or 0: a one-kit sheet's kit."""
+    from dscompanion import kitpages
+    ids = kitpages.kit_ids(sheet)
+    return ids[0] if ids else 0
+
+
+def any_kit(sheet: bytes) -> int:
+    """The sheet's first kit, asleep or not, or 0."""
+    from dscompanion import kitpages
+    found = kitpages.kits_of(sheet)
+    return found[0][0] if found else 0
+
 class HeaderTests(unittest.TestCase):
     def test_built_in_filters_match_the_companion(self):
         image = load_image()
@@ -1536,7 +1550,7 @@ class KindsAllowedTests(unittest.TestCase):
     def test_as_the_python(self):
         image = load_image()
         import re
-        start = re.search(rb"\x51\x52\x56\x57\xe8..\x3c\x16", image, re.S).start()  # (KINDS_ALLOWED: its kit first)
+        start = re.search(rb"\x51\x52\x56\x57\xe8..\x16", image, re.S).start()  # (KINDS_ALLOWED: its kit first)
         self.assertGreater(start, 0)
         mu = Uc(UC_ARCH_X86, UC_MODE_16)
         mu.mem_map(0, 0x100000)
@@ -2726,27 +2740,31 @@ class KitTests(unittest.TestCase):
                                                                               kitpages.KIT_SPHERES))
 
     def test_effects_line(self):
+        """KIT_OF_SHEET: the Effects screen's line for kit AL ("KIT: RAVAGER")."""
         from dscompanion import kitpages
-        sheets = [(c, 0, kit) for c in range(1, 18) for kit in (0, 1, 2, 3, 4, 0xFF)] + [(9, 12, 1), (13, 5, 2)]
-        for rules in (game.RULE_KITS, 0):
-            self.rules(rules)
-            for c1, c2, kit in sheets:
-                with self.subTest(rules=rules, classes=(c1, c2), kit=kit):
-                    sheet = bytearray(game.SHEET_SIZE)
-                    sheet[0x21], sheet[0x22], sheet[kitpages.KIT_BYTE] = c1, c2, kit
-                    self.mu.mem_write(self.SHEET * 16, bytes(sheet))
-                    self.call(rb"\x50\x51\x57\xe8..\x74", es=self.SHEET, ebx=0)
-                    zf = self.mu.reg_read(r.UC_X86_REG_EFLAGS) & 0x40
-                    want = kitpages.kit_name(bytes(sheet)) if rules else None
-                    if want is None:
-                        self.assertTrue(zf)
-                        continue
-                    self.assertFalse(zf)
-                    si = self.mu.reg_read(r.UC_X86_REG_SI)
-                    text = bytes(self.mu.mem_read(TSR * 16 + si, 24)).split(b"\0")[0].decode()
-                    self.assertEqual(text, "KIT: " + want.upper())
+        for name, kid in kitpages.KIT_IDS.items():
+            with self.subTest(name=name):
+                self.call(rb"\x50\x51\x57\x0f\xb6\xc8", eax=kid)
+                si = self.mu.reg_read(r.UC_X86_REG_SI)
+                text = bytes(self.mu.mem_read(TSR * 16 + si, 24)).split(b"\0")[0].decode()
+                self.assertEqual(text, "KIT: " + name.upper())
 
     CREATURES, ITEMS, TYPES = 0x8200, 0x8300, 0x8400
+
+    def test_two_kits_ac(self):
+        """KIT_AC for a human with a kit for each of two classes, both awake: a Ravager fighter 3 who
+        became a Wanderer druid, now 4: both kits' (kits.ac), added."""
+        from dscompanion import kits, kitpages
+        self.rules(game.RULE_KITS)
+        for druid, both in ((4, True), (2, False)):
+            with self.subTest(druid=druid):
+                self.creature(5, 0)
+                sheet = bytearray(self.mu.mem_read(self.SHEET * 16 + 5 * 0x47, game.SHEET_SIZE))
+                sheet[0x18], sheet[0x21:0x23], sheet[0x24:0x26], sheet[kitpages.KIT_BYTE] = 1, bytes((5, 9)), bytes((druid, 3)), 0b1111
+                self.mu.mem_write(self.SHEET * 16 + 5 * 0x47, bytes(sheet))
+                self.assertEqual(kitpages.kit_ids(bytes(sheet)), [kits.RAVAGER, kits.WANDERER] if both else [kits.WANDERER])
+                want = 10 + kits.ac(kits.WANDERER, False) + (kits.ac(kits.RAVAGER, False, 3, 10) if both else 0)
+                self.assertEqual(self.kit_ac(), want)
 
     def test_grove_warden_ac(self):
         """KIT_AC for a Grove Warden: 1 better for every 3 druid levels (kits.ac)."""
@@ -2781,7 +2799,7 @@ class KitTests(unittest.TestCase):
                     self.creature(cls, kit, shield=shield)
                     sheet = bytearray(game.SHEET_SIZE)
                     sheet[0x21], sheet[kitpages.KIT_BYTE] = cls, kit
-                    self.assertEqual(self.kit_ac(), 10 + kits.ac(kitpages.kit_id(bytes(sheet)), shield))
+                    self.assertEqual(self.kit_ac(), 10 + kits.ac(first_kit(bytes(sheet)), shield))
 
     def kit_ac(self):
         """KIT_AC for thing 7, the game's AC 10: the AC."""
@@ -2827,10 +2845,10 @@ class KitTests(unittest.TestCase):
                     self.creature(cls, kit)
                     sheet = bytearray(game.SHEET_SIZE)
                     sheet[0x21], sheet[kitpages.KIT_BYTE] = cls, kit
-                    kid = kitpages.kit_id(bytes(sheet)) if rules else 0
+                    kid = first_kit(bytes(sheet)) if rules else 0
                     self.mu.mem_write(SS * 16 + BP + 6, struct.pack("<H", 7))
                     self.assertEqual(self.kit_ac(), 10 + kits.ac(kid, False, 1))
-                    self.call(rb"\x50\x89\xf0\xe8..\x3c\x1d", eax=120, esi=5)
+                    self.call(rb"\x50\x89\xf0\xe8..\x1d", eax=120, esi=5)
                     self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), 120 + 10 * kits.move(kid))
 
     def test_saves(self):
@@ -2846,7 +2864,7 @@ class KitTests(unittest.TestCase):
             self.creature(cls, kit)
             sheet = bytearray(game.SHEET_SIZE)
             sheet[0x21], sheet[kitpages.KIT_BYTE] = cls, kit
-            kid = kitpages.kit_id(bytes(sheet))
+            kid = first_kit(bytes(sheet))
             for spell in (0, 2, 13, 40, 61, 82, 137, 138, 158, 159, 177, 300):
                 with self.subTest(cls=cls, kit=kit, spell=spell):
                     self.call(rb"\x50\x53\x51\x06\x89\xc1\x8c\xd8", eax=spell, esi=3, edi=7)
@@ -2875,7 +2893,7 @@ class KitTests(unittest.TestCase):
                                         eax=0x1111).items():
                     self.mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
                 self.mu.emu_start(CALLER * 16 + 0x600, CALLER * 16 + 0x603)
-                self.assertEqual(self.mu.reg_read(r.UC_X86_REG_DX), 25 + kits.initiative(kitpages.kit_id(bytes(sheet))))
+                self.assertEqual(self.mu.reg_read(r.UC_X86_REG_DX), 25 + kits.initiative(first_kit(bytes(sheet))))
                 self.assertEqual((self.mu.reg_read(r.UC_X86_REG_AX), self.mu.reg_read(r.UC_X86_REG_SP)), (0x1111, 0x7FC))
 
     def test_thac0(self):
@@ -2898,7 +2916,7 @@ class KitTests(unittest.TestCase):
                     self.creature(cls, kit, level=level)
                     sheet = bytearray(game.SHEET_SIZE)
                     sheet[0x21], sheet[0x24], sheet[kitpages.KIT_BYTE] = cls, level, kit
-                    kid = kitpages.kit_id(bytes(sheet)) if rules else 0
+                    kid = first_kit(bytes(sheet)) if rules else 0
                     own = 20 - level // 2  # (as a thief's: SI the most taken off 20)
                     self.mu.mem_write(SS * 16 + BP + 6, struct.pack("<H", 5))
                     for name, value in dict(cs=CALLER, ds=self.DS, ss=SS, esp=0x7FC, ebp=BP, eflags=IF | 2,
@@ -2916,8 +2934,8 @@ class KitTests(unittest.TestCase):
                 sheet = bytearray(game.SHEET_SIZE)
                 sheet[0x18], sheet[0x21:0x23], sheet[0x24:0x26], sheet[kitpages.KIT_BYTE] = 1, bytes((17, 12)), bytes((thief, 6)), 2
                 self.mu.mem_write(self.SHEET * 16 + 5 * game.SHEET_SIZE, bytes(sheet))
-                self.assertEqual(kitpages.kit_id(bytes(sheet)), kits.MIND_WARRIOR if thief > 6 else 0)
-                self.assertEqual(kitpages.kit_any(bytes(sheet)), kits.MIND_WARRIOR)
+                self.assertEqual(first_kit(bytes(sheet)), kits.MIND_WARRIOR if thief > 6 else 0)
+                self.assertEqual(any_kit(bytes(sheet)), kits.MIND_WARRIOR)
                 self.mu.mem_write(SS * 16 + BP + 6, struct.pack("<H", 5))
                 for name, value in dict(cs=CALLER, ds=self.DS, ss=SS, esp=0x7FC, ebp=BP, eflags=IF | 2,
                                         esi=2, ebx=0x2222, ecx=0x3333, es=0x6666).items():
@@ -2933,7 +2951,7 @@ class KitTests(unittest.TestCase):
         from dscompanion import kitpages
         sheet = bytearray(game.SHEET_SIZE)
         sheet[0x21], sheet[kitpages.KIT_BYTE] = cls, kit
-        return kitpages.kit_id(bytes(sheet)) if rules & game.RULE_KITS else 0
+        return first_kit(bytes(sheet)) if rules & game.RULE_KITS else 0
 
     def test_slots(self):
         """PROBE_SLOTS: the slots the game's routine gives ([BP-2]), with kits.slots."""
@@ -3011,7 +3029,7 @@ class KitTests(unittest.TestCase):
                     self.mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
                 self.mu.emu_start(CALLER * 16 + 0x600, CALLER * 16 + 0x604)
                 level = sheet[0x24 + place]
-                behind = place == kitpages.kit_place(sheet) and kitpages.kit_awake(sheet)
+                behind = bool(kitpages.kit_at(sheet, place)) and kitpages.kit_awake(sheet, place)
                 self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), 0x5500 | (level - 1 if behind else level))
                 self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_BX, r.UC_X86_REG_CX, r.UC_X86_REG_DX,
                                                                 r.UC_X86_REG_DI)], [place, 0x3333, 0x4444, place])
@@ -3292,7 +3310,7 @@ class KitTests(unittest.TestCase):
                 sheet[0x18], sheet[0x21], sheet[0x24], sheet[kitpages.KIT_BYTE] = 1, cls, 5, kit
                 self.mu.mem_write(self.SHEET * 16 + 2 * game.SHEET_SIZE, bytes(sheet))
                 self.mu.mem_write(SS * 16 + BP + 6, struct.pack("<H", 2))
-                kid = kitpages.kit_any(bytes(sheet)) if rules else 0
+                kid = any_kit(bytes(sheet)) if rules else 0
                 for new in (1, 2, 5, 8, 9, 10, 11, 12, 13, 16, 17):
                     for given in (0, 1):
                         with self.subTest(rules=rules, cls=cls, kit=kit, new=new, given=given):
@@ -3613,15 +3631,55 @@ class KitTests(unittest.TestCase):
                         self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_BX, r.UC_X86_REG_SI,
                                                                         r.UC_X86_REG_ES)], [0x2222, 0x4444, 0x6666])
 
-    def test_kit_id(self):
+    def test_kit_at(self):
+        """KIT_AT: the kit of the class at place DI (kitpages.kit_at), two bits a class in KIT_BYTE."""
         from dscompanion import kitpages
         self.rules(game.RULE_KITS)
-        for c1, c2, kit in [(c, 0, kit) for c in range(1, 18) for kit in (0, 1, 2, 3, 4, 0xFF)] + [(9, 12, 1)]:
-            with self.subTest(classes=(c1, c2), kit=kit):
-                sheet = bytearray(game.SHEET_SIZE)
-                sheet[0x21], sheet[0x22], sheet[kitpages.KIT_BYTE] = c1, c2, kit
-                self.mu.mem_write(self.SHEET * 16, bytes(sheet))
-                self.call(rb"\x51\x57\x30\xc9\x2e\xf7\x06..\x01\x00", es=self.SHEET, ebx=0)
-                self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AL), kitpages.kit_id(bytes(sheet)))
+        cases = [((c, 0, 0), (1, 0, 0), kit, 1) for c in range(1, 18) for kit in (0, 1, 2, 3, 4, 0xFF)]
+        cases += [((9, 12, 0), (1, 1, 0), 1, 1), ((9, 11, 0), (4, 3, 0), 0b0110, 1), ((9, 11, 0), (4, 3, 0), 0b0110, 2),
+                  ((12, 9, 11), (5, 4, 3), 0b111001, 1), ((12, 9, 11), (5, 4, 3), 0b111001, 1)]
+        for classes, levels, kit, race in cases:
+            for place in range(3):
+                with self.subTest(classes=classes, kit=kit, place=place):
+                    sheet = bytearray(game.SHEET_SIZE)
+                    sheet[0x18], sheet[kitpages.KIT_BYTE] = race, kit
+                    sheet[0x21:0x24], sheet[0x24:0x27] = bytes(classes), bytes(levels)
+                    self.mu.mem_write(self.SHEET * 16, bytes(sheet))
+                    self.call(rb"\x51\x57\x30\xc9\x2e\xf7\x06..\x01\x00", es=self.SHEET, ebx=0, edi=place)
+                    self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AL), kitpages.kit_at(bytes(sheet), place))
+                    self.assertEqual(self.mu.reg_read(r.UC_X86_REG_DI), place)
+
+    def test_kit_is(self):
+        """KIT_IS and KIT_HAS: whether the sheet has kit AL, awake (kitpages.kit_ids) or at all, its
+        class's place in KIT_WHERE (KIT_LEVEL's), AL kept."""
+        from dscompanion import kitpages, kits
+        self.rules(game.RULE_KITS)
+        import re
+        at = re.search(rb"\x56\xbe\x01\x00\xeb", self.image, re.S).start()  # (KIT_IS; KIT_HAS after it)
+        where = struct.unpack_from("<H", self.image, re.search(rb"\x2e\x89\x3e(..)\x38\xc0", self.image, re.S).start() + 3)[0]
+        # (a Myrmidon fighter 3, then a Scholar preserver 5 (fighter awake), then a psionicist 4 (fighter
+        # awake, the preserver asleep))
+        for classes, levels, kit in (((11, 9, 0), (5, 3, 0), 0b0101), ((12, 11, 9), (4, 5, 3), 0b000101),
+                                     ((9, 0, 0), (3, 0, 0), 1)):
+            sheet = bytearray(game.SHEET_SIZE)
+            sheet[0x18], sheet[kitpages.KIT_BYTE] = 1, kit
+            sheet[0x21:0x24], sheet[0x24:0x27] = bytes(classes), bytes(levels)
+            self.mu.mem_write(self.SHEET * 16, bytes(sheet))
+            for kid in sorted(kitpages.KIT_IDS.values()):
+                for has, start in ((False, at), (True, at + 6)):
+                    with self.subTest(classes=classes, kid=kid, has=has):
+                        self.mu.mem_write(TSR * 16 + 0xFFF0, b"\x90")
+                        mu = self.mu
+                        mu.mem_write(SS * 16 + 0x7FC, struct.pack("<H", 0xFFF0))
+                        for name, value in dict(cs=TSR, ds=self.DS, ss=SS, esp=0x7FC, es=self.SHEET, ebx=0,
+                                                eax=0x1200 | kid).items():
+                            mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+                        mu.emu_start(TSR * 16 + start, TSR * 16 + 0xFFF0)
+                        found = [k for k, _, awake in kitpages.kits_of(bytes(sheet)) if has or awake]
+                        self.assertEqual(not mu.reg_read(r.UC_X86_REG_EFLAGS) & 0x40, kid not in found)
+                        self.assertEqual(mu.reg_read(r.UC_X86_REG_AX), 0x1200 | kid)
+                        if kid in found:
+                            place, = struct.unpack("<H", mu.mem_read(TSR * 16 + where, 2))
+                            self.assertEqual(place, kitpages.kit_place_of(bytes(sheet), kid))
         self.assertEqual(kitpages.KIT_IDS["Ravager"], 15)
         self.assertEqual(kitpages.KIT_IDS["Shinobi"], 35)

@@ -43,16 +43,18 @@ class KitPageTests(unittest.TestCase):
         self.assertEqual(len(widths), 25)
         self.assertEqual({n: w for n, w in widths.items() if w > kitpages.ROW_WIDTH}, {})
 
-    def test_kit_name(self):
+    def test_kit_names(self):
         sheet = bytearray(game.SHEET_SIZE)
         sheet[0x21], sheet[kitpages.KIT_BYTE] = 10, 1  # a gladiator
-        self.assertEqual(kitpages.kit_name(bytes(sheet)), "Arena Champion")
+        self.assertEqual(kitpages.kit_names(bytes(sheet)), ["Arena Champion"])
         sheet[0x21] = 15  # a fire ranger
-        self.assertEqual(kitpages.kit_name(bytes(sheet)), "Stalker")
+        self.assertEqual(kitpages.kit_names(bytes(sheet)), ["Stalker"])
         sheet[0x22] = 12  # and a psionicist: no kit
-        self.assertIsNone(kitpages.kit_name(bytes(sheet)))
+        self.assertEqual(kitpages.kit_names(bytes(sheet)), [])
         sheet[0x22], sheet[kitpages.KIT_BYTE] = 0, 0
-        self.assertIsNone(kitpages.kit_name(bytes(sheet)))
+        self.assertEqual(kitpages.kit_names(bytes(sheet)), [])
+        sheet[kitpages.KIT_BYTE] = 0xFF  # (KIT_OPEN: none chosen)
+        self.assertEqual(kitpages.kit_names(bytes(sheet)), [])
 
     def test_panel_windows(self):
         both = game.RULE_SPECIALIZE | game.RULE_KITS
@@ -114,22 +116,40 @@ class DormantKitTests(unittest.TestCase):
             with self.subTest(new_level=new_level):
                 s = self.sheet((9, 11), (new_level, 3), 2)  # (a Battle Mage, preserver 3, now a fighter)
                 self.assertEqual(kitpages.kit_place(s), 1)
-                self.assertEqual(kitpages.kit_any(s), kits.BATTLE_MAGE)
-                self.assertEqual(kitpages.kit_awake(s), awake)
-                self.assertEqual(kitpages.kit_id(s), kits.BATTLE_MAGE if awake else 0)
-                self.assertEqual((kitpages.kit_level(s), kitpages.kit_class_of(s)), (3, 11))
-                self.assertEqual(kitpages.kit_name(s), "Battle Mage")
+                self.assertEqual(kitpages.kits_of(s), [(kits.BATTLE_MAGE, 1, awake)])
+                self.assertEqual(kitpages.kit_ids(s), [kits.BATTLE_MAGE] if awake else [])
+                self.assertEqual((kitpages.kit_level(s, kits.BATTLE_MAGE), kitpages.kit_class_of(s, kits.BATTLE_MAGE)),
+                                 (3, 11))
+                self.assertEqual(kitpages.kit_names(s), ["Battle Mage"])
 
     def test_twice_changed(self):
-        """The kit is the first class's, the last of three."""
+        """The first class's kit is the last of three's, in KIT_BYTE's lowest bits."""
         from dscompanion import kits
         s = self.sheet((17, 9, 11), (6, 4, 3), 2)
-        self.assertEqual((kitpages.kit_place(s), kitpages.kit_id(s)), (2, kits.BATTLE_MAGE))
+        self.assertEqual((kitpages.kit_place(s), kitpages.kit_ids(s)), (2, [kits.BATTLE_MAGE]))
+
+    def test_kits_of_each_class(self):
+        """A kit for each class: two bits each, the first class's lowest, each class taken after the
+        next two; each awake while its class is (the class it has now, or one passed by it)."""
+        from dscompanion import kits
+        # a Myrmidon fighter 3, a Scholar preserver 5, now a psionicist 4: the fighter's awake
+        s = self.sheet((12, 11, 9), (4, 5, 3), 0b000101)
+        self.assertEqual(kitpages.kits_of(s), [(kits.MYRMIDON, 2, True), (kits.SCHOLAR, 1, False)])
+        self.assertEqual(kitpages.kit_ids(s), [kits.MYRMIDON])
+        self.assertEqual(kitpages.kit_names(s), ["Myrmidon", "Scholar"])
+        self.assertEqual(kitpages.kit_level(s, kits.SCHOLAR), 5)
+        s = self.sheet((12, 11, 9), (6, 5, 3), 0b100101)  # (psionicist 6, a Mind Warrior: all awake)
+        self.assertEqual(kitpages.kit_ids(s), [kits.MYRMIDON, kits.SCHOLAR, kits.MIND_WARRIOR])
+        self.assertEqual(kitpages.kit_place_of(s, kits.MIND_WARRIOR), 0)
+        self.assertEqual(kitpages.kit_byte(s, 0, 0), 0b000101)
+        self.assertEqual(kitpages.kit_byte(s, 1, 3), 0b101101)
 
     def test_multiclass_no_kit(self):
+        from dscompanion import kits
         s = self.sheet((9, 11), (3, 3), 2, race=2)
         self.assertIsNone(kitpages.kit_place(s))
-        self.assertEqual((kitpages.kit_any(s), kitpages.kit_id(s), kitpages.kit_level(s)), (0, 0, 0))
+        self.assertEqual((kitpages.kits_of(s), kitpages.kit_ids(s), kitpages.kit_level(s, kits.BATTLE_MAGE)),
+                         ([], [], 0))
 
     def test_battle_mage_weapon_spec(self):
         """Its chosen weapon spec the kit's alone: nothing for the fighter while asleep, expertise

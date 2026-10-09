@@ -174,12 +174,12 @@ def turn(gd: GameData, combatant: int, roll: Callable[[], int], gear: bool = Tru
     if enemy:
         return [f"{who} can't hide in shadows: {enemy} is right beside them"], False
     sun = daylight(gd, combatant)
-    if ranger and not sun and gd.kit_id(creature) == kits.STALKER:  # (kits.py: not halved indoors)
+    if ranger and not sun and kits.STALKER in gd.kit_ids(creature):  # (kits.py: not halved indoors)
         need, why = hide, f"{shown}, a Stalker: not halved indoors"
     elif ranger:  # at home under the open sky
         need = hide if sun else hide // 2
         why = f"{shown}, a ranger under the open sky" if sun else f"{shown}, halved indoors for a ranger"
-    elif sun and gd.kit_id(creature) == kits.ASSASSIN:  # (kits.py: not halved in daylight)
+    elif sun and kits.ASSASSIN in gd.kit_ids(creature):  # (kits.py: not halved in daylight)
         need, why = hide, f"{shown}, an Assassin: not halved in daylight"
     else:
         need = hide // 2 if sun else hide

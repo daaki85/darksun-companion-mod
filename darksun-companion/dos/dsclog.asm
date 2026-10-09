@@ -2952,12 +2952,30 @@ KIT_BLUNT  equ 0xC112           ; bits by kind: club, mace, quarterstaff, sling,
 HALF_GIANT equ 5
 kit_forbids:
         push ax
+        push cx
+        push di
+        call kit_place          ; (each of its kits awake: KIT_AT, KIT_AWAKE)
+        jc .ok
+.place: call kit_at
+        jz .next
+        call kit_awake
+        jc .next
+        mov [cs:kit_where], di
+        call kit_forbids_one
+        jc .out
+.next:  dec di
+        jns .place
+.ok:    clc
+.out:   pop di
+        pop cx
+        pop ax
+        ret
+kit_forbids_one:                ; (AL the kit, KIT_WHERE its class's place)
+        push ax
         push bx
         push cx
         push si
         push es
-        call kit_id
-        jz .ok
         mov cl, al              ; CL the kit, CH 1 for a half-giant with RULE_HALF_GIANT
         xor ch, ch
         cmp byte [es:bx + 0x18], HALF_GIANT
@@ -3147,8 +3165,8 @@ kit_allows:
         push cx
         push si
         push es
-        call kit_id
-        cmp al, KIT_BATTLE_MAGE
+        call kit_is_b
+        db KIT_BATTLE_MAGE
         jne .no
         mov cl, [es:bx + SPEC_SLOTS]
         les bx, [ITEM_TYPES]
@@ -3295,7 +3313,7 @@ class_forbids:
 
 ; SPECS_AWAKE: CF clear if the weapon specs of the character (sheet ES:BX) count: one class, or not
 ; a human; a human's warrior class (fighter, gladiator, ranger) now, or before and passed by the
-; class it has now; a Battle Mage's kit awake (KIT_ID). Set while the class or kit that gave them
+; class it has now; a Battle Mage's kit awake (KIT_IS). Set while the class or kit that gave them
 ; sleeps. All registers kept.
 specs_awake:
         pusha
@@ -3322,8 +3340,8 @@ specs_awake:
 .next:  inc si
         cmp si, 3
         jb .class
-        call kit_id
-        cmp al, KIT_BATTLE_MAGE
+        call kit_is_b
+        db KIT_BATTLE_MAGE
         je .yes
         popa
         stc
@@ -3723,7 +3741,7 @@ KIT_NONE     equ 0x888
 KIT_VIEW     equ 0x889
 KIT_BYTE     equ 0x43
 KIT_OPEN     equ 0xFF               ; (KIT_BYTE while the player has taken the kit back: none chosen)
-; The kits as KIT_ID numbers them (the creation screen's class x 4 + the kit)
+; The kits as KIT_IS numbers them (the creation screen's class x 4 + the kit)
 KIT_ELEMENTALIST equ 5
 KIT_HEALER   equ 6
 KIT_CRUSADER equ 7
@@ -3977,8 +3995,8 @@ kinds_allowed:
         push dx
         push si
         push di
-        call kit_id             ; (a Battle Mage: its own, whatever its class)
-        cmp al, KIT_BATTLE_MAGE
+        call kit_is_b             ; (a Battle Mage: its own, whatever its class)
+        db KIT_BATTLE_MAGE
         jne .types
         mov di, KIT_BM_KINDS
         jmp .all
@@ -4153,12 +4171,9 @@ lv_shinobi:
         les bx, [LV_SHEETS]
         imul ax, si, 0x47
         add bx, ax
-        call kit_id
-        jnz .kit
-        or al, 1                ; (none: ZF clear)
-        jmp .out
-.kit:   cmp al, KIT_SHINOBI
-        jne .out
+        call kit_is_b
+        db KIT_SHINOBI
+        jne .out                ; (none: ZF clear)
         call kit_level
         cmp al, SHINOBI_FIRST
         jb .no
@@ -4180,8 +4195,8 @@ lv_scholar:
         les bx, [LV_SHEETS]
         imul ax, si, 0x47
         add bx, ax
-        call kit_id
-        cmp al, KIT_SCHOLAR
+        call kit_is_b
+        db KIT_SCHOLAR
         jne .out
         push si
         call far [cs:lv_spell]
@@ -4232,8 +4247,8 @@ lv_due:
         jb .class
         or cl, cl               ; (a Battle Mage: one)
         jnz .out
-        call kit_id
-        cmp al, KIT_BATTLE_MAGE
+        call kit_is_b
+        db KIT_BATTLE_MAGE
         jne .out
         mov cl, 1
 .out:   pop si
@@ -4543,13 +4558,19 @@ ef_draw:
         add bx, ax
         mov word [cs:ef_y], USE_FIRST_Y
         mov byte [cs:ef_last], 0xFF
+        call kit_place          ; (a line for each kit, the oldest class's first; a human's kit
+        jc .specs               ; asleep until its class is passed, as the game's classes are)
+.kit:   call kit_at
+        jz .kit_next
         call kit_of_sheet
-        jz .specs
         call ef_line
-        call kit_id             ; (a human's kit asleep: until its new class passes the old)
-        jnz .specs
+        call kit_awake
+        jnc .kit_next
         mov si, kit_asleep
         call ef_line
+.kit_next:
+        dec di
+        jns .kit
 .specs: test word [cs:rules], RULE_SPECIALIZE
         jz .ret
         xor di, di
@@ -4584,14 +4605,12 @@ ef_draw:
         jb .slot
 .ret:   ret
 
-; KIT_OF_SHEET: CS:SI the line naming the kit of sheet ES:BX ("KIT: RAVAGER", in KIT_LINE), asleep
-; or not (KIT_ANY), ZF clear; ZF set if it has none. Others kept.
+; KIT_OF_SHEET: CS:SI the line naming kit AL (KIT_AT's, not 0: "KIT: RAVAGER", in KIT_LINE). Others
+; kept.
 kit_of_sheet:
         push ax
         push cx
         push di
-        call kit_any
-        jz .out
         movzx cx, al            ; (the kit's place in KIT_NAMES, from 1: (class - 1) * 3 + kit)
         and cl, 3
         shr al, 2
@@ -4619,20 +4638,83 @@ kit_of_sheet:
         pop ax
         ret
 
-; KIT_ID: AL the kit of sheet ES:BX (KIT_RAVAGER...: the creation screen's class x 4 + the kit,
-; kitpages.kit_id), ZF clear; 0 and ZF set if it has none (the rule off, more than one class but
-; for a human, none chosen) or it sleeps (KIT_AWAKE). Others kept.
-kit_id:
-        call kit_any
-        jz .ret
+; KIT_IS: ZF set if sheet ES:BX has kit AL (KIT_RAVAGER...: the creation screen's class x 4 + the
+; kit, kitpages.kit_ids) awake (KIT_AWAKE), KIT_WHERE then the place of its class (KIT_LEVEL and
+; KIT_CLASS_OF go by it); ZF clear if not (the rule off, more than one class but for a human, not
+; chosen, or asleep). KIT_HAS: the same, asleep too. A human may have a kit for each of its classes
+; (KIT_AT). All registers kept.
+kit_is:
+        push si
+        mov si, 1
+        jmp kit_find
+kit_has:
+        push si
+        xor si, si
+kit_find:
         push di
-        call kit_place
+        push cx
+        mov ch, al
+        call kit_place          ; (DI the oldest class's place)
+        jc .no
+.place: call kit_at
+        cmp al, ch
+        jne .next
+        or si, si
+        jz .yes
         call kit_awake
+        jnc .yes
+.next:  dec di
+        jns .place
+.no:    mov al, ch
+        or ch, 1                ; (ZF clear)
+        jmp .out
+.yes:   mov [cs:kit_where], di
+        cmp al, al              ; (ZF set)
+.out:   pop cx
         pop di
-        jnc .on
-        xor al, al
-.on:    or al, al
-.ret:   ret
+        pop si
+        ret
+kit_where dw 0
+
+; KIT_AT: AL the kit (as KIT_IS numbers them) of the class at place DI (0-2) of sheet ES:BX, asleep
+; or not, ZF clear; 0 and ZF set for none. KIT_BYTE has two bits for each class with a kit (0 none,
+; 1-3), the first class's lowest, the next class taken (DUAL) the next two: the place of the class
+; a pair is for counts back from the oldest's (KIT_PLACE). Others kept.
+kit_at:
+        push cx
+        push di
+        xor cl, cl
+        test word [cs:rules_hi], RULE_HI_KITS
+        jz .out
+        mov cx, di
+        call kit_place
+        jc .none
+        xchg cx, di             ; (CX the oldest's place, DI the one asked for)
+        sub cx, di
+        jb .none
+        shl cl, 1
+        mov ch, [es:bx + KIT_BYTE]
+        cmp ch, KIT_OPEN
+        je .none
+        shr ch, cl
+        and ch, 3
+        jz .none
+        dec ch
+        movzx di, byte [es:bx + di + 0x21]  ; (its class, 1-17: the creation screen's)
+        dec di
+        cmp di, 16
+        ja .none
+        mov cl, [cs:di + kit_class_of]
+        shl cl, 2
+        add cl, ch
+        inc cl
+        jmp .out
+.none:  xor cl, cl
+.out:   mov al, cl
+        pop di
+        pop cx
+        or al, al
+        ret
 
 ; KIT_PLACE: DI the place (0-2) among sheet ES:BX's classes of the class its kit was chosen with:
 ; 0 for one class; for a human who has changed class (DUAL: the classes move down, the new one
@@ -4669,57 +4751,25 @@ kit_awake:
 .yes:   clc
         ret
 
-; KIT_LEVEL: AL the level of the class sheet ES:BX's kit was chosen with (KIT_PLACE), the kit's
-; levels (a Ravager's AC, a Seeker's slots), 0 for none. KIT_CLASS_OF: AL that class. Others kept.
+; KIT_LEVEL: AL the level of the class of the kit KIT_IS (or KIT_HAS) last found (KIT_WHERE) on
+; sheet ES:BX, the kit's levels (a Ravager's AC, a Seeker's slots). KIT_CLASS_OF: AL that class.
+; Others kept.
 kit_level:
         push di
-        call kit_place
-        mov al, 0
-        jc .out
+        mov di, [cs:kit_where]
         mov al, [es:bx + di + 0x24]
-.out:   pop di
+        pop di
         ret
 kit_class_of_sheet:
         push di
-        call kit_place
-        mov al, 0
-        jc .out
+        mov di, [cs:kit_where]
         mov al, [es:bx + di + 0x21]
-.out:   pop di
-        ret
-
-; KIT_ANY: AL the kit of sheet ES:BX as KIT_ID's, but asleep too. Others kept.
-kit_any:
-        push cx
-        push di
-        xor cl, cl
-        test word [cs:rules_hi], RULE_HI_KITS
-        jz .out
-        call kit_place
-        jc .out
-        mov ch, [es:bx + KIT_BYTE]
-        dec ch
-        cmp ch, 2
-        ja .out
-        movzx di, byte [es:bx + di + 0x21]  ; (its class, 1-17: the creation screen's)
-        dec di
-        cmp di, 16
-        ja .out
-        mov cl, [cs:di + kit_class_of]
-        shl cl, 2
-        add cl, ch
-        inc cl
-.out:   mov al, cl
         pop di
-        pop cx
-        or al, al
         ret
 
-; KIT_OF_CREATURE: AL the kit (KIT_ID) of creature AX (its record's number), ZF as KIT_ID's. DS
-; the game's; others but AX kept.
-kit_of_creature:
-        push bx
-        push es
+; CREATURE_SHEET: ES:BX the sheet of creature AX (its record's number). DS the game's; others kept.
+creature_sheet:
+        push ax
         les bx, [CREATURES]
         imul ax, ax, 0x3A
         add bx, ax
@@ -4727,9 +4777,37 @@ kit_of_creature:
         les bx, [0x1661]
         imul ax, ax, 0x47
         add bx, ax
-        call kit_id
+        pop ax
+        ret
+
+; CR_IS: "call cr_is / db KIT_X": ZF set if creature AX (DS the game's) has kit KIT_X awake (KIT_IS,
+; KIT_WHERE set), KIT_IS_B the same for sheet ES:BX. All registers kept.
+cr_is:
+        push bx
+        push es
+        call creature_sheet
+        call kit_is_b
+cr_is_back:
         pop es
         pop bx
+        ret
+kit_is_b:
+        push bp
+        mov bp, sp
+        push si
+        push ax
+        mov si, [bp + 2]
+        cmp si, cr_is_back      ; (from CR_IS: the byte after the call to it)
+        jne .byte
+        mov si, [bp + 8]
+        inc word [bp + 8]
+        jmp .is
+.byte:  inc word [bp + 2]
+.is:    mov al, [cs:si]
+        call kit_is
+        pop ax
+        pop si
+        pop bp
         ret
 
 ; KIT_AC: AX (the AC the game's AC routine has for its creature, whose thing is its [BP+6]) with
@@ -4753,39 +4831,18 @@ kit_ac:
         cmp byte [es:bx + THINGS], 2
         jne .out                ; (not a creature)
         mov ax, [es:bx + THINGS + 1]
-        push ax
-        call kit_of_creature
-        pop bx                  ; (BX the creature)
-        cmp al, KIT_WANDERER
-        jne .levels
+        call creature_sheet     ; (each of its kits' awake: a human may have two or three)
+        call kit_is_b
+        db KIT_WANDERER
+        jne .ravager
         inc cx
-        jmp .out
-.levels:
-        cmp al, KIT_RAVAGER
-        je .sheet
-        cmp al, KIT_GROVE_WARDEN
-        jne .sentinel
-.sheet: mov dl, al              ; (DL the kit; ES:BX the sheet: KIT_LEVEL)
-        push dx
-        mov ax, bx
-        les bx, [CREATURES]
-        imul ax, ax, 0x3A
-        add bx, ax
-        mov ax, [es:bx + 4]
-        les bx, [0x1661]
-        imul ax, ax, 0x47
-        add bx, ax
-        pop dx
+.ravager:
+        call kit_is_b
+        db KIT_RAVAGER
+        jne .warden
         call kit_level
         movzx ax, al
-        cmp dl, KIT_GROVE_WARDEN
-        jne .table
-        mov dl, 3
-        div dl
-        movzx ax, al
-        sub cx, ax
-        jmp .out
-.table: dec ax
+        dec ax
         cmp ax, RAVAGER_LEVELS - 1
         jbe .level
         mov ax, RAVAGER_LEVELS - 1
@@ -4795,20 +4852,38 @@ kit_ac:
         pop si
         movsx ax, byte [es:bx + 0x27]
         sub ax, dx              ; (the sheet's base less the table's: what the table betters it by)
-        jle .out
+        jle .warden
         sub cx, ax
-        jmp .out
+.warden:
+        call kit_is_b
+        db KIT_GROVE_WARDEN
+        jne .sentinel
+        call kit_level
+        movzx ax, al
+        mov dl, 3
+        div dl
+        movzx ax, al
+        sub cx, ax
 .sentinel:
-        mov dx, 2               ; (a Sentinel's 2 with a shield, an Arena Champion's 1)
-        cmp al, KIT_SENTINEL
-        je .shield
-        dec dx
-        cmp al, KIT_CHAMPION
-        jne .out
+        xor dx, dx              ; (a Sentinel's 2 with a shield, an Arena Champion's 1)
+        call kit_is_b
+        db KIT_SENTINEL
+        jne .champion
+        mov dl, 2
+.champion:
+        call kit_is_b
+        db KIT_CHAMPION
+        jne .shield
+        inc dx
 .shield:
+        or dx, dx
+        jz .out
         push di
         mov di, [bp + 6]
-        mov [cs:r_things], es
+        mov ax, ds
+        add ax, THINGS_SEG
+        mov es, ax
+        mov [cs:r_things], ax
         call prot_scan
         pop di
         jc .out
@@ -4828,29 +4903,34 @@ RAVAGER_LEVELS equ $ - ravager_ac
 ; is a missile weapon's (its type's +0, bit 2): a Ravager's 1; a Brute's 2 with a two-handed weapon
 ; (+0Fh, 40h); else 0 (kits.melee). DS the game's; others kept.
 kit_melee:
-        call kit_id
         push bx
+        push cx
         push es
-        mov ah, al
-        push ax
+        xor cx, cx
+        call kit_is_b
+        db KIT_RAVAGER
+        jne .brute
+        inc cx
+.brute: call kit_is_b
+        db KIT_BRUTE
+        mov ax, 0
+        jne .type
+        mov al, 2
+.type:  push ax
         les bx, [ITEM_TYPES]
         imul ax, si, 0x14
         add bx, ax
         pop ax
         test byte [es:bx], KT_MISSILE
         jnz .none
-        cmp ah, KIT_RAVAGER
-        je .one
-        cmp ah, KIT_BRUTE
-        jne .none
         test byte [es:bx + 0x0F], KT_TWO_HANDED
-        jz .none
-        mov ax, 2
-        jmp .out
-.one:   mov ax, 1
+        jnz .sum
+        xor ax, ax
+.sum:   add ax, cx
         jmp .out
 .none:  xor ax, ax
 .out:   pop es
+        pop cx
         pop bx
         ret
 
@@ -4918,10 +4998,10 @@ kit_champion:
         les bx, [0x1661]
         imul ax, [bp + 0x10], 0x47
         add bx, ax
-        call kit_id
+        call kit_is_b
+        db KIT_CHAMPION
         pop es
         pop bx
-        cmp al, KIT_CHAMPION
         mov ax, 0
         jne .ret
         push di
@@ -4945,8 +5025,8 @@ probe_init:
         add dx, 20
         push ax
         mov ax, si
-        call kit_of_creature
-        cmp al, KIT_SENTINEL
+        call cr_is
+        db KIT_SENTINEL
         jne .out
         add dx, 2
 .out:   pop ax
@@ -4966,22 +5046,31 @@ probe_thac0:
         les bx, [0x1661]
         imul ax, [bp + 6], 0x47
         add bx, ax
-        call kit_id
-        jz .out
-        cmp al, KIT_SCHOLAR
-        jne .warrior
-        inc cx
-        jmp .out
-.warrior:
-        cmp al, KIT_SWASHBUCKLER
-        je .level
-        cmp al, KIT_CRUSADER
-        je .level
-        cmp al, KIT_BATTLE_MAGE
-        je .level
-        cmp al, KIT_MIND_WARRIOR
+        call kit_is_b           ; (each kit it has awake: the best warrior THAC0 of them)
+        db KIT_SWASHBUCKLER
+        call .warrior
+        call kit_is_b
+        db KIT_CRUSADER
+        call .warrior
+        call kit_is_b
+        db KIT_BATTLE_MAGE
+        call .warrior
+        call kit_is_b
+        db KIT_MIND_WARRIOR
+        call .warrior
+        call kit_is_b
+        db KIT_SCHOLAR
         jne .out
-.level: call kit_level
+        inc cx
+.out:   mov ax, cx
+        pop es
+        pop cx
+        pop bx
+        iret
+.warrior:                       ; (ZF set: CX the warrior THAC0 by the kit's level where better)
+        jne .ret
+        push ax
+        call kit_level
         movzx ax, al
         neg ax
         add ax, 21
@@ -4989,13 +5078,10 @@ probe_thac0:
         jge .best
         mov ax, 1
 .best:  cmp ax, cx
-        jge .out
+        jge .kept
         mov cx, ax
-.out:   mov ax, cx
-        pop es
-        pop cx
-        pop bx
-        iret
+.kept:  pop ax
+.ret:   ret
 
 ; PROBE_SLOTS: INT VEC_SLOTS replaces "mov ax,[bp-2]" (3 bytes: INT + NOP; DSUN.EXE 5E255h) at the
 ; end of the game's spell slot routine (the slots a combatant has at a spell level, on resting
@@ -5017,58 +5103,49 @@ probe_slots:
         mov es, ax
         imul bx, [bp + 6], 3
         mov ax, [es:bx + COMBATANT_CREATURE]
-        push ax
-        call kit_of_creature
-        pop bx                  ; (BX the creature)
-        jz .out
-        cmp al, KIT_ARCANIST
+        call creature_sheet     ; (each kit it has awake)
+        call kit_is_b
+        db KIT_ARCANIST
         jne .battle
         cmp byte [bp + 8], SLOT_WIZARD
-        jne .out
-        or cx, cx
-        jz .out
+        jne .battle
+        jcxz .battle
         inc cx
-        jmp .out
 .battle:
-        cmp al, KIT_BATTLE_MAGE
+        call kit_is_b
+        db KIT_BATTLE_MAGE
         jne .crusader
         cmp byte [bp + 8], SLOT_WIZARD
-        je .fewer
-        jmp .out
-.crusader:
-        cmp al, KIT_CRUSADER
-        jne .seeker
-        cmp byte [bp + 8], SLOT_PRIEST
-        jne .out
-.fewer: or cx, cx
-        jz .out
+        jne .crusader
+        jcxz .crusader
         dec cx
-        jmp .out
-.seeker:
-        cmp al, KIT_SHINOBI     ; (a Shinobi's wizard slots: the Seeker's table, by thief level)
+.crusader:
+        call kit_is_b
+        db KIT_CRUSADER
+        jne .tables
+        cmp byte [bp + 8], SLOT_PRIEST
+        jne .tables
+        jcxz .tables
+        dec cx
+.tables:
+        push dx
+        mov dl, KIT_SEEKER      ; (a Shinobi's wizard slots: the Seeker's table, by thief level)
+        call kit_is_b
+        db KIT_SHINOBI
         jne .ranger
         cmp byte [bp + 8], SLOT_WIZARD
-        jne .out
-        mov al, KIT_SEEKER
-        jmp .levels
+        je .levels
 .ranger:
-        cmp al, KIT_SEEKER
-        je .table
-        cmp al, KIT_JUSTIFIER
-        jne .out
-.table: cmp byte [bp + 8], SLOT_PRIEST
-        jne .out
+        cmp byte [bp + 8], SLOT_PRIEST
+        jne .table_out
+        call kit_is_b
+        db KIT_SEEKER
+        je .levels
+        mov dl, KIT_JUSTIFIER
+        call kit_is_b
+        db KIT_JUSTIFIER
+        jne .table_out
 .levels:
-        push dx
-        mov dl, al
-        mov ax, bx
-        les bx, [CREATURES]
-        imul ax, ax, 0x3A
-        add bx, ax
-        mov ax, [es:bx + 4]
-        les bx, [0x1661]
-        imul ax, ax, 0x47
-        add bx, ax
         call kit_level                  ; (the ranger level)
         movzx ax, al
         xor cx, cx
@@ -5115,13 +5192,11 @@ probe_slot_level:
         mov ch, ah
         mov dx, di
         sub bx, di
-        call kit_id
+        call kit_at             ; (the kit of the class at place DI, awake)
         mov cl, al
-        push di
-        call kit_place          ; (the kit's own class only: a human's other classes as they are)
-        cmp di, dx
-        pop di
-        je .own
+        jz .own
+        call kit_awake
+        jnc .own
         xor cl, cl
 .own:   add bx, di
         mov al, [es:bx + 0x24]
@@ -5154,11 +5229,26 @@ kit_psp:
         imul bx, si, 3
         mov ax, [es:bx + COMBATANT_CREATURE]
         pop bx
-        call kit_of_creature
+        call psi_kit
         xchg ax, cx             ; (CL the kit, AX the cost)
         call kit_psp_of
         pop es
         pop cx
+        ret
+; PSI_KIT: AL the psionicist kit of creature AX that changes costs (KIT_MIND_BENDER, KIT_KINETICIST),
+; awake, or 0. DS the game's; others but AH kept.
+psi_kit:
+        call cr_is
+        db KIT_MIND_BENDER
+        je .bender
+        call cr_is
+        db KIT_KINETICIST
+        mov al, KIT_KINETICIST
+        je .ret
+        xor al, al
+.ret:   ret
+.bender:
+        mov al, KIT_MIND_BENDER
         ret
 kit_psp_of:
         or ax, ax
@@ -5229,7 +5319,7 @@ probe_psp_defence:
         push cx
         mov cx, ax
         mov ax, [bp - 6]
-        call kit_of_creature
+        call psi_kit
         xchg ax, cx             ; (CL the kit, AX the cost)
         mov bx, PSP_TP_FIRST
         call kit_psp_of
@@ -5304,18 +5394,19 @@ probe_cure:
         imul bx, [ss:di + 8], 3
         mov ax, [es:bx + COMBATANT_CREATURE]
         pop es
-        call kit_of_creature
         pop bx
-        jz .out
-        cmp al, KIT_HEALER
+        mov dx, ax              ; (DX the creature)
+        call cr_is
+        db KIT_HEALER
         jne .lifebinder
         cmp byte [cs:bx], 108   ; (Blood Flow: not a cure)
-        je .out
+        je .lifebinder
         movzx ax, byte [cs:bx + 1]
         add [bp + 0x0C], ax
-        jmp .out
 .lifebinder:
-        cmp al, KIT_LIFEBINDER
+        mov ax, dx
+        call cr_is
+        db KIT_LIFEBINDER
         jne .out
         movzx ax, byte [cs:bx + 2]
         call game_die
@@ -5360,8 +5451,8 @@ psp_keep:
 probe_hit_round:
         push ax
         mov ax, si
-        call kit_of_creature
-        cmp al, KIT_BATTLE_MAGE
+        call cr_is
+        db KIT_BATTLE_MAGE
         je .out
         mov byte [es:si + 0xAF], 1
 .out:   pop ax
@@ -5419,12 +5510,13 @@ probe_ranger_level:
         ja .out                 ; (not a ranger: classes 13-16)
         push ax
         push bx
-        call combatant_kit
         mov cl, 5
-        cmp al, KIT_SEEKER
+        call cb_is
+        db KIT_SEEKER
         je .take
         mov cl, 9
-        cmp al, KIT_JUSTIFIER
+        call cb_is
+        db KIT_JUSTIFIER
         je .take
         mov cl, 7
         test word [cs:rules_hi], RULE_HI_RANGER
@@ -5452,17 +5544,29 @@ shinobi_wizard:
 .out:   pop cx
 .ret:   iret
 
-; COMBATANT_KIT: AL the kit (KIT_ID) of combatant [BP+6], BX its creature. DS the game's; others
-; but AX and BX kept.
-combatant_kit:
+; CB_IS: "call cb_is / db KIT_X": ZF set if combatant [BP+6] has kit KIT_X awake (KIT_IS, KIT_WHERE
+; set), BX its creature. DS the game's; others kept.
+cb_is:
         push es
+        push ax
+        push si
+        push di
+        mov di, sp
+        mov si, [ss:di + 8]     ; (the byte after the call)
+        inc word [ss:di + 8]
         mov ax, ds
         add ax, THINGS_SEG
         mov es, ax
         imul bx, [bp + 6], 3
-        mov bx, [es:bx + COMBATANT_CREATURE]
-        mov ax, bx
-        call kit_of_creature
+        mov ax, [es:bx + COMBATANT_CREATURE]
+        push ax
+        call creature_sheet
+        mov al, [cs:si]
+        call kit_is
+        pop bx
+        pop di
+        pop si
+        pop ax
         pop es
         ret
 
@@ -5471,8 +5575,8 @@ combatant_kit:
 shinobi_level:
         push bx
         push es
-        call combatant_kit
-        cmp al, KIT_SHINOBI
+        call cb_is
+        db KIT_SHINOBI
         mov ax, 0
         jne .out
         mov ax, bx
@@ -5509,9 +5613,9 @@ probe_pick_any:
         les bx, [0x1661]
         imul ax, si, 0x47
         add bx, ax
-        call kit_id
-        xchg ax, cx             ; (CL the kit)
-        cmp cl, KIT_SHINOBI
+        call kit_is_b
+        db KIT_SHINOBI
+        mov ax, cx
         jne .flags
         call kit_level
         movzx ax, al
@@ -5578,8 +5682,8 @@ probe_pick_level:
         push es
         les bx, [PICK_SHEET]
         push ax
-        call kit_id
-        cmp al, KIT_SHINOBI
+        call kit_is_b
+        db KIT_SHINOBI
         pop ax
         jne .out
         call kit_level
@@ -5686,8 +5790,8 @@ probe_pick_list:
         push es
         push bp
         les bx, [PICK_SHEET]
-        call kit_id
-        cmp al, KIT_SHINOBI
+        call kit_is_b
+        db KIT_SHINOBI
         jne .out
         mov bp, sp
         les si, [ss:bp + 14]    ; (the INT's way back: CS:IP)
@@ -5744,10 +5848,8 @@ probe_scroll_learn:
         imul bx, bx, 0x47
         les si, [0x1661]
         add bx, si
-        push ax
-        call kit_id
-        cmp al, KIT_SHINOBI
-        pop ax
+        call kit_is_b
+        db KIT_SHINOBI
         jne .keep
         xor ax, ax
 .keep:  pop bp
@@ -5777,14 +5879,15 @@ probe_ranger_cast:
         mov es, ax
         imul bx, [bp + 6], 3
         mov ax, [es:bx + COMBATANT_CREATURE]
-        call kit_of_creature
         pop dx
         mov bx, 7
-        cmp al, KIT_SEEKER
+        call cr_is
+        db KIT_SEEKER
         jne .justifier
         mov bx, 5
 .justifier:
-        cmp al, KIT_JUSTIFIER
+        call cr_is
+        db KIT_JUSTIFIER
         jne .take
         mov bx, 9
 .take:  sub dx, bx
@@ -5814,15 +5917,15 @@ kit_save:
         cmp byte [es:bx + THINGS], 2
         jne .out                ; (not a creature)
         mov ax, [es:bx + THINGS + 1]
-        call kit_of_creature
-        cmp al, KIT_SENTINEL
+        call cr_is              ; (each kit it has awake)
+        db KIT_SENTINEL
         jne .myrmidon
         cmp cx, KIT_SPELL_LAST
-        ja .out
+        ja .myrmidon
         dec si
-        jmp .out
 .myrmidon:
-        cmp al, KIT_MYRMIDON
+        call cr_is
+        db KIT_MYRMIDON
         jne .wanderer
         mov bx, kit_charms
 .charm: cmp [cs:bx], cx
@@ -5830,12 +5933,12 @@ kit_save:
         add bx, 2
         cmp bx, kit_charms_end
         jb .charm
-        jmp .out
+        jmp .wanderer
 .charmed:
         sub si, 4
-        jmp .out
 .wanderer:
-        cmp al, KIT_WANDERER    ; +3 against a fire or cold spell (its record's +1Ah: 2 fire, 4 cold),
+        call cr_is
+        db KIT_WANDERER    ; +3 against a fire or cold spell (its record's +1Ah: 2 fire, 4 cold),
         jne .out                ;   as the game's Resist Fire and Resist Cold
         cmp cx, KIT_SPELLS
         jae .out
@@ -5864,8 +5967,8 @@ kit_charms_end:
 kit_move:
         push ax
         mov ax, si
-        call kit_of_creature
-        cmp al, KIT_STALKER
+        call cr_is
+        db KIT_STALKER
         jne .none
         pop ax
         add ax, 20
@@ -6824,8 +6927,8 @@ GAME_SPHERES_ID equ 3013
 el_second:
         push cx
         mov cl, [es:bx + SPHERE2]
-        call kit_id
-        cmp al, KIT_ELEMENTALIST
+        call kit_is_b
+        db KIT_ELEMENTALIST
         jne .none
         mov al, cl
         dec al
@@ -6996,8 +7099,8 @@ probe_el_know:
 
 ; PROBE_DUAL_BAN: INT VEC_DUAL_BAN replaces "or ax,ax" (2 bytes; DSUN.EXE 866FFh) after the test
 ; whether a human may change to a class (86E94h: AX 1 if so), made for each class (SI, 1-17) as
-; the DUAL window (866C7h, for member [BP+6]) greys those it can't: AX 0 for a class its kit bars
-; (KIT_ANY, asleep too; DUAL_BANS, kits.DUAL_BANS). The test's flags back to the JZ (RETF 2).
+; the DUAL window (866C7h, for member [BP+6]) greys those it can't: AX 0 for a class one of its
+; kits bars (KIT_AT, asleep too; KIT_BANS, kits.DUAL_BANS). The test's flags back to the JZ (RETF 2).
 probe_dual_ban:
         sti
         or ax, ax
@@ -7006,33 +7109,51 @@ probe_dual_ban:
         push ecx
         push si
         push es
+        push di
+        push edx
         les bx, [0x1661]
         imul ax, [bp + 6], 0x47
         add bx, ax
-        call kit_any
         movzx ecx, si           ; (ECX the class)
-        mov si, dual_bans
-.next:  cmp byte [cs:si], 0
-        je .free
-        cmp [cs:si], al
-        je .kit
-        add si, 5
-        jmp .next
-.kit:   push eax
-        mov eax, [cs:si + 1]
-        bt eax, ecx
-        pop eax
-        jnc .free
+        mov ax, 1
+        call kit_place          ; (each of its kits, asleep too)
+        jc .back
+.place: push ax
+        call kit_at
+        call kit_bans
+        pop ax
+        bt edx, ecx
+        jnc .next
         xor ax, ax
-        jmp .back
-.free:  mov ax, 1
-.back:  pop es
+.next:  dec di
+        jns .place
+.back:  pop edx
+        pop di
+        pop es
         pop si
         pop ecx
         pop bx
 .out:   or ax, ax
         retf 2
-; By kit (KIT_ID's number), the classes (bit n: class n, 1-17) a human with it may not change to
+
+; KIT_BANS: EDX the classes (bit n: class n, 1-17) kit AL bars a human from having as well
+; (DUAL_BANS; 0 for none, or no kit). Others kept.
+kit_bans:
+        push si
+        xor edx, edx
+        or al, al
+        jz .out
+        mov si, dual_bans
+.next:  cmp byte [cs:si], 0
+        je .out
+        cmp [cs:si], al
+        je .kit
+        add si, 5
+        jmp .next
+.kit:   mov edx, [cs:si + 1]
+.out:   pop si
+        ret
+; By kit (KIT_IS's number), the classes (bit n: class n, 1-17) a human with it may not change to
 ; (kits.DUAL_BANS): slot tables of its own that would take the new class's place (a Seeker's or
 ; Justifier's priest slots, a Shinobi's wizard ones); a warrior's THAC0 (a warrior class instead);
 ; a shield it needs (a class with none: druid, preserver); a two-handed melee weapon it needs (a
@@ -7092,10 +7213,8 @@ el_spheres:
 ; EL_CASTER: for combatant [BP+6]: AL its second sphere (EL_SECOND), CL its class, ZF clear if an
 ; Elementalist with one; ZF set if not. ES, BX changed.
 el_caster:
-        push ax
-        call combatant_kit
-        cmp al, KIT_ELEMENTALIST
-        pop ax
+        call cb_is
+        db KIT_ELEMENTALIST
         jne .no
         mov ax, bx
         les bx, [CREATURES]
@@ -7191,14 +7310,14 @@ spec_of_sheet:
         or al, [es:bx + SPEC_SLOTS + 2]
         or al, [es:bx + SPEC_SLOTS + 3]
         jz .ret
-        call kit_any            ; (a Battle Mage who has changed class: its weapon spec the kit's
-        cmp al, KIT_BATTLE_MAGE ; alone, nothing while it sleeps, expertise when awake)
+        mov al, KIT_BATTLE_MAGE ; (a Battle Mage who has changed class: its weapon spec the kit's
+        call kit_has            ; alone, nothing while it sleeps, expertise when awake)
         jne .kinds
         cmp word [es:bx + 0x22], 0
         je .kinds
-        call kit_id
+        call kit_is
         mov dl, SPEC_NONE
-        jz .out
+        jne .out
         mov dl, SPEC_PLAIN
         cmp si, KIND_TYPES
         jae .out
@@ -7275,8 +7394,8 @@ spec_of_sheet:
         or al, al
         jnz .warrior
         mov dl, SPEC_PLAIN      ; (a warrior class not back yet)
-        call kit_id             ; (a Battle Mage's expertise)
-        cmp al, KIT_BATTLE_MAGE
+        call kit_is_b           ; (a Battle Mage's expertise)
+        db KIT_BATTLE_MAGE
         jne .ret
         mov dl, SPEC_EXPERT
         jmp .ret
@@ -7288,10 +7407,8 @@ spec_of_sheet:
         jz .master
         cmp si, 1               ; (a Myrmidon's second kind too)
         jne .ret
-        push ax
-        call kit_id
-        cmp al, KIT_MYRMIDON
-        pop ax
+        call kit_is_b
+        db KIT_MYRMIDON
         jne .ret
 .master:
         cmp ch, MASTERY
@@ -7302,8 +7419,8 @@ spec_of_sheet:
         mov dl, SPEC_GRAND
 .ret:   cmp dl, SPEC_EXPERT     ; (a Justifier's expertise, the bow's too: specialization)
         jne .out
-        call kit_id
-        cmp al, KIT_JUSTIFIER
+        call kit_is_b
+        db KIT_JUSTIFIER
         jne .out
         mov dl, SPEC_SPECIAL
 .out:   pop si
@@ -7838,8 +7955,8 @@ probe_two:
         jne .out                ; not a creature
         mov ax, [es:bx+THINGS+1]
         push ax                 ; (a Twin-blade: none, as a ranger; kits.py)
-        call kit_of_creature
-        cmp al, KIT_TWIN_BLADE
+        call cr_is
+        db KIT_TWIN_BLADE
         pop ax
         je .out
         call worn_scan
@@ -7946,16 +8063,18 @@ probe_hit_die:
         les bx, [bp - 4]
         cmp word [es:bx + 0x22], 0      ; (a human who has changed class rolls for the new one)
         jne .out
-        call kit_id
-        cmp al, KIT_BATTLE_MAGE
+        call kit_is_b
+        db KIT_BATTLE_MAGE
         jne .warrior
         mov cl, 6
 .warrior:
-        cmp al, KIT_MIND_WARRIOR
+        call kit_is_b
+        db KIT_MIND_WARRIOR
         jne .arcanist
         mov cl, 8
 .arcanist:
-        cmp al, KIT_ARCANIST
+        call kit_is_b
+        db KIT_ARCANIST
         jne .out
         mov cl, 3
 .out:   mov al, cl
@@ -7967,12 +8086,12 @@ probe_hit_die:
 ; PROBE_MAX_PSP: INT VEC_MAX_PSP replaces "les bx,[bp-8]" (3 bytes: INT + NOP; DSUN.EXE 8748Fh) where
 ; the level-up routine has a character's most PSP worked out (SI) and puts it in the sheet ([BP-8],
 ; far: its +0Ch) when more than it was, the gain on the creature's PSP too: ES:BX the sheet, and a
-; Mind Warrior's SI a tenth less (kits.max_psp), its kit asleep or not (KIT_ANY).
+; Mind Warrior's SI a tenth less (kits.max_psp), its kit asleep or not (KIT_HAS).
 probe_max_psp:
         les bx, [bp - 8]
         push ax
-        call kit_any            ; (asleep too: its psionicist levels are the PSP's)
-        cmp al, KIT_MIND_WARRIOR
+        mov al, KIT_MIND_WARRIOR
+        call kit_has            ; (asleep too: its psionicist levels are the PSP's)
         jne .out
         push cx
         push dx
@@ -8047,7 +8166,7 @@ kit_stale:
         pop eax
 .ret:   ret
 
-; KIT_MADE: AL the kit (KIT_ID's numbers) of the sheet being made, ZF clear; 0 and ZF set if none
+; KIT_MADE: AL the kit (KIT_IS's numbers) of the sheet being made, ZF clear; 0 and ZF set if none
 ; (the rule off, more than one class, none chosen, or its classes changed since PROBE_WP_CLASS last
 ; saw them). DS the game's; others kept.
 kit_made:
@@ -11073,13 +11192,14 @@ probe_belt:
         je .kit
         add dx, BELT_BONUS
 .kit:   mov ax, cx              ; the kit's (kits.thief_skill), no less than 0
-        call kit_of_creature
-        cmp al, KIT_SWASHBUCKLER
+        call cr_is
+        db KIT_SWASHBUCKLER
         jne .assassin
         sub dx, 10
         jmp .least
 .assassin:
-        cmp al, KIT_ASSASSIN
+        call cr_is
+        db KIT_ASSASSIN
         jne .done
         cmp word [bp + 8], 1
         ja .done
