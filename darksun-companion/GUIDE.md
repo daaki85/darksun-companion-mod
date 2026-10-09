@@ -1,7 +1,7 @@
 # Obsidian Edition: the player's guide
 
-How **Dark Sun: Shattered Lands** plays with the Obsidian Edition mod: making a party,
-the classes and kits, fighting, magic, psionics, equipment and levels, with
+How **Dark Sun: Shattered Lands** plays with the Obsidian Edition mod: making
+a party, the classes and kits, fighting, magic, psionics, equipment and levels, with
 the tables you need.
 
 It is **spoiler-free**: no places past the opening arena, no people, no
@@ -53,12 +53,11 @@ The [README](README.md) has every rule in full detail.
   - [New items](#new-items)
 - [Experience and levels](#experience-and-levels)
 - [Worth knowing](#worth-knowing)
-- [What the Ledger shows you](#what-the-ledger-shows-you)
 - [The Options tab at a glance](#the-options-tab-at-a-glance)
 
 ## Getting started
 
-1. Unzip the Ledger anywhere and double-click **`Start Obsidian Edition.bat`**
+1. Unzip the mod anywhere and double-click **`Start Obsidian Edition.bat`**
    (the first time, it offers to install Python; see the
    [README](README.md#running-it-windows)).
 2. Press **Start the game**. The game opens beside the Ledger, whose dice log
@@ -276,8 +275,8 @@ AD&D's tables; a character of several classes uses its best.
 | Psionicist | 20 | 20 | 19 | 19 | 18 | 18 | 17 | 17 | 16 | 16 |
 | Preserver | 20 | 20 | 20 | 19 | 19 | 19 | 18 | 18 | 18 | 17 |
 
-*Without the mod:* clerics and druids improve by 2 every 3 levels from 1st
-(19 at 3rd, 17 at 6th, 15 at 9th); the rest are as above.
+*Without the mod:* clerics and druids improve by about 2/3 a level (19 at
+3rd, 17 at 6th, 15 at 9th); the rest are as above.
 
 ## The classes
 
@@ -410,7 +409,7 @@ single class** (a human may still change class).
 - [Weapon specialization](#weapon-specialization-and-attacks) in **two** kinds
   at 1st level, a third at 6th and a fourth at 9th: +1 to hit, +2 damage and
   3/2 attacks with each. *Without the mod:* 3/2 attacks with any weapon.
-- AC 1 better from 5th level and 2 better at 10th, in armour.
+- AC 1 better from 5th level and 2 better at 10th, with or without armour.
 - AD&D's experience table. *Without the mod:* the fighter's.
 - Up to 10th level; hit dice rolled twice.
 
@@ -813,8 +812,9 @@ A Lifebinder doesn't go with the Brute kit.
 
 **Magic weapons.** Every one but Great Axe +3 and Headsman\*. A **Grove
 Warden** none of the metal ones (Dragonsbane, El's Drinker, Greenbright\*,
-Shadowseeker\*, Dag's Dagger, Galefang\*, Soulcrusher, Axe +1, Linebreaker\*); a **Lifebinder** only Mace +2, Blackmace +1, the three
-quarterstaffs, Gutterknot\* +1, the slings and Windlash\*.
+Shadowseeker\*, Dag's Dagger, Galefang\*, Soulcrusher, Axe +1, Linebreaker\*);
+a **Lifebinder** only Mace +2, Blackmace +1, the three quarterstaffs,
+Gutterknot\* +1, the slings and Windlash\*.
 
 ### Psionicist
 
@@ -1408,8 +1408,9 @@ give no AC and boots no movement.
 **Protection.** Rings and cloaks of protection give +1 AC and +1 on every save,
 by AD&D's rules: two rings don't add up; a ring gives no AC with magical armour
 (its saves still count); a cloak does nothing with magical or metal armour or
-a shield. **Bracers of defense** give their AC (6, 5, 4 or 2) only with no
-armour worn, and a preserver casts in them. These are rare finds.
+a shield. **Bracers of defense** give their AC (6, 5, 4 or 2), and the mod's
+two **robes** their plus, only with no armour worn, and a preserver casts in
+either. These are rare finds.
 
 **Acid.** Some monsters' acid or corroding touch can destroy worn armour or a
 held weapon. Each item gets a saving throw by its material: wood 8, bone 11,
@@ -1531,21 +1532,6 @@ AD&D's tables:
 - **Wait** puts a character later in the round.
 - **Ready a missile weapon and a melee weapon:** the game uses whichever fits
   the target's distance.
-
-## What the Ledger shows you
-
-- **In the game's own screens:** THAC0 and all five saves on the inventory
-  screen and View Character, THAC0 with each weapon, a thief's skills, spell
-  slots left on the USE screen, and, for a character of several classes, which
-  class goes up next. The Effects screen names kits and weapon specs.
-- **The Look box in a fight:** a monster's hit points, AC, THAC0, magic
-  resistance and defences.
-- **The dice log** in the Ledger's window: every roll as it happens, with what
-  it needed and where each bonus came from. Tick **Show each turn's rolls in
-  the game** for them in the game's own window at the end of each turn.
-- **The Ledger's Characters tab:** each character's sheet, what they wear,
-  spell slots and thief skills; the **Spells** tab has every spell's dice,
-  saves and durations.
 
 ## The Options tab at a glance
 

@@ -7,7 +7,19 @@ Released pull requests are summarised in a line or two each; the release notes
 #14 to #18; [1.0.0](release-notes/v1.0.0.md): #1 to #13) and the pull requests
 themselves have the detail.
 
-## Pull request #31 (in progress)
+## Pull request #32 (in progress)
+
+**Documentation**
+- **All the documents reviewed:** the front page and the README name AD&D's
+  class tables, the leader's CHA and the robes among the rules and items, and
+  the README's rule count (21), item and price tables and Kalzith's shop are
+  up to date; the guide's gladiator AC (with or without armour) and the
+  game's priest THAC0 are corrected, and its "What the Ledger shows you",
+  which the quality of life table already covers, is gone; DEVELOPMENT.md's
+  kits are no longer "being built", its parts follow the README's order, and
+  the shop's NO DEAL! and the CHA rule's check in the game are there.
+
+## Pull request #31 ([merged 2026-10-09](https://github.com/daaki85/darksun-obsidian-edition/pull/31))
 
 **Added**
 - **Kits:** a character of one class may take one of three kits
@@ -114,10 +126,9 @@ themselves have the detail.
   or Battle Mage then picks the weapon kinds it is due, as at a level up. Up
   to three kits, one for each class, each asleep with its class. A human
   who becomes a preserver and takes the Scholar kit picks three spells, not
-  two. Kits that can't go together (Arena
-  Champion or Sentinel with Twin-blade, Shinobi or Ravager; Twin-blade with
-  Healer; Brute with Shinobi or Lifebinder), and kits a class bars, both ways
-  (INT 99h).
+  two. Kits that can't go together (Arena Champion or Sentinel with Shinobi;
+  Twin-blade with Healer; Brute with Shinobi or Lifebinder), and kits a class
+  bars, both ways (INT 99h).
 - **The Effects screen a page at a time:** its lower panel has room for five
   lines, too few for three kits and a gladiator's weapon specs. A kit takes
   one line (the long names shortened as on the KIT page, "(ASLEEP)" after one
@@ -141,7 +152,7 @@ themselves have the detail.
 - **Two magic robes** for preservers, psionicists and druids, worn on the
   chest and not armour (cast in them; their AC with no armour worn, as
   bracers'): the **Ashen Robe** (+1 AC, +1 on saves against spells), which
-  Kalzith wears once his scrolls are sold and leaves when killed, and the
+  Kalzith wears and sells and leaves when killed, and the
   **Veiled Robe** (+2 AC, +1 on every save, a wizard slot more at spell levels
   1-3), sold by Kel. Drawn icons, Alagorn's stories, the Ledger's saves and
   slots count them.
@@ -208,7 +219,7 @@ themselves have the detail.
   place of −2 CON.
 - **The dice log's ring holds 96 entries** (was 128), and the helper's text
   buffer is 4 KB (was 8), making room in upper memory for the kits' code.
-- **The helper's interrupts** are now 91h to FEh (and 60h to 65h); the
+- **The helper's interrupts** are now 8Ch to FEh (and 60h to 65h); the
   message when they are in use says so.
 
 **Fixed**
