@@ -1035,6 +1035,12 @@ kits than the 300 bytes or so left goes low again (the game losing 62 KB, as
 before) unless room is made in upper memory too: the ring at 96 entries would
 give 6 KB, the text buffer (`TSIZE`, 8 KB) a little more.
 
+With the ring at 96 entries and the kits for dual classes (a kit for each
+class, the KIT menu after DUAL, a new preserver's spell picks), the image is
+46,448 bytes, and `mem` still has 632 KB free and 1 KB of upper memory left
+(in two blocks). The next large addition wants room made first: `TSIZE` at
+4 KB would give 4 KB.
+
 ### The kit's byte
 
 Sheet `+43h`: zero in every sheet of the saves and saved characters at hand
