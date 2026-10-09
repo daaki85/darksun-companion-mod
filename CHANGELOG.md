@@ -96,6 +96,13 @@ Released pull requests are summarised in a line or two each; the release notes
   sphere, a Battle Mage's weapon spec and a Myrmidon's second are cleared, so
   a Battle Mage who turns fighter doesn't take its kit's weapon for a
   fighter's specialization (INT 9Dh).
+- **Starting gear fitted to the kit:** the game's class gear, given at DONE,
+  is changed while the character is new where the kit can't use it: a
+  Shinobi's long sword becomes a bone short sword, a Brute's a bone great axe
+  (its club to the backpack), a Seeker's of its sphere's material, a
+  Ravager's shield goes to the backpack; an Arena Champion's off-hand club
+  becomes a shield, and a Battle Mage's quarterstaff its weapon spec's weapon.
+  The dice log names each change. The guide lists each class's starting gear.
 
 **Changed** (for the kits)
 - **The Arcanist's drawback** is a d3 hit die (a preserver's is a d4), in

@@ -12,6 +12,12 @@ played (its status New) the Ledger makes them whole:
   are the Ledger's own, of bone (the game has no short sword but Kurzak's, Shadowseeker, and only
   a metal axe). A bow, sling or staff sling goes to the missile slot, and a bow comes with
   arrows; a weapon in both hands sends the starting shield to the backpack.
+
+With kits (kit_gear), the game's starting gear fitted to the kit, whatever the weapon rules: a
+weapon the kit forbids becomes one it allows (a Shinobi's long sword a short sword, a Brute's a
+great axe, a Seeker's of its sphere's material), a shield or off-hand weapon it forbids goes to
+the backpack (a Ravager's shield, a Brute's club), an Arena Champion's off-hand club becomes a
+shield, and a Battle Mage's quarterstaff its chosen weapon spec's weapon.
 """
 
 import struct
@@ -204,4 +210,103 @@ def finish_new(gd) -> List[str]:
                 out.append(f"{gd.creature_name(member)} starts with a plain {material}{specialize.KINDS[kind]} "
                            f"for the weapon specialization chosen, in place of the bone long sword{why}")
                 break
+    return out
+
+
+SHIELD = (4, 0x05, 0xFC04, 10)  # the game's starting (leather) shield: type, name, picture, price
+# the kinds a forbidden starting weapon becomes, the nearest to the long sword first (a Shinobi's
+# short sword, a Brute's great axe); then any other kind, in KINDS' order
+REPLACE_ORDER = tuple(specialize.KINDS.index(k) for k in ("long sword", "short sword", "axe", "mace", "great axe",
+                                                          "gythka", "polearm"))
+
+
+def _replacement(sheet: bytes, kinds: List[int], read) -> Optional[Tuple[int, Tuple[int, int, int, int]]]:
+    """(kind, plain weapon) for a hand's weapon its kit forbids: of the first of KINDS (else any
+    kind its classes allow) with a melee weapon, in a material it may use, that the kit allows."""
+    allowed = restrict.allowed_kinds(sheet, read)
+    order = sorted(allowed, key=lambda k: REPLACE_ORDER.index(k) if k in REPLACE_ORDER else len(REPLACE_ORDER) + k)
+    for kind in kinds + order:
+        if kind in MISSILE_KINDS:
+            continue
+        for weapon in (PLAIN[kind],) + OTHERS.get(kind, ()):
+            typ = read(weapon[0])
+            if typ[0] & 0x01 and restrict.usable(sheet, weapon[0], typ) \
+                    and not restrict.kit_forbids(sheet, weapon[0], typ):
+                return kind, weapon
+    return None
+
+
+def kit_gear(gd) -> List[str]:
+    """The party's New characters' starting gear fitted to their kits (the module's notes): lines
+    for the log. A change is made where the gear doesn't fit, so made once."""
+    from . import kitpages, kits, pickpocket, ring
+    out: List[str] = []
+    sheets = game.far_pointer(gd.guest, gd.ds, game.SHEETS_PTR)
+    items = game.far_pointer(gd.guest, gd.ds, game.ITEMS_PTR)
+    types = game.far_pointer(gd.guest, gd.ds, game.ITEM_TYPES_PTR)
+    read = lambda t: gd.guest.read(types + t * game.ITEM_TYPE_SIZE, game.ITEM_TYPE_SIZE)
+    right, left = game.WEAPON_HANDS
+    for member in range(game.PARTY_SIZE):
+        rec = gd.creature(member)
+        if len(rec) < game.CREATURE_SIZE or not rec[game.CREATURE_NAME] or rec[game.CREATURE_STATUS] != game.STATUS_NEW:
+            continue
+        index = struct.unpack_from("<H", rec, game.CREATURE_SHEET_INDEX)[0]
+        sheet = gd.guest.read(sheets + index * game.SHEET_SIZE, game.SHEET_SIZE)
+        kid = kitpages.kit_id(sheet) if len(sheet) >= game.SHEET_SIZE else 0
+        if not kid:
+            continue
+        who, kit = gd.creature_name(member), kitpages.kit_name(sheet)
+        chosen = [k - 1 for k in sheet[game.SPEC_SLOTS:game.SPEC_SLOTS + game.SPEC_COUNT] if k]
+        owned = list(gd._worn(member))
+        name = lambda item: gd.item_name(struct.unpack_from("<H", item, game.ITEM_NAME)[0])
+        for item_index, item, _ in owned:
+            slot, type_ = item[game.ITEM_SLOT], struct.unpack_from("<H", item, game.ITEM_TYPE)[0]
+            typ = read(type_)
+            if slot not in (right, left) or not restrict.kit_forbids(sheet, type_, typ, off_hand=slot == left):
+                continue
+            at = items + item_index * game.ITEM_SIZE
+            new = _replacement(sheet, chosen, read) if slot == right and typ[0] & 0x01 else None
+            if new is None:
+                cell = pickpocket.free_cell(gd, ring.Items(gd), member)
+                if cell is not None:
+                    gd.guest.write(at + game.ITEM_SLOT, bytes((cell,)))
+                    out.append(f"{who}'s {name(item)} goes into the backpack: a {kit} can't use it")
+                continue
+            kind, weapon = new
+            gd.guest.write(at, plain_weapon(item, kind, weapon)[0])
+            material = MATERIALS.get(read(weapon[0])[8] & 0x4F, "")
+            out.append(f"{who} starts with a plain {material}{specialize.KINDS[kind]} in place of the "
+                       f"{name(item)}: a {kit} can't use it")
+            if two_handed(gd, sheet, weapon[0]):
+                out += _shield_off(gd, member, list(gd._worn(member)), items)
+        owned = list(gd._worn(member))
+        if kid == kits.CHAMPION and not any(read(struct.unpack_from("<H", i, game.ITEM_TYPE)[0])[0] & kits.SHIELD
+                                            for _, i, _ in owned):
+            for item_index, item, _ in owned:
+                if item[game.ITEM_SLOT] == left:  # (the gladiator's club)
+                    rec_ = bytearray(item)
+                    type_, name_, picture, price = SHIELD
+                    struct.pack_into("<H", rec_, ITEM_PICTURE, picture)
+                    struct.pack_into("<H", rec_, ITEM_VALUE, price)
+                    struct.pack_into("<H", rec_, game.ITEM_TYPE, type_)
+                    struct.pack_into("<H", rec_, game.ITEM_NAME, name_)
+                    struct.pack_into("<H", rec_, 0x0C, 0)
+                    rec_[game.ITEM_PLUS] = 0
+                    gd.guest.write(items + item_index * game.ITEM_SIZE, bytes(rec_))
+                    out.append(f"{who} starts with a shield in place of the {name(item)}: an Arena Champion "
+                               f"fights with one")
+                    break
+        if kid == kits.BATTLE_MAGE and chosen and gd.rules & game.RULE_SPECIALIZE \
+                and not any(specialize.kind_of(struct.unpack_from("<H", i, game.ITEM_TYPE)[0]) == chosen[0]
+                            for _, i, _ in owned):
+            for item_index, item, _ in owned:
+                if item[game.ITEM_SLOT] == right:  # (the preserver's quarterstaff)
+                    new = start_weapon(sheet, [chosen[0] + 1], read)
+                    if new is None or new[0] != chosen[0]:
+                        break
+                    gd.guest.write(items + item_index * game.ITEM_SIZE, plain_weapon(item, *new)[0])
+                    material = MATERIALS.get(read(new[1][0])[8] & 0x4F, "")
+                    out.append(f"{who} starts with a plain {material}{specialize.KINDS[chosen[0]]} for the Battle "
+                               f"Mage's weapon spec, in place of the {name(item)}")
+                    break
     return out

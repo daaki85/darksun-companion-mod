@@ -1710,6 +1710,33 @@ then click the kit you want. A few names are shortened to fit the panel
 another class puts the kit back to none. The Effects screen names the kit
 (`KIT: RAVAGER`), as does the Ledger's Characters tab.
 
+The game hands a new character its gear when DONE is clicked, by its class:
+
+| Class | Starting gear |
+|---|---|
+| Fighter | bone long sword, shield, leather chest, arm and leg armour |
+| Gladiator | bone long sword, club in the off hand, leather arm armour |
+| Ranger | bone long sword, bow and arrows, leather chest and arm armour |
+| Cleric | shield, leather chest and arm armour, a club in the backpack |
+| Druid | club, sling |
+| Preserver | quarterstaff, sling |
+| Psionicist | club, bow and arrows, leather chest armour |
+| Thief | bone long sword, sling, leather chest armour |
+
+With **Kits** ticked, the Ledger fits that gear to the kit while the character
+is new, and the dice log says what it changed: a weapon in the hand the kit
+forbids becomes a plain one it allows (a **Shinobi**'s long sword a bone
+short sword; a **Brute**'s a bone great axe, its club going to the backpack;
+a **Seeker**'s long sword one of a material its sphere allows); a shield or
+off-hand weapon the kit forbids goes to the backpack (a **Ravager**'s shield);
+an **Arena Champion**'s off-hand club becomes a shield, the gladiator's kit
+being the one that fights with it; and with weapon specialization a
+**Battle Mage**'s quarterstaff becomes a plain weapon of its chosen weapon spec
+(`T'Jun starts with a plain bone axe for the Battle Mage's weapon spec, in
+place of the Quarterstaff`). The other kits keep the class's gear: it fits
+them (the Twin-blade's long sword and club are its two weapons, the Healer's
+club is in the backpack, a Lifebinder's club and sling are blunt).
+
 A kit belongs to the class it was chosen with. A human who changes class
 (**DUAL** on the menu a right-click on a portrait opens, for a human of 2nd
 level or more) leaves that class, and the kit ends with it, its gifts and its

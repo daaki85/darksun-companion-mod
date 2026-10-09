@@ -357,5 +357,85 @@ class FinishNewTests(unittest.TestCase):
         self.assertEqual(self.item(2)[0], weaponchoice.START_TYPE)
 
 
+class KitGearTests(FinishNewTests):
+    """weaponchoice.kit_gear: a New character's starting gear fitted to its kit."""
+
+    def setUp(self):
+        super().setUp()
+        rules = game.RULES_IN_FORCE
+        game.RULES_IN_FORCE = game.RULE_KITS
+        self.addCleanup(setattr, game, "RULES_IN_FORCE", rules)
+        from dscompanion import weaponchoice
+        for t in range(game.GAME_TYPES + 25):
+            self.mem[self.TYPES + t * game.ITEM_TYPE_SIZE + 0x10:self.TYPES + t * game.ITEM_TYPE_SIZE + 0x12] = b"\xff\xff"
+        for kind, plain in enumerate(weaponchoice.PLAIN):  # (melee weapons, but the missile ones)
+            self.mem[self.TYPES + plain[0] * game.ITEM_TYPE_SIZE] = 0x02 if kind in weaponchoice.MISSILE_KINDS else 0x01
+        for shield in (4, 36):
+            self.mem[self.TYPES + shield * game.ITEM_TYPE_SIZE] = 0x04
+        great_axe = weaponchoice.PLAIN[specialize.KINDS.index("great axe")][0]
+        self.mem[self.TYPES + great_axe * game.ITEM_TYPE_SIZE + 0x0F] = weaponchoice.TWO_HANDED
+
+    def character(self, cls, kit, chosen=()):
+        s = bytearray(sheet(tuple(specialize.KINDS.index(k) for k in chosen), classes=(cls, 0, 0)))
+        s[game.SHEET_FLAGS:game.SHEET_FLAGS + 2] = b"\xff\xff"
+        s[0x43] = kit
+        self.mem[self.SHEETS:self.SHEETS + game.SHEET_SIZE] = s
+        return game.WEAPON_HANDS
+
+    def test_shinobi_long_sword(self):
+        from dscompanion import weaponchoice
+        right, left = self.character(17, 3)
+        self.give(weaponchoice.START_TYPE, weaponchoice.START_NAME, right)
+        out = weaponchoice.kit_gear(self.gd)
+        self.assertEqual(self.item(0), (weaponchoice.PLAIN[specialize.KINDS.index("short sword")][0], right))
+        self.assertIn("a Shinobi can't use it", out[0])
+        self.assertEqual(weaponchoice.kit_gear(self.gd), [])  # (once)
+
+    def test_ravager_shield(self):
+        from dscompanion import weaponchoice
+        right, left = self.character(9, 3)
+        self.give(weaponchoice.START_TYPE, weaponchoice.START_NAME, right)
+        self.give(4, 0x05, left)
+        weaponchoice.kit_gear(self.gd)
+        self.assertEqual(self.item(0), (weaponchoice.START_TYPE, right))
+        self.assertEqual(self.item(1), (4, 30))  # (into a backpack cell)
+
+    def test_brute_two_handed(self):
+        """Without weapon specialization (its chosen kind would be one already): a great axe, and
+        the off-hand club into the backpack."""
+        from dscompanion import weaponchoice
+        right, left = self.character(10, 3)
+        self.give(weaponchoice.START_TYPE, weaponchoice.START_NAME, right)
+        self.give(18, 0x11, left)
+        weaponchoice.kit_gear(self.gd)
+        self.assertEqual(self.item(0), (weaponchoice.PLAIN[specialize.KINDS.index("great axe")][0], right))
+        self.assertEqual(self.item(1), (18, 30))
+
+    def test_arena_champion_shield(self):
+        from dscompanion import weaponchoice
+        right, left = self.character(10, 1)
+        self.give(weaponchoice.START_TYPE, weaponchoice.START_NAME, right)
+        self.give(18, 0x11, left)
+        out = weaponchoice.kit_gear(self.gd)
+        self.assertEqual(self.item(1), (4, left))
+        self.assertIn("shield", out[0])
+        self.assertEqual(weaponchoice.kit_gear(self.gd), [])
+
+    def test_battle_mage_weapon(self):
+        from dscompanion import weaponchoice
+        right, left = self.character(11, 2, ("axe",))
+        self.give(3, 0x04, right)  # (the quarterstaff)
+        self.assertEqual(weaponchoice.kit_gear(self.gd), [])  # (weapon specialization off: no spec)
+        self.gd.rules = game.RULE_SPECIALIZE
+        weaponchoice.kit_gear(self.gd)
+        self.assertEqual(self.item(0), (weaponchoice.PLAIN[specialize.KINDS.index("axe")][0], right))
+
+    def test_no_kit(self):
+        from dscompanion import weaponchoice
+        right, left = self.character(17, 0)
+        self.give(weaponchoice.START_TYPE, weaponchoice.START_NAME, right)
+        self.assertEqual(weaponchoice.kit_gear(self.gd), [])
+        self.assertEqual(self.item(0), (weaponchoice.START_TYPE, right))
+
 if __name__ == "__main__":
     unittest.main()
