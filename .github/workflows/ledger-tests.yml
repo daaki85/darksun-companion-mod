@@ -3,7 +3,7 @@ name: Obsidian Edition tests
 
 on:
   push:
-    branches: [templars-ledger]
+    branches: [obsidian-edition]
     paths: ["darksun-companion/**", ".github/workflows/ledger-tests.yml"]
   workflow_dispatch:
 
