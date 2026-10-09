@@ -1460,7 +1460,7 @@ game itself does, under [Two weapons](#two-weapons), [Thieves](#thieves) and
 | Rule (its box on the Options tab) | What it changes |
 |---|---|
 | [Weapon specialization](#weapon-specialization) | fighters and gladiators specialize in kinds of weapon, fighters on to mastery and grand mastery, rangers take expertise (and every ranger the bow); specialists and rangers shoot missiles faster; other weapons at a warrior's plain rate (missiles faster from 7th level) |
-| [Kits](#kits) | a character of one class takes one of three kits for its class, or none (being built: all but the Elementalist's second sphere work) |
+| [Kits](#kits) | a character of one class takes one of three kits for its class, or none |
 | [Class restrictions](#class-restrictions) | each class's limits on armour, shields and weapons hold, the strictest winning; a multiclass preserver casts no spells in armour |
 | [Multiclass hit points](#multiclass-hit-points) | each level's die and CON's bonus shared between a character's classes |
 | [Hit dice: the better of two](#hit-dice-the-better-of-two) | each hit die rolled twice, the better kept, for every character |
@@ -1606,7 +1606,6 @@ How it works: [DEVELOPMENT.md](DEVELOPMENT.md#weapon-specialization).
 
 ### Kits
 
-Being built: every kit works but for the Elementalist's second sphere.
 With **Kits** ticked, a character of one class may take one of three kits for
 its class when it is made, or none (the class as it is). Each gives something
 and costs something.
@@ -1630,7 +1629,7 @@ and costs something.
 | **Healer** (cleric) | Cure Light, Serious and Critical Wounds heal 1 more a die (+1, +2, +3) | no weapon in the off hand (a shield is fine) |
 | **Scholar** (preserver) | a spell more learnt at each level up (CHOOSE A SPELL comes up twice) | −1 to hit (THAC0 1 worse) |
 | **Crusader** (cleric) | a warrior's THAC0 | one fewer spell slot at each spell level |
-| **Elementalist** (cleric) | *to come:* a second sphere: its spells and its weapons | spell slots a level behind (a 7th-level Elementalist has a 6th-level cleric's; none at 1st level) |
+| **Elementalist** (cleric) | a second sphere: its spells (cast at its cleric level) and its weapons as well as its own sphere's | spell slots a level behind (a 7th-level Elementalist has a 6th-level cleric's; none at 1st level) |
 | **Seeker** (ranger) | priest spell slots from 6th level: one 1st-level slot at 6th, two at 7th, and a 2nd-level slot at 8th, two at 9th, and a 3rd-level slot at 10th (and on), in place of a ranger's, cast at the ranger level less 5 (a ranger's: less 7) | its sphere's weapon limits, as a cleric of that sphere's (air: missile and thrown weapons, daggers; earth: stone, obsidian, metal, wood; fire: obsidian; water: bone, wood), but it keeps the bow |
 | **Justifier** (ranger) | with weapon specialization, its expertise with the bow and its chosen weapon spec becomes specialization: +1 to hit, +2 damage (SPECIALIZED IN on the Effects screen) | one 1st-level priest spell slot from 10th level, in place of a ranger's slots, cast at the ranger level less 9 |
 | **Battle Mage** (preserver) | a warrior's THAC0; a spell still cast after being hit earlier in the round; a d6 hit die; light armour (leather, or none) worn, and spells cast in it; with weapon specialization, expertise in one weapon spec of its choice (long sword, club, dagger, short sword, mace, axe or pick), whose weapons it may use as well as a preserver's own, at 3/2 attacks a round (2 from 7th level) | one fewer spell slot at each spell level; nothing in the off hand |
@@ -1638,7 +1637,6 @@ and costs something.
 | **Mind Bender** (psionicist) | telepathy powers (the defence modes too) cost 2 PSP less to use | psychokinesis powers cost 2 PSP more |
 | **Kineticist** (psionicist) | psychokinesis powers cost 2 PSP less to use | telepathy powers (the defence modes too) cost 2 PSP more |
 
-Still to come: the parts marked *to come* above.
 
 The Lifebinder's die
 is rolled by the helper from the game's own random numbers; the dice log notes
@@ -1666,6 +1664,14 @@ A warrior's THAC0 is the game's own for a fighter, given where it is better
 than the character's class's; it and the Scholar's are in the THAC0 the game
 keeps for the character (View Character's, the attack's), worked out when the
 character is made and at each level up.
+
+The Elementalist chooses its second sphere on the creation panel's
+**CLERICAL SPHERE** list: once the kit is taken (KITS, then ELEMENTAL), its
+own sphere marked, the other spheres stay in use, and a click on one marks it
+as the second; a click on it again takes it back, and taking back its own
+sphere takes back both. The Ledger's Characters tab names it (**Kit:
+Elementalist (and water)**). Its second sphere's spells are known from the
+start and at each level up as its own sphere's are.
 
 The Battle Mage chooses its weapon spec on the weapon pages: once the kit is
 taken, **VIEW PSIONICS** on the KIT page goes back to the panel, which then

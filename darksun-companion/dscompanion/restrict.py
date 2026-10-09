@@ -83,6 +83,15 @@ def spheres(classes: Iterable[int]) -> Set[int]:
     return {(c - 1) % 4 for c in classes if c in CLERICS or c in RANGERS}
 
 
+def elementalist_sphere(sheet: bytes) -> Set[int]:
+    """An Elementalist's (kits.py, the rule for kits in force) second sphere, as a set (empty for none)."""
+    from . import kitpages, kits
+    if not game.RULES_IN_FORCE & game.RULE_KITS:
+        return set()
+    second = kits.second_sphere(kitpages.kit_id(sheet), sheet)
+    return set() if second is None else {second}
+
+
 def sphere_allows(sphere: int, typ: bytes, kind: int) -> bool:
     if sphere == AIR:
         return bool(typ[TYPE_FLAGS] & (MISSILE | THROWN)) or kind == specialize.KINDS.index("dagger")
@@ -163,7 +172,7 @@ def allowed(sheet: bytes, item_type: int, typ: bytes) -> bool:
     if any(c in DRUIDS for c in holding) and (armour or shield):
         return False
     if any(c in CLERICS for c in holding) and kind is not None:
-        if not any(sphere_allows(s, typ, kind) for s in spheres(classes)):
+        if not any(sphere_allows(s, typ, kind) for s in spheres(classes) | elementalist_sphere(sheet)):
             return False
     return True
 

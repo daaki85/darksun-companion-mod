@@ -1253,6 +1253,30 @@ class CanUseTests(unittest.TestCase):
         finally:
             game.RULES_IN_FORCE = old
 
+    def test_elementalist(self):
+        """An Elementalist's second sphere's weapons as well as its own sphere's (CLASS_FORBIDS's
+        EL_SECOND; restrict.elementalist_sphere)."""
+        hdr = TSR * 16 + load_image().find(HDR_SIG)
+        old = game.RULES_IN_FORCE
+        try:
+            self.mu.mem_write(hdr + 270, struct.pack("<H", 1))
+            game.RULES_IN_FORCE = game.RULE_RESTRICT | game.RULE_KITS
+            for cls in (1, 2, 3, 4):
+                for kit, second in ((1, 0), (1, 1), (1, 2), (1, 3), (1, None), (2, 1)):
+                    s = bytearray(test_restrict.sheet(cls))
+                    s[0x43], s[0x45] = kit, 0 if second is None else second + 1
+                    for t in test_restrict.TYPES:
+                        with self.subTest(cls=cls, kit=kit, second=second, type=t):
+                            self.assertEqual(self.can_use(bytes(s), t, rules=game.RULE_RESTRICT), self.expected(s, t))
+            fire = bytearray(test_restrict.sheet(1))  # (an air cleric: the bone long sword with water)
+            fire[0x43], fire[0x45] = 1, 4
+            self.assertTrue(restrict.allowed(bytes(fire), 81, test_restrict.record(81)))
+            fire[0x45] = 0
+            self.assertFalse(restrict.allowed(bytes(fire), 81, test_restrict.record(81)))
+        finally:
+            game.RULES_IN_FORCE = old
+            self.mu.mem_write(hdr + 270, struct.pack("<H", 0))
+
     def test_kits(self):
         """KIT_FORBIDS in PROBE_CAN_USE as restrict.kit_forbids (kits.forbids): the Twin-blade,
         Brute, Stalker, Grove Warden and Lifebinder, a half-giant or not, the rule for half-giants'
@@ -1514,7 +1538,7 @@ class KindsAllowedTests(unittest.TestCase):
             game.RULES_IN_FORCE = game.RULE_KITS
             mu.mem_write(hdr + 270, struct.pack("<H", 1))
             for classes, kit in (((10,), 3), ((10,), 2), ((5,), 2), ((17,), 3), ((5,), 1), ((11,), 2), ((11,), 1),
-                                 ((13,), 3), ((14,), 3), ((15,), 3), ((16,), 3), ((13,), 2)):
+                                 ((13,), 3), ((14,), 3), ((15,), 3), ((16,), 3), ((13,), 2), ((1,), 1), ((3,), 1)):
                 s = bytearray(sheet(*classes))
                 s[0x43] = kit
                 with self.subTest(classes=classes, kit=kit):
@@ -1525,6 +1549,21 @@ class KindsAllowedTests(unittest.TestCase):
                     mu.emu_start(TSR * 16 + start, TSR * 16 + 0xFFF0)
                     got = mu.reg_read(r.UC_X86_REG_AX)
                     self.assertEqual([k for k in range(16) if got >> k & 1], restrict.allowed_kinds(bytes(s), self.record))
+            game.RULES_IN_FORCE = game.RULE_KITS | game.RULE_RESTRICT  # an Elementalist's second sphere's kinds too
+            for cls, second in ((1, 3), (3, 3), (3, 0), (2, 2)):
+                s = bytearray(sheet(cls))
+                s[0x43], s[0x45] = 1, second + 1
+                with self.subTest(cls=cls, second=second):
+                    mu.mem_write(SS * 16 + 0x500, bytes(s))
+                    mu.mem_write(SS * 16 + 0x7FC, struct.pack("<H", 0xFFF0))
+                    for name, value in dict(cs=TSR, ds=GAME_DS, es=SS, ebx=0x500, ss=SS, esp=0x7FC).items():
+                        mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+                    mu.emu_start(TSR * 16 + start, TSR * 16 + 0xFFF0)
+                    got = mu.reg_read(r.UC_X86_REG_AX)
+                    want = restrict.allowed_kinds(bytes(s), self.record)
+                    self.assertEqual([k for k in range(16) if got >> k & 1], want)
+                    s[0x45] = 0
+                    self.assertLessEqual(set(restrict.allowed_kinds(bytes(s), self.record)), set(want))
         finally:
             game.RULES_IN_FORCE = old
             mu.mem_write(hdr + 270, struct.pack("<H", 0))
@@ -3121,6 +3160,62 @@ class KitTests(unittest.TestCase):
                                                                                     r.UC_X86_REG_DI, r.UC_X86_REG_ES)],
                                                      [0x2222, 0x3333, di, 0x6666])
         self.assertEqual([kits.shinobi_cast(n) for n in (1, 5, 6, 8, 10)], [0, 0, 1, 3, 5])
+
+    def test_elementalist_spells(self):
+        """PROBE_EL_CAST and PROBE_EL_LEVEL: the spell's mask read (EDX, EBX), an Elementalist's
+        second sphere's spells its own class's too (kits.spell_spheres); PROBE_EL_GRANT: its second
+        sphere's cleric bit in the priest mask the spells are given by ([BP-6]), SI cleared."""
+        from dscompanion import kits
+        from dscompanion.gamepatch import VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_GRANT
+        spells = 0x6600
+        for rules in (game.RULE_KITS, 0):
+            self.rules(rules)
+            for cls, kit, second in ((1, 1, 2), (2, 1, 0), (4, 1, 3), (1, 1, None), (1, 2, 2), (13, 3, 2)):
+                self.creature(cls, kit)  # (combatant 7, creature 5, sheet 5)
+                self.mu.mem_write(self.SHEET * 16 + 5 * 0x47 + kits.SPHERE2, bytes((0 if second is None else second + 1,)))
+                elementalist = rules and cls <= 4 and kit == 1 and second is not None
+                kid = kits.ELEMENTALIST if elementalist else 0
+                self.mu.mem_write(SS * 16 + BP + 6, struct.pack("<H", 7))
+                for mask in (0x110112, 0x104046, 0x10808A, 0x120222, 0x13C3FE, 0x81001, 0):
+                    with self.subTest(rules=rules, cls=cls, kit=kit, second=second, mask=hex(mask)):
+                        want = kits.spell_spheres(kid, cls, second, mask)
+                        self.mu.mem_write(spells * 16 + 0x10 + 0x19D, struct.pack("<I", mask))
+                        self.run_vector(VEC_EL_CAST, 6, eax=0x11112222, ebx=0x3333, esi=0x10, edx=0, es=spells)
+                        self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_EDX, r.UC_X86_REG_EAX,
+                                                                        r.UC_X86_REG_BX, r.UC_X86_REG_SI, r.UC_X86_REG_ES)],
+                                         [want, 0x11112222, 0x3333, 0x10, spells])
+                        self.run_vector(VEC_EL_LEVEL, 6, eax=0x11112222, ebx=0x10, ecx=0x4444, edx=0x5555, es=spells)
+                        self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_EBX, r.UC_X86_REG_EAX,
+                                                                        r.UC_X86_REG_CX, r.UC_X86_REG_DX)],
+                                         [want, 0x11112222, 0x4444, 0x5555])
+                with self.subTest(rules=rules, cls=cls, kit=kit, second=second, probe="grant"):
+                    self.mu.mem_write(SS * 16 + BP - 6, struct.pack("<I", 2 << cls))
+                    self.run_vector(VEC_EL_GRANT, 2, eax=0x1111, ebx=0x2222, ecx=0x3333, esi=0x5555, es=0x6666)
+                    got, = struct.unpack("<I", self.mu.mem_read(SS * 16 + BP - 6, 4))
+                    self.assertEqual(got, (2 << cls) | (4 << second if elementalist else 0))
+                    self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_SI, r.UC_X86_REG_AX, r.UC_X86_REG_BX,
+                                                                    r.UC_X86_REG_CX, r.UC_X86_REG_ES)],
+                                     [0, 0x1111, 0x2222, 0x3333, 0x6666])
+        # PROBE_EL_KNOW: member 5's class bit (EAX) tested against the spell's mask, ZF as the test
+        from dscompanion.gamepatch import VEC_EL_KNOW
+        for rules in (game.RULE_KITS, 0):
+            self.rules(rules)
+            for cls, kit, second in ((2, 1, 3), (1, 1, 2), (2, 1, None), (2, 2, 3)):
+                self.creature(cls, kit)
+                self.mu.mem_write(self.SHEET * 16 + 5 * 0x47 + kits.SPHERE2, bytes((0 if second is None else second + 1,)))
+                kid = kits.ELEMENTALIST if rules and kit == 1 and second is not None else 0
+                for mask in (0x120222, 0x10808A, 0x104046, 0x13C3FE):
+                    with self.subTest(rules=rules, cls=cls, kit=kit, second=second, mask=hex(mask), probe="know"):
+                        self.mu.mem_write(spells * 16 + 0x20 + 0x19D, struct.pack("<I", mask))
+                        bit = 2 << cls
+                        self.run_vector(VEC_EL_KNOW, 6, eax=bit, ebx=0x20, ecx=0x12345678, esi=5, es=spells)
+                        zf = bool(self.mu.reg_read(r.UC_X86_REG_EFLAGS) & 0x40)
+                        self.assertEqual(zf, not kits.spell_spheres(kid, cls, second, mask) & bit)
+                        self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_EAX, r.UC_X86_REG_EBX, r.UC_X86_REG_ECX,
+                                                                        r.UC_X86_REG_SI, r.UC_X86_REG_ES)],
+                                         [bit, 0x20, 0x12345678, 5, spells])
+        self.assertEqual(kits.spell_spheres(kits.ELEMENTALIST, 1, 2, 0x110112), 0x110116)  # (fire's: the air cleric's too)
+        self.assertEqual(kits.spell_spheres(kits.ELEMENTALIST, 1, 2, 0x10808A), 0x10808A)
 
 
     def picker_sheet(self, cls, kit, level):

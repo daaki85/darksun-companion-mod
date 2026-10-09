@@ -948,7 +948,7 @@ characters" check counts to 19. The patched game has 30 and 29 there
 A New character counts as Okay wherever the game tests for Okay: a jump each
 (`NEW_AS_OKAY` in `dscompanion/gamepatch.py`), and `game.py` does the same.
 
-## Planned: kits
+## Kits
 
 Being built: the choice is made (the KIT page, the kit's byte, the Effects
 screen's line, the Characters tab, the Options switch); the kits' effects are
@@ -1137,11 +1137,18 @@ kit byte goes with it; a kit left from the classes before a click on a class
 (`PROBE_WP_CLASS` clears it only after the click's rolls) is cleared first
 (`KIT_STALE`), so the class's own die is rolled.
 
-Still to find:
+The Elementalist's second sphere is the sheet's `+45h` (`SPHERE2`: 0 none, else the sphere + 1),
+free since the Arcanist's CON change went. The game gives each class a mask (load + 3800h, `+118h`,
+a dword a class: 1 wizard, 2 priest, then a bit a class, 4 the air cleric to 20h the water cleric)
+and each spell one (load + 3FB9h, `+19Dh`, 7 bytes a spell); a class casts the spells whose masks
+meet its:
 
-| Effect | Kits | What |
+| Effect | Kits | Where |
 |---|---|---|
-| a second sphere | Elementalist | how the game gives a priest its element's spells (the USE screen) and counts caster level 0 for another's |
+| priest spells known | Elementalist (its second sphere's too) | the loops that mark each priest spell (45h-89h) known or not for a party member by the class's bit, on making a character (66F89h) and at a level up (86E1Eh): `PROBE_EL_KNOW` (`INT 9Eh`, new: `test dword es:[bx+19Dh],eax`, 66FC9h and 86E56h; its flags back to the JZ with `RETF 2`) adds the second sphere's cleric bit. And the routine giving a priest its spheres' spells (5E401h, no caller found): `PROBE_EL_GRANT` (`INT A1h`, new: `xor si,si`, 5E489h) adds it to its mask |
+| caster level, a spell's level | Elementalist | the caster level routine (81B16h: the spell levels it casts, Dispel Magic) and the effect level routine (5E25Ch: durations and damage) count a class whose mask meets the spell's: `PROBE_EL_CAST` (`INT A0h`, new: `mov edx,es:[si+19Dh]`, 81B42h) and `PROBE_EL_LEVEL` (`INT 9Fh`, new: `mov ebx,es:[bx+19Dh]`, 5E375h) give a spell of its second sphere its own cleric's bit too; `kits.spell_spheres`, `GameData.effect_caster_level` |
+| weapons | Elementalist (its second sphere's as well as its own) | `CLASS_FORBIDS`'s cleric spheres (`EL_SECOND`), and `KINDS_ALLOWED` through it; `restrict.elementalist_sphere` |
+| choosing it | Elementalist | the creation panel's spheres (the game's, drawn from a mask by 63FEEh, `DS:4982h` its own sphere's row): `WP_CLICK` sends a click on a sphere's row to `EL_CLICK`, which takes or takes back the second (the game's mask left alone) and has `EL_MARKS` draw both marked and every row in use; `PROBE_WP_CLASS` (after every click) draws them so again over the game's own drawing (`EL_REMARK`) |
 
 Every kit also needs its Python side: the Characters tab and the in-game
 THAC0 and saves (`game.py`), the dice log's lines, and tests that hold the
@@ -1200,4 +1207,11 @@ helper's code (emulated) to the Python.
    the Justifier's specialization. Checked in the game: a fire Seeker's
    weapon pages open the obsidian kinds (long sword, dagger, short sword,
    mace, axe, great axe, chatkcha) and grey the rest.
-7. The Elementalist's second sphere.
+7. Done: the Elementalist's second sphere: chosen on the creation panel's
+   spheres, its spells known, its caster level and its spells' levels, its
+   weapons. Checked in the game: a cleric taking Elementalist, its own
+   sphere marked, marks a second (both marked, the rest in use), takes it
+   back, and loses both when its own is taken back; an earth Elementalist
+   with water made with DONE knows the water spells (93, 108, 114, 126) as
+   well as earth's (75, 92, 111, 125, 133). Its casting of them and the
+   weapons are held to the Python by emulated tests.

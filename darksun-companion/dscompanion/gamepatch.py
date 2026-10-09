@@ -72,6 +72,7 @@ VEC_RANGER_CAST, VEC_PSP_KEEP_DX, VEC_HIT_ROUND = 0xAF, 0xAE, 0xAD
 VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL = 0xAC, 0xAB, 0xAA, 0xA9, 0xA8
 VEC_PICK_ANY, VEC_RANGER_LEVEL = 0xA7, 0xA6
 VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP = 0xA5, 0xA4, 0xA3, 0xA2
+VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW = 0xA1, 0xA0, 0x9F, 0x9E
 
 
 SCRIPT_BUFFER = 0x2E00  # the scripts' buffer, made bigger (the game's: 10000 bytes)
@@ -383,6 +384,15 @@ PATCHES = (
     Patch("max_psp", 0x8748F, bytes.fromhex("c45ef8"), _interrupt(VEC_MAX_PSP, 3)),
     Patch("cr_die", 0x65677, bytes.fromhex("268a874a01"), _interrupt(VEC_CR_DIE, 5)),
     Patch("cr_psp", 0x65C3D, bytes.fromhex("5dcb"), _interrupt(VEC_CR_PSP, 2)),
+    # The Elementalist's second sphere (kits.py): its cleric bit added where the game gives a
+    # priest its spheres' spells (and where it marks them known, on making a character and at a
+    # level up), and a spell of that sphere counted as its own sphere's where the
+    # caster level and the level a spell's duration and damage take are worked out
+    Patch("el_grant", 0x5E489, bytes.fromhex("33f6"), _interrupt(VEC_EL_GRANT, 2)),
+    Patch("el_cast", 0x81B42, bytes.fromhex("66268b949d01"), _interrupt(VEC_EL_CAST, 6)),
+    Patch("el_level", 0x5E375, bytes.fromhex("66268b9f9d01"), _interrupt(VEC_EL_LEVEL, 6)),
+    Patch("el_know_new", 0x66FC9, bytes.fromhex("662685879d01"), _interrupt(VEC_EL_KNOW, 6)),
+    Patch("el_know_level", 0x86E56, bytes.fromhex("662685879d01"), _interrupt(VEC_EL_KNOW, 6)),
     Patch("pick_any", 0x85580, bytes.fromhex("8946fe0bc0"), _interrupt(VEC_PICK_ANY, 5)),
     Patch("pick_level", 0x85861, bytes.fromhex("fec0"), _interrupt(VEC_PICK_LEVEL, 2)),
     Patch("pick_list", 0x8563F, bytes.fromhex("8bf8"), _interrupt(VEC_PICK_LIST, 2)),

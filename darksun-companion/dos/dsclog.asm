@@ -121,6 +121,10 @@ VEC_HIT_DIE equ 0xA5       ; PROBE_HIT_DIE
 VEC_MAX_PSP equ 0xA4       ; PROBE_MAX_PSP
 VEC_CR_DIE equ 0xA3        ; PROBE_CR_DIE
 VEC_CR_PSP equ 0xA2        ; PROBE_CR_PSP
+VEC_EL_GRANT equ 0xA1      ; PROBE_EL_GRANT
+VEC_EL_CAST equ 0xA0       ; PROBE_EL_CAST
+VEC_EL_LEVEL equ 0x9F      ; PROBE_EL_LEVEL
+VEC_EL_KNOW equ 0x9E       ; PROBE_EL_KNOW
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 96          ; entries in the ring (96: the helper and it fit in upper memory)
@@ -3386,7 +3390,11 @@ class_forbids_one:
 .nexts: inc si
         cmp si, 3
         jb .sphere
-        pop si
+        call el_second          ; (an Elementalist's second sphere's too)
+        jz .none
+        call sphere_allows
+        jnc .yes
+.none:  pop si
         stc
         ret
 .yes:   pop si
@@ -3868,6 +3876,8 @@ wp_allowed:
         mov [cs:wp_sheet + 0x12], dx
         mov al, [es:bx + KIT_BYTE]          ; (its kit: what it keeps the sheet from)
         mov [cs:wp_sheet + KIT_BYTE], al
+        mov al, [es:bx + SPHERE2]           ; (an Elementalist's second sphere)
+        mov [cs:wp_sheet + SPHERE2], al
         push cs
         pop es
         mov bx, wp_sheet
@@ -5876,6 +5886,10 @@ probe_wp_class:
         jz .out
         les bx, [WP_SPHERE]
         mov ax, [es:bx + 8]
+        cmp ax, KIT_SPHERE_ID   ; (the spheres: an Elementalist's marked again, EL_MARKS)
+        je .spheres
+        cmp ax, GAME_SPHERES_ID
+        je .spheres
         sub ax, KIT_WIN_ID
         cmp ax, 8
         jb .kit
@@ -5913,6 +5927,12 @@ probe_wp_class:
         jmp .done
 .kit_marks:
         call kit_marks
+        jmp .done
+.spheres:
+        sti
+        pushad
+        push es
+        call el_remark
 .done:  pop es
         popad
 .out:   pop es
@@ -5957,7 +5977,7 @@ wp_click:
         cmp byte [cs:wp_from], 1    ; (a weapon or kit page's button, in the spheres' routine)
         jne .game
         cmp ax, WP_ROW
-        jb .game
+        jb .sphere
         cmp ax, KIT_VIEW
         ja .game
         sti
@@ -5988,6 +6008,18 @@ wp_click:
         call kit_open
         pop es
         popad
+.sphere:                        ; a sphere's row: an Elementalist's second (EL_CLICK)
+        cmp ax, EL_ROW
+        jb .game
+        cmp ax, EL_ROW + 3
+        ja .game
+        sti
+        pushad
+        push es
+        call el_click
+        pop es
+        popad
+        jnc .game
 .end:
         mov ax, [cs:wp_end_file]  ; go on at the routine's end
         sub ax, [cs:wp_ret_file]
@@ -6537,6 +6569,238 @@ cr_show:
         ret
 
 kit_reroll_due db 0
+
+; The Elementalist (kits.py): a cleric with a second sphere, its spells and its weapons. The sheet's
+; SPHERE2 (+45h): 0 none, 1-4 the sphere (air, earth, fire, water) + 1. On the creation panel's
+; spheres (the game's, mask-driven: WP_SPHERE_MASK its own sphere's row, 80h air to 10h water), an
+; Elementalist with its own sphere chosen clicks another for its second (EL_CLICK), the rows kept in
+; use and both marked (EL_MARKS, after every click: PROBE_WP_CLASS); its own taken back, the
+; second goes too.
+SPHERE2    equ 0x45
+EL_ROW     equ 0x7FA                ; (the spheres' rows: AIR, EARTH, FIRE, WATER)
+GAME_SPHERES_ID equ 3013
+; EL_SECOND: AL the second sphere (0-3) of the Elementalist whose sheet is at ES:BX, ZF clear; ZF
+; set if none (not one, or none chosen). Others kept.
+el_second:
+        push cx
+        mov cl, [es:bx + SPHERE2]
+        call kit_id
+        cmp al, KIT_ELEMENTALIST
+        jne .none
+        mov al, cl
+        dec al
+        cmp al, 3
+        ja .none
+        or cl, 1                ; (ZF clear)
+        pop cx
+        ret
+.none:  cmp al, al
+        pop cx
+        ret
+
+; EL_CLICK: sphere row AX clicked on the creation panel (DS the game's): carry set if it was an
+; Elementalist's second (taken, or taken back) and the game is to do nothing; its own taken back
+; (the game's), the second cleared too.
+el_click:
+        mov si, ax
+        sub si, EL_ROW
+        call kit_made
+        cmp al, KIT_ELEMENTALIST
+        jne .game
+        les bx, [WP_CREATION]
+        mov ax, [WP_SPHERE_MASK]
+        mov cx, si
+        mov dx, 0x80
+        shr dx, cl
+        or ax, ax
+        jz .own                 ; (none chosen: the game's, its own)
+        test ax, dx
+        jnz .own                ; (its own: taken back)
+        inc si
+        mov ax, si
+        cmp [es:bx + SPHERE2], al
+        jne .put
+        xor al, al              ; (the second again: taken back)
+.put:   mov [es:bx + SPHERE2], al
+        call el_marks
+        stc
+        ret
+.own:   mov byte [es:bx + SPHERE2], 0
+.game:  clc
+        ret
+
+; EL_REMARK: for an Elementalist with its own sphere chosen, the spheres' rows as EL_MARKS has
+; them. DS the game's.
+el_remark:
+        cmp word [cs:wp_button_fn + 2], 0   ; (the window routines not yet read from the overlay)
+        je .ret
+        call kit_made
+        cmp al, KIT_ELEMENTALIST
+        jne .ret
+        cmp word [WP_SPHERE_MASK], 0
+        jne el_marks
+.ret:   ret
+
+; EL_MARKS: the spheres' rows (the page at DS:EA6h) all in use, its own sphere's and its second's
+; marked, the others not.
+el_marks:
+        les bx, [WP_CREATION]
+        mov dx, [WP_SPHERE_MASK]
+        mov cl, [es:bx + SPHERE2]
+        or cl, cl
+        jz .draw
+        dec cl
+        mov ax, 0x80
+        shr ax, cl
+        or dx, ax
+.draw:  mov bx, EL_ROW
+        mov si, 0x80
+        mov cx, 4
+.row:   mov ax, bx
+        push 0
+        call wp_button_op
+        test dx, si
+        jz .open
+        push 2
+        call wp_button_op
+        push 1
+        jmp .mark
+.open:  push 3
+        call wp_button_op
+        push 0
+.mark:  call wp_mark
+        inc bx
+        shr si, 1
+        loop .row
+        ret
+
+; The Elementalist's spells. The game gives each class a mask (the load segment + 3800h, +118h, a
+; dword a class: 1 wizard, 2 priest, then a bit a class, 4 the air cleric to 20h the water cleric)
+; and each spell one (+3FB9h:19Dh, 7 bytes a spell): a class casts the spells whose masks meet its.
+; PROBE_EL_GRANT: INT VEC_EL_GRANT replaces "xor si,si" (2 bytes; DSUN.EXE 5E489h) in the routine
+; that gives a priest the spells of its spheres (5E401h; [BP+6] the character, [BP-6] the mask of
+; its priest classes, then every spell meeting it that it may cast learnt): an Elementalist's
+; second sphere's cleric bit added. PROBE_EL_CAST: INT VEC_EL_CAST replaces "mov edx,es:[si+19Dh]"
+; (6 bytes; 81B42h) in the caster level routine (81B16h, [BP+6] the caster), and PROBE_EL_LEVEL
+; "mov ebx,es:[bx+19Dh]" (6 bytes; 5E375h) in the effect level routine (5E25Ch, [BP+6] too), where
+; the spell's mask is read: for an Elementalist, a spell of its second sphere counts as its own
+; sphere's (its cleric bit added; kits.spell_spheres).
+probe_el_grant:
+        xor si, si
+        push ax
+        push bx
+        push cx
+        push es
+        call el_caster
+        jz .out
+        mov bx, 4
+        xchg cl, al             ; (CL the second sphere)
+        shl bx, cl
+        xchg cl, al
+        or [bp - 6], bx
+.out:   pop es
+        pop cx
+        pop bx
+        pop ax
+        iret
+
+probe_el_cast:
+        mov edx, [es:si + 0x19D]
+        push eax
+        mov eax, edx
+        call el_spheres
+        mov edx, eax
+        pop eax
+        iret
+
+probe_el_level:
+        mov ebx, [es:bx + 0x19D]
+        push eax
+        mov eax, ebx
+        call el_spheres
+        mov ebx, eax
+        pop eax
+        iret
+
+; PROBE_EL_KNOW: INT VEC_EL_KNOW replaces "test dword es:[bx+19Dh],eax" (6 bytes; DSUN.EXE 66FC9h,
+; on making a character, and 86E56h, at a level up) in the loops that mark each priest spell
+; (45h-89h) known or not for party member SI by its mask (ES:BX the spell's place in the table)
+; meeting the class's bit (EAX): for an Elementalist, its second sphere's cleric bit too
+; (as kits.spell_spheres). The flags of the test go back to the JZ after (RETF 2: the interrupt's own
+; dropped), interrupts on again.
+probe_el_know:
+        sti
+        push eax
+        push ecx
+        push bx
+        push es
+        mov ecx, eax            ; (ECX the class's bit)
+        imul ax, si, 0x3A
+        les bx, [CREATURES]
+        add bx, ax
+        mov ax, [es:bx + 4]
+        les bx, [0x1661]
+        imul ax, ax, 0x47
+        add bx, ax
+        call el_second
+        jz .test
+        movzx eax, al           ; (the second sphere's cleric bit: 4 the air cleric's)
+        add al, 2
+        bts ecx, eax
+.test:  pop es
+        pop bx
+        test [es:bx + 0x19D], ecx
+        pop ecx
+        pop eax
+        retf 2
+
+; EL_SPHERES: EAX a spell's mask, for caster [BP+6]: an Elementalist's second sphere's spells its
+; own sphere's too. Others kept.
+el_spheres:
+        push bx
+        push cx
+        push edx
+        push es
+        mov edx, eax
+        call el_caster          ; AL the second sphere, CL the cleric class (1-4)
+        jz .out
+        push cx
+        mov cl, al
+        mov eax, 4
+        shl eax, cl
+        pop cx
+        test edx, eax
+        jz .out
+        mov eax, 2
+        shl eax, cl
+        or edx, eax
+.out:   mov eax, edx
+        pop es
+        pop edx
+        pop cx
+        pop bx
+        ret
+
+; EL_CASTER: for combatant [BP+6]: AL its second sphere (EL_SECOND), CL its class, ZF clear if an
+; Elementalist with one; ZF set if not. ES, BX changed.
+el_caster:
+        push ax
+        call combatant_kit
+        cmp al, KIT_ELEMENTALIST
+        pop ax
+        jne .no
+        mov ax, bx
+        les bx, [CREATURES]
+        imul ax, ax, 0x3A
+        add bx, ax
+        mov ax, [es:bx + 4]
+        les bx, [0x1661]
+        imul ax, ax, 0x47
+        add bx, ax
+        mov cl, [es:bx + 0x21]
+        jmp el_second
+.no:    cmp al, al
+        ret
 kit_title  db 'KITS', 0
 kit_keep   db 0                 ; 1 while the panel goes back to the disciplines (the kit kept)
 WP_TITLE_SIZE equ 16
@@ -10895,6 +11159,18 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_CR_PSP
         mov dx, probe_cr_psp
         int 21h
+        mov ax, 2500h + VEC_EL_GRANT
+        mov dx, probe_el_grant
+        int 21h
+        mov ax, 2500h + VEC_EL_CAST
+        mov dx, probe_el_cast
+        int 21h
+        mov ax, 2500h + VEC_EL_LEVEL
+        mov dx, probe_el_level
+        int 21h
+        mov ax, 2500h + VEC_EL_KNOW
+        mov dx, probe_el_know
+        int 21h
         mov ax, 2500h + VEC_PICK_LEVEL
         mov dx, probe_pick_level
         int 21h
@@ -10949,10 +11225,10 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or A2h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+busy    db 'DSCLOG: interrupts 60h-65h or 9Eh-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
 all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS, VEC_LV_PICK, VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK, VEC_EF_ROWS, VEC_HP_BEST, VEC_TOME, VEC_INIT, VEC_THAC0, VEC_SLOTS, VEC_SLOT_LEVEL
             db VEC_PSP_USE, VEC_PSP_TABLE, VEC_PSP_DEFENCE, VEC_CURE, VEC_PSP_KEEP, VEC_RANGER_CAST, VEC_PSP_KEEP_DX
-            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY, VEC_RANGER_LEVEL, VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP
+            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY, VEC_RANGER_LEVEL, VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP, VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW
 all_vectors_end:
 
         align 16, db 0

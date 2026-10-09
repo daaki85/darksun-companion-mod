@@ -239,6 +239,7 @@ PSIONIC_FIRST, PSIONIC_COUNT = 138, 34
 # bits 5-7: the kind of save)
 SPELLS_SEG, SPELLS_OFF, SPELL_SIZE = 0x3CB4, 0x40, 0x20
 SHEET_MAGIC_RESISTANCE = 0x29
+SPHERE_NAMES = ("air", "earth", "fire", "water")  # the clerics' and druids' spheres, by class order
 SHEET_ATTACKS = 0x2A  # the game's attacks a round, in halves (2: 1, 3: 3/2)
 SHEET_XP, SHEET_XP_VALUE, SHEET_MAX_HP = 0x00, 0x04, 0x08  # a monster's sheet holds its XP value at +4
 SHEET_RACE, SHEET_ABILITIES = 0x18, 0x1B
@@ -1148,6 +1149,9 @@ class GameData:
         classes = self.guest.read((self.load_seg + CLASS_MAGIC_SEG) * 16 + CLASS_MAGIC_OFF, 4 * 20)
         from . import kits
         kid = self.kit_id(creature)
+        sheet = self.sheet(creature)
+        if len(sheet) >= SHEET_SIZE:  # (an Elementalist's second sphere: DSCLOG's PROBE_EL_CAST)
+            spheres = kits.spell_spheres(kid, sheet[SHEET_CLASSES], kits.second_sphere(kid, sheet), spheres)
         drop = kits.ranger_cast_drop(kid)  # (the game's 7; DSCLOG's PROBE_RANGER_CAST)
         best = 0
         for cls in range(1, 20):
@@ -1565,11 +1569,15 @@ class GameData:
         return kitpages.kit_id(self.sheet(creature))
 
     def kit(self, creature: int) -> Optional[str]:
-        """With kits, the kit the creature took when made (kitpages.KITS), or None."""
+        """With kits, the kit the creature took when made (kitpages.KITS), or None; an Elementalist's
+        with its second sphere ("Elementalist (and water)")."""
         if not self.rules & RULE_KITS:
             return None
-        from . import kitpages
-        return kitpages.kit_name(self.sheet(creature))
+        from . import kitpages, kits
+        sheet = self.sheet(creature)
+        name = kitpages.kit_name(sheet)
+        second = kits.second_sphere(kitpages.kit_id(sheet), sheet)
+        return f"{name} (and {SPHERE_NAMES[second]})" if name and second is not None else name
 
     def specializations(self, creature: int) -> List[Tuple[str, str]]:
         """With weapon specialization, (kind, skill) for each weapon kind the creature has chosen:

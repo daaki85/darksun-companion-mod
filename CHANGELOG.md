@@ -15,7 +15,7 @@ Released pull requests are summarised in a line or two each; the release notes
   room in its segment for the kits' code.
 
 **Added**
-- **Kits, being built:** a character of one class may take one of three kits
+- **Kits:** a character of one class may take one of three kits
   for its class, or none, on the creation panel's new KIT page (KITS, at the
   end of the panel's pages: the disciplines' for a class with no sphere, the
   spheres' for a cleric, druid or ranger, the last weapon page for a warrior
@@ -75,6 +75,11 @@ Released pull requests are summarised in a line or two each; the release notes
   from 7th level). The game's equip check, the fight, View Character's and the
   inventory's DAM lines, the Effects screen (EXPERT IN) and the Ledger all
   count it.
+- **The Elementalist's second sphere:** chosen on the creation panel's
+  CLERICAL SPHERE list once the kit is taken (a second row marked beside its
+  own), its spells known from the start and at each level up, cast at its
+  cleric level, and its weapons allowed as well as its own sphere's (INT A1h,
+  A0h, 9Fh, 9Eh). The Characters tab names it. Every kit now works.
 - **The Seeker's weapons** are its sphere's, as a cleric's of that sphere,
   but for the bow, on the weapon pages and when equipping. **The Justifier's**
   expertise with the bow and its chosen weapon spec is specialization (+1 to
@@ -92,7 +97,7 @@ Released pull requests are summarised in a line or two each; the release notes
   place of −2 CON.
 - **The dice log's ring holds 96 entries** (was 128), making room in upper
   memory for the kits' code.
-- **The helper's interrupts** are now A2h to FEh (and 60h to 65h); the
+- **The helper's interrupts** are now 9Eh to FEh (and 60h to 65h); the
   message when they are in use says so.
 
 **Documentation**
