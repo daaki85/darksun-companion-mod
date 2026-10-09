@@ -296,6 +296,23 @@ def dual_banned(kid: int, cls: int) -> bool:
     return cls in DUAL_BANS.get(kid, ())
 
 
+# Kits barred from going together, either way round (DSCLOG's KIT_PAIRS): one needing a shield and one
+# forbidding it (Arena Champion, Sentinel; Twin-blade, Shinobi, Ravager); two-weapon fighting and
+# an off hand free of weapons (Twin-blade, Healer); a two-handed weapon and weapons it can't be
+# (Brute; Shinobi, Lifebinder).
+KIT_PAIRS = frozenset(frozenset(p) for p in (
+    (CHAMPION, TWIN_BLADE), (CHAMPION, SHINOBI), (CHAMPION, RAVAGER), (SENTINEL, TWIN_BLADE),
+    (SENTINEL, SHINOBI), (SENTINEL, RAVAGER), (TWIN_BLADE, HEALER), (BRUTE, SHINOBI), (BRUTE, LIFEBINDER)))
+
+
+def dual_kit_banned(kid: int, classes, kids) -> bool:
+    """Whether a human changing class may not take kit KID for its new class, CLASSES (1-17) the
+    classes it had and KIDS their kits (asleep too), as DSCLOG's DK_BANNED blanks it on the KIT
+    menu: the kit's DUAL_BANS hold one of the classes, or it and one of the kits are a KIT_PAIRS
+    pair. (The kits' own DUAL_BANS on the new class are the DUAL window's: dual_banned.)"""
+    return any(c in DUAL_BANS.get(kid, ()) for c in classes) or any(frozenset((kid, k)) in KIT_PAIRS for k in kids)
+
+
 def spell_spheres(kid: int, cls: int, second: Optional[int], spheres: int) -> int:
     """A spell's mask of the classes that cast it (SPHERES), for a caster of class CLS with kit KID:
     an Elementalist's second sphere's spells its own class's too (DSCLOG's EL_SPHERES: the second

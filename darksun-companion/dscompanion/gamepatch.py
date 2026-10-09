@@ -73,7 +73,7 @@ VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL
 VEC_PICK_ANY, VEC_RANGER_LEVEL = 0xA7, 0xA6
 VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP = 0xA5, 0xA4, 0xA3, 0xA2
 VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW = 0xA1, 0xA0, 0x9F, 0x9E
-VEC_DUAL_BAN, VEC_DUAL_SPELLS, VEC_SOUND_42, VEC_SOUND_44 = 0x9D, 0x9C, 0x9B, 0x9A
+VEC_DUAL_BAN, VEC_DUAL_SPELLS, VEC_SOUND_42, VEC_SOUND_44, VEC_DUAL_KIT = 0x9D, 0x9C, 0x9B, 0x9A, 0x99
 
 
 SCRIPT_BUFFER = 0x2E00  # the scripts' buffer, made bigger (the game's: 10000 bytes)
@@ -400,6 +400,9 @@ PATCHES = (
     # game gives Grease and Magic Missile)
     Patch("dual_spells", 0x86DE4, bytes.fromhex("6a08569a4300000583c4046a07569a4300000583c404"),
           _interrupt(VEC_DUAL_SPELLS, 22)),
+    # After DUAL: the new class's kit on the game's three-choice menu (an Elementalist's second sphere
+    # too), and a new warrior's weapon kinds
+    Patch("dual_kit", 0x86D90, bytes.fromhex("837e080c"), _interrupt(VEC_DUAL_KIT, 4)),
     # Two sound numbers on the sheet the game reads as words, the kit (43h) and the second sphere
     # (45h) their high bytes: the low byte alone
     Patch("sound_42", 0x78FDA, bytes.fromhex("268b5742"), _interrupt(VEC_SOUND_42, 4)),

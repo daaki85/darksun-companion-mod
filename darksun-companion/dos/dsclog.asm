@@ -129,6 +129,7 @@ VEC_DUAL_BAN equ 0x9D      ; PROBE_DUAL_BAN
 VEC_DUAL_SPELLS equ 0x9C   ; PROBE_DUAL_SPELLS
 VEC_SOUND_42 equ 0x9B      ; PROBE_SOUND_42
 VEC_SOUND_44 equ 0x9A      ; PROBE_SOUND_44
+VEC_DUAL_KIT equ 0x99      ; PROBE_DUAL_KIT
 TSIZE    equ 8192     ; bytes in the text buffer
 
 NENT    equ 96          ; entries in the ring (96: the helper and it fit in upper memory)
@@ -4611,21 +4612,8 @@ kit_of_sheet:
         push ax
         push cx
         push di
-        movzx cx, al            ; (the kit's place in KIT_NAMES, from 1: (class - 1) * 3 + kit)
-        and cl, 3
-        shr al, 2
-        dec al
-        mov ah, 3
-        mul ah
-        add cx, ax
-        mov si, kit_names
-.skip:  dec cx
-        jz .copy
-.past:  cs lodsb
-        or al, al
-        jnz .past
-        jmp .skip
-.copy:  mov di, kit_line + 5    ; (after "KIT: ")
+        call kit_name_ptr
+        mov di, kit_line + 5    ; (after "KIT: ")
 .char:  cs lodsb
         mov [cs:di], al
         inc di
@@ -4635,6 +4623,28 @@ kit_of_sheet:
         or di, di               ; (ZF clear)
 .out:   pop di
         pop cx
+        pop ax
+        ret
+
+; KIT_NAME_PTR: CS:SI kit AL's name in KIT_NAMES (AL not 0). Others kept.
+kit_name_ptr:
+        push ax
+        push cx
+        movzx cx, al            ; (the kit's place in KIT_NAMES, from 1: (class - 1) * 3 + kit)
+        and cl, 3
+        shr al, 2
+        dec al
+        mov ah, 3
+        mul ah
+        add cx, ax
+        mov si, kit_names
+.skip:  dec cx
+        jz .out
+.past:  cs lodsb
+        or al, al
+        jnz .past
+        jmp .skip
+.out:   pop cx
         pop ax
         ret
 
@@ -5753,11 +5763,259 @@ pick_cap   db 0
 ; of its own instead on CHOOSE A SPELL (PICK_SPELLS), as a preserver does at a level up.
 probe_dual_spells:
         sti
+        push bx
         push cx
+        push es
         mov cx, 2
-        call pick_spells
+        les bx, [LV_SHEETS]
+        push ax
+        imul ax, si, 0x47
+        add bx, ax
+        pop ax
+        call kit_is_b           ; (a Scholar's one more, as at its level ups)
+        db KIT_SCHOLAR
+        jne .pick
+        inc cx
+.pick:  call pick_spells
+        pop es
         pop cx
+        pop bx
         iret
+
+; PROBE_DUAL_KIT: INT VEC_DUAL_KIT replaces "cmp word [bp+8],0Ch" (4 bytes: INT + 2 NOPs; DSUN.EXE
+; 86D90h) in the routine that changes a human's class (86C80h; SI the member, [BP+8] the new class,
+; already first among its classes, as for the sphere a cleric's menu chose before). With kits, the
+; game's three-choice menu (4D0:25h, the sphere's: DK_STUB) asks for the new class's kit, "KIT:
+; NONE" its first row, the class's kits below it, a kit barred left off (DK_BANNED: an empty row,
+; which the menu leaves out); the one
+; clicked goes in the kit byte's two bits for the new class (KIT_AT). An Elementalist picks its
+; second sphere the same way. Then, with weapon specialization, a new warrior (or Battle Mage) picks
+; the weapon kinds it is due as at a level up (LV_CHECK, through the psionicists' pop-up, 620:57h:
+; DK_PSI). The menu is overlay code of its own: the way back is put in a frame the overlay manager
+; can fix up, as for PROBE_LV_PICK. Then the compare, its flags back to the JNZ (RETF 2).
+DK_STUB    equ 0x41B4 - 0x4356          ; (the menu's stub segment, less DS: as PICK_STUB)
+DK_MENU    equ 0x25
+DK_PSI     equ 0x57                     ; (in PICK_STUB's: the psionicists' pop-up)
+DK_X       equ 0x5C
+DK_Y       equ 0x47
+probe_dual_kit:
+        sti
+        pushad
+        push es
+        mov bx, sp              ; the interrupt frame at BX+34: IP, CS, flags
+        test word [cs:rules_hi], RULE_HI_KITS
+        jnz .ask
+        test word [cs:rules], RULE_SPECIALIZE
+        jz .done
+.ask:   push word [ss:bx + 36]
+        push word [ss:bx + 34]
+        push bp
+        mov bp, sp
+        mov di, [bp]            ; (the routine's frame: [DI+8] the new class)
+        mov ax, [ss:di + 8]
+        call dk_ask
+        pop bp
+        pop ax                  ; the way back, as the overlay manager has left it
+        pop dx
+        mov bx, sp
+        mov [ss:bx + 34], ax
+        mov [ss:bx + 36], dx
+.done:  pop es
+        popad
+        cmp word [bp + 8], 0x0C
+        retf 2
+
+; DK_ASK: member SI (DS the game's), its new class AL first on its sheet: PROBE_DUAL_KIT's menus and
+; weapon kinds. Registers changed.
+dk_ask:
+        les bx, [LV_SHEETS]
+        imul cx, si, 0x47
+        add bx, cx
+        test word [cs:rules_hi], RULE_HI_KITS
+        jz .specs
+        movzx di, al
+        dec di
+        cmp di, 16
+        ja .specs
+        mov ch, [cs:di + kit_class_of]
+        shl ch, 2               ; (CH the kit numbers' base: the creation class x 4)
+        mov di, dk_opts + 8     ; the rows, the last first
+        mov cl, 3
+.opt:   mov al, ch
+        add al, cl
+        mov dx, dk_blank
+        call dk_banned
+        jc .row
+        push si
+        call kit_name_ptr
+        mov dx, si
+        pop si
+.row:   mov [cs:di], dx
+        mov [cs:di + 2], cs
+        sub di, 4
+        dec cl
+        jnz .opt
+        mov dx, dk_title
+        call dk_menu            ; (AX the row: 1-3 a kit)
+        dec ax
+        cmp ax, 2
+        ja .specs
+        mov dl, al
+        add al, ch
+        inc al
+        call dk_banned
+        jc .specs
+        push di
+        call kit_place          ; (DI the oldest class's place: the new one's bits above it)
+        mov cx, di
+        pop di
+        shl cl, 1
+        inc dl
+        movzx dx, dl
+        shl dx, cl
+        mov cl, [es:bx + KIT_BYTE]
+        cmp cl, KIT_OPEN
+        jne .set
+        xor cl, cl
+.set:   or cl, dl
+        mov [es:bx + KIT_BYTE], cl
+        cmp al, KIT_ELEMENTALIST
+        jne .specs
+        call dk_second
+.specs: mov ax, ds
+        add ax, PICK_STUB
+        mov word [cs:lv_psi], DK_PSI
+        mov [cs:lv_psi + 2], ax
+        call lv_check
+        ret
+
+; DK_SECOND: a new Elementalist (sheet ES:BX, its cleric class first) picks its second sphere on
+; the menu: the three that aren't its own; SPHERE2 that sphere + 1. Registers changed.
+dk_second:
+        mov byte [es:bx + SPHERE2], 0
+        movzx cx, byte [es:bx + 0x21]
+        dec cx                  ; (CX its own sphere, 0-3: the cleric's class less 1)
+        mov di, dk_opts
+        xor dx, dx
+.sphere:
+        cmp dx, cx
+        je .next
+        push dx
+        imul dx, dx, 6
+        add dx, dk_spheres
+        mov [cs:di], dx
+        mov [cs:di + 2], cs
+        pop dx
+        add di, 4
+.next:  inc dx
+        cmp dx, 4
+        jb .sphere
+        mov dx, dk_title2
+        call dk_menu
+        dec ax
+        cmp ax, 2
+        ja .ret
+        cmp ax, cx              ; (the rows skip its own)
+        jb .take
+        inc ax
+.take:  inc ax
+        mov [es:bx + SPHERE2], al
+.ret:   ret
+
+; DK_MENU: AX the row picked on the game's three-choice menu (DK_STUB), its title CS:DX, its rows
+; DK_OPTS (far). ES:BX kept; others but CX, SI changed.
+dk_menu:
+        push bx
+        push cx
+        push si
+        push es
+        mov si, dk_opts + 8
+.push:  push word [cs:si + 2]
+        push word [cs:si]
+        sub si, 4
+        cmp si, dk_opts
+        jae .push
+        push 1                  ; (as the sphere's)
+        push cs
+        push dx
+        push DK_Y
+        push DK_X
+        mov ax, ds
+        add ax, DK_STUB
+        mov word [cs:dk_far], DK_MENU
+        mov [cs:dk_far + 2], ax
+        call far [cs:dk_far]
+        add sp, 22
+        pop es
+        pop si
+        pop cx
+        pop bx
+        ret
+
+; DK_BANNED: CF set if kit AL may not go with the other classes of sheet ES:BX (its places from 1)
+; or their kits (asleep too): its DUAL_BANS hold one of the classes (KIT_BANS), or a kit's and its
+; are a pair KIT_PAIRS bars (kits.dual_kit_banned). All registers kept.
+dk_banned:
+        pushad
+        mov cl, al
+        call kit_bans           ; (EDX the classes it bars)
+        call kit_place
+        jc .ok
+.place: or di, di
+        jz .ok
+        movzx eax, byte [es:bx + di + 0x21]
+        bt edx, eax
+        jc .no
+        call kit_at
+        jz .next
+        mov ah, cl
+        call kit_pair
+        jc .no
+.next:  dec di
+        jmp .place
+.ok:    popad
+        clc
+        ret
+.no:    popad
+        stc
+        ret
+
+; KIT_PAIR: CF set if kits AL and AH may not go together (KIT_PAIRS, either way round). Others kept.
+kit_pair:
+        push dx
+        push si
+        mov dx, ax
+        xchg dl, dh
+        mov si, kit_pairs
+.next:  cmp word [cs:si], 0
+        je .free
+        cmp [cs:si], ax
+        je .barred
+        cmp [cs:si], dx
+        je .barred
+        add si, 2
+        jmp .next
+.free:  clc
+        jmp .out
+.barred:
+        stc
+.out:   pop si
+        pop dx
+        ret
+; Kits barred from going together (kits.KIT_PAIRS): one needing a shield and one forbidding it
+; (Arena Champion, Sentinel; Twin-blade, Shinobi, Ravager); two-weapon fighting and the off hand
+; free of weapons (Twin-blade, Healer); a two-handed weapon and weapons it can't be (Brute;
+; Shinobi, Lifebinder). 0 ends it.
+kit_pairs  db KIT_CHAMPION, KIT_TWIN_BLADE,  KIT_CHAMPION, KIT_SHINOBI,  KIT_CHAMPION, KIT_RAVAGER
+           db KIT_SENTINEL, KIT_TWIN_BLADE,  KIT_SENTINEL, KIT_SHINOBI,  KIT_SENTINEL, KIT_RAVAGER
+           db KIT_TWIN_BLADE, KIT_HEALER,  KIT_BRUTE, KIT_SHINOBI,  KIT_BRUTE, KIT_LIFEBINDER
+           dw 0
+dk_opts    times 3 dd 0
+dk_far     dd 0
+dk_title   db 'KIT: NONE', 0
+dk_title2  db 'SPHERE 2: NONE', 0
+dk_blank   db 0
+dk_spheres db 'AIR', 0, 0, 0, 'EARTH', 0, 'FIRE', 0, 0, 'WATER', 0
 
 ; PROBE_SOUND_42 / PROBE_SOUND_44: INT VEC_SOUND_42 replaces "mov dx,[es:bx+42h]" (4 bytes: INT + 2
 ; NOPs; DSUN.EXE 78FDAh) and INT VEC_SOUND_44 "mov ax,[es:bx+44h]" (81DE3h): two sound numbers on
@@ -11633,6 +11891,9 @@ install:                        ; DS = ES = PSP, CS = the image
         mov ax, 2500h + VEC_SOUND_44
         mov dx, probe_sound_44
         int 21h
+        mov ax, 2500h + VEC_DUAL_KIT
+        mov dx, probe_dual_kit
+        int 21h
         mov ax, 2500h + VEC_PICK_LEVEL
         mov dx, probe_pick_level
         int 21h
@@ -11687,10 +11948,10 @@ install:                        ; DS = ES = PSP, CS = the image
 
 msg     db 'Dark Sun companion dice log helper loaded.', 13, 10, '$'
 psp     dw 0
-busy    db 'DSCLOG: interrupts 60h-65h or 9Ah-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
+busy    db 'DSCLOG: interrupts 60h-65h or 99h-FEh are in use (already loaded?). Not loaded.', 13, 10, '$'
 all_vectors db VEC_RAND, VEC_SAVE, VEC_AC, VEC_TEXT, VEC_MSG, VEC_CHAR, VEC_TURN, VEC_USE, VEC_VIEW, VEC_WIN, VEC_LOOK, VEC_UNLOOK, VEC_NEXT, VEC_RING_AC, VEC_RING_SAVE, VEC_WEAPON, VEC_MOVE, VEC_PICK, VEC_USE_ITEM, VEC_TWO, VEC_DOUBLE, VEC_GRACE_CAST, VEC_GRACE_EFFECT, VEC_GRACE_ABILITY, VEC_NAMES_SIZE, VEC_NAMES_FILL, VEC_STEALTH, VEC_TYPES_SIZE, VEC_TYPES_FILL, VEC_LEVEL, VEC_HD_ROLL, VEC_HD_CON, VEC_THIEF_SKILL, VEC_TWO_HANDED, VEC_SPELL_TEXT, VEC_CHUNK_ID, VEC_FLOOR_ALL, VEC_FLOOR_RECT, VEC_REDRAW, VEC_REDRAW_ALL, VEC_SCROLL, VEC_HIT, VEC_ITEM_BOX, VEC_BELT, VEC_SAVE_PAGE, VEC_SAVE_CLICK, VEC_ITEM_WEAPON, VEC_ITEM_SKIP, VEC_ITEM_ARMOUR, VEC_SCRIPT_RAND, VEC_XP_NEXT, VEC_ATTACKS, VEC_SPEC_DAMAGE, VEC_DAM_LINE, VEC_VIEW_DAM, VEC_CAN_USE, VEC_NO_CAST, VEC_MC_ROLL, VEC_MC_CON, VEC_MC_UNCON, VEC_WP_DISC_WIN, VEC_WP_SPHERE_WIN, VEC_WP_DISC_CLICK, VEC_WP_SPHERE_CLICK, VEC_WP_SHOWN, VEC_WP_CLASS, VEC_LV_PICK, VEC_PK_COUNT, VEC_PK_WIN, VEC_PK_LEFT, VEC_PK_TITLE, VEC_PK_FILL, VEC_PK_CLICK, VEC_EF_ROWS, VEC_HP_BEST, VEC_TOME, VEC_INIT, VEC_THAC0, VEC_SLOTS, VEC_SLOT_LEVEL
             db VEC_PSP_USE, VEC_PSP_TABLE, VEC_PSP_DEFENCE, VEC_CURE, VEC_PSP_KEEP, VEC_RANGER_CAST, VEC_PSP_KEEP_DX
-            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY, VEC_RANGER_LEVEL, VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP, VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW, VEC_DUAL_BAN, VEC_DUAL_SPELLS, VEC_SOUND_42, VEC_SOUND_44
+            db VEC_HIT_ROUND, VEC_CAST_LEVEL, VEC_PICK_LEVEL, VEC_PICK_LIST, VEC_SCROLL_LEARN, VEC_SPELL_LEVEL, VEC_PICK_ANY, VEC_RANGER_LEVEL, VEC_HIT_DIE, VEC_MAX_PSP, VEC_CR_DIE, VEC_CR_PSP, VEC_EL_GRANT, VEC_EL_CAST, VEC_EL_LEVEL, VEC_EL_KNOW, VEC_DUAL_BAN, VEC_DUAL_SPELLS, VEC_SOUND_42, VEC_SOUND_44, VEC_DUAL_KIT
 all_vectors_end:
 
         align 16, db 0

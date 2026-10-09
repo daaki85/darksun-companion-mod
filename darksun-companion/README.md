@@ -1761,12 +1761,39 @@ who has changed class may use the kinds it chose whatever the new class
 allows. While that class or kit sleeps, the kinds go with it, and come back
 when it wakes.
 
+A human who changes class may take a kit for the new class too, so a human
+can have up to three, one for each class it has had. Right after DUAL (and
+the sphere a new cleric picks), the game's own three-choice menu asks for it:
+**KIT: NONE** at the top, then the new class's kits; click one, or the top
+row for none. A kit that can't go with the character's other classes or kits
+(below) is left off the menu. A new **Elementalist** then picks its second
+sphere on the same menu (**SPHERE 2: NONE**, then the three other spheres).
+Each kit sleeps and wakes with its own class, and the Effects screen lists
+them all, oldest first:
+
+![The KIT menu after DUAL: a Battle Mage turned thief, offered Swashbuckler and Assassin (not the Shinobi)](docs/dual-kit-menu.png)
+
+```
+KIT: ELEMENTALIST
+DORMANT
+KIT: MYRMIDON
+SPECIALIZED IN
+  LONG SWORD
+```
+
+With **Weapon specialization** ticked, a human who becomes a fighter,
+gladiator or ranger (or a Battle Mage) then picks the weapon kinds it is due
+on the same window as at a level up (**PICK A WEAPON SPECIALTY**), less any it
+has already.
+
 A human who becomes a preserver picks its first two spells on the game's
 **CHOOSE A SPELL** window, twice over, from the 1st-level ones (the game gave
-it Grease and Magic Missile), as a preserver picks one at each level up.
+it Grease and Magic Missile), as a preserver picks one at each level up; a
+**Scholar** picks three.
 
-Some kits keep a human from some classes, greyed on the DUAL window as the
-game greys those it already bars:
+Some kits keep a human from some classes, both ways: greyed on the DUAL
+window for a human who has the kit (as the game greys the classes it already
+bars), and left off the KIT menu for a human who has had the class:
 
 | Kit | Can't become | Why |
 |---|---|---|
@@ -1775,6 +1802,14 @@ game greys those it already bars:
 | Swashbuckler, Crusader, Battle Mage, Mind Warrior | fighter, gladiator, ranger | a warrior's THAC0 is already their kit's |
 | Arena Champion, Sentinel | druid, preserver | their gift needs a shield, which those classes can't hold |
 | Brute | psionicist, air cleric | it needs a two-handed melee weapon, which those classes can't use |
+
+And some kits can't go together, whichever came first:
+
+| Kit | Can't go with | Why |
+|---|---|---|
+| Arena Champion, Sentinel | Twin-blade, Shinobi, Ravager | one needs a shield, the other forbids it |
+| Twin-blade | Healer | two weapons, and an off hand free of them |
+| Brute | Shinobi, Lifebinder | a two-handed weapon, and weapons that can't be one |
 
 ### Class restrictions
 

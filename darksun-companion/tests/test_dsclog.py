@@ -2744,7 +2744,7 @@ class KitTests(unittest.TestCase):
         from dscompanion import kitpages
         for name, kid in kitpages.KIT_IDS.items():
             with self.subTest(name=name):
-                self.call(rb"\x50\x51\x57\x0f\xb6\xc8", eax=kid)
+                self.call(rb"\x50\x51\x57\xe8..\xbf", eax=kid)
                 si = self.mu.reg_read(r.UC_X86_REG_SI)
                 text = bytes(self.mu.mem_read(TSR * 16 + si, 24)).split(b"\0")[0].decode()
                 self.assertEqual(text, "KIT: " + name.upper())
@@ -3346,6 +3346,111 @@ class KitTests(unittest.TestCase):
                         self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AL), want)
                         self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_BX, r.UC_X86_REG_ES)],
                                          [0x2222, 0x6666])
+
+    def dual_sheet(self, classes, levels, kit, member=3):
+        """Human member MEMBER's sheet (DS:[1661h] the sheets): CLASSES, LEVELS, the kit byte KIT."""
+        from dscompanion import kitpages
+        sheet = bytearray(game.SHEET_SIZE)
+        sheet[0x18], sheet[kitpages.KIT_BYTE] = 1, kit
+        sheet[0x21:0x21 + len(classes)], sheet[0x24:0x24 + len(levels)] = bytes(classes), bytes(levels)
+        self.mu.mem_write(self.DS * 16 + 0x1661, struct.pack("<HH", 0, self.SHEET))
+        self.mu.mem_write(self.SHEET * 16 + member * 0x47, bytes(sheet))
+        return bytes(sheet)
+
+    def test_dual_kit_banned(self):
+        """DK_BANNED: a kit for a human's new class (first on its sheet) barred by its other classes
+        or their kits, asleep too (kits.dual_kit_banned)."""
+        from dscompanion import kitpages, kits
+        self.rules(game.RULE_KITS)
+        import re
+        at = re.search(rb"\x66\x60\x88\xc1\xe8", self.image).start()
+        cases = [((11, 9), (1, 4), 0b01), ((11, 9), (1, 4), 0b10), ((10, 9), (1, 4), 0b11), ((1, 10), (1, 4), 0b10),
+                 ((17, 10), (1, 4), 0b10), ((17, 12, 11), (1, 3, 4), 0b0100), ((12, 17), (1, 4), 0b11),
+                 ((5, 10), (1, 4), 0b11), ((13, 1), (1, 4), 0), ((9, 17, 2), (1, 2, 3), 0b0011)]
+        for classes, levels, kit in cases:
+            sheet = self.dual_sheet(classes, levels, kit, member=0)
+            others = [c for c in classes[1:]]
+            kids = [k for k, place, _ in kitpages.kits_of(sheet) if place]
+            for kid in sorted(kitpages.KIT_IDS.values()):
+                with self.subTest(classes=classes, kit=kit, kid=kid):
+                    self.mu.mem_write(TSR * 16 + 0xFFF0, b"\x90")
+                    mu = self.mu
+                    mu.mem_write(SS * 16 + 0x7FC, struct.pack("<H", 0xFFF0))
+                    for name, value in dict(cs=TSR, ds=self.DS, ss=SS, esp=0x7FC, es=self.SHEET, ebx=0, eax=kid,
+                                            eflags=2).items():
+                        mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+                    mu.emu_start(TSR * 16 + at, TSR * 16 + 0xFFF0)
+                    self.assertEqual(bool(mu.reg_read(r.UC_X86_REG_EFLAGS) & 1), kits.dual_kit_banned(kid, others, kids))
+                    self.assertEqual(mu.reg_read(r.UC_X86_REG_AX), kid)
+        self.assertTrue(kits.dual_kit_banned(kits.SHINOBI, [11], []))
+        self.assertTrue(kits.dual_kit_banned(kits.HEALER, [10], [kits.TWIN_BLADE]))
+        self.assertFalse(kits.dual_kit_banned(kits.HEALER, [10], [kits.CHAMPION]))
+
+    def test_dual_kit(self):
+        """PROBE_DUAL_KIT: the new class's kit on the game's three-choice menu (4D0:25h, through its
+        stub at DS less 1A2h): "KIT: NONE", the class's three kits, a barred one blank; the row
+        clicked goes in the kit byte's bits for the new class; an Elementalist's second sphere on
+        the menu again. Then the compare, its flags back."""
+        from dscompanion import kitpages, kits
+        from dscompanion.gamepatch import VEC_DUAL_KIT
+        stub = (self.DS + 0x41B4 - 0x4356) * 16 + 0x25
+        record = self.DS * 16 + 0xF000
+
+        def run(new_class, rows):
+            # the menu: its stack's args copied to DS:F010 + 40h a call, AX the next of ROWS
+            self.mu.mem_write(record, struct.pack("<H", 0) + bytes(14))
+            code = bytes.fromhex("5657511e07" "8b360" "0f0" "c1e606" "81c610f0".replace(" ", ""))
+            code = bytes.fromhex(
+                "56575106" "1e07"                   # push si/di/cx/es; push ds; pop es
+                "8b3e00f0" "c1e706" "81c710f0"      # mov di,[F000h]; shl di,6; add di,F010h
+                "89e6" "83c60c"                     # mov si,sp; add si,0Ch (past 4 pushes and the far return)
+                "b91600" "36" "f3a4"                # mov cx,22; ss rep movsb... (ss: on the source)
+                "8b3e00f0" "d1e7" "8b85f0f0"        # mov di,[F000h]; shl di,1; mov ax,[di+F0F0h]
+                "ff0600f0" "07595f5e" "cb")         # inc word [F000h]; pop es/cx/di/si; retf
+            self.mu.mem_write(stub, code)
+            self.mu.mem_write(self.DS * 16 + 0xF0F0, b"".join(struct.pack("<H", x) for x in rows))
+            self.mu.mem_write(SS * 16 + BP + 8, struct.pack("<H", new_class))
+            self.run_vector(VEC_DUAL_KIT, 4, esi=3, eax=0x1234)
+            calls, = struct.unpack("<H", self.mu.mem_read(record, 2))
+            menus = []
+            for n in range(calls):
+                x, y, t_off, t_seg, flag, *opts = struct.unpack("<HHHHH6H", self.mu.mem_read(record + 0x10 + n * 0x40, 22))
+                text = lambda off, seg: bytes(self.mu.mem_read(seg * 16 + off, 20)).split(b"\0")[0].decode()
+                menus.append([text(t_off, t_seg)] + [text(opts[i], opts[i + 1]) for i in (0, 2, 4)])
+            zf = bool(self.mu.reg_read(r.UC_X86_REG_EFLAGS) & 0x40)
+            self.assertEqual(zf, new_class == 12)
+            self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), 0x1234)
+            return menus, bytes(self.mu.mem_read(self.SHEET * 16 + 3 * 0x47, game.SHEET_SIZE))
+
+        self.rules(game.RULE_KITS)
+        # a Myrmidon fighter 5 becomes a preserver: Scholar taken; Battle Mage barred (a warrior THAC0)
+        self.dual_sheet((11, 9), (1, 5), 1)
+        menus, sheet = run(11, [1])
+        self.assertEqual(menus, [["KIT: NONE", "SCHOLAR", "", "ARCANIST"]])
+        self.assertEqual(kitpages.kits_of(sheet), [(kits.MYRMIDON, 1, False), (kits.SCHOLAR, 0, True)])
+        # the barred row clicked, or the title: none
+        for row in (2, 0, 4):
+            self.dual_sheet((11, 9), (1, 5), 1)
+            _, sheet = run(11, [row])
+            self.assertEqual(sheet[kitpages.KIT_BYTE], 1)
+        # a Twin-blade gladiator becomes a fire cleric: Healer and Crusader barred; an Elementalist picks water
+        self.dual_sheet((3, 10), (1, 5), 2)
+        menus, sheet = run(3, [1, 3])
+        self.assertEqual(menus, [["KIT: NONE", "ELEMENTALIST", "", ""],
+                                 ["SPHERE 2: NONE", "AIR", "EARTH", "WATER"]])
+        self.assertEqual(kitpages.kits_of(sheet), [(kits.TWIN_BLADE, 1, False), (kits.ELEMENTALIST, 0, True)])
+        self.assertEqual(kits.second_sphere(kits.ELEMENTALIST, sheet), 3)
+        # twice changed: the third kit's bits above the second's
+        self.dual_sheet((12, 11, 9), (1, 6, 5), 0b0101)
+        menus, sheet = run(12, [1])
+        self.assertEqual(menus, [["KIT: NONE", "MIND BENDER", "", "KINETICIST"]])  # (the Mind Warrior: a fighter's)
+        self.assertEqual(kitpages.kits_of(sheet)[-1], (kits.MIND_BENDER, 0, True))
+        self.assertEqual(sheet[kitpages.KIT_BYTE], 0b010101)
+        # without the rule: no menu
+        self.rules(0)
+        self.dual_sheet((11, 9), (1, 5), 1)
+        menus, sheet = run(11, [1])
+        self.assertEqual((menus, sheet[kitpages.KIT_BYTE]), ([], 1))
 
     def test_dual_spells(self):
         """PROBE_DUAL_SPELLS: a new preserver picks two spells on CHOOSE A SPELL (620:5Ch, through
