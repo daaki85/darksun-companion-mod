@@ -3,11 +3,19 @@
 What changed in Obsidian Edition (called Templar's Ledger up to 1.2.0), pull
 request by pull request, newest first.
 Released pull requests are summarised in a line or two each; the release notes
-([1.2.0](release-notes/v1.2.0.md): #19 to #29; [1.1.0](release-notes/v1.1.0.md):
-#14 to #18; [1.0.0](release-notes/v1.0.0.md): #1 to #13) and the pull requests
-themselves have the detail.
+([2.0.0](release-notes/v2.0.0.md): #31 and #32; [1.2.0](release-notes/v1.2.0.md):
+#19 to #29; [1.1.0](release-notes/v1.1.0.md): #14 to #18;
+[1.0.0](release-notes/v1.0.0.md): #1 to #13) and the pull requests themselves
+have the detail.
 
-## Pull request #32 (in progress)
+## Pull request #33 (in progress)
+
+**Release**
+- **Obsidian Edition 2.0.0:** the version is 2.0.0, the first release under
+  the new name, with its notes in `release-notes/v2.0.0.md` (pull requests #31
+  and #32), listed on the front page with the others.
+
+## Pull request #32 ([merged 2026-10-09](https://github.com/daaki85/darksun-obsidian-edition/pull/32))
 
 **Documentation**
 - **All the documents reviewed:** the front page and the README name AD&D's
