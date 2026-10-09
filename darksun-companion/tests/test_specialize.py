@@ -4,6 +4,7 @@ import os
 import struct
 import sys
 import unittest
+from unittest import mock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -396,9 +397,19 @@ class KitGearTests(FinishNewTests):
         right, left = self.character(9, 3)
         self.give(weaponchoice.START_TYPE, weaponchoice.START_NAME, right)
         self.give(4, 0x05, left)
-        weaponchoice.kit_gear(self.gd)
+        taken = []
+
+        def unlink(gd, it, item, what, empty=False):  # (the harness has no lists: the record emptied)
+            taken.append(item)
+            at = self.ITEMS + item * game.ITEM_SIZE
+            self.mem[at:at + game.ITEM_SIZE] = bytes(game.ITEM_SIZE)
+            return True
+        with mock.patch("dscompanion.ring.unlink", unlink):
+            out = weaponchoice.kit_gear(self.gd)
+            self.assertEqual(weaponchoice.kit_gear(self.gd), [])
         self.assertEqual(self.item(0), (weaponchoice.START_TYPE, right))
-        self.assertEqual(self.item(1), (4, 30))  # (into a backpack cell)
+        self.assertEqual(taken, [1])  # (the shield taken away, not put in the backpack)
+        self.assertIn("left behind", out[0])
 
     def test_brute_two_handed(self):
         """Without weapon specialization (its chosen kind would be one already): a great axe, and

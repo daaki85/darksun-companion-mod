@@ -15,8 +15,8 @@ played (its status New) the Ledger makes them whole:
 
 With kits (kit_gear), the game's starting gear fitted to the kit, whatever the weapon rules: a
 weapon the kit forbids becomes one it allows (a Shinobi's long sword a short sword, a Brute's a
-great axe, a Seeker's of its sphere's material), a shield or off-hand weapon it forbids goes to
-the backpack (a Ravager's shield, a Brute's club), an Arena Champion's off-hand club becomes a
+great axe, a Seeker's of its sphere's material), a shield it forbids is taken away (a Ravager's),
+an off-hand weapon it forbids goes to the backpack (a Brute's club), an Arena Champion's off-hand club becomes a
 shield, and a Battle Mage's quarterstaff its chosen weapon spec's weapon.
 """
 
@@ -267,6 +267,9 @@ def kit_gear(gd) -> List[str]:
             at = items + item_index * game.ITEM_SIZE
             new = _replacement(sheet, chosen, read) if slot == right and typ[0] & 0x01 else None
             if new is None:
+                if typ[0] & kits.SHIELD and ring.unlink(gd, ring.Items(gd), item_index, "kit gear"):
+                    out.append(f"{who}'s {name(item)} is left behind: a {kit} fights without a shield")
+                    continue  # (a shield the kit forbids: no use in the backpack)
                 cell = pickpocket.free_cell(gd, ring.Items(gd), member)
                 if cell is not None:
                     gd.guest.write(at + game.ITEM_SLOT, bytes((cell,)))

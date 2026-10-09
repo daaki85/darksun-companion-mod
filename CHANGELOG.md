@@ -133,7 +133,8 @@ themselves have the detail.
   is changed while the character is new where the kit can't use it: a
   Shinobi's long sword becomes a bone short sword, a Brute's a bone great axe
   (its club to the backpack), a Seeker's of its sphere's material, a
-  Ravager's shield goes to the backpack; an Arena Champion's off-hand club
+  Ravager's shield is taken away (a kit that can't use a shield has no use for it in
+  the backpack); an Arena Champion's off-hand club
   becomes a shield, and a Battle Mage's quarterstaff its weapon spec's weapon.
   The dice log names each change. The guide lists each class's starting gear.
 - **Charges in an item's box:** a wand, the Storm Ring or a necklace shows the

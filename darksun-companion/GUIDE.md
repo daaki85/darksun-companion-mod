@@ -351,7 +351,7 @@ changed where its kit can't use it:
 | Kit | Starts with |
 |---|---|
 | Myrmidon, Sentinel | the fighter's gear |
-| Ravager | the fighter's gear, its shield in the backpack |
+| Ravager | the fighter's gear without the shield |
 | Arena Champion | the gladiator's gear, with a shield in place of the off-hand club |
 | Twin-blade | the gladiator's gear: its weapon and the club are its two weapons |
 | Brute | a two-handed weapon in place of the gladiator's (a bone great axe without weapon specialization), the club in the backpack |

@@ -1464,8 +1464,9 @@ With **Kits** ticked, the Ledger fits that gear to the kit while the character
 is new, and the dice log says what it changed: a weapon in the hand the kit
 forbids becomes a plain one it allows (a **Shinobi**'s long sword a bone
 short sword; a **Brute**'s a bone great axe, its club going to the backpack;
-a **Seeker**'s long sword one of a material its sphere allows); a shield or
-off-hand weapon the kit forbids goes to the backpack (a **Ravager**'s shield);
+a **Seeker**'s long sword one of a material its sphere allows); a shield the
+kit forbids is taken away (a **Ravager**'s), and an off-hand weapon it forbids
+goes to the backpack;
 an **Arena Champion**'s off-hand club becomes a shield, the gladiator's kit
 being the one that fights with it; and with weapon specialization a
 **Battle Mage**'s quarterstaff becomes a plain weapon of its chosen weapon spec
