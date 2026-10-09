@@ -2328,10 +2328,10 @@ each, Chest 36,000 and Helm 30,000, and the Tome of Understanding AD&D's 43,500.
 ![The Tome of Understanding's box in the game: a night-steel book with a fiery emblem, 43500, Tome/Understand, and the icon to click](docs/tome.png)
 
 **The Warden's Plate** is plate mail +1 in four pieces: the chest 4 better
-than no armour (its AC 3, +1), the arms and legs 3 each (AC 2, +1), the helm 1
-(its +1; 2 with [helms giving AC 1](#helms-and-boots)): 11 better as a set,
-12 with the helm's AC, so a wearer with no other help goes from AC 10 to
-AC −1 (−2). The game adds up its pieces' AC this way for all armour, so a
+than no armour (its AC 3, +1), the arms and legs 3 each (AC 2, +1), the helm 2
+(a helm's AC 1 with [helms giving AC 1](#helms-and-boots), +1): 12 better as a
+set, so a wearer with no other help goes from AC 10 to AC −2. (With that rule
+off the helm gives only its +1: 11 better, AC −1.) The game adds up its pieces' AC this way for all armour, so a
 full set does better than AD&D's plate mail +1 (one suit, AC 2: 8 better). It
 is metal armour, worn by the classes
 that can wear the game's chain (no single-class thieves), and kept from more

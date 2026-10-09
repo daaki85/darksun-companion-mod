@@ -1377,7 +1377,7 @@ chosen kind, often one of these.
 | Ashen Robe | worn on the chest by preservers, psionicists and druids, not armour: AC 1 better with no armour, +1 on saves against spells |
 | Veiled Robe, a robe of the Veiled Alliance | the same, AC 2 better, +1 on every save, and a wizard spell slot more at spell levels 1, 2 and 3 |
 | Inixhide | leather chest armour +1 |
-| Warden's Chest, Arms, Legs and Helm | plate armour +1 in four pieces: 11 points of AC better as a set (12 with the helm's AC 1), so AC 10 becomes −1 (−2) before DEX; the chest gives Resist Fire, the helm Cloak of Bravery, while worn |
+| Warden's Chest, Arms, Legs and Helm | plate armour +1 in four pieces: the chest 4 points of AC better, the arms and legs 3 each, the helm 2 (a helm's AC 1, +1): 12 better as a set, so AC 10 becomes −2 before DEX; the chest gives Resist Fire, the helm Cloak of Bravery, while worn |
 | Arrowbane | a circlet: Protection from Normal Missiles while worn; not armour |
 | Sunking Crown | a crown: Protection from Evil while worn; not armour |
 | Cloak of Elvenkind, Boots of Elvenkind | help a thief or ranger [hide and move silently](#hiding-in-shadows); thieves and rangers only |

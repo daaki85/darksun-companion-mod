@@ -144,8 +144,8 @@ themselves have the detail.
   **Veiled Robe** (+2 AC, +1 on every save, a wizard slot more at spell levels
   1-3), sold by Kel. Drawn icons, Alagorn's stories, the Ledger's saves and
   slots count them.
-- **The Warden's Plate's AC explained:** 11 points better as a set (12 with
-  the helm's AC), not "AC 11".
+- **The Warden's Plate's AC explained:** 12 points better as a set (the
+  helm 2: a helm's AC 1 and its +1), not "AC 11".
 - **Kits' starting gear, more:** a Myrmidon gets a plain weapon of its
   second weapon spec as well (in the backpack; a bow in the missile slot,
   with arrows), a Ravager a second of its weapon for the hand its shield
