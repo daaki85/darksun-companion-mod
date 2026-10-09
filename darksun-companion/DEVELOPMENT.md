@@ -9,60 +9,32 @@ of the game's data, the tools for mapping it, and how each part of the
 Every roll in the game goes through one function, Borland C++'s `rand()`.
 
 1. When you start the game with the dice log, the launcher writes
-   `dos\DSUNLOG.EXE`: a copy of the game's `DSUN.EXE` with a few small changes
-   (`dscompanion/gamepatch.py`). The start of `rand()`, the end of the saving
-   throw, the end of the AC calculation, the start of the routine that fills
-   the dialogue window and the start of the message box routine become
-   `INT 60h` to `64h`, the inventory screen's panel calls `INT 65h`, the
-   combat loop `INT F1h`, the USE screen `INT F2h`, the View Character screen
-   `INT F3h`, the end of the window redraw `INT F4h`, the Look box `INT F5h`
-   and `INT F6h`, the start of a monster's turn `INT F7h` (see In the
-   game; that one is in overlay code, which the game moves or unloads to load
-   the dialogue window's, so the helper puts its way back in a stack frame the
-   game's overlay manager fixes up, rather than returning to a stale address:
-   that used to restart a fight, or stop the game with "Stack overflow!"), and the places where AC and a saving throw's modifiers are added up
-   `INT F8h` and `INT F9h` (for [the Ring +1](README.md#new-items), helms and
-   [rings and cloaks of protection](README.md#rings-and-cloaks-of-protection)), each
-   weapon's line on the inventory screen `INT FAh`, and the start of a round's
-   movement `INT FBh` (for boots), a key the conversation window doesn't know
-   `INT FCh` and an item used on the map `INT FDh` (for
-   [picking pockets](README.md#picking-pockets)), the two-weapon adjustment `INT FEh`
-   and the doubling of a save's d20 `INT F0h`, Cat's Grace `INT EDh`-`INT EFh` and a hidden thief's attack `INT EAh` and the class level cap `INT E7h` and a thief's hit dice `INT E6h` and `INT E5h` and the thief skills `INT E4h` and two-handed weapons `INT E3h` and the Tome of Understanding `INT B9h` and Cat's
-   Grace's description and icon `INT E2h` and `INT E1h` (for
-   [rule changes](README.md#rule-changes)), and
-   where the game makes room for its name table and reads it in `INT ECh` and
-   `INT EBh` (for [new item names](README.md#new-items)), and its item type table
-   `INT E9h` and `INT E8h` (for [the new items](README.md#new-items)), and
-   the start of the routines drawing the map's floor `INT E0h` and `INT DFh`
-   and of two that draw a rectangle of it again `INT DEh` and `INT DDh` (for
-   [shadows](README.md#shadows)), and where the main loop asks where the pointer is
-   `INT DCh` (for [scrolling the map](README.md#scrolling-the-map) and the
-   [dust](README.md#dust)), and the start of the routine finding what is under the
-   pointer `INT DBh` (for [choosing an enemy](README.md#choosing-an-enemy-tab-enter-and-the-rings)), and
-   the end of the routines filling an item's box `INT DAh` and working out a
-   thief skill's chance `INT D9h` (for a cloak's, boots' and belt's bonuses,
-   see [rule changes](README.md#rule-changes)), and in the save and load window's
-   events, where a key and a button it has no use for go, `INT D8h` and
-   `INT D7h` (for [more saves](README.md#more-saves)), and in the routines that
-   destroy an item hit by acid or a corroding touch `INT D6h`, `INT D5h` and
-   `INT D4h` (for [items saving against acid](README.md#items-saving-against-acid)), and in the scripts'
-   random command `INT D3h` (for [searching junk, hay and wardrobes](README.md#searching-junk-hay-and-wardrobes)), and where View Character adds the bracket after the XP for the next level `INT D2h` (to name the class). The
-   copy keeps 29 characters rather than 19, deletes the one chosen in the
-   roster and counts a New character as Okay (see
-   [more characters](README.md#more-characters)), lets Enter load only a save that is
-   there (see [more saves](README.md#more-saves)), and also allocates a bigger buffer for the game's scripts (11,776 bytes
-   rather than 10,000, for
-   [Dinos and the Trustee](README.md#what-dinos-and-the-trustee-say-about-them)), and
-   looks for its data files in the current folder rather than next to itself. The helper also hooks DOS's `INT 21h`, to
-   open the launcher's copies of `SEGOBJEX.GFF`, `RESOURCE.GFF` (see
-   [Item icons](README.md#new-items)), `RGN1C.GFF`, `RGN1E.GFF`, `RGN08.GFF` (see
-   [new items](README.md#new-items)), `GPLDATA.GFF` and `RGN29.GFF` (see
-   [Kalzith](README.md#kalzith), [Semyon](README.md#semyon),
-   [Dinos and the Trustee](README.md#what-dinos-and-the-trustee-say-about-them) and
-   [no manual check](README.md#no-manual-check)), the mouse driver's `INT 33h`
-   (for [scrolling the map](README.md#scrolling-the-map)) and the keyboard's `INT 16h`
-   (for Tab and Enter). DOSBox runs it from the game folder, so
-   it uses your saves as usual.
+   `dos\DSUNLOG.EXE`: a copy of the game's `DSUN.EXE` with about 140 small
+   changes, listed in `PATCHES` in `dscompanion/gamepatch.py`. Most replace a
+   few bytes of the game's code with an `INT` (60h to 65h, and 91h to FEh)
+   that the helper answers: `rand()`, the saving throw, AC, the dialogue
+   window and message boxes for the dice log; the inventory, View Character,
+   USE and Effects screens and the Look box for what the Ledger adds to them;
+   and the places each rule change, new item and screen addition needs. The
+   sections under [How each part works](#how-each-part-works) name the patches
+   each part uses. One, at the start of a monster's turn, is in overlay code
+   the game moves or unloads to load the dialogue window's, so the helper puts
+   its way back in a stack frame the game's overlay manager fixes up (a stale
+   address used to restart a fight, or stop the game with "Stack overflow!").
+   A few patches change the game outright: 29 saved characters rather than 19,
+   DELETE deleting the one chosen and a New character counting as Okay (see
+   [more characters](README.md#more-characters)), Enter loading only a save
+   that is there (see [more saves](README.md#more-saves)), a script buffer of
+   11,776 bytes rather than 10,000 (for
+   [Dinos and the Trustee](README.md#what-dinos-and-the-trustee-say-about-them)),
+   and data files looked for in the current folder rather than next to the
+   program. The helper also hooks DOS's `INT 21h`, to open the launcher's
+   copies of `SEGOBJEX.GFF`, `RESOURCE.GFF`, `GPLDATA.GFF` and some regions'
+   files (for the [new items](README.md#new-items), [Kalzith](README.md#kalzith),
+   [Semyon](README.md#semyon) and [no manual check](README.md#no-manual-check)),
+   the mouse driver's `INT 33h` (for [scrolling the map](README.md#scrolling-the-map))
+   and the keyboard's `INT 16h` (for Tab and Enter). DOSBox runs it from the
+   game folder, so it uses your saves as usual.
 2. `dos\DSCLOG.EXE` (source in `dos\dsclog.asm`) is a tiny DOS program loaded
    into upper memory before the game, so the game loses no memory. It answers
    those interrupts. Its `rand()` returns exactly the numbers the original
@@ -1040,7 +1012,7 @@ header's +270) switches them all off.
 | | Shinobi | preserver spells on the Seeker's table, cast in light armour too | the Seeker's few slots; its own short list of spells, one learnt at each level up from its first slots, none from scrolls; only the dagger, short sword, quarterstaff, chatkcha, sling, staff sling and bow; light armour only; no shield |
 | Cleric | Elementalist | a second sphere: its spells and its weapons | spell slots one level slower (none at 1st level) |
 | | Healer | Cure spells heal 1 more per die | no weapon in the off hand |
-| | Crusader | a fighter's THAC0, a warrior's extra attacks in melee (3/2 from 7th level, 2 from 13th) | one fewer spell slot at each spell level |
+| | Crusader | a fighter's THAC0, a warrior's extra attacks in melee (3/2 from 7th level; the code has 2 from 13th, past the level cap) | one fewer spell slot at each spell level |
 | Druid | Grove Warden | AC 1 better for every 3 druid levels | no metal weapons |
 | | Lifebinder | healing spells heal a die more | blunt weapons only |
 | | Wanderer | +3 on saves against fire and cold spells (the game's Resist Fire and Resist Cold) | AC 1 worse |
@@ -1048,7 +1020,7 @@ header's +270) switches them all off.
 | | Battle Mage | a warrior's THAC0, a d6 hit die, expertise in one weapon spec (a one-handed melee weapon: long sword, short sword, dagger, club, mace, axe or pick; no thrown weapon), which it may use as well as a preserver's own weapons; light armour worn and spells cast in it; spells cast though hit earlier in the round (the game stops anyone else's) | one fewer spell slot at each spell level; nothing in the off hand |
 | | Arcanist | a spell slot more at each spell level, two preserver spells in a turn in a fight | a d3 hit die |
 | Psionicist | Mind Bender | telepathy powers cost 2 PSP less | psychokinesis powers 2 more |
-| | Mind Warrior | a warrior's THAC0, a warrior's extra attacks in melee (3/2 from 7th level, 2 from 13th), a d8 hit die | a tenth fewer PSP |
+| | Mind Warrior | a warrior's THAC0, a warrior's extra attacks in melee (3/2 from 7th level; 2 from 13th in the code), a d8 hit die | a tenth fewer PSP |
 | | Kineticist | psychokinesis powers cost 2 PSP less | telepathy powers 2 more |
 
 The Seeker's and the Justifier's tables are AD&D's (*The Complete Ranger's
@@ -1215,7 +1187,7 @@ in `kitpages.kit_ids`), and emulated tests hold the helper to it:
 | gear allowed | Ravager, Twin-blade, Brute, Stalker, Grove Warden, Lifebinder, Shinobi, Seeker (its sphere's weapons, as a cleric's: `SPHERE_ALLOWS` with `CU_*` set from the item type, its sphere the ranger class less 13; the bow kept) | `PROBE_CAN_USE` and `KINDS_ALLOWED` (`KIT_FORBIDS`: `restrict.kit_forbids`), whatever the class restrictions |
 | skill with a weapon | Justifier (expertise, the bow's and its chosen kind's, becomes specialization) | `SPEC_OF_SHEET`'s end: `SPEC_EXPERT` made `SPEC_SPECIAL` for a Justifier; `specialize.skill` |
 | weapon specs | Myrmidon (two, the second to grand mastery), Brute (no missile spec), Battle Mage (one, of `KIT_BM_KINDS`: expertise) | `WP_TWO`, `SPEC_OF_SHEET` (a Battle Mage's chosen kind `SPEC_EXPERT`), `KIT_FORBIDS`, `KINDS_ALLOWED` (a Battle Mage its own kinds, whatever its class), `LV_DUE` (a Battle Mage one); the creation panel counts a Battle Mage as a warrior (`WP_CLASSES`, so `WP_IDS` gives the disciplines' window with WEAPON SPEC; `kitpages.panel_windows`) |
-| attacks a round | Battle Mage (its chosen kind: expertise, 3/2, 2 from 7th preserver level); Crusader and Mind Warrior (a warrior's extra attacks in melee, 3/2 from 7th level of the kit's class, 2 from 13th, weapon specialization on or off) | `EXPERT_HALVES` where `PROBE_ATTACKS`, `PROBE_DAM_LINE` and `PROBE_VIEW_DAM` leave a non-warrior's (2 halves or fewer) alone; `specialize.expert_attacks`. `WAR_KIT_HALVES` in the same three probes, after the rest (`WAR_KIT_OF` in `PROBE_ATTACKS`, not for a missile: `[BP+16h]` above 1, or in View Character a type's `+0` bit 2); `kits.warrior_attacks`, which `GameData.weapon_hits` gives the party view. Checked in the game: the DAM lines 1.5× for a 7th-level Crusader and Mind Warrior, 2× at 13th, 1× at 6th and for a Mind Bender; in a fight a 7th-level Crusader with a club in each hand attacked 1+1 and 2+2 in turn before the off hand's cap (see [Two weapons](#two-weapons-adds-penalties)) |
+| attacks a round | Battle Mage (its chosen kind: expertise, 3/2, 2 from 7th preserver level); Crusader and Mind Warrior (a warrior's extra attacks in melee, 3/2 from 7th level of the kit's class (2 from 13th, past the level cap), weapon specialization on or off) | `EXPERT_HALVES` where `PROBE_ATTACKS`, `PROBE_DAM_LINE` and `PROBE_VIEW_DAM` leave a non-warrior's (2 halves or fewer) alone; `specialize.expert_attacks`. `WAR_KIT_HALVES` in the same three probes, after the rest (`WAR_KIT_OF` in `PROBE_ATTACKS`, not for a missile: `[BP+16h]` above 1, or in View Character a type's `+0` bit 2); `kits.warrior_attacks`, which `GameData.weapon_hits` gives the party view. Checked in the game: the DAM lines 1.5× for a 7th-level Crusader and Mind Warrior, 2× at 13th, 1× at 6th and for a Mind Bender; in a fight a 7th-level Crusader with a club in each hand attacked 1+1 and 2+2 in turn before the off hand's cap (see [Two weapons](#two-weapons-adds-penalties)) |
 | gear the kit allows | Battle Mage (its chosen kind's weapons, with weapon specialization; light armour) | `KIT_ALLOWS` in `PROBE_CAN_USE`: an item the game's class mask refuses is let through (AX 1), and the class restrictions pass it; `KIT_FORBIDS` still holds (nothing in a Battle Mage's off hand). `kits.allows`, `restrict.kit_allows`. The game has no armour rule for a single class's spells, so it casts in that armour |
 | hit die | Battle Mage (d6), Mind Warrior (d8), Arcanist (d3) | a level's die: `PROBE_HIT_DIE` (`INT A5h`, new: `mov al,es:[bx+0]`, 87308h, the die read from the class's hit point group in the routine rolling a level's hit points, 87250h, which both a level up and the creation screen call; `[BP-4]` the sheet). The creation screen's range (the least and most hit points it allows, `DS:[4998h]` and `[4996h]`, worked out with the rolls by 655D6h): `PROBE_CR_DIE` (`INT A3h`, new: `mov al,es:[bx+14Ah]`, 65677h, the die from its table by creation class). `kits.hit_die` |
 | max PSP | Mind Warrior (a tenth fewer, rounded down) | at a level up: `PROBE_MAX_PSP` (`INT A4h`, new: `les bx,[bp-8]`, 8748Fh, the sum in SI before it goes in the sheet, in the routine at 873B2h); on the creation screen: `PROBE_CR_PSP` (`INT A2h`, new: the end, `pop bp / retf`, of 65B39h, which sums the PSP into the sheet being made's `+0Ch`). `kits.max_psp` |

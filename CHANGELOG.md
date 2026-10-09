@@ -2,17 +2,11 @@
 
 What changed in Templar's Ledger, pull request by pull request, newest first.
 Released pull requests are summarised in a line or two each; the release notes
-([1.1.0](release-notes/v1.1.0.md): #14 to #18; [1.0.0](release-notes/v1.0.0.md):
-#1 to #13) and the pull requests themselves have the detail.
+([1.2.0](release-notes/v1.2.0.md): #19 to #29; [1.1.0](release-notes/v1.1.0.md):
+#14 to #18; [1.0.0](release-notes/v1.0.0.md): #1 to #13) and the pull requests
+themselves have the detail.
 
 ## Pull request #31 (in progress)
-
-**Changed**
-- **The helper loads into upper memory again,** leaving the game 62 KB more
-  conventional memory (632 KB free, was 570): the dice log's ring buffer now
-  follows the helper in a segment of its own, so the helper's image is 40 KB
-  (was 63) and what it asks for fits DOSBox's upper memory. It also leaves
-  room in its segment for the kits' code.
 
 **Added**
 - **Kits:** a character of one class may take one of three kits
@@ -24,7 +18,7 @@ Released pull requests are summarised in a line or two each; the release notes
   character (sheet `+43h`), and the Effects screen (`KIT: RAVAGER`) and the
   Ledger's Characters tab name it. A new switch on the Options tab, under Rule
   changes.
-- **Kits that work so far:** the Myrmidon, Sentinel and Ravager (fighter); the
+- **What the kits do:** the Myrmidon, Sentinel and Ravager (fighter); the
   Arena Champion, Twin-blade and Brute (gladiator); the Stalker (ranger); the
   Assassin (thief); the Grove Warden and Wanderer (druid); the Lifebinder's
   weapons, and the Shinobi's weapons and armour. The guide's
@@ -142,24 +136,44 @@ Released pull requests are summarised in a line or two each; the release notes
   Ravager's shield goes to the backpack; an Arena Champion's off-hand club
   becomes a shield, and a Battle Mage's quarterstaff its weapon spec's weapon.
   The dice log names each change. The guide lists each class's starting gear.
-
-**Added**
 - **Charges in an item's box:** a wand, the Storm Ring or a necklace shows the
   charges it has left (`Charges: 50`) in its item box.
-
-**Changed** (rules)
-- **Two weapons:** the off hand attacks once a round, whoever holds it; the
-  extra attacks (the game's 3/2 for warriors, specialization's, the kits')
-  are the main hand's. The game gave each hand the whole rate.
-
-**Added** (rules)
 - **Preservers' INT**, a new rule change (on by default): AD&D's table for
   INT gives a preserver a chance to learn a spell from a scroll (35% at INT
   9 to 100% at 24; a failed try uses the scroll up) and the most spells of
   each spell level it may know (6 at INT 9, all from 19), which also limits
   CHOOSE A SPELL at a level up. The dice log shows each try.
 
-**Fixed** (for the kits)
+**Changed**
+- **The helper loads into upper memory again,** leaving the game 62 KB more
+  conventional memory (632 KB free, was 570): the dice log's ring buffer now
+  follows the helper in a segment of its own, so the helper's image is 40 KB
+  (was 63) and what it asks for fits DOSBox's upper memory. It also leaves
+  room in its segment for the kits' code.
+- **Two weapons:** the off hand attacks once a round, whoever holds it; the
+  extra attacks (the game's 3/2 for warriors, specialization's, the kits')
+  are the main hand's. The game gave each hand the whole rate.
+- **A kit for each class:** the kit byte keeps two bits for each of a
+  human's classes, so a human who changes class can have up to three kits;
+  every kit rule, in the helper and the Ledger, now asks for each kit the
+  character has awake, and the Effects screen lists them all. Characters
+  made before read as they did.
+- **The Arcanist casts two preserver spells in a turn** in a fight: its first
+  doesn't end the turn (a hit still keeps it from a second).
+- **The Crusader and Mind Warrior** have a warrior's extra attacks in melee:
+  3/2 a round from 7th level of the kit's class, whether weapon
+  specialization is on or not (the DAM lines and the Ledger's party view show
+  them too).
+- **The Ravager's base AC** is described only up to 10th level, the highest
+  the game goes.
+- **The Arcanist's drawback** is a d3 hit die (a preserver's is a d4), in
+  place of −2 CON.
+- **The dice log's ring holds 96 entries** (was 128), and the helper's text
+  buffer is 4 KB (was 8), making room in upper memory for the kits' code.
+- **The helper's interrupts** are now 91h to FEh (and 60h to 65h); the
+  message when they are in use says so.
+
+**Fixed**
 - **A kit or a second sphere could change a sound.** The game reads two sound
   numbers on the character sheet (`+42h`, `+44h`) as words, and the kit
   (`+43h`) and second sphere (`+45h`) sit in their high bytes; they are read a
@@ -173,40 +187,29 @@ Released pull requests are summarised in a line or two each; the release notes
   The crash didn't happen again in testing, but it was never reproduced
   either.
 
-**Changed** (for the kits)
-- **A kit for each class:** the kit byte keeps two bits for each of a
-  human's classes, so a human who changes class can have up to three kits;
-  every kit rule, in the helper and the Ledger, now asks for each kit the
-  character has awake, and the Effects screen lists them all. Characters
-  made before read as they did.
-- **The Arcanist casts two preserver spells in a turn** in a fight: its first
-  doesn't end the turn (a hit still keeps it from a second).
-- **The Crusader and Mind Warrior** have a warrior's extra attacks in melee:
-  3/2 a round from 7th level of the kit's class, 2 from 13th, whether weapon
-  specialization is on or not (the DAM lines and the Ledger's party view show
-  them too).
-- **The Ravager's base AC** is described only up to 10th level, the highest
-  the game goes.
-- **The Arcanist's drawback** is a d3 hit die (a preserver's is a d4), in
-  place of −2 CON.
-- **The dice log's ring holds 96 entries** (was 128), and the helper's text
-  buffer is 4 KB (was 8), making room in upper memory for the kits' code.
-- **The helper's interrupts** are now 98h to FEh (and 60h to 65h); the
-  message when they are in use says so.
-
 **Documentation**
-- **Kits, planned:** DEVELOPMENT.md has the design for kits (three for each
-  class, for characters of one class) and what research says about building
-  them: room in the helper, the sheet byte for the kit, the creation page, and
-  each effect's hook, found or still to find. Revised: the Lifebinder's,
-  Battle Mage's, Arcanist's, Stalker's, Myrmidon's and Shinobi's kits (the
-  Shinobi with a list of its own of 14 spells); the Raider made the Ravager
-  (+1 to hit and damage in melee, a base AC by level; no missile or thrown
-  weapons, no shield, light armour only); the Brute +2 to hit and damage with
-  a two-handed melee weapon, in place of its score changes; the Wanderer
-  resisting fire and cold (+3 on saves) for AC 1 worse; the Arena Champion
-  by its shield (+1 to hit and damage in melee and AC 1 better with one, −1
-  to hit in melee without) instead of by the ground under it.
+- **Kits:** DEVELOPMENT.md has how they are built: room in the helper, the
+  sheet byte for the kit, the creation page, and each effect's hook.
+- **The player's guide** (`GUIDE.md`), new: the game's rules as its code works
+  them and the mod's changes, laid out like the game's rule book (making a
+  party, the classes, kits, fighting, magic, psionics, equipment, levels), with
+  the tables, and no spoilers: no places past the arena, people, quests or
+  items by name. Its spell slot, WIS bonus and XP tables are read from the
+  game, which differs from the manual's.
+- **The README reorganised:** what the game does on its own (initiative,
+  spells, psionics, character creation, monsters' defences, two weapons,
+  thief skills, saving throws) is under one heading, How the game works, and
+  every rule change under Rule changes (the two-weapon, thief and saving
+  throw rules had sections of their own); Kits has sub-headings; the charges
+  in item boxes are under In the game; addresses in the game's code are left
+  to DEVELOPMENT.md; the contents list every section. Corrected: the Crusader
+  and Mind Warrior attack 3/2 from 7th level (no character reaches 13th), a
+  backstab is ×4 at 9th and 10th, and an example of the off hand's one attack
+  a round is clearer (3/2 + 1).
+- **The front page** names the kits and INT among the rules, and what has
+  changed since 1.2.0.
+- **DEVELOPMENT.md:** the patched game's interrupts are summarised, with
+  `gamepatch.py` as the list, in place of a list that had fallen behind.
 
 ## Pull request #30 ([merged 2026-10-08](https://github.com/daaki85/darksun-companion-mod/pull/30))
 
