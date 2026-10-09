@@ -56,7 +56,7 @@ folder only what you'd expect: your saves (pages 2 to 4 as files of their own,
 ## Getting started
 
 1. Download the latest release from the
-   [Releases page](https://github.com/daaki85/darksun-companion-mod/releases)
+   [Releases page](https://github.com/daaki85/darksun-obsidian-edition/releases)
    (`Obsidian-Edition-<version>.zip`; `Templars-Ledger-<version>.zip` up to
    1.2.0) and unzip it anywhere. (Or this repository as it stands: **Code →
    Download ZIP**.)
