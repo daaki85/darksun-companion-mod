@@ -874,9 +874,13 @@ ranger level). 3/2 means one attack one round and two the next.
 | a warrior, a kind it hasn't chosen | 1 | 3/2 | 2 | 3 | 1 | 3/2 |
 | a chosen kind (specialized, mastery, expertise) | 3/2 | 2 | 3 | 4 | 3/2 | 2 |
 | grand mastery (9th level on) | | 3 | | 5 | | 3 |
+| a **Crusader** or **Mind Warrior** (by its cleric or psionicist level), any weapon | 1 | 3/2 | 2 | 2 | 1 | 1 |
+| a **Battle Mage** (by its preserver level), its chosen kind | 3/2 | 2 | | | | |
+| a **Battle Mage**, any other weapon | 1 | 1 | 2 | 2 | 1 | 1 |
 
-The Crusader, Mind Warrior and Battle Mage [kits](#kits) have extra attacks of
-their own. With [two weapons](#two-weapons), the off hand attacks once a round
+The levels are the warrior's (its best fighter, gladiator or ranger level), or
+for the three kits their own class's. A Battle Mage's chosen kind is a melee
+weapon. With [two weapons](#two-weapons), the off hand attacks once a round
 whatever the rate.
 
 *Without the mod:* every warrior has 3/2 attacks a round in melee (2 from 7th
