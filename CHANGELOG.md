@@ -98,6 +98,11 @@ Released pull requests are summarised in a line or two each; the release notes
   its own class's level; its hit die counts only for its own class. A Battle
   Mage's chosen weapon spec stays the kit's (expertise when awake, nothing
   while asleep), not a new fighter's specialization.
+- **Classes a kit bars on dual-classing:** a Seeker or Justifier can't become
+  a cleric or druid, a Shinobi a preserver, greyed on the DUAL window (INT
+  9Dh): their own slot tables would replace the new class's slots.
+- **The Stalker hides in shadows indoors** with its full chance (the stealth
+  rule halves a ranger's indoors).
 - **Starting gear fitted to the kit:** the game's class gear, given at DONE,
   is changed while the character is new where the kit can't use it: a
   Shinobi's long sword becomes a bone short sword, a Brute's a bone great axe
@@ -111,7 +116,7 @@ Released pull requests are summarised in a line or two each; the release notes
   place of −2 CON.
 - **The dice log's ring holds 96 entries** (was 128), making room in upper
   memory for the kits' code.
-- **The helper's interrupts** are now 9Eh to FEh (and 60h to 65h); the
+- **The helper's interrupts** are now 9Dh to FEh (and 60h to 65h); the
   message when they are in use says so.
 
 **Documentation**

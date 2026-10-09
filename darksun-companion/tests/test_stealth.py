@@ -180,6 +180,18 @@ class StealthTests(unittest.TestCase):
         self.assertEqual(lines, ["Dag hides in shadows: d100 = 6, needs 5 or less (10, halved indoors for a ranger) -> seen"])
         self.assertFalse(hidden)
 
+    def test_stalker_indoors(self):
+        """A Stalker (kits.py) hides with its full chance indoors too."""
+        from unittest import mock
+        from dscompanion import kits
+        self.ranger(level=1)
+        self.region(0x29)
+        with mock.patch.object(self.gd, "kit_id", lambda creature: kits.STALKER):
+            lines, _ = stealth.turn(self.gd, 0, rolls(99))
+        self.assertIn("a Stalker: not halved indoors", lines[0])
+        need = int(lines[0].split("needs ")[1].split(" ")[0])
+        self.assertEqual(need, int(lines[0].split("(")[1].split(",")[0].split(" = ")[-1]))
+
     def test_ranger_effects(self):
         """Not Okay: no hiding for a ranger either."""
         self.ranger()

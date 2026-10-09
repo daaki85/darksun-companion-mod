@@ -278,6 +278,16 @@ def second_sphere(kid: int, sheet: bytes) -> Optional[int]:
     return sheet[SPHERE2] - 1
 
 
+def dual_banned(kid: int, cls: int) -> bool:
+    """Whether a human with kit KID (asleep or not) may not change to class CLS (1-17), as DSCLOG's
+    PROBE_DUAL_BAN greys it on the DUAL window: a Seeker or Justifier a cleric or druid (1-8), a
+    Shinobi a preserver (11). Their own slot tables (SEEKER_SLOTS, by the kit's class level) would
+    take the new class's slots' place once the kit woke."""
+    if kid in (SEEKER, JUSTIFIER):
+        return 1 <= cls <= 8
+    return kid == SHINOBI and cls == 11
+
+
 def spell_spheres(kid: int, cls: int, second: Optional[int], spheres: int) -> int:
     """A spell's mask of the classes that cast it (SPHERES), for a caster of class CLS with kit KID:
     an Elementalist's second sphere's spells its own class's too (DSCLOG's EL_SPHERES: the second

@@ -3252,6 +3252,32 @@ class KitTests(unittest.TestCase):
         self.assertEqual(kits.spell_spheres(kits.ELEMENTALIST, 1, 2, 0x10808A), 0x10808A)
 
 
+    def test_dual_ban(self):
+        """PROBE_DUAL_BAN: the game's yes (AX 1) to a class on the DUAL window made no for a class
+        the kit bars (kits.dual_banned), ZF as "or ax,ax"; the game's no kept."""
+        from dscompanion import kits, kitpages
+        from dscompanion.gamepatch import VEC_DUAL_BAN
+        self.creature(13, 3)  # (DS:1661h the sheets)
+        for rules in (game.RULE_KITS, 0):
+            self.rules(rules)
+            for cls, kit in ((13, 3), (14, 2), (13, 1), (17, 3), (17, 1), (11, 2)):
+                sheet = bytearray(game.SHEET_SIZE)
+                sheet[0x18], sheet[0x21], sheet[0x24], sheet[kitpages.KIT_BYTE] = 1, cls, 5, kit
+                self.mu.mem_write(self.SHEET * 16 + 2 * game.SHEET_SIZE, bytes(sheet))
+                self.mu.mem_write(SS * 16 + BP + 6, struct.pack("<H", 2))
+                kid = kitpages.kit_any(bytes(sheet)) if rules else 0
+                for new in (1, 5, 8, 9, 11, 12):
+                    for given in (0, 1):
+                        with self.subTest(rules=rules, cls=cls, kit=kit, new=new, given=given):
+                            self.run_vector(VEC_DUAL_BAN, 2, eax=given, ebx=0x2222, esi=new, es=0x6666)
+                            want = int(given and not kits.dual_banned(kid, new))
+                            self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), want)
+                            self.assertEqual(bool(self.mu.reg_read(r.UC_X86_REG_EFLAGS) & 0x40), not want)
+                            self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_BX, r.UC_X86_REG_SI,
+                                                                            r.UC_X86_REG_ES)], [0x2222, new, 0x6666])
+        self.assertEqual([kits.dual_banned(kits.SEEKER, c) for c in (1, 8, 9, 11)], [True, True, False, False])
+        self.assertEqual([kits.dual_banned(kits.SHINOBI, c) for c in (1, 11)], [False, True])
+
     def picker_sheet(self, cls, kit, level):
         from dscompanion import kitpages
         sheet = bytearray(game.SHEET_SIZE)

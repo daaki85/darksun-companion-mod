@@ -17,7 +17,8 @@ ELVEN_QUIET (AD&D's 95% in the worst conditions).
 
 Rangers do it too, with AD&D's chances for a ranger (the game gives them no thief skills;
 game.ranger_skill_parts), but the other way round for the light: outdoorsmen, they hide with
-the full chance under the open sky and half of it indoors. Their attack from behind is no
+the full chance under the open sky and half of it indoors (a Stalker, kits.py, the full chance
+indoors too). Their attack from behind is no
 backstab (DSCLOG's own check keeps that to thieves). Someone with thief levels hides as a thief.
 
 Daylight goes by the region (the map) the party is in: open desert, rock and the arena are
@@ -173,7 +174,9 @@ def turn(gd: GameData, combatant: int, roll: Callable[[], int], gear: bool = Tru
     if enemy:
         return [f"{who} can't hide in shadows: {enemy} is right beside them"], False
     sun = daylight(gd, combatant)
-    if ranger:  # at home under the open sky
+    if ranger and not sun and gd.kit_id(creature) == kits.STALKER:  # (kits.py: not halved indoors)
+        need, why = hide, f"{shown}, a Stalker: not halved indoors"
+    elif ranger:  # at home under the open sky
         need = hide if sun else hide // 2
         why = f"{shown}, a ranger under the open sky" if sun else f"{shown}, halved indoors for a ranger"
     elif sun and gd.kit_id(creature) == kits.ASSASSIN:  # (kits.py: not halved in daylight)

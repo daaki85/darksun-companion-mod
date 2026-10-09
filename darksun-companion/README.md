@@ -1618,7 +1618,7 @@ and costs something.
 | **Arena Champion** (gladiator) | with a shield in a hand: +1 to hit and damage in melee, and AC 1 better | −1 to hit in melee with no shield |
 | **Twin-blade** (gladiator) | no penalty for two weapons (with the two-weapons rule) | no shield; no two-handed weapon (a half-giant may hold one in one hand, with the half-giants' rule) |
 | **Brute** (gladiator) | +2 to hit and damage with a two-handed melee weapon | two-handed melee weapons only (a half-giant may add a shield); missile weapons, but not as a weapon spec |
-| **Stalker** (ranger) | +2 movement in a fight; +15 hide in shadows and move silently | light armour only (leather, or none) |
+| **Stalker** (ranger) | +2 movement in a fight; +15 hide in shadows and move silently, and hiding not halved indoors (with the stealth rule) | light armour only (leather, or none) |
 | **Assassin** (thief) | hiding in shadows not halved in daylight | −15 pick pockets and open locks |
 | **Swashbuckler** (thief) | a warrior's THAC0 (21 less its level) | −10 to every thief skill |
 | **Grove Warden** (druid) | AC 1 better for every 3 druid levels | no metal weapons |
@@ -1752,6 +1752,12 @@ the kit's alone: a Battle Mage turned fighter isn't specialized in it, and has
 expertise with it once the kit wakes. A warrior's own weapon specs stay, as
 the game keeps them, and count again once the new class's level passes the
 old.
+
+Two kits keep a human from some classes, greyed on the DUAL window as the
+game greys those it already bars: a **Seeker** or **Justifier** can't become a
+cleric or druid, and a **Shinobi** can't become a preserver. Each casts from a
+slot table of its own, which would take the place of the new class's slots
+once the kit woke.
 
 ### Class restrictions
 
