@@ -79,6 +79,9 @@ VEC_CAST_MARK, VEC_ROUND_MARK, VEC_CAST_DONE, VEC_END_TURN = 0x96, 0x95, 0x94, 0
 VEC_LEARN_SAID, VEC_LEARN_REFUSED = 0x92, 0x91
 VEC_XP, VEC_PRIEST_THAC0, VEC_ADND_SLOTS = 0x90, 0x8F, 0x8E
 VEC_PRICE, VEC_PRICE_EAX = 0x8D, 0x8C
+# the game's data segment (4356h) in DSUN.EXE: after the 5400h-byte header
+DS_FILE = 0x5400 + 0x4356 * 16
+RL_SCORE, RL_HP, RL_ROLL, RL_SUM = 1, 2, 3, 4  # (sites sharing VEC_CR_SPELLS, as in dsclog.asm)
 
 
 SCRIPT_BUFFER = 0x2E00  # the scripts' buffer, made bigger (the game's: 10000 bytes)
@@ -432,6 +435,20 @@ PATCHES = (
     # A new preserver picks its spells on CHOOSE A SPELL at creation (the game gives Grease, Magic
     # Missile and more by its level)
     Patch("cr_spells", 0x66F2D, bytes.fromhex("8b46fe"), _interrupt(VEC_CR_SPELLS, 3)),
+    # Creation's scores and hit points as rolled (game.RULE_ROLLED): a score click kept to the
+    # die's total, a hit point click doing nothing, the die's total kept as its three loops set
+    # CHR, and the totals drawn under CHR. No vectors are left: these share VEC_CR_SPELLS, the
+    # INT followed by the site's number (DSCLOG's RL_*) where cr_spells's has its NOP.
+    Patch("rl_score", 0x655C6, bytes.fromhex("8a46fe"), bytes((0xCD, VEC_CR_SPELLS, RL_SCORE))),
+    Patch("rl_hp", 0x63A49, bytes.fromhex("0346fe"), bytes((0xCD, VEC_CR_SPELLS, RL_HP))),
+    Patch("rl_roll_4", 0x65944, bytes.fromhex("26884722"), bytes((0xCD, VEC_CR_SPELLS, RL_ROLL, 0x90))),
+    Patch("rl_roll_6", 0x65979, bytes.fromhex("26884722"), bytes((0xCD, VEC_CR_SPELLS, RL_ROLL, 0x90))),
+    Patch("rl_roll_7", 0x659AE, bytes.fromhex("26884722"), bytes((0xCD, VEC_CR_SPELLS, RL_ROLL, 0x90))),
+    Patch("rl_sum", 0x65185, bytes.fromhex("83c404"), bytes((0xCD, VEC_CR_SPELLS, RL_SUM))),
+    # The box the scores' redraw puts back what was under (the screen's first, DS:0F62h: x1, y1,
+    # x2, y2), its x2 and y2: a line more under CHR, and wide enough for "100/102" and its shadow
+    # (the game's x 48, y 178; nothing else is drawn there, the next thing right a bullet at x 80)
+    Patch("rl_sum_box", DS_FILE + 0xF66, struct.pack("<hh", 48, 178), struct.pack("<hh", 77, 185)),
     # After DUAL: the new class's kit on the game's three-choice menu (an Elementalist's second sphere
     # too), and a new warrior's weapon kinds
     Patch("dual_kit", 0x86D90, bytes.fromhex("837e080c"), _interrupt(VEC_DUAL_KIT, 4)),

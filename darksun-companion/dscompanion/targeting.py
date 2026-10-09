@@ -17,7 +17,7 @@ TSR_TARGET_ON, TSR_TAB, TSR_BACK, TSR_TARGET, TSR_ATTACK = 250, 252, 254, 256, 2
 NONE = 0xFFFF
 MAP_THINGS, MAP_THING_SIZE, MAP_FEET = 0x6694, 32, 9  # DS: things on the map, their feet (x, y)
 CAMERA = 0x1178  # DS: the view's top left on the map
-TSR_PAN = 230  # DSCLOG's PAN_X, PAN_Y (scrolling.py)
+TSR_PAN = 230  # DSCLOG's PAN_X, PAN_Y: the view scrolled by as many pixels
 VIEW_W, VIEW_H, VIEW_TOP, VIEW_MARGIN = 320, 200, 30, 24  # (the view; its top has the name box)
 
 

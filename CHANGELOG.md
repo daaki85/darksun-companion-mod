@@ -8,6 +8,34 @@ Released pull requests are summarised in a line or two each; the release notes
 [1.0.0](release-notes/v1.0.0.md): #1 to #13) and the pull requests themselves
 have the detail.
 
+## Pull request #35 (in progress)
+
+**Added**
+- **Scores and hit points as rolled** (a new rule, on by default, its own box
+  on the Options tab): on the creation screen a click raises a score only
+  while the six add up to no more than the die gave, so lowering one frees
+  points for another, and a click on the hit points does nothing. Under CHR
+  the screen shows the six's total and the die's (`SUM:99/101`); a new class
+  that raises a score to its minimum raises the die's total with it. The dice
+  log adds each roll's total (`Character creation: the six scores add up to
+  101`). No interrupt vectors were left, so the new sites share the one for
+  choosing a preserver's spells, a site number after the `INT`.
+
+**Fixed**
+- **A click on a score on the creation screen stopped the game** (since
+  2.0.0): the Mind Warrior's PSP check at the end of the game's PSP routine
+  returned with interrupts off, and from a score's click nothing turned them
+  on again. The flags are now put back.
+
+**Removed**
+- **Turning the mouse wheel** no longer scrolls the map (the Ledger's Windows
+  mouse hook is gone); pressing the wheel and dragging still does.
+
+**Documentation**
+- **Patch notes** (`PATCH-NOTES.md`, and `patch-notes.html` as a page with a
+  copy-as-Markdown button): every change from the original game, laid out as
+  patch notes, to share online. Linked from the front page.
+
 ## Pull request #33 ([merged 2026-10-09](https://github.com/daaki85/darksun-obsidian-edition/pull/33))
 
 **Release**

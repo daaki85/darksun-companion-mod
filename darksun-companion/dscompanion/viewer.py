@@ -358,6 +358,10 @@ class Viewer:
                                 "preservers' spell slots by level (WIS's bonus slots stay the game's)"),
                 ("cha_prices", "The leader's CHA lowers what shops ask, as in Baldur's Gate: 5% off at CHA 16, "
                                "10% at 17, 15% at 18, 20% at 19, 25% from 20 (selling as the game has it)"),
+                ("rolled_scores", "Character creation keeps what the die rolls: a score may be raised only "
+                                  "while the six add up to no more than the die gave (lower one to raise "
+                                  "another; the total is shown under CHR), and the hit points can't be "
+                                  "clicked"),
                 ("best_hit_die", "Hit dice rolled twice, the better kept, at creation and at every level "
                                  "(every character)"),
                 ("spell_save", "Spells are saved against with the spell save (the game uses "
@@ -444,8 +448,7 @@ class Viewer:
             ttk.Radiobutton(controls, text=text, value=value, variable=self.ring_mode,
                             command=self._popups_changed).pack(anchor="w", padx=(20, 0))
         self.scroll_map = tk.BooleanVar(value=bool(settings.get("scroll_map", True)))
-        ttk.Checkbutton(controls, text="Scroll the map with the mouse wheel: press it and move, or turn it "
-                        "(Shift: sideways)", variable=self.scroll_map,
+        ttk.Checkbutton(controls, text="Scroll the map by pressing the mouse wheel and moving", variable=self.scroll_map,
                         command=self._popups_changed).pack(anchor="w", pady=(4, 0))
         self.scroll_right = tk.BooleanVar(value=bool(settings.get("scroll_right", False)))
         ttk.Checkbutton(controls, text="... or by holding the right mouse button and moving (a right "

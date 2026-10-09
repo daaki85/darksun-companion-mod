@@ -3811,7 +3811,8 @@ class KitTests(unittest.TestCase):
 
     def test_cr_psp(self):
         """PROBE_CR_PSP: the creation PSP routine's end ("pop bp / retf"), the sheet being made's
-        most PSP (+0Ch) a tenth less for a Mind Warrior (kits.max_psp)."""
+        most PSP (+0Ch) a tenth less for a Mind Warrior (kits.max_psp); the flags as at the INT
+        (IF set again: a click on a score once stopped the game here)."""
         from dscompanion import kits
         from dscompanion.gamepatch import VEC_CR_PSP
         mu = self.mu
@@ -3841,6 +3842,7 @@ class KitTests(unittest.TestCase):
                                                                    r.UC_X86_REG_AX, r.UC_X86_REG_BX, r.UC_X86_REG_CX,
                                                                    r.UC_X86_REG_DX)],
                                          [back, 0x7FC, 0x1234, 0x1111, 0x2222, 0x3333, 0x4444])
+                        self.assertTrue(mu.reg_read(r.UC_X86_REG_EFLAGS) & IF)
 
     def test_max_psp(self):
         """PROBE_MAX_PSP: ES:BX the sheet ([BP-8]), and SI (the most PSP) a tenth less for a Mind
@@ -4259,3 +4261,127 @@ class ChaPriceTests(AdndTablesTests):
                         self.assertEqual(self.mu.reg_read(r.UC_X86_REG_EAX), want - 0x10000 & 0xFFFFFFFF
                                          if want >= 0x8000 else want)
                         self.assertEqual(self.mu.reg_read(r.UC_X86_REG_CX), 0x3333)
+
+
+@unittest.skipIf(Uc is None, "unicorn is not installed")
+class RolledTests(AdndTablesTests):
+    """RULE_HI_ROLLED (game.RULE_ROLLED): the creation screen's sites sharing VEC_CR_SPELLS, the
+    INT followed by the site's number. RL_ROLL keeps the die's total as a loop sets CHR, RL_SCORE
+    keeps a click's raise to the points to spare, RL_HP leaves the hit points as they are, and
+    RL_SUM draws "SUM:" and the totals; with the rule off, the game's."""
+    test_xp = test_priest_thac0 = test_slots = None  # (AdndTablesTests' own)
+    CREATURE, WINDOW, LOG = 0x8000, 0x12345678, 0x6800
+    # the game's text routine, a stand-in: x, y and the text (its far pointer, the last argument)
+    # added to a log at LOG:2, LOG:0 where the next goes
+    TEXT = bytes.fromhex("5589e51e560657c5761eb800688ec0268b3e00008b460aab8b460cabacaa08c075fa26893e0000"
+                         "5f075e1f5dcb")
+
+    def setUp(self):
+        super().setUp()
+        self.mu.mem_write(self.DS * 16 + 0x11A0, struct.pack("<HH", 0, self.CREATURE))
+        self.mu.mem_write(self.DS * 16 + 0x11A4, struct.pack("<I", self.WINDOW))
+        self.mu.mem_write(self.DS * 16 + 0xF62, struct.pack("<4h", 33, 137, 77, 185))  # (the scores' box)
+        self.mu.mem_write((self.DS + 0x2B7A - 0x4356) * 16 + 0x16D, self.TEXT)
+
+    def rules(self, on):
+        self.mu.mem_write(self.hdr + self.RULES_HI, struct.pack("<H", 32 if on else 0))
+
+    def scores(self, *values):
+        self.mu.mem_write(self.CREATURE * 16 + 0x22, bytes(values))
+
+    def run_site(self, site, code_len, stack=b"", popped=0, **regs):
+        """INT VEC_CR_SPELLS, the site's number and NOPs (CODE_LEN in all); STACK the words on the
+        stack at the INT, POPPED bytes of it gone after."""
+        from dscompanion.gamepatch import VEC_CR_SPELLS
+        at = self.image.find(bytes((0xB8, VEC_CR_SPELLS, 0x25, 0xBA)))
+        self.mu.mem_write(VEC_CR_SPELLS * 4, struct.pack("<HH", struct.unpack_from("<H", self.image, at + 4)[0], TSR))
+        ip = 0x600 + site * 0x10  # (one for each site: the emulator keeps code it has seen)
+        self.mu.mem_write(CALLER * 16 + ip, bytes((0xCD, VEC_CR_SPELLS, site)) + b"\x90" * (code_len - 3))
+        sp = 0x7FC - len(stack)
+        self.mu.mem_write(SS * 16 + sp, stack)
+        for name, value in dict(cs=CALLER, ds=self.DS, ss=SS, esp=sp, ebp=BP, eflags=IF | 2, **regs).items():
+            self.mu.reg_write(getattr(r, "UC_X86_REG_" + name.upper()), value)
+        self.mu.emu_start(CALLER * 16 + ip, CALLER * 16 + ip + code_len, count=20000)
+        self.assertEqual((self.mu.reg_read(r.UC_X86_REG_IP), self.mu.reg_read(r.UC_X86_REG_SP)),
+                         (ip + code_len, sp + popped))
+
+    def roll(self, last, di=1):
+        """RL_ROLL: CHR (SI 5) set to LAST, DI the die's flag."""
+        from dscompanion.gamepatch import RL_ROLL
+        self.run_site(RL_ROLL, 4, es=self.CREATURE, ebx=5, esi=5, edi=di, eax=0x1100 | last)
+        self.assertEqual(self.mu.mem_read(self.CREATURE * 16 + 0x27, 1)[0], last)
+
+    def click(self, score, value):
+        """RL_SCORE: AL the value a click on SCORE would set ([BP-2] the game's)."""
+        from dscompanion.gamepatch import RL_SCORE
+        self.mu.mem_write(SS * 16 + BP - 2, struct.pack("<H", value))
+        self.run_site(RL_SCORE, 3, es=self.CREATURE, ebx=score, esi=score, eax=0x2200, ecx=0x3333,
+                      edx=0x4444)
+        self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_AH, r.UC_X86_REG_BX, r.UC_X86_REG_CX,
+                                                        r.UC_X86_REG_DX, r.UC_X86_REG_SI)],
+                         [0x22, score, 0x3333, 0x4444, score])
+        return self.mu.reg_read(r.UC_X86_REG_AL)
+
+    def test_scores(self):
+        for on in (False, True):
+            with self.subTest(on=on):
+                self.rules(on)
+                self.scores(17, 14, 17, 18, 19, 0)
+                self.roll(17)  # the die: 102
+                self.assertEqual(self.click(0, 18), 17 if on else 18)  # nothing to spare
+                self.assertEqual(self.click(0, 16), 16)  # lowering: always
+                self.scores(17, 12, 17, 18, 19, 17)  # DEX lowered by 2
+                self.assertEqual(self.click(0, 18), 18)
+                self.assertEqual(self.click(0, 22), 19 if on else 22)  # as far as the 2 to spare
+                self.assertEqual(self.click(3, 3), 3)  # round from the least: down
+                self.scores(17, 12, 17, 18, 19, 0)
+                self.roll(15)  # rolled again: 98
+                self.assertEqual(self.click(1, 13), 12 if on else 13)
+                self.scores(17, 12, 15, 18, 19, 0)
+                self.roll(15, di=0)  # kept, not rolled (96): the die's 98 stays
+                self.assertEqual(self.click(1, 14), 14)
+                self.assertEqual(self.click(1, 15), 14 if on else 15)
+                self.scores(18, 14, 17, 18, 19, 0)
+                self.roll(18, di=0)  # raised to a new class's least (104): the most is 104
+                self.assertEqual(self.click(1, 15), 14 if on else 15)
+                self.scores(18, 13, 17, 18, 19, 18)
+                self.assertEqual(self.click(1, 14), 14)
+
+    def test_hit_points(self):
+        from dscompanion.gamepatch import RL_HP
+        for on in (False, True):
+            for step in (1, -1):
+                with self.subTest(on=on, step=step):
+                    self.rules(on)
+                    self.mu.mem_write(SS * 16 + BP - 2, struct.pack("<h", step))
+                    self.run_site(RL_HP, 3, eax=9, ebx=0x2222)
+                    self.assertEqual(self.mu.reg_read(r.UC_X86_REG_AX), 9 if on else 9 + step & 0xFFFF)
+
+    def drawn(self):
+        """The text routine's calls since the last: (x, y, text) each."""
+        mem = self.mu.mem_read(self.LOG * 16, 0x100)
+        end, at, out = struct.unpack_from("<H", mem)[0], 2, []
+        while at < end:
+            x, y = struct.unpack_from("<hh", mem, at)
+            text = bytes(mem[at + 4:mem.index(0, at + 4)])
+            out.append((x, y, text.decode()))
+            at += 4 + len(text) + 1
+        self.mu.mem_write(self.LOG * 16, struct.pack("<H", 2))
+        return out
+
+    def test_sum(self):
+        from dscompanion.gamepatch import RL_SUM
+        self.mu.mem_write(self.LOG * 16, struct.pack("<H", 2))
+        for on in (False, True):
+            with self.subTest(on=on):
+                self.rules(on)
+                self.scores(17, 14, 17, 18, 19, 0)
+                self.roll(17)
+                self.scores(17, 12, 17, 18, 19, 17)
+                self.run_site(RL_SUM, 3, stack=struct.pack("<HH", 0x1111, 0x2222), popped=4,
+                              eax=0x1111, ebx=0x2222, esi=0x5555, edi=0x6666)
+                self.assertEqual([self.mu.reg_read(x) for x in (r.UC_X86_REG_AX, r.UC_X86_REG_BX,
+                                                                r.UC_X86_REG_SI, r.UC_X86_REG_DI,
+                                                                r.UC_X86_REG_BP, r.UC_X86_REG_DS)],
+                                 [0x1111, 0x2222, 0x5555, 0x6666, BP, self.DS])
+                self.assertEqual(self.drawn(), [(10, 177, "SUM:"), (33, 177, "100/102")] if on else [])

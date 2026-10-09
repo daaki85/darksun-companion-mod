@@ -355,10 +355,9 @@ class DiceLog:
         self._rings = rings.Rings()
         self.use_targeting = True  # Tab chooses an enemy in a fight, Enter attacks it (targeting.py)
         self._targeting = targeting.Targeting()
-        self.scroll_map = True  # the map scrolled with the wheel, turned or pressed and dragged (scrolling.py)
+        self.scroll_map = True  # the map scrolled by dragging with the wheel pressed (scrolling.py)
         self.scroll_right = False  # ... and dragged with the right button held
         self._scrolling = scrolling.Scrolling()
-        self._wheel: Optional[scrolling.WheelWatch] = None
         self._dresser: Optional[sprites.Dresser] = None
         self._dresser_tried = False
         self.picked: set = set()  # the pockets tried already (each person gets one try)
@@ -441,10 +440,6 @@ class DiceLog:
         self._dust = dust.Dust()
         self._rings = rings.Rings()
         self._targeting.forget()
-        if self._wheel is None:
-            proc = getattr(self.guest, "proc", None)
-            self._wheel = scrolling.WheelWatch(lambda: getattr(proc, "pid", None), self._scrolling.add)
-            self._wheel.start()
         self.tracker = PartyTracker(self.game)
         self.text = TextBuffer(self.guest.read, hdr)
         self.set_record_everything(self.record_everything)
@@ -941,11 +936,7 @@ class DiceLog:
         self.rand_addr = None
 
     def close(self) -> None:
-        """Done with: the mouse wheel's watch (a hook of Windows') stopped, so a new DiceLog's
-        doesn't run beside it."""
-        if self._wheel is not None:
-            self._wheel.stop()
-            self._wheel = None
+        """Done with (nothing of its own to stop now)."""
 
     # ---- reading ----------------------------------------------------------------
 
@@ -1133,7 +1124,7 @@ class DiceLog:
             pass
 
     def _scroll(self) -> None:
-        """The map scrolled by the wheel's turns, at every look (they come in as they're made)."""
+        """The map's drag switches written to DSCLOG when they change."""
         if self.tsr_hdr is None:
             return
         try:
@@ -2223,6 +2214,8 @@ class DiceLog:
                         self._creation_con = shown[ability]
                 elif line is not None:
                     out.append(line[1])
+            if shown is not None:  # (what game.RULE_ROLLED lets the six add up to)
+                out.append(f"Character creation: the six scores add up to {sum(shown)}")
         if shown is not None:
             self._creation_con = shown[2]
         return out + self.creation_hp_lines()

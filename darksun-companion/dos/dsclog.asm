@@ -272,7 +272,7 @@ shadow_passes dw 0              ; +226 shadow passes drawn (counted)
 scroll_on  dw 0                 ; +228 the companion sets SCROLL_MIDDLE and/or SCROLL_RIGHT to have
                                 ;      a drag with that button scroll the map (SCROLLING)
 pan_x      dw 0                 ; +230 the companion adds to these (wrapping) to scroll the map by
-pan_y      dw 0                 ; +232   as many pixels (the mouse wheel, read in Windows)
+pan_y      dw 0                 ; +232   as many pixels (to a chosen enemy: TARGETING)
 dust_on    dw 0                 ; +234 the companion sets 1 once LIGHT is made, to have walkers raise
                                 ;      dust (DUST)
 light_off  dw light             ; +236 offset of LIGHT: each colour's lighter one (0: none, not ground
@@ -6378,6 +6378,21 @@ dk_spheres db 'AIR', 0, 0, 0, 'EARTH', 0, 'FIRE', 0, 0, 'WATER', 0
 ; (without it the game's code is lost). Another level: AX [BP-2], on as before.
 CR_SPELLS_PAST equ 0x66F83 - 0x66F2F    ; (past the game's grants, less the address after the INT)
 probe_cr_spells:
+        push bp
+        mov bp, sp
+        push ds
+        push bx
+        lds bx, [bp + 2]
+        mov bl, [bx]            ; the byte after the INT: its NOP, or another site's number (RL_*)
+        mov [cs:rl_site], bl
+        cmp bl, 0x90
+        je .own
+        inc word [bp + 2]       ; (past the site's number)
+.own:   pop bx
+        pop ds
+        pop bp
+        cmp byte [cs:rl_site], 0x90
+        jne rl_sites
         mov ax, [bp - 2]
         or ax, ax
         jz .iret
@@ -6418,6 +6433,160 @@ probe_cr_spells:
         pop es
         popad
         iret
+
+; Creation's scores and hit points as rolled (RULE_HI_ROLLED; game.RULE_ROLLED). The game lets
+; a click raise any score to its most and set the hit points anywhere from the least to the most
+; the classes could roll. With the rule, a hit point click does nothing, and a score is raised
+; only while the six add up to no more than the die gave (RL_POOL): lowering one frees points
+; for another. Under CHR the screen shows the six's total and the die's: "SUM:100/102".
+; No vectors are left: these sites share VEC_CR_SPELLS, the INT followed by the site's number
+; (PROBE_CR_SPELLS's own has its NOP), which the return address is moved past.
+RL_SCORE equ 1                  ; DSUN.EXE 655C6h, in the score click (65480h)
+RL_HP    equ 2                  ; 63A49h, in the hit point click (63A24h)
+RL_ROLL  equ 3                  ; 65944h, 65979h, 659AEh: the die's three loops (657BBh)
+RL_SUM   equ 4                  ; 65185h, in the scores' redraw (65168h)
+RL_BOX   equ 0x0F62             ; DS: the screen's boxes (x1, y1, x2, y2), the scores' first
+RL_LABEL_X equ 23               ; "SUM:" this far left of the scores' x
+RL_ROW_Y equ 6 * 7 - 2          ; the line under CHR: 7 apart, from 2 above the box's top
+rl_sites:
+        cmp byte [cs:rl_site], RL_SCORE
+        je rl_score
+        cmp byte [cs:rl_site], RL_HP
+        je rl_hp
+        cmp byte [cs:rl_site], RL_ROLL
+        je rl_roll
+        cmp byte [cs:rl_site], RL_SUM
+        je rl_sum
+        iret
+
+; CR_TOTAL: DX the six scores of the creature being made (DS:[11A0h], from +22h) added up.
+; DS the game's; others kept.
+rl_total:
+        push es
+        push ax
+        push bx
+        push cx
+        les bx, [0x11A0]
+        xor ax, ax
+        xor dx, dx
+        mov cx, 6
+.add:   mov al, [es:bx + 0x22]
+        add dx, ax
+        inc bx
+        loop .add
+        pop cx
+        pop bx
+        pop ax
+        pop es
+        ret
+
+; RL_SCORE replaces "mov al,[bp-2]" (DSUN.EXE 655C6h), where a click sets a score (ES:BX the
+; creature plus the score's number, [BP-2] the value the click gives: one more or one less, or
+; round from the most to the least or back). A raise is kept to the points to spare.
+rl_score:
+        mov al, [bp - 2]
+        test word [cs:rules_hi], RULE_HI_ROLLED
+        jz .out
+        cmp al, [es:bx + 0x22]
+        jbe .out                ; lowered: always
+        push cx
+        push dx
+        mov cx, [cs:rl_pool]
+        jcxz .done              ; (no roll seen)
+        call rl_total
+        sub cx, dx              ; the points to spare
+        jg .some
+        mov al, [es:bx + 0x22]  ; none: as it was
+        jmp .done
+.some:  add cl, [es:bx + 0x22]  ; the most it may be
+        cmp al, cl
+        jbe .done
+        mov al, cl
+.done:  pop dx
+        pop cx
+.out:   iret
+
+; RL_HP replaces "add ax,[bp-2]" (63A49h), where a click adds 1 or -1 (BP-2) to the hit points.
+rl_hp:
+        test word [cs:rules_hi], RULE_HI_ROLLED
+        jnz .out
+        add ax, [bp - 2]
+.out:   iret
+
+; RL_ROLL replaces "mov es:[bx+22h],al" (+ NOP) in the die's three loops (one for each kind of
+; class), SI the score: after CHR, the six's total is the die's (DI 1, a roll), or no less
+; (DI 0: the scores kept, raised to a new class's least).
+rl_roll:
+        mov [es:bx + 0x22], al
+        cmp si, 5
+        jne .out
+        push dx
+        call rl_total
+        or di, di
+        jnz .set
+        cmp dx, [cs:rl_pool]
+        jbe .done
+.set:   mov [cs:rl_pool], dx
+.done:  pop dx
+.out:   iret
+
+; RL_SUM replaces "add sp,4" (65185h) in the scores' redraw, after the game has put back what
+; was under them (its box, RL_BOX, the line under CHR and to x 77 too: gamepatch.py's
+; "cr_sum_box"): "SUM:" and the totals, the six's and the die's, in the game's lettering.
+rl_sum:
+        pop word [cs:rl_ip]
+        pop word [cs:rl_cs]
+        pop word [cs:rl_fl]
+        add sp, 4               ; the replaced instruction
+        test word [cs:rules_hi], RULE_HI_ROLLED
+        jz .back
+        cmp word [cs:rl_pool], 0
+        je .back
+        sti
+        pushad
+        push es
+        mov ax, ds
+        add ax, USE_TEXT_SEG
+        mov [cs:c_draw + 2], ax
+        mov word [cs:c_draw], USE_TEXT_OFF
+        mov eax, [0x11A4]       ; the screen's window
+        mov [cs:c_winptr], eax
+        mov dx, [RL_BOX + 2]
+        add dx, RL_ROW_Y
+        mov ax, [RL_BOX]
+        push dx
+        push ax
+        push cs
+        push word rl_text
+        push dx
+        sub ax, RL_LABEL_X
+        push ax
+        push cs
+        push word rl_label
+        call c_draw_line
+        call rl_total
+        mov al, dl
+        mov di, rl_text
+        call c_itoa
+        mov byte [cs:di], '/'
+        inc di
+        mov al, [cs:rl_pool]
+        call c_itoa
+        call c_draw_line
+        pop es
+        popad
+.back:  push word [cs:rl_fl]
+        push word [cs:rl_cs]
+        push word [cs:rl_ip]
+        iret
+
+rl_site  db 0
+rl_pool  dw 0                   ; (RL_POOL) the die's total, the most the six may add up to (0: none seen)
+rl_ip    dw 0
+rl_cs    dw 0
+rl_fl    dw 0
+rl_label db 'SUM:', 0
+rl_text  db '000/000', 0
 
 ; PROBE_EF_CLICK: INT VEC_EF_CLICK replaces "mov si,[bp+8]" (3 bytes: INT + NOP; DSUN.EXE 7EC9Eh) in the
 ; Effects screen's handler for its cells (7EC97h; [BP+8] the cell's button, from 2BCDh, [BP+0Ah] the
@@ -9236,6 +9405,7 @@ RULE_MULTI_HP equ 16384         ; multiclass hit points as in AD&D (PROBE_MC_*)
 RULE_HP_BEST equ 32768          ; a hit die rolled twice, the better kept (PROBE_HP_BEST)
 RULE_HI_KITS equ 1              ; (RULES_HI) kits, chosen on the creation panel's KIT page (KIT_*)
 RULE_HI_CHA_PRICES equ 16      ; (RULES_HI) the leader's CHA lowers what shops ask (CHA_PRICE)
+RULE_HI_ROLLED equ 32           ; (RULES_HI) creation's scores and hit points as rolled (RL_SCORE, RL_HP)
 RULE_HI_TABLES equ 8            ; (RULES_HI) AD&D's class tables: XP, priests' THAC0, spell slots (XP_NEED, PROBE_*)
 RULE_HI_INT    equ 4            ; (RULES_HI) INT's chance to learn a scroll's spell and most spells a level (INT_LEARN)
 RULE_HI_RANGER equ 2            ; (RULES_HI) a ranger's spells' durations and damage at its level less 7 (PROBE_RANGER_LEVEL)
@@ -9573,8 +9743,14 @@ kit_made:
 ; PROBE_CR_PSP: INT VEC_CR_PSP replaces "pop bp; retf" (2 bytes; DSUN.EXE 65C3Dh), the end of the
 ; creation PSP routine (65B39h), which has put the sheet being made's most PSP in its +0Ch: a Mind
 ; Warrior's a tenth fewer, rounded down (kits.max_psp). Then the routine's own end, the interrupt
-; frame dropped.
+; frame dropped, its flags put back first: the INT cleared IF, and a click on a score reaches the
+; routine with nothing after to set it again (the game's clock stopped, and the game with it).
 probe_cr_psp:
+        push bp
+        mov bp, sp
+        push word [bp + 6]      ; (the flags at the INT)
+        popf
+        pop bp
         add sp, 6
         push ax
         call kit_made

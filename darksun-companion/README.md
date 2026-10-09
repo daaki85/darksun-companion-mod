@@ -106,7 +106,7 @@ It brings the rules closer to AD&D: weapon specialization and mastery, kits
 (three for each class), class restrictions, AD&D's class tables (experience,
 priests' THAC0, spell slots), INT's limits on learning spells, thief skills
 from the Player's Handbook, saving throws as the books have them, the party
-leader's CHA at shops, and levels up to 10 ([Rule changes](#rule-changes)). Thieves can hide in
+leader's CHA at shops, scores and hit points kept as rolled, and levels up to 10 ([Rule changes](#rule-changes)). Thieves can hide in
 shadows to backstab, and pick pockets ([Picking pockets](#picking-pockets)).
 
 It adds to Athas: new weapons in every material, magic items with stories of
@@ -117,11 +117,11 @@ armour the party wears, have characters cast shadows, and kick up dirt as they
 walk ([On the screen](#on-the-screen)).
 
 Quality of life changes: choosing an enemy with Tab and attacking it with
-Enter, scrolling the map with the mouse wheel ([Controls](#controls)), 40 saves
-and 29 saved characters ([More saves and characters](#more-saves-and-characters)),
-a game speed setting ([Game speed](#game-speed)), crash reports, and no dragon
-asking for a word from the manual, the game's copy protection ([No manual
-check](#no-manual-check)).
+Enter, scrolling the map by dragging with the mouse wheel
+([Controls](#controls)), 40 saves and 29 saved characters ([More saves and
+characters](#more-saves-and-characters)), a game speed setting ([Game
+speed](#game-speed)), crash reports, and no dragon asking for a word from the
+manual, the game's copy protection ([No manual check](#no-manual-check)).
 
 Nothing in the game folder or your save files is changed, except what play
 writes there: save pages 2 to 4 as files of their own beside the game's,
@@ -493,6 +493,7 @@ with the log's background (WCAG 2.0 AA, as AODA asks).
 | Line | Meaning |
 |---|---|
 | `Character creation, STR 17: best of four 4d4 (7, 11, 9, 10) = 11, +4, +1 dwarf = 16, raised to 17 (the Fighter's prime requisite)` | An ability score rolled on the character creation screen (see [Character creation](#character-creation)). The die rolls a whole character several times while it tumbles; the log gives only the one it stops on, once it stops, each ability checked against the one the screen shows. Rolls that came too fast to record leave the game's number: `Character creation, DEX 19 (its rolls came too fast to record)`, and likewise for hit points. |
+| `Character creation: the six scores add up to 101` | After the scores, what they add up to: the most they may add up to with [Scores and hit points as rolled](#scores-and-hit-points-as-rolled). |
 | `Character creation, hit points 15: Fighter d10 per level: 7 + 9; Thief d6 per level: 5 + 1 = 22, / 2 classes = 11, +4 CON 16 = 15` | The new character's hit points: a die for every level of every class, divided by the number of classes, plus CON's bonus (see [Character creation](#character-creation)). With [the better of two](#hit-dice-the-better-of-two) each die shows both rolls (`10 (the better of 2 and 10)`); with [multiclass hit points](#multiclass-hit-points) each is shared on its own and CON's bonus too (`each / 2 classes (at least 1) = 9, +2 CON 16 shared = 11`). |
 | `Character creation: a name picked at random, 1d33 = 6` | The game picks a new name from its lists when the sex or race changes. |
 
@@ -698,6 +699,9 @@ rolls a new character. From the game's code, and checked against the screen:
 * **Choices without dice.** Raising a score to a new class's minimum (adding
   Thief raises DEX to 17) and PSP aren't rolled, so they don't appear in the
   log. The creation screen's other random numbers only choose pictures.
+* **The total.** After the six scores comes what they add up to, the most
+  they may add up to with [Scores and hit points as
+  rolled](#scores-and-hit-points-as-rolled).
 
 Changing sex or race can make the game roll hit points twice, once with the
 old scores and once with the new: the last hit point line is the one that
@@ -1219,7 +1223,7 @@ How it works: [DEVELOPMENT.md](DEVELOPMENT.md#no-manual-check).
 
 ## Rule changes
 
-Twenty-one changes to the game's rules, each with its own box on the Options tab:
+Twenty-two changes to the game's rules, each with its own box on the Options tab:
 under **Rule changes**, but for the two thief rules, which are under
 **Thieves** with [picking pockets](#picking-pockets). All are on by default,
 and they take effect in games started with the dice log: with the Ledger
@@ -1234,6 +1238,7 @@ works](#how-the-game-works) has what the game does without them.
 | [Class restrictions](#class-restrictions) | each class's limits on armour, shields and weapons hold, the strictest winning; a multiclass preserver casts no spells in armour |
 | [Multiclass hit points](#multiclass-hit-points) | each level's die and CON's bonus shared between a character's classes |
 | [Hit dice: the better of two](#hit-dice-the-better-of-two) | each hit die rolled twice, the better kept, for every character |
+| [Scores and hit points as rolled](#scores-and-hit-points-as-rolled) | on the creation screen, a click raises a score only while the six add up to no more than the die gave (lower one to raise another), and doesn't change the hit points |
 | [Rangers' casting level](#rangers-casting-level) | a ranger's spells last and do damage as cast at its level less 7, as the spell levels it may cast already count it |
 | [Preservers' INT](#preservers-int) | INT gives a preserver a chance to learn a spell from a scroll, and the most spells of each spell level it may know |
 | [AD&D's class tables](#adds-class-tables) | the XP for each level, priests' THAC0, and clerics', druids' and preservers' spell slots from AD&D's tables |
@@ -1671,6 +1676,29 @@ Character creation, hit points 18: Fighter d10 per level: 10 (the better of 2 an
 ```
 
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#hit-dice-the-better-of-two).
+
+### Scores and hit points as rolled
+
+The game's creation screen lets a click change what the die rolled: a left
+click raises a score by 1 (round to the least from the most), a right click
+lowers it, and a click on the hit points sets them anywhere the classes could
+roll. Every score can go to its most that way. With **Scores and hit points as
+rolled** ticked:
+
+* **The six add up to no more than the die gave.** A score may still be
+  lowered, and the points it frees raise another. A raise past what's spare
+  stops at it, or does nothing when none is spare. The game's least and most
+  for each score still hold.
+* **The totals show under CHR**, the six's and the die's: `SUM:99/101` has 2
+  points to spare. A new roll of the die (or of a new race or sex) sets both.
+  A new class can raise a score to its least, as the game does; the die's
+  total grows to match if the six then add up to more.
+* **The hit points are as rolled**: a click on them does nothing.
+
+The dice log gives each roll's total with its scores:
+`Character creation: the six scores add up to 101`.
+
+How it works: [DEVELOPMENT.md](DEVELOPMENT.md#scores-and-hit-points-as-rolled).
 
 ### Rangers' casting level
 
@@ -2856,13 +2884,11 @@ How it works: [DEVELOPMENT.md](DEVELOPMENT.md#choosing-an-enemy-tab-enter-and-th
 ### Scrolling the map
 
 Press the mouse wheel on the map and move the mouse: the map moves with the
-pointer, as if dragged, in fights too. In Windows, turning the wheel scrolls the
-map up and down while the game's window is in front, and sideways with Shift
-held (or a wheel that tilts). On the Options tab it can be switched off, or
-holding the right button made to drag the map as well (a right click, let go
-before the pointer has moved, still changes the pointer between walking, using
-and looking). The game still scrolls on its own when the pointer touches the
-screen's edge, and still brings the view back to whoever's turn it is in a
+pointer, as if dragged, in fights too. On the Options tab it can be switched
+off, or holding the right button made to drag the map as well (a right click,
+let go before the pointer has moved, still changes the pointer between walking,
+using and looking). The game still scrolls on its own when the pointer touches
+the screen's edge, and still brings the view back to whoever's turn it is in a
 fight.
 
 The view can't be zoomed: the game draws a 320 by 200 screen at one scale,
