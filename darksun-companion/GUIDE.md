@@ -345,6 +345,18 @@ theirs ([what each class may use](#what-each-class-may-use)).
 
 **Kits.**
 
+*Myrmidon.* Drilled in a sorcerer-king's legions, where a soldier who falls out
+of step is left for the kanks. They master two weapons where others master one,
+but years of obeying orders leave their minds open to anyone who barks them.
+
+*Sentinel.* Caravan guards and city-gate wardens who live behind their shields,
+first to see the raiders coming and last to give ground. They trust bone and
+obsidian over sorcery, and spells bite them harder for it.
+
+*Ravager.* Raiders of the wastes who fight half-naked under the crimson sun,
+scarred hide hardening with every season. They charge in close and stay there:
+bows, slings and shields are for those who mean to live long.
+
 | Kit | Gives | Costs | Starts with |
 |---|---|---|---|
 | **Myrmidon** | a second weapon spec at 1st level, on to mastery as the first | −4 on saves against charms | the fighter's gear, and a plain weapon of its second weapon spec in the backpack |
@@ -406,6 +418,18 @@ single class** (a human may still change class).
 
 **Kits.**
 
+*Arena Champion.* Crowd favourites of the fighting pits, schooled to turn every
+blow with a shield and answer it before the cheering dies. Without one they
+feel naked on the sand, and fight like it.
+
+*Twin-blade.* Showfighters who carry a weapon in each hand and make the crowd
+count the blows. They have no use for a shield, nor for a weapon so heavy it
+needs both hands.
+
+*Brute.* Pit fighters bought for size and fed for strength, swinging great axes
+and mauls that end a bout in one blow. Anything smaller looks like a toy in
+their hands, and they treat it like one.
+
 | Kit | Gives | Costs | Starts with |
 |---|---|---|---|
 | **Arena Champion** | with a shield: +1 to hit and damage in melee, and AC 1 better | −1 to hit in melee without a shield | a shield in place of the off-hand club |
@@ -458,6 +482,20 @@ sky to strike from behind, and a little priest magic late on.
 whatever its other classes allow.
 
 **Kits.**
+
+*Stalker.* Hunters of the scrub and the city's shadowed alleys alike, moving
+where no one is watching and striking before anyone knows they are there. Heavy
+armour would only slow them down and give them away.
+
+*Seeker.* Wanderers on a lifelong pilgrimage through the wastes, looking for
+the spirit that still lives in Athas's broken land. As they come to understand
+it, the elements begin to answer them, though only through the arms a priest
+would carry.
+
+*Justifier.* Hunters hired to deal with whatever is too dangerous for anyone
+else: a tribe's chieftain, a defiler's lair, a beast that has emptied a
+village. They train their weapons to a killer's edge and leave prayer to
+others.
 
 | Kit | Gives | Costs | Starts with |
 |---|---|---|---|
@@ -516,6 +554,18 @@ than a long sword backstabs, see [Equipment](#equipment)); with another class,
 light armour and at most a leather shield.
 
 **Kits.**
+
+*Assassin.* Knives for hire in the templars' cities, where a noble house pays
+well to see a rival fall. They learn to vanish in the full glare of the sun,
+and leave locks and purses to lesser thieves.
+
+*Swashbuckler.* Swaggering rogues of the merchant houses and the elven markets,
+as handy with a blade as any soldier. All that time spent fighting leaves
+little for the quieter arts.
+
+*Shinobi.* Spies trained in secret by the Veiled Alliance, who carry a few
+spells beside their knives. Their masters teach them only what they need; they
+learn nothing from scrolls and travel light.
 
 | Kit | Gives | Costs | Starts with |
 |---|---|---|---|
@@ -578,6 +628,19 @@ allows them).
 
 **Kits.**
 
+*Arcanist.* Scholars of the Veiled Alliance who live for the Art, hoarding
+spells while their bodies wither from years of study in hiding. In a fight they
+can weave two spells while others weave one.
+
+*Scholar.* Keepers of forbidden lore who have spent more time over hidden
+libraries than learning to hold a weapon. Every new level of skill brings
+another spell into their books.
+
+*Battle Mage.* Preservers who learned in the arena or the legions that a spell
+is no use if you are dead before you finish it. They fight in leather with a
+chosen weapon and keep casting while others bleed, at the cost of a little of
+their magic.
+
 | Kit | Gives | Costs | Starts with |
 |---|---|---|---|
 | **Arcanist** | a spell slot more at each spell level it has; in a fight, casts two preserver spells each turn instead of one | a d3 hit die | the preserver's gear |
@@ -636,6 +699,17 @@ has the most, air and fire the fewest.
 | Water | bone, wood | bone long sword, dagger, short sword, mace, axe, great axe and polearm; club; quarterstaff; gythka; cahulaks; bow |
 
 **Kits.**
+
+*Healer.* Elemental priests who answer to the needs of the dying more than to
+the temples, using water and earth to close wounds. They keep a free hand for
+the work and won't fill it with a weapon.
+
+*Crusader.* Warrior priests who carry their element's anger into battle, as
+deadly with a weapon as any soldier. Their prayers are fewer for it.
+
+*Elementalist.* Priests who have bargained with two of the elemental lords at
+once and wield both powers. Divided worship comes slowly, and their spells lag
+a level behind.
 
 | Kit | Gives | Costs | Starts with |
 |---|---|---|---|
@@ -703,6 +777,18 @@ weapon but the great axes (the game's lists).
 
 **Kits.**
 
+*Grove Warden.* Guardians of an oasis or a hidden grove, whose skin toughens
+like bark the longer they keep watch. They refuse metal, which the land gave up
+only at great cost.
+
+*Wanderer.* Druids with no grove of their own, crossing salt flats and stony
+barrens under the sun and the freezing night. Heat and cold barely touch them,
+but they rarely stop long enough to armour themselves properly.
+
+*Lifebinder.* Druids devoted to the life in what defilers have left behind,
+mending wounds as they would mend a dying field. They fight only with blunt
+weapons, which wound without spilling blood.
+
 | Kit | Gives | Costs | Starts with |
 |---|---|---|---|
 | **Grove Warden** | AC 1 better for every 3 druid levels | no metal weapons | the druid's gear |
@@ -751,6 +837,16 @@ obsidian short swords, clubs, chatkchas and bows (the game's lists leave out
 its maces, slings and the metal short sword).
 
 **Kits.**
+
+*Mind Warrior.* Students of the Way who turned their discipline to the body,
+fighting like trained soldiers with minds as sharp as their blades. Their
+training leaves a little less room for the powers of the mind.
+
+*Mind Bender.* Masters of other minds, at ease reaching into thoughts and
+bending wills. Moving the world with thought alone comes harder to them.
+
+*Kineticist.* Psionicists who move the world with their minds, throwing stone
+and flame with a thought. Reaching into another mind costs them more.
 
 | Kit | Gives | Costs | Starts with |
 |---|---|---|---|

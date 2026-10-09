@@ -217,6 +217,8 @@ themselves have the detail.
   either.
 
 **Documentation**
+- **The guide's kits** each have a short description of who takes them on
+  Athas, above each class's kit table.
 - **The guide's Battle Mage** now says its chosen kind of weapon gives 3/2
   attacks a round, 2 from 7th level.
 - **Kits:** DEVELOPMENT.md has how they are built: room in the helper, the
