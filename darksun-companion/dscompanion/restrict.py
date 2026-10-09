@@ -18,11 +18,13 @@ PROBE_CAN_USE does this in the game; this is its model, for the tests and the Le
 - A multiclass preserver: no spells, wizard or priest, while it wears armour (DSCLOG's
   PROBE_NO_CAST, at the game's test for its "No spell use" effect); a shield doesn't count.
 
-A human who has changed class keeps the weapons it specialized in (a warrior class's, a Battle
-Mage's), whatever the new class allows, its old class asleep or not. A ranger's bow is its own
-the same way (every ranger has expertise with it): a ranger, now or before, may use bows
-whatever its other classes allow (a fire cleric's sphere). No kit keeps a character from a
-kind it specialized in either (kit_forbids), but for the off hand's rules.
+A human who was a fighter, gladiator or ranger and has changed class keeps the weapons it
+specialized in, whatever the new class allows, once its new class's level has passed the old
+(asleep till then, as the class is). A ranger's bow is its own the same way (every ranger has
+expertise with it): a multiclass ranger may use bows whatever its other classes allow (a fire
+cleric's sphere), and so may a human once ranger, as its chosen weapons. No kit keeps a
+character from a kind it specialized in either (kit_forbids), while its specs count
+(specs_awake), but for the off hand's rules.
 
 Helms count as armour. A human who has changed class (dual-classed: the class it has now is the
 first) is held only by that class; another race's classes (multiclass) all hold it. Weapons of
@@ -102,14 +104,33 @@ WARRIORS = frozenset((9, 10)) | frozenset(RANGERS)
 
 
 def specialized_back(sheet: bytes, kind: int) -> bool:
-    """A human who has dual-classed keeps the weapons it specialized in (a warrior class's, a
-    Battle Mage's), its earlier class asleep or not: none of the new class's limits on them. A
-    ranger's bow is its own too, now or before."""
+    """A human who was a fighter, gladiator or ranger and has dual-classed keeps the weapons it
+    specialized in once the new class's level has passed the old: none of the new class's
+    limits on them. A ranger's bow is its own too: a multiclass ranger's always, a human's while
+    it is a ranger or once its new class's level has passed its ranger level."""
+    human = sheet[game.SHEET_RACE] == game.HUMAN
     classes = sheet[game.SHEET_CLASSES:game.SHEET_CLASSES + 3]
-    if kind == specialize.KINDS.index("bow") and any(c in RANGERS for c in classes):
+    levels = sheet[game.SHEET_LEVELS:game.SHEET_LEVELS + 3]
+    if kind == specialize.KINDS.index("bow") and any(
+            c in RANGERS and (not human or i == 0 or levels[i] < levels[0]) for i, c in enumerate(classes)):
         return True
-    return sheet[game.SHEET_RACE] == game.HUMAN and bool(classes[1]) \
-        and kind + 1 in sheet[game.SPEC_SLOTS:game.SPEC_SLOTS + game.SPEC_COUNT]
+    if not human or kind + 1 not in sheet[game.SPEC_SLOTS:game.SPEC_SLOTS + game.SPEC_COUNT]:
+        return False
+    return any(classes[i] in WARRIORS and levels[i] < levels[0] for i in (1, 2))
+
+
+def specs_awake(sheet: bytes) -> bool:
+    """Whether the character's weapon specs count (DSCLOG's SPECS_AWAKE): one class, or not a
+    human; a human's warrior class now, or before and passed by the class it has now; a Battle
+    Mage's kit awake. Not while the class or kit that gave them sleeps."""
+    from . import kitpages, kits
+    classes = sheet[game.SHEET_CLASSES:game.SHEET_CLASSES + 3]
+    levels = sheet[game.SHEET_LEVELS:game.SHEET_LEVELS + 3]
+    if not classes[1] or sheet[game.SHEET_RACE] != game.HUMAN:
+        return True
+    if any(c in WARRIORS and (i == 0 or levels[i] < levels[0]) for i, c in enumerate(classes)):
+        return True
+    return bool(game.RULES_IN_FORCE & game.RULE_KITS) and kitpages.kit_id(sheet) == kits.BATTLE_MAGE
 
 
 def kit_forbids(sheet: bytes, item_type: int, typ: bytes, spec: bool = False, off_hand: bool = False) -> bool:
@@ -119,8 +140,9 @@ def kit_forbids(sheet: bytes, item_type: int, typ: bytes, spec: bool = False, of
     if not game.RULES_IN_FORCE & game.RULE_KITS:
         return False
     kind = specialize.kind_of(item_type) if is_weapon(typ) else None
-    if not spec and kind is not None and kind + 1 in sheet[game.SPEC_SLOTS:game.SPEC_SLOTS + game.SPEC_COUNT]:
-        # (a kind it specialized in: none, but for the off hand's rules)
+    if not spec and kind is not None and kind + 1 in sheet[game.SPEC_SLOTS:game.SPEC_SLOTS + game.SPEC_COUNT] \
+            and specs_awake(sheet):
+        # (a kind it specialized in, its specs counting: none, but for the off hand's rules)
         return off_hand and kits.forbids_off_hand(kitpages.kit_id(sheet), typ)
     half_giant = sheet[game.SHEET_RACE] == game.RACE_HALF_GIANT and bool(game.RULES_IN_FORCE & game.RULE_HALF_GIANT)
     sphere = (kitpages.kit_class_of(sheet) - 1) % 4  # (a ranger's, for a Seeker)

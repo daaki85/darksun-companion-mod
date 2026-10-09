@@ -1315,6 +1315,17 @@ class CanUseTests(unittest.TestCase):
                         with self.subTest(cls=cls, kit=kit, kind=kind, type=t, slot=slot):
                             self.assertEqual(self.can_use(bytes(s), t, rules=rules, slot=slot),
                                              self.expected(s, t, off_hand=slot == 14))
+            # a human Lifebinder (druid 2) turned fighter (7, a long sword spec), now a thief: the
+            # long sword the kit's to forbid while the fighter class sleeps, its own once passed
+            for thief in (6, 7, 8):
+                s = bytearray(test_restrict.sheet(17, 9, 5, race=game.HUMAN))
+                s[0x24:0x27], s[0x43], s[0x14] = bytes((thief, 7, 2)), 2, 1
+                game.RULES_IN_FORCE = rules | game.RULE_KITS
+                self.assertEqual(restrict.specs_awake(bytes(s)), thief > 7)
+                self.assertEqual(restrict.kit_forbids(bytes(s), 45, test_restrict.record(45)), thief <= 7)
+                for t in test_restrict.TYPES:
+                    with self.subTest(thief=thief, type=t):
+                        self.assertEqual(self.can_use(bytes(s), t, rules=rules), self.expected(s, t))
             game.RULES_IN_FORCE = game.RULE_KITS
             shinobi = bytearray(test_restrict.sheet(17))
             shinobi[0x43], shinobi[0x14] = 3, 1  # (a long sword spec: a thief turned ... back again)

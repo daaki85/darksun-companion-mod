@@ -2937,8 +2937,8 @@ probe_can_use:
 ; weapon of a kind not blunt (KIT_BLUNT); a Shinobi a shield, armour that isn't light, and a
 ; weapon not of its kinds (KIT_SHINOBI); a Seeker a weapon its sphere doesn't allow (as a
 ; cleric's: SPHERE_ALLOWS), but the bow. A weapon of a kind the character specialized in (its
-; SPEC_SLOTS; but choosing one, KF_SPEC) none, but for the off hand's. DS the game's; all
-; registers kept.
+; SPEC_SLOTS, while they count: SPECS_AWAKE; but choosing one, KF_SPEC) none, but for the off
+; hand's. DS the game's; all registers kept.
 KT_MELEE   equ 0x01             ; (the item type's +0 flags, +0Fh kind flags)
 KT_MISSILE equ 0x02
 KT_SHIELD  equ 0x04
@@ -2968,6 +2968,8 @@ kit_forbids:
         mov byte [cs:kf_chosen], 0      ; (a weapon of a kind it specialized in: the kit keeps
         cmp byte [cs:kf_spec], 0        ; it from none, but for the off hand's rules)
         jne .forbids
+        call specs_awake                ; (its weapon specs counting: their class or kit awake)
+        jc .forbids
         cmp dx, KIND_TYPES
         jae .forbids
         push si
@@ -3288,10 +3290,50 @@ class_forbids:
         pop ax
         ret
 
-; SPECIALIZED_BACK: carry set if CU_KIND is a kind the character (sheet ES:BX), a human who has
-; dual-classed, specialized in (its SPEC_SLOTS: a warrior class's, a Battle Mage's), asleep or not;
-; or the bow, for a ranger, now or before: the new class's limits don't shrink what it has
-; learnt (restrict.specialized_back). All registers kept.
+; SPECS_AWAKE: CF clear if the weapon specs of the character (sheet ES:BX) count: one class, or not
+; a human; a human's warrior class (fighter, gladiator, ranger) now, or before and passed by the
+; class it has now; a Battle Mage's kit awake (KIT_ID). Set while the class or kit that gave them
+; sleeps. All registers kept.
+specs_awake:
+        pusha
+        cmp byte [es:bx + 0x22], 0
+        je .yes
+        cmp byte [es:bx + 0x18], 1
+        jne .yes
+        xor si, si
+.class: mov al, [es:bx + si + 0x21]
+        cmp al, FIGHTER_CLASS
+        je .warrior
+        cmp al, GLADIATOR_CLASS
+        je .warrior
+        cmp al, 13
+        jb .next
+        cmp al, 16
+        ja .next
+.warrior:
+        or si, si
+        jz .yes
+        mov al, [es:bx + si + 0x24]
+        cmp al, [es:bx + 0x24]
+        jb .yes
+.next:  inc si
+        cmp si, 3
+        jb .class
+        call kit_id
+        cmp al, KIT_BATTLE_MAGE
+        je .yes
+        popa
+        stc
+        ret
+.yes:   popa
+        clc
+        ret
+
+; SPECIALIZED_BACK: carry set if CU_KIND is a kind the character (sheet ES:BX) specialized in as a
+; fighter, gladiator or ranger, a human who has dual-classed and whose new class's level has
+; passed the old; or the bow, for a ranger (a multiclass one always, a human while a ranger or
+; once its new class's level has passed its ranger level): restrict.specialized_back. All
+; registers kept.
 specialized_back:
         pusha
         mov al, [cs:cu_kind]
@@ -3306,7 +3348,13 @@ specialized_back:
         jb .rnext
         cmp al, 16
         ja .rnext
-        jmp .yes                        ; (a ranger, now or before)
+        cmp byte [es:bx + 0x18], 1      ; (not human: multiclass, always)
+        jne .yes
+        or si, si                       ; (a human ranger now)
+        jz .yes
+        mov al, [es:bx + si + 0x24]
+        cmp al, [es:bx + 0x24]
+        jb .yes
 .rnext: inc si
         cmp si, 3
         jb .rclass
@@ -3322,8 +3370,23 @@ specialized_back:
         je .kind
         cmp [es:bx + SPEC_SLOTS + 3], al
         jne .no
-.kind:  cmp byte [es:bx + 0x22], 0      ; (a human who has changed class: its weapon specs its
-        jne .yes                        ; own, whatever the new class or a kit allows)
+.kind:  mov si, 1
+.class: mov al, [es:bx + si + 0x21]
+        cmp al, FIGHTER_CLASS
+        je .warrior
+        cmp al, GLADIATOR_CLASS
+        je .warrior
+        cmp al, 13
+        jb .next
+        cmp al, 16
+        ja .next
+.warrior:
+        mov al, [es:bx + si + 0x24]
+        cmp al, [es:bx + 0x24]
+        jb .yes
+.next:  inc si
+        cmp si, 3
+        jb .class
 .no:    popa
         clc
         ret

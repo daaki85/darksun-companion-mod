@@ -454,11 +454,13 @@ where the game checks for "No spell use" (`INT CCh`). (`dscompanion/restrict.py`
 says the same in Python, for the tests.)
 A weapon the character has made its own is left as the game has it, past the
 classes' limits (`SPECIALIZED_BACK`, `restrict.specialized_back`): a dual-classed
-human's chosen weapon specs (a warrior class's, a Battle Mage's), its old class
-asleep or not, and a ranger's bow (every ranger has expertise with it, but never
-chooses it), now or before. `KIT_FORBIDS` likewise passes a weapon of a kind in
-the sheet's `SPEC_SLOTS` (`KF_CHOSEN`), but for the off hand's rules and when a
-weapon spec is being chosen (`KF_SPEC`).
+human's chosen weapon specs once its new class's level has passed the warrior
+class's, and a ranger's bow (every ranger has expertise with it, but never
+chooses it): a multiclass ranger's always, a human's while a ranger or once past.
+`KIT_FORBIDS` likewise passes a weapon of a kind in the sheet's `SPEC_SLOTS`
+(`KF_CHOSEN`) while the specs count (`SPECS_AWAKE`, `restrict.specs_awake`: one
+class; a human's warrior class now or passed; a Battle Mage's kit awake), but
+for the off hand's rules and when a weapon spec is being chosen (`KF_SPEC`).
 
 ### Multiclass hit points
 

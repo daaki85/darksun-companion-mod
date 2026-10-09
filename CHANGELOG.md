@@ -105,11 +105,10 @@ Released pull requests are summarised in a line or two each; the release notes
   have a warrior's THAC0 already); an Arena Champion or Sentinel no druid or
   preserver (no shield); a Brute no psionicist or air cleric (no two-handed
   melee weapon).
-- **Weapon specs are weapons learnt for good:** no kit forbids a kind the
-  character specialized in (but for the off hand's rules), and a human who has
-  changed class may use its chosen kinds (and a ranger's bow) whatever the new
-  class allows, its old class asleep or not (was: once the new class's level
-  passed the old).
+- **Weapon specs are weapons learnt for good,** while the class or kit that
+  gave them is awake: no kit forbids a kind the character specialized in (but
+  for the off hand's rules). A dual-classed human's chosen kinds sleep with
+  their class, as before, and come back when it wakes.
 - **The Stalker hides in shadows indoors** with its full chance (the stealth
   rule halves a ranger's indoors).
 - **Starting gear fitted to the kit:** the game's class gear, given at DONE,

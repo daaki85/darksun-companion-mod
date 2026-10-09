@@ -1599,9 +1599,9 @@ character's melee rate whatever weapon is ready.
 ![The Effects screen: Daaki, a 9th-level fighter, GRAND MASTER OF LONG SWORD](docs/effects-weapons.png)
 
 A human who dual-classes keeps what it earned as a fighter, gladiator or
-ranger: its weapon specs count again once the new class's level passes the
-old, and its chosen weapons stay its own to use all along, whatever the new
-class (or a kit) allows.
+ranger: its weapon specs, and the weapons it chose, whatever the new class (or
+a kit) allows, count again once the new class's level passes the old. Till
+then they sleep, as the class does.
 
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#weapon-specialization).
 
@@ -1754,10 +1754,12 @@ expertise with it once the kit wakes. A warrior's own weapon specs stay, as
 the game keeps them, and count again once the new class's level passes the
 old.
 
-A weapon spec is a weapon learnt for good: no kit keeps a character from a
-kind of weapon it specialized in (but for the off hand's rules: the Healer's,
-the Battle Mage's), and a human who has changed class may use the kinds it
-chose whatever the new class allows, its old class asleep or not.
+A weapon spec is a weapon learnt for good, while the class or kit that gave it
+is awake: no kit keeps a character from a kind of weapon it specialized in
+(but for the off hand's rules: the Healer's, the Battle Mage's), and a human
+who has changed class may use the kinds it chose whatever the new class
+allows. While that class or kit sleeps, the kinds go with it, and come back
+when it wakes.
 
 Some kits keep a human from some classes, greyed on the DUAL window as the
 game greys those it already bars:
@@ -1792,10 +1794,10 @@ doesn't), as the game's own "No spell use" stops them. The **USE** screen
 heads its spell slots **NO SPELLS IN ARMOUR**, and the Characters tab adds
 "(no spells in armour)" to them. A human who has
 changed class is held by the class it has now; another race by all of its
-classes. A ranger turned cleric uses both spheres' weapons, and a human who
-dual-classed uses the weapons it specialized in whatever the new class allows,
-its old class asleep or not (a fighter's, gladiator's or ranger's chosen weapon
-specs, a Battle Mage's, and a ranger's bow). A ranger's bow is always its own: a fire ranger/cleric, whose
+classes. A ranger turned cleric uses both spheres' weapons, and a warrior who
+dual-classed uses the weapons it specialized in once the new class's level
+passes the old (a fighter's, gladiator's or ranger's chosen weapon specs, and a
+ranger's bow). A ranger's bow is always its own: a fire ranger/cleric, whose
 fire sphere allows only obsidian weapons, may still use bows.
 
 How it works: [DEVELOPMENT.md](DEVELOPMENT.md#class-restrictions).
