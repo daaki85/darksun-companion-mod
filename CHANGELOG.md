@@ -8,6 +8,13 @@ Released pull requests are summarised in a line or two each; the release notes
 [1.0.0](release-notes/v1.0.0.md): #1 to #13) and the pull requests themselves
 have the detail.
 
+## Pull request #38 (in progress)
+
+**Release**
+- **The release zip is `Dark-Sun-Shattered-Lands-Obsidian-Edition-<version>.zip`**, unzipping to a
+  folder of that name, to match the releases' title (it was
+  `Obsidian-Edition-<version>.zip`).
+
 ## Pull request #37 ([merged 2026-10-10](https://github.com/daaki85/darksun-obsidian-edition/pull/37))
 
 **Release**

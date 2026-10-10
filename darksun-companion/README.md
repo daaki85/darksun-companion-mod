@@ -171,11 +171,12 @@ next to the game. You don't install anything into the game folder.
 
 ### One-time setup
 
-1. Download the latest release, `Obsidian-Edition-<version>.zip`
-   (`Templars-Ledger-<version>.zip` up to 1.2.0), from the
+1. Download the latest release, `Dark-Sun-Shattered-Lands-Obsidian-Edition-<version>.zip`
+   (earlier, `Obsidian-Edition-<version>.zip`, and
+   `Templars-Ledger-<version>.zip` up to 1.2.0), from the
    [Releases page](https://github.com/daaki85/darksun-obsidian-edition/releases),
    and unzip it anywhere: the files you need are in its
-   `Obsidian-Edition-<version>` folder. (Or the project as it stands: on its
+   `Dark-Sun-Shattered-Lands-Obsidian-Edition-<version>` folder. (Or the project as it stands: on its
    GitHub page click **Code → Download ZIP**; the files are then in its
    `darksun-companion` folder.)
 2. Python: the first time you double-click one of the `.bat` files, it

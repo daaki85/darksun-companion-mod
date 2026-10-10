@@ -36,11 +36,11 @@ jobs:
       - name: Zip
         shell: bash
         run: |
-          git archive --format=zip --prefix="Obsidian-Edition-$VERSION/" -o "Obsidian-Edition-$VERSION.zip" "$GITHUB_SHA":darksun-companion
+          git archive --format=zip --prefix="Dark-Sun-Shattered-Lands-Obsidian-Edition-$VERSION/" -o "Dark-Sun-Shattered-Lands-Obsidian-Edition-$VERSION.zip" "$GITHUB_SHA":darksun-companion
       - name: Release
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v$VERSION" "Obsidian-Edition-$VERSION.zip" --target "$GITHUB_SHA" \
+          gh release create "v$VERSION" "Dark-Sun-Shattered-Lands-Obsidian-Edition-$VERSION.zip" --target "$GITHUB_SHA" \
             --title "Dark Sun: Shattered Lands - Obsidian Edition $VERSION" --notes-file "release-notes/v$VERSION.md"

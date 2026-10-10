@@ -61,10 +61,11 @@ folder only what you'd expect: your saves (pages 2 to 4 as files of their own,
 
 1. Download the latest release from the
    [Releases page](https://github.com/daaki85/darksun-obsidian-edition/releases)
-   (`Obsidian-Edition-<version>.zip`; `Templars-Ledger-<version>.zip` up to
+   (`Dark-Sun-Shattered-Lands-Obsidian-Edition-<version>.zip`; earlier,
+   `Obsidian-Edition-<version>.zip`, and `Templars-Ledger-<version>.zip` up to
    1.2.0) and unzip it anywhere. (Or this repository as it stands: **Code →
    Download ZIP**.)
-2. In the unzipped folder (`Obsidian-Edition-<version>`, or `darksun-companion`
+2. In the unzipped folder (`Dark-Sun-Shattered-Lands-Obsidian-Edition-<version>`, or `darksun-companion`
    in a download of the repository), double-click **`Start Obsidian Edition.bat`**
    (`Start Templar's Ledger.bat` up to 1.2.0).
    The first time, it offers to install 64-bit Python if you don't have it.
