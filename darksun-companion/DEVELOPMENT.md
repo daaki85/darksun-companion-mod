@@ -440,9 +440,9 @@ its scores from `+22h`; `DS:119Ch` the sheet, the hit points its `+8`):
   of ten), then draws each value with the game's text routine.
 
 How (`RULE_HI_ROLLED`, the second rules word's 32: `game.RULE_ROLLED`): no
-interrupt vectors are left, so the six sites share `PROBE_CR_SPELLS`'s
+interrupt vectors are left, so the eight sites share `PROBE_CR_SPELLS`'s
 (`INT 98h`), the byte after the `INT` saying which (`RL_SCORE` 1, `RL_HP` 2,
-`RL_ROLL` 3, `RL_SUM` 4) where `PROBE_CR_SPELLS`'s own has its NOP; the
+`RL_ROLL` 3, `RL_SUM` 4, `RL_CON` 5, `RL_TRY` 6) where `PROBE_CR_SPELLS`'s own has its NOP; the
 helper moves the return address past it.
 
 * `RL_ROLL` (the three loops' write, `INT` + site + NOP) writes the score; at
@@ -452,15 +452,31 @@ helper moves the return address past it.
   plus what's spare (the most less the six's total), the score as it was if
   none.
 * `RL_HP` (63A49h) leaves out the `add`.
+* `RL_CON` (5, in place of `les bx,[119Ch]` + NOP at 63946h, in the score
+  click's CON case at 63915h, after it has had 655D6h work out the least and
+  most hit points again without rolling): the game only keeps the hit points
+  within the new range, so a CON raised added nothing. `RL_SCORE` keeps the
+  most (`DS:4996h`) before every click; here the hit points move as far as it
+  did, which is CON's bonus for every level as the game counts it, and the
+  game's clamp follows.
 * `RL_SUM` (in place of 65168h's `add sp,4` after the copy is put back) draws
   `SUM:` 23 pixels left of the scores and the totals, `99/101`, on the line
   under CHR, with the game's text routine as the Ledger's other lines are.
   The scores' box is made a line taller and wider (`rl_sum_box`: x2 48 to 77,
   y2 178 to 185, in the game's data) so the copy put back clears them.
 
-The dice log adds the six's total to the creation lines.
+The dice log adds the six's total to the creation lines. The die rolls a
+whole character many times while it tumbles, about 100 `rand()` calls each,
+more than the ring holds between two reads, so the log used to miss a
+character's rolls. `RL_TRY` (6, whatever the rule, in place of
+`add ax,[499Ah]` + NOP at 6498Bh, in 6490Dh: AX a 4d4, `[BP+8]` the ability,
+DI the try) keeps each 4d4 in the header (`+282`, four for each ability) and
+counts them (`+280`); the log reads them once the count has been still for
+0.3 s, and doesn't report the ring's missed rolls while it moves.
 
-Checked in the game: a preserver rolled 101 (`SUM:101/101`); DEX lowered and
+Checked in the game: three rolls of the die, every ability's line complete
+(none "too fast"); CON 14 to 15 to 16 took a 3rd-level preserver's hit points
+from 8 to 11 to 14, and back down; a preserver rolled 101 (`SUM:101/101`); DEX lowered and
 STR raised by one, a second raise refused; the hit points unchanged by left
 and right clicks (with the rule off, 16 to 17); the die's next roll
 `SUM:98/98`, as the dice log's line; a new class raising INT from 14 to 17

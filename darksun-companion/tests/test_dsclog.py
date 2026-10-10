@@ -4385,3 +4385,42 @@ class RolledTests(AdndTablesTests):
                                                                 r.UC_X86_REG_BP, r.UC_X86_REG_DS)],
                                  [0x1111, 0x2222, 0x5555, 0x6666, BP, self.DS])
                 self.assertEqual(self.drawn(), [(10, 177, "SUM:"), (33, 177, "100/102")] if on else [])
+
+    SHEET = 0x8800
+
+    def test_con(self):
+        """RL_CON: after a click on CON (RL_SCORE keeping the most hit points before it), the sheet's
+        hit points move as far as the most did (ES:BX the sheet, as "les bx,[119Ch]" leaves it)."""
+        from dscompanion.gamepatch import RL_CON
+        self.mu.mem_write(self.DS * 16 + 0x119C, struct.pack("<HH", 0, self.SHEET))
+        for on in (False, True):
+            for before, after, hp in ((20, 23, 15), (23, 20, 18), (20, 20, 12)):
+                with self.subTest(on=on, before=before, after=after):
+                    self.rules(on)
+                    self.scores(17, 14, 17, 18, 19, 17)
+                    self.roll(17)
+                    self.mu.mem_write(self.DS * 16 + 0x4996, struct.pack("<H", before))
+                    self.click(2, 18)
+                    self.mu.mem_write(self.DS * 16 + 0x4996, struct.pack("<H", after))
+                    self.mu.mem_write(self.SHEET * 16 + 8, struct.pack("<H", hp))
+                    self.run_site(RL_CON, 4, es=0, ebx=0, eax=0x1234)
+                    self.assertEqual((self.mu.reg_read(r.UC_X86_REG_ES), self.mu.reg_read(r.UC_X86_REG_BX),
+                                      self.mu.reg_read(r.UC_X86_REG_AX)), (self.SHEET, 0, 0x1234))
+                    got, = struct.unpack("<H", self.mu.mem_read(self.SHEET * 16 + 8, 2))
+                    self.assertEqual(got, hp + after - before if on else hp)
+
+    def test_tries(self):
+        """RL_TRY: AX (a 4d4) plus the word at DS:499Ah, the 4d4 kept for the dice log at the
+        header's +282 (four for each ability, [BP+8], the try in DI) and +280 counted."""
+        from dscompanion.gamepatch import RL_TRY
+        self.mu.mem_write(self.DS * 16 + 0x499A, struct.pack("<H", 5))
+        seq0, = struct.unpack("<H", self.mu.mem_read(self.hdr + 280, 2))
+        for n, (ability, try_, roll) in enumerate(((0, 0, 7), (0, 3, 11), (5, 2, 16), (6, 0, 9), (2, 4, 9))):
+            with self.subTest(ability=ability, try_=try_):
+                self.mu.mem_write(SS * 16 + BP + 8, struct.pack("<H", ability))
+                self.run_site(RL_TRY, 4, eax=roll, edi=try_, ebx=0x2222)
+                self.assertEqual((self.mu.reg_read(r.UC_X86_REG_AX), self.mu.reg_read(r.UC_X86_REG_BX)),
+                                 (roll + 5, 0x2222))
+        tries = bytes(self.mu.mem_read(self.hdr + 282, 24))
+        self.assertEqual((tries[0], tries[3], tries[22]), (7, 11, 16))
+        self.assertEqual(struct.unpack("<H", self.mu.mem_read(self.hdr + 280, 2))[0], seq0 + 3)  # (not the two out of range)

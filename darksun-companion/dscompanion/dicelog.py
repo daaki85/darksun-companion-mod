@@ -58,6 +58,9 @@ SKILLS_ELVEN = 4  # the Cloak and Boots of Elvenkind's boxes name their chances 
 TSR_RING_SEG = 268  # the ring's segment (past the image, so it takes none of DSCLOG's 64 KB)
 TSR_RULES_HI = 270  # the rules' bits past 16 (game.RULE_KITS), shifted down
 TSR_LEARN = 272  # a preserver's try at a scroll's spell: count, who, spell, INT, chance, d100, result (intlearn.py)
+# character creation: each ability's 4d4 rolled (counted), and the last four of each, STR to CHA (DSCLOG's
+# RL_TRY: the die tumbles faster than the ring is read)
+TSR_TRIES_SEQ, TSR_TRIES = 280, 282
 TSR_PICK_SEQ, TSR_PICK_REPLY, TSR_PICK_OFF, TSR_PICK_ON, PICK_SIZE = 172, 174, 176, 178, 240
 PICK_TOOLS, PICK_KEY = 1, 2  # (TSR_PICK_ON: the thieving tools on someone; P in a conversation too)
 TSR_USE_SEQ, TSR_USE_REPLY, TSR_USE_WHO, TSR_USE_TAKEN, TSR_USE_ITEM = 180, 182, 184, 186, 188
@@ -139,7 +142,8 @@ INITIATIVE_WAIT = 0.3  # seconds after the last initiative roll before the order
 # 4d4 + 4 + the race's adjustment, raised to the class's minimum; the code after the
 # ability routine's call to the dice routine, whose arguments are (?, ability, ...,
 # classes counted):
-CREATION_ABILITY_RETURN = bytes.fromhex("83c40403069a498946fe")
+CREATION_ABILITY_RETURN = (bytes.fromhex("83c404cd98069089"),  # (RL_TRY's INT in place of "add ax,[499Ah]")
+                           bytes.fromhex("83c40403069a498946fe"))
 CREATION_ABILITY_TRIES = 4
 # Then each class level's hit point die, through the level-up routine (its caller's
 # arguments are (sheet, class, level)); called from the creation screen, it returns here:
@@ -148,6 +152,7 @@ LEVEL_HP_RETURN = bytes.fromhex("83c4048bc8c45efc268a")
 LEVEL_HP_RETURNS = (LEVEL_HP_RETURN, bytes.fromhex("83c404cdbac45efc268a"))
 CREATION_HP_CALLER = 0x0232
 CREATION_HP_WAIT = 0.3  # seconds after the last hit point roll before the total is shown
+CREATION_TUMBLE = 1.0  # seconds after the creation die's last 4d4 that missed rolls go unmentioned
 # ... and in the handler for spells with rules of their own (its arguments: caster, target, ...,
 # spell at +0Eh): code after its dice calls -> what the roll is and what the game adds
 SPELL_HANDLER_RETURNS = (
@@ -408,6 +413,9 @@ class DiceLog:
         self._hp_first: Optional[Tuple[tuple, int]] = None  # RULE_HP_BEST: a hit die's first roll
         self._creation_con: Optional[int] = None  # the CON just rolled
         self._creation_abilities: Dict[int, Tuple[int, str]] = {}  # ability: (value, line), this set's
+        self._tries_seq: Optional[int] = None  # DSCLOG's count of creation 4d4s at the last look
+        self._tries_new = False  # ... and whether it has moved since the lines were last given
+        self._tries_at = -CREATION_TUMBLE  # ... and when it last moved
         self._hp: Dict[int, int] = {}  # creature index -> HP at the last look
         self._spell_until = 0.0  # HP changes before this are a spell's doing
         self._spell_name = ""
@@ -1017,7 +1025,9 @@ class DiceLog:
         if self._initiative and now - self._initiative_at >= INITIATIVE_WAIT:
             out += self.initiative_lines()
         out += self.turn_lines()  # after the round's order and the last turn's XP
-        if (self._creation_hp or self._creation_abilities) and now - self._creation_hp_at >= CREATION_HP_WAIT:
+        self._creation_tries_moved(now)
+        if (self._creation_hp or self._creation_abilities or self._tries_new) \
+                and now - self._creation_hp_at >= CREATION_HP_WAIT:
             out += self.creation_lines()
         out += self.flush(now)
         refused = getattr(self.guest, "refused", None)
@@ -1026,7 +1036,9 @@ class DiceLog:
                     "Please send this line.)" for r in refused[:3]]
             refused.clear()
         if self.missed:
-            out.append(f"({self.missed} rolls came too fast to record)")
+            # (not while the creation die tumbles: DSCLOG keeps the rolls that count, RL_TRY)
+            if now - self._tries_at > CREATION_TUMBLE:
+                out.append(f"({self.missed} rolls came too fast to record)")
             self.missed = 0
         return out
 
@@ -2147,10 +2159,20 @@ class DiceLog:
             self._creation_hp, self._creation_abilities = [], {}
         self._creation_hp_at = now
         out: List[str] = []
-        g = self.game
         if ability is None or not 0 <= ability < 6:
             return out + [f"Character creation: 4d4 four times: {', '.join(map(str, tries))}"]
-        sheet = g.creation_sheet()
+        sheet = self.game.creation_sheet()
+        classes = [sheet[game.SHEET_CLASSES + i] for i in range(min(max(class_count or 1, 1), 3))]
+        value, line = self._ability_line(ability, tries, sheet, classes)
+        if ability == 2:
+            self._creation_con = value
+        self._creation_abilities[ability] = (value, line)
+        return out
+
+    def _ability_line(self, ability: int, tries: List[int], sheet: bytes, classes: List[int]) -> Tuple[int, str]:
+        """An ability rolled at creation: the best of its four 4d4 + 4, the race's adjustment, raised to
+        the classes' least; (the value, its line)."""
+        g = self.game
         race = sheet[game.SHEET_RACE]
         adjustment = g.race_adjustment(race, ability)
         best = max(tries)
@@ -2159,7 +2181,6 @@ class DiceLog:
         if adjustment:
             steps += f", {signed(adjustment)} {game.RACE_NAMES.get(race, f'race {race}')}"
         steps += f" = {value}"
-        classes = [sheet[game.SHEET_CLASSES + i] for i in range(min(max(class_count or 1, 1), 3))]
         minimums = [(g.class_minimum(c, ability), c) for c in classes if c]
         if minimums:
             least, cls = max(minimums)
@@ -2168,10 +2189,32 @@ class DiceLog:
                 why = "prime requisite" if least == game.CREATION_PRIME_MINIMUM else "least"
                 steps += f", raised to {least} (the {name}'s {why})"
                 value = least
-        if ability == 2:
-            self._creation_con = value
-        self._creation_abilities[ability] = (value, f"Character creation, {ABILITIES[ability]} {value}: {steps}")
-        return out
+        return value, f"Character creation, {ABILITIES[ability]} {value}: {steps}"
+
+    def _creation_tries_moved(self, now: float) -> None:
+        """DSCLOG's count of creation 4d4s (RL_TRY): moved since the last look, the die has rolled;
+        the lines come once it has been still for CREATION_HP_WAIT."""
+        if self.tsr_hdr is None:
+            return
+        try:
+            seq, = struct.unpack("<H", self.guest.read(self.tsr_hdr + TSR_TRIES_SEQ, 2))
+        except (struct.error, IndexError, ValueError):
+            return
+        if self._tries_seq is not None and seq != self._tries_seq:
+            self._tries_new, self._creation_hp_at, self._tries_at = True, now, now
+        self._tries_seq = seq
+
+    def _creation_tries(self) -> Optional[List[List[int]]]:
+        """The last four 4d4 of each ability, STR to CHA, as DSCLOG kept them (None if it can't be read)."""
+        if self.tsr_hdr is None:
+            return None
+        try:
+            raw = self.guest.read(self.tsr_hdr + TSR_TRIES, 24)
+        except (IndexError, ValueError):
+            return None
+        if len(raw) < 24 or not all(4 <= b <= 16 for b in raw):
+            return None
+        return [list(raw[i * 4:i * 4 + 4]) for i in range(6)]
 
     def _creation_hp_roll(self, e: Entry, sides: int, roll: int, now: float) -> List[str]:
         """A class level's hit point die on the creation screen: (sheet, class, level)."""
@@ -2203,7 +2246,16 @@ class DiceLog:
         points."""
         got, self._creation_abilities = self._creation_abilities, {}
         shown = self.game.creation_abilities()
+        tries = self._creation_tries() if self._tries_new else None
+        self._tries_new = False
         out = []
+        if tries is not None:  # (DSCLOG's: every roll, however fast the die tumbled)
+            sheet = self.game.creation_sheet()
+            classes = list(sheet[game.SHEET_CLASSES:game.SHEET_CLASSES + 3])
+            for ability in range(6):
+                value, line = self._ability_line(ability, tries[ability], sheet, classes)
+                if shown is None or value == shown[ability]:
+                    got[ability] = (value, line)
         if got:
             for ability in range(6):
                 line = got.get(ability)

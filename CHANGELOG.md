@@ -8,6 +8,19 @@ Released pull requests are summarised in a line or two each; the release notes
 [1.0.0](release-notes/v1.0.0.md): #1 to #13) and the pull requests themselves
 have the detail.
 
+## Pull request #37 (in progress)
+
+**Fixed**
+- **The dice log missed character creation rolls:** the die rolls a whole
+  character many times while it tumbles, more rolls than the log could read,
+  so abilities often came as "its rolls came too fast to record". The helper
+  now keeps each ability's last four 4d4 itself, and the log reads them when
+  the die stops; the rolls missed meanwhile are no longer mentioned.
+- **Raising CON on the creation screen didn't raise the hit points** (lowering
+  it could lower them): the game only kept them within the new range. With
+  Scores and hit points as rolled, a change of CON now adds or takes off its
+  bonus for every level, as the game counts it.
+
 ## Pull request #36 ([merged 2026-10-09](https://github.com/daaki85/darksun-obsidian-edition/pull/36))
 
 **Release**

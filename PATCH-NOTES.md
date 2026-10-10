@@ -61,7 +61,7 @@ Obsidian Edition is a free mod for the GOG release of Dark Sun: Shattered Lands.
 **All classes**
 
 - **[Changed]** Every class can reach **10th level** *(was 9th)*.
-- **[Changed]** Character creation keeps what the die rolls: lower a score to raise another, but the six never add up to more than the die gave (shown under CHR as `SUM:99/101`), and the hit points stay as rolled *(was any score clicked up to its most, and the hit points set by a click)*.
+- **[Changed]** Character creation keeps what the die rolls: lower a score to raise another, but the six never add up to more than the die gave (shown under CHR as `SUM:99/101`), and the hit points stay as rolled, moving only with CON's bonus *(was any score clicked up to its most, and the hit points set by a click)*.
 - **[Changed]** Class restrictions hold: a character may use an item only if every one of its classes allows it, and a multiclass preserver can't cast in armour *(was any one class allowing it)*.
 - **[Changed]** Multiclass characters gain hit points as in AD&D, each class's die divided between them. Every hit die is rolled twice and the better kept.
 - **[Changed]** Experience, priests' THAC0 and spell slots follow AD&D's tables: a gladiator needs 2,250 XP for 2nd level *(was 2,000)*, a preserver has 4 2 1 slots at 5th *(was 3 2 1)*, a cleric 3 3 1 *(was 3 2 1)*.
