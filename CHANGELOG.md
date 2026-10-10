@@ -3,12 +3,31 @@
 What changed in Obsidian Edition (called Templar's Ledger up to 1.2.0), pull
 request by pull request, newest first.
 Released pull requests are summarised in a line or two each; the release notes
-([2.1.0](release-notes/v2.1.0.md): #35; [2.0.0](release-notes/v2.0.0.md): #31 and #32; [1.2.0](release-notes/v1.2.0.md):
+([2.1.1](release-notes/v2.1.1.md): #37; [2.1.0](release-notes/v2.1.0.md): #35; [2.0.0](release-notes/v2.0.0.md): #31 and #32; [1.2.0](release-notes/v1.2.0.md):
 #19 to #29; [1.1.0](release-notes/v1.1.0.md): #14 to #18;
 [1.0.0](release-notes/v1.0.0.md): #1 to #13) and the pull requests themselves
 have the detail.
 
-## Pull request #36 (in progress)
+## Pull request #37 (in progress)
+
+**Release**
+- **Obsidian Edition 2.1.1:** the version is 2.1.1, with its notes in
+  `release-notes/v2.1.1.md`, listed on the front page with the others.
+- **Releases are titled "Dark Sun: Shattered Lands - Obsidian Edition"** and
+  the version, rather than "Obsidian Edition" alone.
+
+**Fixed**
+- **The dice log missed character creation rolls:** the die rolls a whole
+  character many times while it tumbles, more rolls than the log could read,
+  so abilities often came as "its rolls came too fast to record". The helper
+  now keeps each ability's last four 4d4 itself, and the log reads them when
+  the die stops; the rolls missed meanwhile are no longer mentioned.
+- **Raising CON on the creation screen didn't raise the hit points** (lowering
+  it could lower them): the game only kept them within the new range. With
+  Scores and hit points as rolled, a change of CON now adds or takes off its
+  bonus for every level, as the game counts it.
+
+## Pull request #36 ([merged 2026-10-09](https://github.com/daaki85/darksun-obsidian-edition/pull/36))
 
 **Release**
 - **Obsidian Edition 2.1.0:** the version is 2.1.0, with its notes in

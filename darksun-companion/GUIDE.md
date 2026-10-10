@@ -259,7 +259,9 @@ classes a human could change to ([kits](#kits)).
 - **Every hit die is rolled twice and the better kept,** at creation (one die
   for every starting level) and at every level up. *Without the mod:* one roll.
 - **The hit points are as rolled:** clicking them on the creation screen does
-  nothing. *Without the mod:* a click sets them anywhere the dice could have.
+  nothing. Changing CON there adds or takes off its bonus for every level.
+  *Without the mod:* a click sets them anywhere the dice could have, and a
+  higher CON adds nothing unless they are below the new least.
 - Half-giants roll double. A roll counts at least 2 with CON 20, 3 with CON
   21-22 and 4 with CON 23 or more.
 - **CON's bonus** comes with every level: for a fighter, gladiator or ranger

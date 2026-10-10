@@ -82,16 +82,19 @@ double-click, with the options as last set.)
 
 ## What's new
 
-**Obsidian Edition 2.1.0** is out ([release notes](release-notes/v2.1.0.md)).
-It fixes a freeze on the creation screen in 2.0.0, and character creation now
-keeps what the die rolls: the scores can be moved around but not raised past
-the die's total, shown under CHR, and the hit points stay as rolled. Turning
-the mouse wheel no longer scrolls the map, and there are [patch
-notes](PATCH-NOTES.md) for the whole project. It is pull request #35.
+**Obsidian Edition 2.1.1** is out ([release notes](release-notes/v2.1.1.md)),
+with two fixes to character creation: the dice log no longer misses the
+abilities' rolls while the die tumbles, and raising CON raises the hit points.
+2.1.0 before it fixed a freeze on the creation screen in 2.0.0 and made
+character creation keep what the die rolls: the scores can be moved around
+but not raised past the die's total, shown under CHR, and the hit points stay
+as rolled. It also stopped the turning mouse wheel scrolling the map, and
+added [patch notes](PATCH-NOTES.md) for the whole project.
 
 Earlier changes, pull request by pull request, are in
 [`CHANGELOG.md`](CHANGELOG.md). Releases have notes of their own:
-[2.1.0](release-notes/v2.1.0.md) (pull request #35),
+[2.1.1](release-notes/v2.1.1.md) (pull request #37),
+[2.1.0](release-notes/v2.1.0.md) (#35),
 [2.0.0](release-notes/v2.0.0.md) (#31 and #32),
 [1.2.0](release-notes/v1.2.0.md) (#19 to #29),
 [1.1.0](release-notes/v1.1.0.md) (#14 to #18) and

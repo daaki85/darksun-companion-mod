@@ -313,6 +313,9 @@ learn_int  db 0                 ; +276 ... its INT ...
 learn_chance db 0               ; +277 ... the chance to learn (%) ...
 learn_roll db 0                 ; +278 ... the d100 (LEARN_FULL: the spells of that level known) ...
 learn_result db 0               ; +279 ... and LEARN_LEARNT, LEARN_FAILED or LEARN_FULL
+rl_seq     dw 0                 ; +280 an ability's 4d4 rolled on the creation screen (RL_TRY), counted
+rl_tries   times 24 db 0        ; +282 the last four 4d4 of each ability, STR to CHA (the dice log's,
+                                ;      as the die tumbles faster than its ring is read)
 
 ; TEXT BUFFER: what the game sends to its dialogue window, as records of
 ;   byte 0FEh, byte kind (the dialogue window's: 0 = a reply to choose, the
@@ -6438,13 +6441,18 @@ probe_cr_spells:
 ; a click raise any score to its most and set the hit points anywhere from the least to the most
 ; the classes could roll. With the rule, a hit point click does nothing, and a score is raised
 ; only while the six add up to no more than the die gave (RL_POOL): lowering one frees points
-; for another. Under CHR the screen shows the six's total and the die's: "SUM:100/102".
+; for another. Under CHR the screen shows the six's total and the die's: "SUM:100/102". A click
+; on CON moves the hit points as far as it moves the most they may be (CON's bonus for each level,
+; as the game counts it), where the game alone keeps them between the least and most.
 ; No vectors are left: these sites share VEC_CR_SPELLS, the INT followed by the site's number
 ; (PROBE_CR_SPELLS's own has its NOP), which the return address is moved past.
 RL_SCORE equ 1                  ; DSUN.EXE 655C6h, in the score click (65480h)
 RL_HP    equ 2                  ; 63A49h, in the hit point click (63A24h)
 RL_ROLL  equ 3                  ; 65944h, 65979h, 659AEh: the die's three loops (657BBh)
 RL_SUM   equ 4                  ; 65185h, in the scores' redraw (65168h)
+RL_CON   equ 5                  ; 63946h, in the score click's CON case (63915h)
+RL_TRY   equ 6                  ; 6498Bh, in an ability's roll (6490Dh): each 4d4, whatever the rule
+RL_HP_MAX equ 0x4996            ; DS: the most hit points the classes could roll (655D6h's)
 RL_BOX   equ 0x0F62             ; DS: the screen's boxes (x1, y1, x2, y2), the scores' first
 RL_LABEL_X equ 23               ; "SUM:" this far left of the scores' x
 RL_ROW_Y equ 6 * 7 - 2          ; the line under CHR: 7 apart, from 2 above the box's top
@@ -6457,6 +6465,10 @@ rl_sites:
         je rl_roll
         cmp byte [cs:rl_site], RL_SUM
         je rl_sum
+        cmp byte [cs:rl_site], RL_CON
+        je rl_con
+        cmp byte [cs:rl_site], RL_TRY
+        je rl_try
         iret
 
 ; CR_TOTAL: DX the six scores of the creature being made (DS:[11A0h], from +22h) added up.
@@ -6484,6 +6496,8 @@ rl_total:
 ; creature plus the score's number, [BP-2] the value the click gives: one more or one less, or
 ; round from the most to the least or back). A raise is kept to the points to spare.
 rl_score:
+        push word [RL_HP_MAX]   ; (the most hit points before the click, for RL_CON)
+        pop word [cs:rl_old_max]
         mov al, [bp - 2]
         test word [cs:rules_hi], RULE_HI_ROLLED
         jz .out
@@ -6512,6 +6526,38 @@ rl_hp:
         jnz .out
         add ax, [bp - 2]
 .out:   iret
+
+; RL_CON replaces "les bx,[119Ch]" (+ NOP; 63946h) after a click on CON has had the game work out
+; the hit points' least and most again (655D6h, not rolling): the sheet's hit points (+8) move as
+; far as the most did (RL_SCORE kept it before the click), so a CON raised adds its bonus and one
+; lowered takes it off; the game then keeps them between the least and most, as before.
+rl_con:
+        les bx, [0x119C]
+        test word [cs:rules_hi], RULE_HI_ROLLED
+        jz .out
+        push ax
+        mov ax, [RL_HP_MAX]
+        sub ax, [cs:rl_old_max]
+        add [es:bx + 8], ax
+        pop ax
+.out:   iret
+
+; RL_TRY replaces "add ax,[499Ah]" (+ NOP; 6498Bh), where an ability's roll (6490Dh, the ability at
+; [BP+8], DI the try, 0-3) adds the race's adjustment + 4 to a 4d4 (AX): the 4d4 kept in RL_TRIES,
+; and RL_SEQ counted, for the dice log.
+rl_try:
+        push bx
+        mov bx, [bp + 8]
+        cmp bx, 5
+        ja .add
+        cmp di, 3
+        ja .add
+        shl bx, 2
+        mov [cs:rl_tries + bx + di], al
+        inc word [cs:rl_seq]
+.add:   pop bx
+        add ax, [0x499A]
+        iret
 
 ; RL_ROLL replaces "mov es:[bx+22h],al" (+ NOP) in the die's three loops (one for each kind of
 ; class), SI the score: after CHR, the six's total is the die's (DI 1, a roll), or no less
@@ -6581,6 +6627,7 @@ rl_sum:
         iret
 
 rl_site  db 0
+rl_old_max dw 0                 ; (RL_HP_MAX before a score's click)
 rl_pool  dw 0                   ; (RL_POOL) the die's total, the most the six may add up to (0: none seen)
 rl_ip    dw 0
 rl_cs    dw 0

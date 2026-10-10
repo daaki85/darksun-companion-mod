@@ -361,7 +361,7 @@ class Viewer:
                 ("rolled_scores", "Character creation keeps what the die rolls: a score may be raised only "
                                   "while the six add up to no more than the die gave (lower one to raise "
                                   "another; the total is shown under CHR), and the hit points can't be "
-                                  "clicked"),
+                                  "clicked; a change of CON adds or takes off its bonus"),
                 ("best_hit_die", "Hit dice rolled twice, the better kept, at creation and at every level "
                                  "(every character)"),
                 ("spell_save", "Spells are saved against with the spell save (the game uses "
