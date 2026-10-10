@@ -10,6 +10,10 @@ have the detail.
 
 ## Pull request #37 (in progress)
 
+**Release**
+- **Releases are titled "Dark Sun: Shattered Lands - Obsidian Edition"** and
+  the version, rather than "Obsidian Edition" alone.
+
 **Fixed**
 - **The dice log missed character creation rolls:** the die rolls a whole
   character many times while it tumbles, more rolls than the log could read,
